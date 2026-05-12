@@ -109,13 +109,13 @@
 "Symlink .env and .env.local from the main repository into new worktrees." = "Skapa symboliska länkar för .env och .env.local från huvudrepositoriet till nya arbetsträd.";
 
 /* Quit confirmation */
-"Quit Factory Floor?" = "Avsluta Factory Floor?";
+"Quit Dockyard?" = "Avsluta Dockyard?";
 "Active workstreams will be stopped." = "Aktiva arbetsflöden kommer att stoppas.";
 "Quit" = "Avsluta";
 "Confirm before quitting" = "Bekräfta innan avslut";
 "Show a confirmation dialog when quitting with active workstreams." = "Visa en bekräftelsedialog vid avslut med aktiva arbetsflöden.";
 "Launch at login" = "Öppna vid inloggning";
-"Automatically open Factory Floor when you log in." = "Öppna Factory Floor automatiskt vid inloggning.";
+"Automatically open Dockyard when you log in." = "Öppna Dockyard automatiskt vid inloggning.";
 "Detailed logging" = "Detaljerad loggning";
 "Log setup, run, and teardown script output to files for debugging." = "Logga utdata från konfigurations-, körnings- och nedmonteringsskript till filer för felsökning.";
 "Open Logs Directory" = "Öppna loggkatalog";
@@ -147,7 +147,7 @@
 /* Settings - Advanced */
 "Advanced" = "Avancerat";
 "Usage analytics" = "Användningsanalys";
-"Send anonymous usage data to help improve Factory Floor. We collect: app version, build type, macOS version, locale, and screen resolution. No project names, file contents, or personal data." = "Skicka anonym användningsdata för att hjälpa förbättra Factory Floor. Vi samlar in: appversion, byggtyp, macOS-version, språk och skärmupplösning. Inga projektnamn, filinnehåll eller personuppgifter.";
+"Send anonymous usage data to help improve Dockyard. We collect: app version, build type, macOS version, locale, and screen resolution. No project names, file contents, or personal data." = "Skicka anonym användningsdata för att hjälpa förbättra Dockyard. Vi samlar in: appversion, byggtyp, macOS-version, språk och skärmupplösning. Inga projektnamn, filinnehåll eller personuppgifter.";
 "Crash reports" = "Kraschrapporter";
 "Send crash reports and performance data. Requires restart to take effect." = "Skicka kraschrapporter och prestandadata. Kräver omstart av appen.";
 "Bleeding edge" = "Senaste versionen";
@@ -215,7 +215,7 @@
 "Description" = "Beskrivning";
 
 /* Initialization errors */
-"Factory Floor cannot start" = "Factory Floor kan inte starta";
+"Dockyard cannot start" = "Dockyard kan inte starta";
 "The terminal engine (Ghostty) failed to initialize. This may indicate a system compatibility issue." = "Terminalmotorn (Ghostty) kunde inte initialiseras. Detta kan tyda på ett systemkompatibilitetsproblem.";
 
 /* EnvironmentTabView */
@@ -224,8 +224,8 @@
 "Restart %@ script" = "Starta om %@-skript";
 "Start %@ script" = "Starta %@-skript";
 "No %@ script configured" = "Inget %@-skript konfigurerat";
-"Add a %@ field to .factoryfloor.json:" = "Lägg till ett %@-fält i .factoryfloor.json:";
-"Also supports .factoryfloor/config.json." = "Stöder även .factoryfloor/config.json.";
+"Add a %@ field to .dockyard.json:" = "Lägg till ett %@-fält i .dockyard.json:";
+"Also supports .dockyard/config.json." = "Stöder även .dockyard/config.json.";
 
 /* Tab labels */
 "Info" = "Info";
@@ -295,3 +295,10 @@
 "No GitHub remote found for this project." = "Ingen GitHub-fjärrserver hittades för detta projekt.";
 "Quick action debug" = "Felsökning av snabbåtgärder";
 "Show a debug panel with command output from quick actions (Create PR, Commit & Push)." = "Visa en felsökningspanel med kommandoutdata från snabbåtgärder (Skapa PR, Commit & Push).";
+
+"Rename" = "Byt namn";
+"Rename Workstream" = "Byt namn på arbetsström";
+"Label" = "Etikett";
+"Enter a custom label for this workstream. If empty, the branch name or task description will be used." = "Ange en anpassad etikett för den här arbetsströmmen. Om det lämnas tomt används grennamnet eller uppgiftsbeskrivningen.";
+"Save" = "Spara";
+

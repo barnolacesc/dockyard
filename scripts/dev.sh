@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# ABOUTME: Development convenience script for Factory Floor.
+# ABOUTME: Development convenience script for Dockyard.
 # ABOUTME: Usage: ./scripts/dev.sh [build|run|test|clean]
 
 set -e
 
-PROJECT="FactoryFloor.xcodeproj"
-SCHEME="FactoryFloor"
-TEST_SCHEME="FactoryFloorTests"
-APP_NAME="Factory Floor Debug"
+PROJECT="Dockyard.xcodeproj"
+SCHEME="Dockyard"
+TEST_SCHEME="DockyardTests"
+APP_NAME="Dockyard Debug"
 BUILD_DIR="build/debug/derived"
 APP_PATH="$BUILD_DIR/Build/Products/Debug/$APP_NAME.app"
-SPM_CACHE="$HOME/Library/Caches/factoryfloor/spm"
+SPM_CACHE="$HOME/Library/Caches/dockyard/spm"
 BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 GHOSTTY_RESOURCES="ghostty/zig-out/share"
 MONACO_OUTPUT="Resources/MonacoEditor/index.html"
@@ -92,12 +92,12 @@ case "${1:-build}" in
       CODE_SIGN_ENTITLEMENTS=Resources/ff2-local.entitlements \
       OTHER_CODE_SIGN_FLAGS="--options=runtime" \
       build
-    APP_BUNDLE="$RELEASE_DIR/Build/Products/Release/Factory Floor.app"
+    APP_BUNDLE="$RELEASE_DIR/Build/Products/Release/Dockyard.app"
     echo "==> Release build at: $APP_BUNDLE"
     if [ "${2:-}" = "--run" ]; then
-      pkill -xf ".*/Contents/MacOS/Factory Floor" 2>/dev/null || true
+      pkill -xf ".*/Contents/MacOS/Dockyard" 2>/dev/null || true
       sleep 0.5
-      open "$RELEASE_DIR/Build/Products/Release/Factory Floor.app"
+      open "$RELEASE_DIR/Build/Products/Release/Dockyard.app"
     fi
     ;;
   clean)

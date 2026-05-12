@@ -5,21 +5,21 @@ import os
 import SwiftUI
 import WebKit
 
-private let logger = Logger(subsystem: "factoryfloor", category: "surface-cache")
+private let logger = Logger(subsystem: "dockyard", category: "surface-cache")
 
 extension Notification.Name {
-    static let terminalSurfaceClosed = Notification.Name("factoryfloor.terminalSurfaceClosed")
-    static let toggleInfo = Notification.Name("factoryfloor.toggleInfo")
-    static let toggleTerminal = Notification.Name("factoryfloor.toggleTerminal")
-    static let toggleBrowser = Notification.Name("factoryfloor.toggleBrowser")
-    static let focusAgent = Notification.Name("factoryfloor.focusAgent")
-    static let closeTerminal = Notification.Name("factoryfloor.closeTerminal")
-    static let nextTab = Notification.Name("factoryfloor.nextTab")
-    static let prevTab = Notification.Name("factoryfloor.prevTab")
-    static let terminalTitleChanged = Notification.Name("factoryfloor.terminalTitleChanged")
-    static let toggleEditor = Notification.Name("factoryfloor.toggleEditor")
-    static let saveEditor = Notification.Name("factoryfloor.saveEditor")
-    static let saveEditorAs = Notification.Name("factoryfloor.saveEditorAs")
+    static let terminalSurfaceClosed = Notification.Name("dockyard.terminalSurfaceClosed")
+    static let toggleInfo = Notification.Name("dockyard.toggleInfo")
+    static let toggleTerminal = Notification.Name("dockyard.toggleTerminal")
+    static let toggleBrowser = Notification.Name("dockyard.toggleBrowser")
+    static let focusAgent = Notification.Name("dockyard.focusAgent")
+    static let closeTerminal = Notification.Name("dockyard.closeTerminal")
+    static let nextTab = Notification.Name("dockyard.nextTab")
+    static let prevTab = Notification.Name("dockyard.prevTab")
+    static let terminalTitleChanged = Notification.Name("dockyard.terminalTitleChanged")
+    static let toggleEditor = Notification.Name("dockyard.toggleEditor")
+    static let saveEditor = Notification.Name("dockyard.saveEditor")
+    static let saveEditorAs = Notification.Name("dockyard.saveEditorAs")
 }
 
 enum RestorableWorkspaceTab: String, Codable {
@@ -47,7 +47,7 @@ enum RestorableWorkspaceTab: String, Codable {
 }
 
 enum SetupStateStore {
-    private static let userDefaultsKey = "factoryfloor.setupCompleted"
+    private static let userDefaultsKey = "dockyard.setupCompleted"
 
     static func isCompleted(for workstreamID: UUID) -> Bool {
         guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
@@ -79,7 +79,7 @@ enum SetupStateStore {
 }
 
 enum WorkspaceStateStore {
-    private static let userDefaultsKey = "factoryfloor.workspaceTabs"
+    private static let userDefaultsKey = "dockyard.workspaceTabs"
 
     static func load(for workstreamID: UUID) -> RestorableWorkspaceTab? {
         guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
@@ -265,14 +265,14 @@ struct TerminalContainerView: View {
 
     @EnvironmentObject var surfaceCache: TerminalSurfaceCache
     @EnvironmentObject var appEnv: AppEnvironment
-    @AppStorage("factoryfloor.defaultBrowser") private var defaultBrowser: String = ""
-    @AppStorage("factoryfloor.tmuxMode") private var tmuxMode: Bool = false
-    @AppStorage("factoryfloor.agentTeams") private var agentTeams: Bool = false
-    @AppStorage("factoryfloor.autoRenameBranch") private var autoRenameBranch: Bool = false
-    @AppStorage("factoryfloor.allowOutsideWorktree") private var allowOutsideWorktree: Bool = false
-    @AppStorage("factoryfloor.quickActionDebug") private var quickActionDebug: Bool = false
-    @AppStorage("factoryfloor.editorTabActive") private var editorTabActive: Bool = false
-    @AppStorage("factoryfloor.editorFileDirty") private var editorFileDirty: Bool = false
+    @AppStorage("dockyard.defaultBrowser") private var defaultBrowser: String = ""
+    @AppStorage("dockyard.tmuxMode") private var tmuxMode: Bool = false
+    @AppStorage("dockyard.agentTeams") private var agentTeams: Bool = false
+    @AppStorage("dockyard.autoRenameBranch") private var autoRenameBranch: Bool = false
+    @AppStorage("dockyard.allowOutsideWorktree") private var allowOutsideWorktree: Bool = false
+    @AppStorage("dockyard.quickActionDebug") private var quickActionDebug: Bool = false
+    @AppStorage("dockyard.editorTabActive") private var editorTabActive: Bool = false
+    @AppStorage("dockyard.editorFileDirty") private var editorFileDirty: Bool = false
     @State private var activeTab: WorkspaceTab = .info
     @State private var tabs: [WorkspaceTab] = [.info, .agent]
     @State private var terminalCount = 0
@@ -1934,7 +1934,7 @@ private struct QuickActionDebugView: View {
 // MARK: - Surface cache
 
 extension Notification.Name {
-    static let terminalTabExited = Notification.Name("factoryfloor.terminalTabExited")
+    static let terminalTabExited = Notification.Name("dockyard.terminalTabExited")
 }
 
 @MainActor

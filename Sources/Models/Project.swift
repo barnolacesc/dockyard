@@ -6,13 +6,15 @@ import Foundation
 struct Workstream: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     var name: String
+    var customLabel: String?
     var worktreePath: String?
     var bypassPermissions: Bool
     var lastAccessedAt: Date
 
-    init(name: String, worktreePath: String? = nil, bypassPermissions: Bool = false, id: UUID = UUID(), lastAccessedAt: Date = Date()) {
+    init(name: String, customLabel: String? = nil, worktreePath: String? = nil, bypassPermissions: Bool = false, id: UUID = UUID(), lastAccessedAt: Date = Date()) {
         self.id = id
         self.name = name
+        self.customLabel = customLabel
         self.worktreePath = worktreePath
         self.bypassPermissions = bypassPermissions
         self.lastAccessedAt = lastAccessedAt

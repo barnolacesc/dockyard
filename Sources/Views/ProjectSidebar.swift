@@ -5,7 +5,7 @@ import OSLog
 import SwiftUI
 import UniformTypeIdentifiers
 
-private let logger = Logger(subsystem: "factoryfloor", category: "sidebar")
+private let logger = Logger(subsystem: "dockyard", category: "sidebar")
 
 func expandedProjectIDs(afterSelecting selection: SidebarSelection?, current: Set<UUID>, projectIDByWorkstreamID: [UUID: UUID]) -> Set<UUID> {
     guard let selection else { return current }
@@ -24,8 +24,8 @@ func expandedProjectIDs(afterSelecting selection: SidebarSelection?, current: Se
 }
 
 extension Notification.Name {
-    static let addProject = Notification.Name("factoryfloor.addProject")
-    static let addNew = Notification.Name("factoryfloor.addNew")
+    static let addProject = Notification.Name("dockyard.addProject")
+    static let addNew = Notification.Name("dockyard.addNew")
 }
 
 struct ProjectSidebar: View {
@@ -40,6 +40,8 @@ struct ProjectSidebar: View {
     @State private var isDropTargeted = false
     @State private var projectToDelete: UUID?
     @State private var workstreamToRemove: UUID?
+    @State private var workstreamToRename: UUID?
+    @State private var renameWorkstreamLabel: String = ""
     @State private var workstreamToPurge: UUID?
     @State private var purgeWarningMessage: String?
     @State private var expandedProjects: Set<UUID> = SidebarState.loadExpanded()
@@ -49,7 +51,7 @@ struct ProjectSidebar: View {
     @State private var cachedWorkstreamIndex: [UUID: (Int, Int)] = [:]
     @State private var showWorktreeError = false
     @State private var showNotGitRepoError = false
-    @AppStorage("factoryfloor.sortOrder") private var sortOrder: ProjectSortOrder = .recent
+    @AppStorage("dockyard.sortOrder") private var sortOrder: ProjectSortOrder = .recent
 
     private func recomputeSortedIDs() -> [UUID] {
         switch sortOrder {
@@ -156,6 +158,7 @@ struct ProjectSidebar: View {
                         let pr = branch.flatMap { appEnv.githubPR(for: project.directory, branch: $0) }
                         WorkstreamRow(
                             name: workstream.name,
+                            customLabel: workstream.customLabel,
                             branchName: branch,
                             worktreePath: workstream.worktreePath,
                             isPathValid: appEnv.isPathValid(workstream.worktreePath),
@@ -166,6 +169,10 @@ struct ProjectSidebar: View {
                             prTitle: pr?.title,
                             prNumber: pr?.number,
                             prState: pr?.state,
+                            onRename: {
+                                renameWorkstreamLabel = workstream.customLabel ?? ""
+                                workstreamToRename = workstream.id
+                            },
                             onRemove: { workstreamToRemove = workstream.id },
                             onPurge: { confirmPurge(workstream) }
                         )
@@ -245,6 +252,21 @@ struct ProjectSidebar: View {
                 if let id = projectToDelete, let project = projects.first(where: { $0.id == id }) {
                     Text(String(format: NSLocalizedString("Remove \"%@\" from the list? Files in %@ will not be deleted.", comment: ""), project.name, project.directory))
                 }
+            }
+            .alert(
+                "Rename Workstream",
+                isPresented: Binding(
+                    get: { workstreamToRename != nil },
+                    set: { if !$0 { workstreamToRename = nil } }
+                )
+            ) {
+                TextField("Label", text: $renameWorkstreamLabel)
+                Button("Cancel", role: .cancel) { workstreamToRename = nil }
+                Button("Save") {
+                    performRename()
+                }
+            } message: {
+                Text("Enter a custom label for this workstream. If empty, the branch name or task description will be used.")
             }
             .alert(
                 "Remove Workstream",
@@ -414,8 +436,8 @@ struct ProjectSidebar: View {
 
     // MARK: - Workstream management
 
-    @AppStorage("factoryfloor.bypassPermissions") private var defaultBypass: Bool = false
-    @AppStorage("factoryfloor.symlinkEnv") private var symlinkEnv: Bool = true
+    @AppStorage("dockyard.bypassPermissions") private var defaultBypass: Bool = false
+    @AppStorage("dockyard.symlinkEnv") private var symlinkEnv: Bool = true
 
     private func addWorkstream(for projectID: UUID, bypassPermissions: Bool? = nil) {
         logger.warning("[FF] addWorkstream called for projectID=\(projectID, privacy: .public)")
@@ -494,6 +516,17 @@ struct ProjectSidebar: View {
         workstreamToPurge = workstream.id
     }
 
+    private func performRename() {
+        guard let wsID = workstreamToRename,
+              let pi = projects.firstIndex(where: { $0.workstreams.contains(where: { $0.id == wsID }) }),
+              let wi = projects[pi].workstreams.firstIndex(where: { $0.id == wsID }) else { return }
+        
+        let trimmed = renameWorkstreamLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+        projects[pi].workstreams[wi].customLabel = trimmed.isEmpty ? nil : trimmed
+        onProjectsChanged()
+        workstreamToRename = nil
+    }
+
     private func performRemove() {
         guard let wsID = workstreamToRemove,
               let pi = projects.firstIndex(where: { $0.workstreams.contains(where: { $0.id == wsID }) }) else { return }
@@ -557,11 +590,11 @@ struct ProjectSidebar: View {
     private var sponsorURL: URL {
         let lang = Locale.current.language.languageCode?.identifier ?? "en"
         let path = lang == "en" ? "/sponsor" : "/\(lang)/sponsor"
-        return URL(string: "https://factory-floor.com\(path)")!
+        return URL(string: "https://francesc.barnola.net\(path)")!
     }
 
-    @AppStorage("factoryfloor.baseDirectory") private var baseDirectory: String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? ""
-    @AppStorage("factoryfloor.branchPrefix") private var branchPrefix: String = "ff"
+    @AppStorage("dockyard.baseDirectory") private var baseDirectory: String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? ""
+    @AppStorage("dockyard.branchPrefix") private var branchPrefix: String = "dy"
 
     private func openDirectoryPicker() {
         let panel = NSOpenPanel()
@@ -642,7 +675,7 @@ func copyTextToPasteboard(_ text: String) {
 
 /// Opens a directory in the user's configured terminal, falling back to Apple Terminal.
 func openDirectoryInTerminal(_ directory: String) {
-    let terminalBundleID = UserDefaults.standard.string(forKey: "factoryfloor.defaultTerminal") ?? ""
+    let terminalBundleID = UserDefaults.standard.string(forKey: "dockyard.defaultTerminal") ?? ""
     let appURL: URL?
     if !terminalBundleID.isEmpty {
         appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: terminalBundleID)
@@ -767,6 +800,7 @@ private struct ProjectHeaderRow: View {
 
 private struct WorkstreamRow: View {
     let name: String
+    var customLabel: String?
     var branchName: String?
     var worktreePath: String?
     let isPathValid: Bool
@@ -777,19 +811,21 @@ private struct WorkstreamRow: View {
     var prTitle: String?
     var prNumber: Int?
     var prState: String?
+    let onRename: () -> Void
     let onRemove: () -> Void
     let onPurge: () -> Void
 
     @State private var isHovering = false
 
     private var headline: String {
+        if let customLabel, !customLabel.isEmpty { return customLabel }
         if let prTitle { return prTitle }
         if let taskDescription { return taskDescription }
         return name
     }
 
     private var hasRichHeadline: Bool {
-        prTitle != nil || taskDescription != nil
+        (customLabel != nil && !customLabel!.isEmpty) || prTitle != nil || taskDescription != nil
     }
 
     private var subtitle: String? {
@@ -883,6 +919,9 @@ private struct WorkstreamRow: View {
                 }
             }
             Divider()
+            Button(action: onRename) {
+                Label("Rename", systemImage: "pencil")
+            }
             Button(action: onRemove) {
                 Label("Remove", systemImage: "xmark")
             }
