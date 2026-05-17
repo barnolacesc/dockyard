@@ -54,4 +54,38 @@ final class AgentHooksTests: XCTestCase {
         XCTAssertTrue(command!.contains("aabbccdd-1122-3344-5566-778899aabbcc"))
         XCTAssertTrue(command!.contains("--state working"))
     }
+
+    func testHelperPathWithSpacesIsShellQuoted() throws {
+        let id = UUID()
+        let helperPath = "/path/with spaces/Dockyard Debug.app/Contents/Helpers/dy-agent-state"
+        let url = try AgentHooks.writeClaudeSettings(workstreamID: id, helperPath: helperPath)
+
+        let data = try Data(contentsOf: url)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let hooks = json?["hooks"] as? [String: Any]
+        let userPrompt = (hooks?["UserPromptSubmit"] as? [[String: Any]])?.first
+        let inner = (userPrompt?["hooks"] as? [[String: Any]])?.first
+        let command = inner?["command"] as? String
+
+        // The helper path must be wrapped in single quotes so /bin/sh -c treats
+        // it as a single argv[0]. Without quoting, sh splits on the space and
+        // tries to exec '/path/with' which fails.
+        XCTAssertTrue(command!.hasPrefix("'\(helperPath)' "), "expected single-quoted helper path, got: \(command!)")
+    }
+
+    func testHelperPathWithSingleQuoteIsEscaped() throws {
+        let id = UUID()
+        let helperPath = "/weird'path/dy-agent-state"
+        let url = try AgentHooks.writeClaudeSettings(workstreamID: id, helperPath: helperPath)
+
+        let data = try Data(contentsOf: url)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let hooks = json?["hooks"] as? [String: Any]
+        let userPrompt = (hooks?["UserPromptSubmit"] as? [[String: Any]])?.first
+        let inner = (userPrompt?["hooks"] as? [[String: Any]])?.first
+        let command = inner?["command"] as? String
+
+        // POSIX single-quote escape: ' becomes '\''
+        XCTAssertTrue(command!.hasPrefix("'/weird'\\''path/dy-agent-state' "), "got: \(command!)")
+    }
 }

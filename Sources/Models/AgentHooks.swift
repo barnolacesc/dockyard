@@ -28,24 +28,28 @@ enum AgentHooks {
     @discardableResult
     static func writeClaudeSettings(workstreamID: UUID, helperPath: String) throws -> URL {
         let id = workstreamID.uuidString.lowercased()
+        // Claude runs hook commands via `/bin/sh -c`, so the helper path must
+        // be shell-quoted — debug builds live in `Dockyard Debug.app` which
+        // contains a space.
+        let quotedHelper = shellSingleQuote(helperPath)
         let settings: [String: Any] = [
             "hooks": [
                 "UserPromptSubmit": [[
                     "hooks": [[
                         "type": "command",
-                        "command": "\(helperPath) --workstream-id \(id) --state working",
+                        "command": "\(quotedHelper) --workstream-id \(id) --state working",
                     ]],
                 ]],
                 "Notification": [[
                     "hooks": [[
                         "type": "command",
-                        "command": "\(helperPath) --workstream-id \(id) --state waiting",
+                        "command": "\(quotedHelper) --workstream-id \(id) --state waiting",
                     ]],
                 ]],
                 "Stop": [[
                     "hooks": [[
                         "type": "command",
-                        "command": "\(helperPath) --workstream-id \(id) --state idle",
+                        "command": "\(quotedHelper) --workstream-id \(id) --state idle",
                     ]],
                 ]],
             ],
@@ -66,5 +70,9 @@ enum AgentHooks {
         }
         let candidate = resourceURL.appendingPathComponent("Helpers/dy-agent-state").path
         return FileManager.default.fileExists(atPath: candidate) ? candidate : nil
+    }
+
+    private static func shellSingleQuote(_ s: String) -> String {
+        "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 }
