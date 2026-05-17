@@ -168,9 +168,6 @@ final class TerminalView: NSView {
         let result = super.becomeFirstResponder()
         if result, let surface {
             ghostty_surface_set_focus(surface, true)
-            if let workstreamID {
-                NotificationCenter.default.post(name: .terminalClearAttention, object: workstreamID)
-            }
         }
         return result
     }
@@ -353,7 +350,6 @@ final class TerminalView: NSView {
     /// Debounced activity notification (at most once per 30 seconds).
     private func reportActivity() {
         guard let workstreamID else { return }
-        NotificationCenter.default.post(name: .terminalClearAttention, object: workstreamID)
 
         guard activityDebounceWork == nil else { return }
         let userInfo: [AnyHashable: Any] = surfaceID != nil ? ["surfaceID": surfaceID!] : [:]
@@ -645,9 +641,6 @@ final class TerminalView: NSView {
         // Claim first responder so this surface gets keyboard input
         window?.makeFirstResponder(self)
         guard let surface else { return }
-        if let workstreamID {
-            NotificationCenter.default.post(name: .terminalClearAttention, object: workstreamID)
-        }
         let mods = Self.eventMods(event)
         _ = ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_PRESS, GHOSTTY_MOUSE_LEFT, mods)
     }
