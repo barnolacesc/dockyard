@@ -412,6 +412,19 @@ struct TerminalContainerView: View {
     private func buildAgentCommand() -> String? {
         guard let cliPath = selectedCodingCLIPath else { return nil }
 
+        var settingsPath: URL?
+        if let helperPath = AgentHooks.bundledHelperPath,
+           let candidatePath = AgentHooks.settingsPathIfSupported(for: selectedCodingCLI, workstreamID: workstreamID)
+        {
+            do {
+                try AgentHooks.writeClaudeSettings(workstreamID: workstreamID, helperPath: helperPath)
+                settingsPath = candidatePath
+            } catch {
+                // Falling back to no settings is acceptable; indicator stays unknown.
+                settingsPath = nil
+            }
+        }
+
         let command = CodingCLICommandBuilder.buildAgentCommand(
             cli: selectedCodingCLI,
             cliPath: cliPath,
@@ -425,7 +438,8 @@ struct TerminalContainerView: View {
             allowOutsideWorktree: allowOutsideWorktree,
             autoRenameBranch: autoRenameBranch,
             envVars: envVars,
-            supportsSessionName: appEnv.toolStatus.supportsSessionName(for: selectedCodingCLI)
+            supportsSessionName: appEnv.toolStatus.supportsSessionName(for: selectedCodingCLI),
+            settingsPath: settingsPath
         )
 
         LaunchLogger.log(LaunchLogEntry(
