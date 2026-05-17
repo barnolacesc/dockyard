@@ -884,9 +884,8 @@ private struct WorkstreamRow: View {
     let name: String
     var branchName: String?
     var worktreePath: String?
-    let isPathValid: Bool
-    var isActive: Bool = false
-    var needsAttention: Bool = false
+    var agentState: AgentState? = nil
+    var isPathValid: Bool = false
     var hasActivePort: Bool = false
     var githubURL: URL?
     var taskDescription: String?
@@ -1016,9 +1015,8 @@ private struct WorkstreamRow: View {
 }
 
 struct ActivityIndicator: View {
-    let isActive: Bool
+    let state: AgentState?
     let isPathValid: Bool
-    var needsAttention: Bool = false
 
     @State private var isPulsing = false
 
@@ -1028,28 +1026,26 @@ struct ActivityIndicator: View {
                 Image(systemName: "exclamationmark.triangle")
                     .foregroundStyle(.orange)
                     .font(.system(size: 10))
-            } else if needsAttention {
+            } else if state == .waiting {
                 Circle()
                     .fill(Color.accentColor)
                     .frame(width: 6, height: 6)
                     .opacity(isPulsing ? 0.4 : 1.0)
                     .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: isPulsing)
                     .onAppear { isPulsing = true }
-            } else if isActive {
+            } else if state == .working {
                 Circle()
                     .fill(.green)
                     .frame(width: 6, height: 6)
                     .opacity(isPulsing ? 0.4 : 1.0)
                     .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isPulsing)
                     .onAppear { isPulsing = true }
-                    .onChange(of: isActive) { _, active in
-                        isPulsing = active
-                    }
-            } else {
+            } else if state == .idle {
                 Circle()
                     .fill(.tertiary)
                     .frame(width: 6, height: 6)
             }
+            // state == nil (unknown) draws nothing
         }
         .frame(width: 12)
     }
