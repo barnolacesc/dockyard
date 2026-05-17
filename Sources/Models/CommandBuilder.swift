@@ -285,7 +285,8 @@ enum CodingCLICommandBuilder {
         allowOutsideWorktree: Bool,
         autoRenameBranch: Bool,
         envVars: [String: String],
-        supportsSessionName: Bool
+        supportsSessionName: Bool,
+        settingsPath: URL? = nil
     ) -> AgentLaunchCommand {
         let command: AgentLaunchCommand
         switch cli {
@@ -299,7 +300,8 @@ enum CodingCLICommandBuilder {
                 bypassPermissions: bypassPermissions,
                 allowOutsideWorktree: allowOutsideWorktree,
                 autoRenameBranch: autoRenameBranch,
-                supportsSessionName: supportsSessionName
+                supportsSessionName: supportsSessionName,
+                settingsPath: settingsPath
             )
         case .codex:
             command = buildCodexAgentCommand(
@@ -389,7 +391,8 @@ enum CodingCLICommandBuilder {
         bypassPermissions: Bool,
         allowOutsideWorktree: Bool,
         autoRenameBranch: Bool,
-        supportsSessionName: Bool
+        supportsSessionName: Bool,
+        settingsPath: URL?
     ) -> AgentLaunchCommand {
         let sessionID = workstreamID.uuidString.lowercased()
 
@@ -417,6 +420,9 @@ enum CodingCLICommandBuilder {
         if let combinedSystemPrompt {
             resume.option("--append-system-prompt", combinedSystemPrompt)
         }
+        if let settingsPath {
+            resume.option("--settings", settingsPath.path)
+        }
 
         var fresh = CommandBuilder(cliPath)
         fresh.option("--session-id", sessionID)
@@ -432,6 +438,9 @@ enum CodingCLICommandBuilder {
         }
         if let combinedSystemPrompt {
             fresh.option("--append-system-prompt", combinedSystemPrompt)
+        }
+        if let settingsPath {
+            fresh.option("--settings", settingsPath.path)
         }
 
         let finalCommand = CommandBuilder.withFallback(

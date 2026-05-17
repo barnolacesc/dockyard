@@ -323,6 +323,51 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertTrue(command.finalCommand.contains("Starting new session..."))
     }
 
+    func testBuildClaudeAgentCommandIncludesSettingsFlag() {
+        let id = UUID()
+        let settingsURL = URL(fileURLWithPath: "/tmp/dockyard-test/settings.json")
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .claude,
+            cliPath: "/usr/local/bin/claude",
+            workingDirectory: "/tmp/worktree",
+            projectName: "demo",
+            workstreamName: "ws",
+            workstreamID: id,
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: true,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: true,
+            settingsPath: settingsURL
+        )
+        XCTAssertTrue(command.finalCommand.contains("--settings /tmp/dockyard-test/settings.json"),
+                      "expected --settings flag in command, got: \(command.finalCommand)")
+    }
+
+    func testBuildClaudeAgentCommandWithoutSettingsHasNoFlag() {
+        let id = UUID()
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .claude,
+            cliPath: "/usr/local/bin/claude",
+            workingDirectory: "/tmp/worktree",
+            projectName: "demo",
+            workstreamName: "ws",
+            workstreamID: id,
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: true,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: true,
+            settingsPath: nil
+        )
+        XCTAssertFalse(command.finalCommand.contains("--settings"),
+                       "expected no --settings flag, got: \(command.finalCommand)")
+    }
+
     func testBuildCodexQuickActionCommandUsesExec() {
         let command = CodingCLICommandBuilder.buildQuickActionCommand(
             cli: .codex,
