@@ -166,9 +166,8 @@ struct ProjectSidebar: View {
                             name: workstream.name,
                             branchName: branch,
                             worktreePath: workstream.worktreePath,
+                            agentState: agentStateStore.agentState(for: workstream.id),
                             isPathValid: appEnv.isPathValid(workstream.worktreePath),
-                            isActive: activityTracker.isActive(workstream.id),
-                            needsAttention: activityTracker.needsAttention(workstream.id),
                             hasActivePort: appEnv.hasActivePort(workstream.id),
                             githubURL: appEnv.githubURL(for: project.directory, branch: branch),
                             taskDescription: appEnv.taskDescription(for: workstream.worktreePath),
@@ -186,7 +185,7 @@ struct ProjectSidebar: View {
                         .padding(.leading, 28)
                         .listRowBackground(
                             Group {
-                                if activityTracker.needsAttention(workstream.id) && selection != .workstream(workstream.id) {
+                                if agentStateStore.agentState(for: workstream.id) == .waiting && selection != .workstream(workstream.id) {
                                     Color.accentColor.opacity(0.15)
                                         .clipShape(RoundedRectangle(cornerRadius: 6))
                                         .padding(.horizontal, 4)
@@ -573,6 +572,7 @@ struct ProjectSidebar: View {
     @EnvironmentObject private var surfaceCache: TerminalSurfaceCache
     @EnvironmentObject private var appEnv: AppEnvironment
     @EnvironmentObject private var activityTracker: WorkstreamActivityTracker
+    @EnvironmentObject private var agentStateStore: AgentStateStore
 
     private func renameWorkstream() {
         guard let wsID = workstreamToRename,
@@ -921,14 +921,14 @@ private struct WorkstreamRow: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            ActivityIndicator(isActive: isActive, isPathValid: isPathValid, needsAttention: needsAttention)
+            ActivityIndicator(state: agentState, isPathValid: isPathValid)
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 4) {
                     Text(headline)
                         .font(.system(size: 12))
                         .strikethrough(!isPathValid)
-                        .foregroundStyle(needsAttention ? AnyShapeStyle(Color.accentColor) : (isPathValid ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary)))
+                        .foregroundStyle(agentState == .waiting ? AnyShapeStyle(Color.accentColor) : (isPathValid ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary)))
                         .lineLimit(1)
                     if hasActivePort {
                         Image(systemName: "circle.fill")
@@ -947,7 +947,7 @@ private struct WorkstreamRow: View {
                             .lineLimit(1)
                     }
                     .font(.system(size: 9, design: .monospaced))
-                    .foregroundStyle(needsAttention ? AnyShapeStyle(Color.accentColor.opacity(0.8)) : (prState == "MERGED" ? AnyShapeStyle(.purple) : AnyShapeStyle(.tertiary)))
+                    .foregroundStyle(agentState == .waiting ? AnyShapeStyle(Color.accentColor.opacity(0.8)) : (prState == "MERGED" ? AnyShapeStyle(.purple) : AnyShapeStyle(.tertiary)))
                 }
             }
 
