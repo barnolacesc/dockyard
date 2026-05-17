@@ -72,6 +72,7 @@ targets:
       - path: Sources
         excludes:
           - Launcher
+          - AgentStateHelper
       - path: Resources/Assets.xcassets
         buildPhase: resources
       - path: Localization/en.lproj/Localizable.strings
@@ -146,6 +147,7 @@ targets:
           DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
     dependencies:
       - target: FFRun
+      - target: DyAgentState
       - package: swift-cmark
         product: cmark-gfm
       - package: swift-cmark
@@ -175,6 +177,15 @@ targets:
         name: Bundle dy-run
         outputFiles:
           - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/dy-run
+      - script: |
+          set -e
+          mkdir -p "${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Helpers"
+          cp -f "${BUILT_PRODUCTS_DIR}/dy-agent-state" "${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Helpers/dy-agent-state"
+          chmod +x "${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Helpers/dy-agent-state"
+          codesign --force --sign "${EXPANDED_CODE_SIGN_IDENTITY}" --timestamp --options=runtime --generate-entitlement-der "${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Helpers/dy-agent-state"
+        name: Bundle dy-agent-state
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/dy-agent-state
 
   FFRun:
     type: tool
@@ -199,6 +210,20 @@ targets:
       configs:
         Debug:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+
+  DyAgentState:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Sources/AgentStateHelper
+      - path: Sources/Models/AgentState.swift
+      - path: Sources/Models/AppConstants.swift
+      - path: Sources/Models/AppCommit.swift
+      - path: Sources/Models/FilePersistence.swift
+      - path: Sources/Models/RunState.swift
+    settings:
+      base:
+        PRODUCT_NAME: dy-agent-state
 
   DockyardTests:
     type: bundle.unit-test
