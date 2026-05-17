@@ -412,6 +412,19 @@ struct TerminalContainerView: View {
     private func buildAgentCommand() -> String? {
         guard let cliPath = selectedCodingCLIPath else { return nil }
 
+        var settingsPath: URL?
+        if let helperPath = AgentHooks.bundledHelperPath,
+           let candidatePath = AgentHooks.settingsPathIfSupported(for: selectedCodingCLI, workstreamID: workstreamID)
+        {
+            do {
+                try AgentHooks.writeClaudeSettings(workstreamID: workstreamID, helperPath: helperPath)
+                settingsPath = candidatePath
+            } catch {
+                // Falling back to no settings is acceptable; indicator stays unknown.
+                settingsPath = nil
+            }
+        }
+
         let command = CodingCLICommandBuilder.buildAgentCommand(
             cli: selectedCodingCLI,
             cliPath: cliPath,
@@ -420,12 +433,13 @@ struct TerminalContainerView: View {
             workstreamName: workstreamName,
             workstreamID: workstreamID,
             tmuxPath: appEnv.toolStatus.tmux.path,
-            useTmux: useTmux,
+            useTmux: tmuxMode,
             bypassPermissions: bypassPermissions,
             allowOutsideWorktree: allowOutsideWorktree,
             autoRenameBranch: autoRenameBranch,
-            envVars: envVars,
-            supportsSessionName: appEnv.toolStatus.supportsSessionName(for: selectedCodingCLI)
+            envVars: terminalEnvVars,
+            supportsSessionName: appEnv.toolStatus.supportsSessionName(for: selectedCodingCLI),
+            settingsPath: settingsPath
         )
 
         LaunchLogger.log(LaunchLogEntry(
@@ -433,7 +447,7 @@ struct TerminalContainerView: View {
             event: "agent-start",
             finalCommand: command.finalCommand,
             intermediateCommands: command.intermediateCommands,
-            environmentVariables: envVars,
+            environmentVariables: terminalEnvVars,
             workingDirectory: workingDirectory,
             toolPaths: LaunchLogEntry.ToolPaths(
                 agentCLI: selectedCodingCLI.rawValue,

@@ -25,6 +25,8 @@ enum WorkstreamArchiver {
         surfaceCache.removeWorkstreamSurfaces(for: workstreamID)
         LaunchLogger.removeLog(for: workstreamID)
         SetupStateStore.remove(for: workstreamID)
+        AgentStateFiles.remove(for: workstreamID)
+        try? FileManager.default.removeItem(at: AgentHooks.settingsURL(for: workstreamID))
         project.workstreams.removeAll { $0.id == workstreamID }
     }
 
@@ -80,6 +82,8 @@ enum WorkstreamArchiver {
         surfaceCache.removeWorkstreamSurfaces(for: workstreamID)
         LaunchLogger.removeLog(for: workstreamID)
         SetupStateStore.remove(for: workstreamID)
+        AgentStateFiles.remove(for: workstreamID)
+        try? FileManager.default.removeItem(at: AgentHooks.settingsURL(for: workstreamID))
         project.workstreams.removeAll { $0.id == workstreamID }
     }
 }

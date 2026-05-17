@@ -111,6 +111,7 @@ struct ContentView: View {
     @StateObject private var surfaceCache = TerminalSurfaceCache()
     @StateObject private var appEnvironment = AppEnvironment()
     @StateObject private var activityTracker = WorkstreamActivityTracker()
+    @StateObject private var agentStateStore = AgentStateStore.shared
     @State private var saveWork: DispatchWorkItem?
     @State private var workstreamToRemove: UUID?
     @State private var workstreamToPurge: UUID?
@@ -371,6 +372,7 @@ struct ContentView: View {
         .environmentObject(surfaceCache)
         .environmentObject(appEnvironment)
         .environmentObject(activityTracker)
+        .environmentObject(agentStateStore)
         .onAppear {
             appEnvironment.refresh()
             appEnvironment.refreshAllRepoInfo(projects: projects)

@@ -371,7 +371,7 @@ private struct WorktreeInfoRow: View {
     let onAdopt: () -> Void
 
     @EnvironmentObject var appEnv: AppEnvironment
-    @EnvironmentObject var activityTracker: WorkstreamActivityTracker
+    @EnvironmentObject var agentStateStore: AgentStateStore
 
     private var pr: GitHubPR? {
         guard let branch = worktree.branch else { return nil }
@@ -382,9 +382,8 @@ private struct WorktreeInfoRow: View {
         HStack {
             if let workstreamID {
                 ActivityIndicator(
-                    isActive: activityTracker.isActive(workstreamID),
-                    isPathValid: appEnv.isPathValid(worktree.path),
-                    needsAttention: activityTracker.needsAttention(workstreamID)
+                    state: agentStateStore.agentState(for: workstreamID),
+                    isPathValid: appEnv.isPathValid(worktree.path)
                 )
                 .padding(.top, 4)
                 .frame(width: 20, alignment: .top)
