@@ -226,6 +226,16 @@ struct ProjectSidebar: View {
                     }
                     .buttonStyle(.plain)
                     .help("Pull latest changes from main and rebuild")
+                } else {
+                    Button(action: {
+                        appUpdater.checkForUpdates()
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 10))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.tertiary)
+                    .help("Check for updates")
                 }
             }
             .padding(.bottom, 4)
