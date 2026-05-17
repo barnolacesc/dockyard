@@ -35,3 +35,60 @@ final class AgentStateTests: XCTestCase {
         XCTAssertTrue(url.path.hasSuffix("agent-state/aabbccdd-1122-3344-5566-778899aabbcc.json"))
     }
 }
+
+@MainActor
+final class AgentStateStoreTests: XCTestCase {
+    private var tempDir: URL!
+
+    private func writeSnapshot(_ state: AgentState, pid: Int32, for id: UUID) throws {
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        let snapshot = AgentStateSnapshot(state: state, updatedAt: Date(), pid: pid)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(snapshot)
+        
+        let fileURL = tempDir.appendingPathComponent("\(id.uuidString.lowercased()).json")
+        try data.write(to: fileURL, options: .atomic)
+    }
+
+    override func setUp() {
+        super.setUp()
+        tempDir = FileManager.default.temporaryDirectory.appendingPathComponent("dockyard-agent-state-tests-\(UUID().uuidString)")
+    }
+
+    override func tearDown() {
+        try? FileManager.default.removeItem(at: tempDir)
+        super.tearDown()
+    }
+
+    func testInitialScanLoadsExistingFiles() throws {
+        let id = UUID()
+        try writeSnapshot(.working, pid: Int32(getpid()), for: id)
+
+        let store = AgentStateStore(directoryURL: tempDir)
+        store.refresh()
+
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(store.agentState(for: id), .working)
+    }
+
+    func testReturnsUnknownForStalePid() throws {
+        let id = UUID()
+        // pid 1 is launchd; always alive. Use a clearly dead pid instead.
+        try writeSnapshot(.working, pid: Int32(99999), for: id)
+
+        let store = AgentStateStore(directoryURL: tempDir)
+        store.refresh()
+
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertNil(store.agentState(for: id))
+    }
+
+    func testReturnsNilForUnknownID() {
+        let store = AgentStateStore(directoryURL: tempDir)
+        XCTAssertNil(store.agentState(for: UUID()))
+    }
+}
