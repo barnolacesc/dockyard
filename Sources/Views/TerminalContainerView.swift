@@ -433,11 +433,11 @@ struct TerminalContainerView: View {
             workstreamName: workstreamName,
             workstreamID: workstreamID,
             tmuxPath: appEnv.toolStatus.tmux.path,
-            useTmux: useTmux,
+            useTmux: tmuxMode,
             bypassPermissions: bypassPermissions,
             allowOutsideWorktree: allowOutsideWorktree,
             autoRenameBranch: autoRenameBranch,
-            envVars: envVars,
+            envVars: terminalEnvVars,
             supportsSessionName: appEnv.toolStatus.supportsSessionName(for: selectedCodingCLI),
             settingsPath: settingsPath
         )
@@ -447,7 +447,7 @@ struct TerminalContainerView: View {
             event: "agent-start",
             finalCommand: command.finalCommand,
             intermediateCommands: command.intermediateCommands,
-            environmentVariables: envVars,
+            environmentVariables: terminalEnvVars,
             workingDirectory: workingDirectory,
             toolPaths: LaunchLogEntry.ToolPaths(
                 agentCLI: selectedCodingCLI.rawValue,
