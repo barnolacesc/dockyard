@@ -330,3 +330,15 @@
 "Run in terminal" = "Run in terminal";
 
 "View log" = "View log";
+
+/* Updates */
+"Updates" = "Updates";
+"Automatically check for updates" = "Automatically check for updates";
+"Sparkle checks daily and prompts when a new release is available." = "Sparkle checks daily and prompts when a new release is available.";
+"Check now" = "Check now";
+"Fetches the latest appcast and installs any available update." = "Fetches the latest appcast and installs any available update.";
+
+/* New shortcut copy */
+"New workstream or add existing project" = "New workstream or add existing project";
+"New project directory" = "New project directory";
+"New Project Directory..." = "New Project Directory...";

@@ -330,3 +330,15 @@
 "Run in terminal" = "Executa al terminal";
 
 "View log" = "Mostra el registre";
+
+/* Updates */
+"Updates" = "Actualitzacions";
+"Automatically check for updates" = "Comprova actualitzacions automàticament";
+"Sparkle checks daily and prompts when a new release is available." = "Sparkle comprova diàriament i avisa quan hi ha una nova versió disponible.";
+"Check now" = "Comprova ara";
+"Fetches the latest appcast and installs any available update." = "Descarrega l'appcast més recent i instal·la qualsevol actualització disponible.";
+
+/* New shortcut copy */
+"New workstream or add existing project" = "Nou workstream o afegir projecte existent";
+"New project directory" = "Nou directori de projecte";
+"New Project Directory..." = "Nou directori de projecte...";
