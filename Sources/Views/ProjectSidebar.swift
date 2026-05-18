@@ -192,8 +192,55 @@ struct ProjectSidebar: View {
         }
     }
 
+    private var summaryStats: (workstreams: Int, openPRs: Int, waiting: Int) {
+        var openPRs = 0
+        var waiting = 0
+        for project in projects {
+            for ws in project.workstreams {
+                if let branch = appEnv.branchName(for: ws.worktreePath),
+                   let pr = appEnv.githubPR(for: project.directory, branch: branch),
+                   pr.state.uppercased() == "OPEN"
+                {
+                    openPRs += 1
+                }
+                if agentStateStore.agentState(for: ws.id) == .waiting {
+                    waiting += 1
+                }
+            }
+        }
+        return (totalWorkstreamCount(), openPRs, waiting)
+    }
+
+    private var summaryBar: some View {
+        let stats = summaryStats
+        return HStack(spacing: 10) {
+            Label("\(stats.workstreams)", systemImage: "rectangle.stack")
+                .help("\(stats.workstreams) workstream\(stats.workstreams == 1 ? "" : "s")")
+            if stats.openPRs > 0 {
+                Label("\(stats.openPRs)", systemImage: "arrow.triangle.pull")
+                    .help("\(stats.openPRs) open PR\(stats.openPRs == 1 ? "" : "s")")
+            }
+            if stats.waiting > 0 {
+                Label("\(stats.waiting)", systemImage: "bell.fill")
+                    .foregroundStyle(Color.accentColor)
+                    .help("\(stats.waiting) agent\(stats.waiting == 1 ? "" : "s") waiting")
+            }
+            Spacer()
+        }
+        .font(.system(size: 10))
+        .foregroundStyle(.secondary)
+        .labelStyle(.titleAndIcon)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+    }
+
     private var bottomBar: some View {
         VStack(spacing: 4) {
+            if !projects.isEmpty {
+                summaryBar
+                Divider()
+                    .padding(.horizontal, 4)
+            }
             HStack(alignment: .center, spacing: 6) {
                 Text(AppConstants.displayVersion)
                     .font(.system(size: 10, design: .monospaced))
