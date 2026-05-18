@@ -298,3 +298,20 @@
 "Run in terminal" = "Im Terminal ausführen";
 
 "View log" = "Protokoll anzeigen";
+
+/* Updates */
+"Updates" = "Aktualisierungen";
+"Automatically check for updates" = "Automatisch nach Aktualisierungen suchen";
+"Sparkle checks daily and prompts when a new release is available." = "Sparkle prüft täglich und meldet sich, sobald eine neue Version verfügbar ist.";
+"Check now" = "Jetzt prüfen";
+"Fetches the latest appcast and installs any available update." = "Ruft den aktuellen Appcast ab und installiert jede verfügbare Aktualisierung.";
+
+/* New shortcut copy */
+"New workstream or add existing project" = "Neuer Workstream oder bestehendes Projekt hinzufügen";
+"New project directory" = "Neues Projektverzeichnis";
+"New Project Directory..." = "Neues Projektverzeichnis...";
+
+
+/* Split orientation */
+"Toggle Split Orientation" = "Splitausrichtung umschalten";
+"Toggle split orientation" = "Splitausrichtung umschalten";

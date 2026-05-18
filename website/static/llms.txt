@@ -57,8 +57,8 @@ Every workstream terminal has access to:
 
 Global:
 
-- `Cmd+N` — new workstream or project
-- `Cmd+Shift+N` — new project
+- `Cmd+N` — new workstream, or add existing project
+- `Cmd+Shift+N` — new project directory
 - `Cmd+,` — settings
 - `Cmd+/` — help
 - `Cmd+Option+S` — toggle sidebar

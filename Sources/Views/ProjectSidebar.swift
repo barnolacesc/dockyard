@@ -53,19 +53,13 @@ struct ProjectSidebar: View {
     @State private var cachedWorkstreamIndex: [UUID: (Int, Int)] = [:]
     @State private var showWorktreeError = false
     @State private var showNotGitRepoError = false
-    @AppStorage("dockyard.sortOrder") private var sortOrder: ProjectSortOrder = .recent
 
     private var currentVersionLooksLikeRelease: Bool {
         AppConstants.version.range(of: "^[0-9]+\\.[0-9]+\\.[0-9]+$", options: .regularExpression) != nil
     }
 
     private func recomputeSortedIDs() -> [UUID] {
-        switch sortOrder {
-        case .recent:
-            return projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }.map(\.id)
-        case .alphabetical:
-            return projects.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }.map(\.id)
-        }
+        return projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }.map(\.id)
     }
 
     private func rebuildIndices() {
@@ -198,8 +192,55 @@ struct ProjectSidebar: View {
         }
     }
 
+    private var summaryStats: (workstreams: Int, openPRs: Int, waiting: Int) {
+        var openPRs = 0
+        var waiting = 0
+        for project in projects {
+            for ws in project.workstreams {
+                if let branch = appEnv.branchName(for: ws.worktreePath),
+                   let pr = appEnv.githubPR(for: project.directory, branch: branch),
+                   pr.state.uppercased() == "OPEN"
+                {
+                    openPRs += 1
+                }
+                if agentStateStore.agentState(for: ws.id) == .waiting {
+                    waiting += 1
+                }
+            }
+        }
+        return (totalWorkstreamCount(), openPRs, waiting)
+    }
+
+    private var summaryBar: some View {
+        let stats = summaryStats
+        return HStack(spacing: 10) {
+            Label("\(stats.workstreams)", systemImage: "rectangle.stack")
+                .help("\(stats.workstreams) workstream\(stats.workstreams == 1 ? "" : "s")")
+            if stats.openPRs > 0 {
+                Label("\(stats.openPRs)", systemImage: "arrow.triangle.pull")
+                    .help("\(stats.openPRs) open PR\(stats.openPRs == 1 ? "" : "s")")
+            }
+            if stats.waiting > 0 {
+                Label("\(stats.waiting)", systemImage: "bell.fill")
+                    .foregroundStyle(Color.accentColor)
+                    .help("\(stats.waiting) agent\(stats.waiting == 1 ? "" : "s") waiting")
+            }
+            Spacer()
+        }
+        .font(.system(size: 10))
+        .foregroundStyle(.secondary)
+        .labelStyle(.titleAndIcon)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+    }
+
     private var bottomBar: some View {
         VStack(spacing: 4) {
+            if !projects.isEmpty {
+                summaryBar
+                Divider()
+                    .padding(.horizontal, 4)
+            }
             HStack(alignment: .center, spacing: 6) {
                 Text(AppConstants.displayVersion)
                     .font(.system(size: 10, design: .monospaced))
@@ -409,7 +450,9 @@ struct ProjectSidebar: View {
                 Text("This will rename the git branch. Use kebab-case without spaces.")
             }
             .onReceive(NotificationCenter.default.publisher(for: .addProject)) { _ in
-                showingAddProjectChoice = true
+                newProjectName = ""
+                newProjectError = ""
+                showingNewProjectName = true
             }
             .onReceive(NotificationCenter.default.publisher(for: .addNew)) { _ in
                 if case let .workstream(wsID) = selection,
@@ -419,7 +462,7 @@ struct ProjectSidebar: View {
                 } else if case let .project(pid) = selection {
                     addWorkstream(for: pid)
                 } else {
-                    showingAddProjectChoice = true
+                    openDirectoryPicker()
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .openDirectory)) { notification in
@@ -436,18 +479,6 @@ struct ProjectSidebar: View {
                         projectRows()
                     }
                     .listStyle(.sidebar)
-                    .safeAreaInset(edge: .top) {
-                        if projects.count > 1 {
-                            Picker("", selection: $sortOrder) {
-                                ForEach(ProjectSortOrder.allCases, id: \.self) { order in
-                                    Text(order.rawValue).tag(order)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                        }
-                    }
                     .onChange(of: selection) { _, sel in
                         guard let sel else { return }
                         deferSelectionExpansion(sel, projectIDByWorkstreamID: projectIDByWorkstreamIDSnapshot(), scrollProxy: scrollProxy)
@@ -465,18 +496,15 @@ struct ProjectSidebar: View {
             projects[pi].lastAccessedAt = now
             projects[pi].workstreams[wi].lastAccessedAt = now
             onProjectsChanged()
-            if sortOrder == .recent {
-                cachedSortedIDs = recomputeSortedIDs()
-                cachedSortedWorkstreamIDs[projects[pi].id] = projects[pi].workstreams
-                    .sorted { $0.lastAccessedAt > $1.lastAccessedAt }
-                    .map(\.id)
-            }
+            cachedSortedIDs = recomputeSortedIDs()
+            cachedSortedWorkstreamIDs[projects[pi].id] = projects[pi].workstreams
+                .sorted { $0.lastAccessedAt > $1.lastAccessedAt }
+                .map(\.id)
         }
         .onAppear {
             cachedSortedIDs = recomputeSortedIDs()
             rebuildIndices()
         }
-        .onChange(of: sortOrder) { _, _ in cachedSortedIDs = recomputeSortedIDs() }
         .onChange(of: expandedProjects) { _, newValue in SidebarState.saveExpanded(newValue) }
         .onChange(of: projects.count) { _, _ in
             cachedSortedIDs = recomputeSortedIDs()

@@ -6,7 +6,7 @@
 
 ## Post-release
 
-- [ ] Auto-update mechanism (Sparkle): in-app update for direct DMG users
+- [x] Auto-update mechanism (Sparkle): in-app update for direct DMG users (Settings → Updates, plus existing Check for Updates menu)
 
 ## Bugs
 
@@ -14,17 +14,17 @@
 
 ## UI improvements
 
-- [ ] **Refactor Cmd+N behavior**: Default to a file picker to add an existing folder (the 99% use case), rather than prompting for a new directory name. Move "Create New" to a secondary action (e.g. Cmd+Shift+N).
-- [ ] **Declutter Sidebar**: Remove the "Recent" and "A-Z" sorting options from the sidebar to reduce visual noise.
-- [ ] **Sidebar Density**: The left sidebar feels too empty. Explore ways to utilize the space better (e.g., global PR status, recent activity, quick access to docs, or global settings).
+- [x] **Refactor Cmd+N behavior**: Cmd+N now opens a directory picker for existing folders; Cmd+Shift+N creates a new project directory.
+- [x] **Declutter Sidebar**: Removed the "Recent" and "A-Z" sorting picker from the sidebar.
+- [x] **Sidebar Density**: Added a summary stats footer (workstream / open PR / waiting agent counts).
 - [x] Sidebar workstream rows: removed repetitive terminal icons, kept warning icon only for invalid paths
 - [x] Sidebar workstream subtext: show PR title (#number) when available, fall back to branch name only when it differs from the workstream name
 
 ## Future
 
-- [ ] **Embedded Browser Claude Integration**: Implement Chrome extension-like capabilities (WebMCP/CDP) directly into the app's internal WKWebView browser, allowing the agent to analyze and interact with web pages natively inside the IDE.
-- [ ] External Chrome integration: launch with --remote-debugging-port for WebMCP/CDP
-- [ ] Horizontal terminal splits within a tab (ghostty C API supports splits)
+- [~] **Embedded Browser Claude Integration**: Foundation shipped — embedded WKWebView writes URL / title / recent console logs to `~/Library/Caches/dockyard/browser-state/<id>.json`, exposed via `DOCKYARD_BROWSER_STATE_FILE`. Full bidirectional CDP control deferred (WKWebView cannot run Chrome extensions, so this needs its own design).
+- [ ] External Chrome integration: launch with --remote-debugging-port for WebMCP/CDP — dropped, doesn't unlock "Claude in Chrome" extension since that lives inside Chrome and doesn't talk CDP.
+- [x] Horizontal terminal splits within a tab: split panes existed already (Cmd+Shift+T/B/Return). Added Cmd+Shift+D to toggle between horizontal (side-by-side) and vertical (stacked) layouts.
 
 ## Done
 - [x] PR management: create and manage PRs from workstreams via Quick Actions

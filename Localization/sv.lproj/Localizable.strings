@@ -330,3 +330,20 @@
 "Run in terminal" = "Kör i terminal";
 
 "View log" = "Visa logg";
+
+/* Updates */
+"Updates" = "Uppdateringar";
+"Automatically check for updates" = "Sök efter uppdateringar automatiskt";
+"Sparkle checks daily and prompts when a new release is available." = "Sparkle kontrollerar dagligen och meddelar när en ny version finns tillgänglig.";
+"Check now" = "Sök nu";
+"Fetches the latest appcast and installs any available update." = "Hämtar senaste appcast och installerar tillgängliga uppdateringar.";
+
+/* New shortcut copy */
+"New workstream or add existing project" = "Ny workstream eller lägg till befintligt projekt";
+"New project directory" = "Ny projektkatalog";
+"New Project Directory..." = "Ny projektkatalog...";
+
+
+/* Split orientation */
+"Toggle Split Orientation" = "Växla delningsorientering";
+"Toggle split orientation" = "Växla delningsorientering";

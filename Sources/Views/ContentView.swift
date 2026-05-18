@@ -117,7 +117,6 @@ struct ContentView: View {
     @State private var workstreamToPurge: UUID?
     @State private var purgeWarningMessage: String?
     @State private var removedProjectNames: [String] = []
-    @AppStorage("dockyard.sortOrder") private var sortOrder: ProjectSortOrder = .recent
     @State private var keyMonitorInstalled = false
 
     private static func initialSelection() -> SidebarSelection? {
@@ -540,14 +539,7 @@ struct ContentView: View {
 
     /// Cycle through all workstreams globally across all projects.
     private func cycleGlobalWorkstream(direction: Int) {
-        // Build a flat list of all workstreams across all projects, sorted by project order then by workstream accessed order
-        let sortedProjects: [Project]
-        switch sortOrder {
-        case .recent:
-            sortedProjects = projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }
-        case .alphabetical:
-            sortedProjects = projects.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        }
+        let sortedProjects = projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }
 
         var allWorkstreams: [(Project, Workstream)] = []
         for project in sortedProjects {
@@ -581,13 +573,7 @@ struct ContentView: View {
 
     /// Cycle through projects in sidebar display order.
     private func cycleProject(direction: Int) {
-        let sorted: [Project]
-        switch sortOrder {
-        case .recent:
-            sorted = projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }
-        case .alphabetical:
-            sorted = projects.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        }
+        let sorted = projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }
         guard !sorted.isEmpty else { return }
 
         guard let current = activeProject,
