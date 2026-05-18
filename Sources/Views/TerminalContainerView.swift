@@ -627,7 +627,7 @@ struct TerminalContainerView: View {
                 environmentVars: terminalEnvVars
             )
         case let .browser(id):
-            BrowserView(defaultURL: browserDefaultURL, tabID: id, webView: surfaceCache.webView(for: id))
+            BrowserView(defaultURL: browserDefaultURL, tabID: id, workstreamID: workstreamID, webView: surfaceCache.webView(for: id))
                 .id(id)
         case let .editor(id):
             if let bridge = editorBridge {

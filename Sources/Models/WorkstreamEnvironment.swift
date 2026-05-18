@@ -25,6 +25,13 @@ enum WorkstreamEnvironment {
         let finalPort = inferredPort ?? port
         let portString = "\(finalPort)"
 
+        let browserStateFile = FileManager.default
+            .urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("dockyard")
+            .appendingPathComponent("browser-state")
+            .appendingPathComponent("\(id).json")
+            .path
+
         var vars = [
             "DY_WORKSTREAM_ID": id,
             "DY_PROJECT": projectName,
@@ -33,6 +40,7 @@ enum WorkstreamEnvironment {
             "DY_WORKTREE_DIR": workingDirectory,
             "DY_PORT": portString,
             "DY_DEFAULT_BRANCH": defaultBranch,
+            "DOCKYARD_BROWSER_STATE_FILE": browserStateFile,
         ]
 
         if let inferredVenv {

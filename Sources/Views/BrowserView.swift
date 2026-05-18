@@ -17,6 +17,35 @@ func browserWebViewConfiguration() -> WKWebViewConfiguration {
     configuration.preferences.setValue(true, forKey: "mediaDevicesEnabled")
     configuration.preferences.setValue(true, forKey: "mediaStreamEnabled")
     configuration.preferences.setValue(true, forKey: "peerConnectionEnabled")
+
+    // Inject a tiny console-capture shim so the embedded browser can ship
+    // recent logs through to the agent via BrowserBridge.
+    let consoleShim = WKUserScript(
+        source: """
+        (function(){
+            if (window.__dockyardConsoleHooked) return;
+            window.__dockyardConsoleHooked = true;
+            const post = (level, args) => {
+                try {
+                    const message = Array.from(args).map(a => {
+                        if (a == null) return String(a);
+                        if (typeof a === 'string') return a;
+                        try { return JSON.stringify(a); } catch (_) { return String(a); }
+                    }).join(' ');
+                    window.webkit?.messageHandlers?.dockyardConsole?.postMessage({ level, message });
+                } catch (_) { /* swallow */ }
+            };
+            ['log','info','warn','error','debug'].forEach(level => {
+                const orig = console[level].bind(console);
+                console[level] = function(){ post(level, arguments); orig.apply(null, arguments); };
+            });
+            window.addEventListener('error', e => post('error', [e.message]));
+        })();
+        """,
+        injectionTime: .atDocumentStart,
+        forMainFrameOnly: false
+    )
+    configuration.userContentController.addUserScript(consoleShim)
     return configuration
 }
 
@@ -64,6 +93,7 @@ private func normalizedBrowserURL(_ urlString: String) -> String {
 struct BrowserView: View {
     let defaultURL: String
     var tabID: UUID?
+    var workstreamID: UUID?
     let webView: WKWebView
 
     @State private var urlText: String = ""
@@ -136,6 +166,7 @@ struct BrowserView: View {
             ZStack {
                 WebViewRepresentable(
                     webView: webView,
+                    workstreamID: workstreamID,
                     isLoading: $isLoading,
                     canGoBack: $canGoBack,
                     canGoForward: $canGoForward,
@@ -199,12 +230,19 @@ struct BrowserView: View {
             navigateTo(newURL)
         }
         .onChange(of: pageTitle) { _, newTitle in
+            if let workstreamID {
+                BrowserBridge.write(workstreamID: workstreamID, url: webView.url?.absoluteString, title: newTitle)
+            }
             guard let tabID else { return }
             NotificationCenter.default.post(
                 name: .browserTitleChanged,
                 object: tabID,
                 userInfo: newTitle.map { ["title": $0] }
             )
+        }
+        .onChange(of: urlText) { _, newURL in
+            guard let workstreamID else { return }
+            BrowserBridge.write(workstreamID: workstreamID, url: newURL, title: pageTitle)
         }
     }
 
@@ -232,6 +270,7 @@ struct BrowserView: View {
 
 struct WebViewRepresentable: NSViewRepresentable {
     let webView: WKWebView
+    var workstreamID: UUID?
     @Binding var isLoading: Bool
     @Binding var canGoBack: Bool
     @Binding var canGoForward: Bool
@@ -242,6 +281,11 @@ struct WebViewRepresentable: NSViewRepresentable {
     func makeNSView(context: Context) -> WKWebView {
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
+        if workstreamID != nil {
+            let controller = webView.configuration.userContentController
+            controller.removeScriptMessageHandler(forName: "dockyardConsole")
+            controller.add(context.coordinator, name: "dockyardConsole")
+        }
         return webView
     }
 
@@ -251,11 +295,29 @@ struct WebViewRepresentable: NSViewRepresentable {
         Coordinator(self)
     }
 
-    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
+    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         let parent: WebViewRepresentable
 
         init(_ parent: WebViewRepresentable) {
             self.parent = parent
+        }
+
+        // MARK: - WKScriptMessageHandler (console capture)
+
+        @MainActor
+        func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
+            guard message.name == "dockyardConsole",
+                  let workstreamID = parent.workstreamID,
+                  let body = message.body as? [String: Any],
+                  let level = body["level"] as? String,
+                  let text = body["message"] as? String
+            else { return }
+            BrowserBridge.write(
+                workstreamID: workstreamID,
+                url: parent.webView.url?.absoluteString,
+                title: parent.webView.title,
+                appendLog: BrowserBridge.State.LogEntry(level: level, message: text, timestamp: Date())
+            )
         }
 
         // MARK: - WKUIDelegate (JavaScript dialogs)
