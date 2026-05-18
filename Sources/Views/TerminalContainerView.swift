@@ -16,6 +16,7 @@ extension Notification.Name {
     static let splitAgent = Notification.Name("dockyard.splitAgent")
     static let splitTerminal = Notification.Name("dockyard.splitTerminal")
     static let splitBrowser = Notification.Name("dockyard.splitBrowser")
+    static let toggleSplitOrientation = Notification.Name("dockyard.toggleSplitOrientation")
     static let closeTerminal = Notification.Name("dockyard.closeTerminal")
     static let nextTab = Notification.Name("dockyard.nextTab")
     static let prevTab = Notification.Name("dockyard.prevTab")
@@ -276,6 +277,7 @@ struct TerminalContainerView: View {
     @AppStorage("dockyard.editorFileDirty") private var editorFileDirty: Bool = false
     @State private var activeTab: WorkspaceTab = .info
     @State private var splitTab: WorkspaceTab?
+    @AppStorage("dockyard.splitOrientation") private var splitOrientation: String = "horizontal"
     @State private var tabs: [WorkspaceTab] = [.info, .agent]
     @State private var terminalCount = 0
     @State private var browserCount = 0
@@ -710,21 +712,17 @@ struct TerminalContainerView: View {
             .onReceive(NotificationCenter.default.publisher(for: .splitAgent)) { _ in toggleSplit(for: .agent) }
             .onReceive(NotificationCenter.default.publisher(for: .splitTerminal)) { _ in toggleSplit(for: .terminal) }
             .onReceive(NotificationCenter.default.publisher(for: .splitBrowser)) { _ in toggleSplit(for: .browser) }
+            .onReceive(NotificationCenter.default.publisher(for: .toggleSplitOrientation)) { _ in
+                guard isActive else { return }
+                splitOrientation = (splitOrientation == "vertical") ? "horizontal" : "vertical"
+            }
     }
 
     private var mainLayout: some View {
         VStack(spacing: 0) {
             tabBar
             Divider()
-            HStack(spacing: 0) {
-                paneContent(for: activeTab)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                if let splitTab {
-                    Divider()
-                    paneContent(for: splitTab)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
+            splitPane
             if quickActionDebug {
                 Divider()
                 QuickActionDebugView(runner: quickActionRunner)
@@ -987,6 +985,31 @@ struct TerminalContainerView: View {
             }
         } else {
             splitTab = target
+        }
+    }
+
+    @ViewBuilder
+    private var splitPane: some View {
+        if splitOrientation == "vertical", splitTab != nil {
+            VStack(spacing: 0) {
+                paneContent(for: activeTab)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if let splitTab {
+                    Divider()
+                    paneContent(for: splitTab)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+        } else {
+            HStack(spacing: 0) {
+                paneContent(for: activeTab)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if let splitTab {
+                    Divider()
+                    paneContent(for: splitTab)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
         }
     }
 

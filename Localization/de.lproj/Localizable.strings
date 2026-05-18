@@ -316,3 +316,7 @@
 "Launch Chrome (or other Chromium browsers) with --remote-debugging-port so the agent can attach via CDP/WebMCP. Uses a separate profile to avoid clobbering your main session." = "Startet Chrome (oder andere Chromium-Browser) mit --remote-debugging-port, damit der Agent per CDP/WebMCP zugreifen kann. Verwendet ein separates Profil, um die Hauptsitzung nicht zu stören.";
 "Debugger port" = "Debugger-Port";
 "Default 9222. The agent reads DOCKYARD_CHROME_DEBUG_PORT." = "Standard 9222. Der Agent liest DOCKYARD_CHROME_DEBUG_PORT.";
+
+/* Split orientation */
+"Toggle Split Orientation" = "Splitausrichtung umschalten";
+"Toggle split orientation" = "Splitausrichtung umschalten";

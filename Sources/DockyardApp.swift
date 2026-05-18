@@ -339,6 +339,11 @@ struct DockyardApp: App {
                 }
                 .keyboardShortcut("o", modifiers: .command)
 
+                Button("Toggle Split Orientation") {
+                    NotificationCenter.default.post(name: .toggleSplitOrientation, object: nil)
+                }
+                .keyboardShortcut("d", modifiers: [.command, .shift])
+
                 Button("Start/Rerun") {
                     NotificationCenter.default.post(name: .rerunScript, object: nil)
                 }

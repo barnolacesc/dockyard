@@ -135,6 +135,7 @@ Every workstream terminal has access to:
 | `Cmd+Shift+T` | Split Terminal pane |
 | `Cmd+B` | New Browser |
 | `Cmd+Shift+B` | Split Browser pane |
+| `Cmd+Shift+D` | Toggle split orientation (horizontal/vertical) |
 | `Cmd+O` | New Editor |
 | `Cmd+S` | Save (Editor) |
 | `Cmd+Shift+S` | Save As (Editor) |

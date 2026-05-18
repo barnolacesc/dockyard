@@ -96,6 +96,7 @@ struct HelpView: View {
                         ShortcutRow(keys: "T", shift: true, description: "Split Terminal pane")
                         ShortcutRow(keys: "B", description: "New Browser")
                         ShortcutRow(keys: "B", shift: true, description: "Split Browser pane")
+                        ShortcutRow(keys: "D", shift: true, description: "Toggle split orientation")
                         ShortcutRow(keys: "O", description: "New Editor")
                         ShortcutRow(keys: "S", description: "Save (Editor)")
                         ShortcutRow(keys: "S", shift: true, description: "Save As (Editor)")
