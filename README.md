@@ -113,8 +113,8 @@ Every workstream terminal has access to:
 
 | Shortcut | Action |
 |---|---|
-| `Cmd+N` | New workstream or project |
-| `Cmd+Shift+N` | New project |
+| `Cmd+N` | New workstream, or add existing project |
+| `Cmd+Shift+N` | New project directory |
 | `Cmd+,` | Settings |
 | `Cmd+/` | Help |
 | `Cmd+Option+S` | Toggle sidebar |

@@ -403,7 +403,9 @@ struct ProjectSidebar: View {
                 Text("This will rename the git branch. Use kebab-case without spaces.")
             }
             .onReceive(NotificationCenter.default.publisher(for: .addProject)) { _ in
-                showingAddProjectChoice = true
+                newProjectName = ""
+                newProjectError = ""
+                showingNewProjectName = true
             }
             .onReceive(NotificationCenter.default.publisher(for: .addNew)) { _ in
                 if case let .workstream(wsID) = selection,
@@ -413,7 +415,7 @@ struct ProjectSidebar: View {
                 } else if case let .project(pid) = selection {
                     addWorkstream(for: pid)
                 } else {
-                    showingAddProjectChoice = true
+                    openDirectoryPicker()
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .openDirectory)) { notification in

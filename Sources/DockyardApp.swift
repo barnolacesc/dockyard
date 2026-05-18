@@ -246,14 +246,15 @@ struct DockyardApp: App {
             CommandGroup(replacing: .help) {}
 
             CommandGroup(replacing: .newItem) {
-                // Cmd+N: context-sensitive (add project if none selected, else add workstream)
+                // Cmd+N: context-sensitive — add workstream if a project/workstream is selected,
+                // otherwise open a directory picker to add an existing folder as a project.
                 Button("New") {
                     NotificationCenter.default.post(name: .addNew, object: nil)
                 }
                 .keyboardShortcut("n", modifiers: .command)
 
-                // Cmd+Shift+N: always add project
-                Button("New Project") {
+                // Cmd+Shift+N: create a brand-new project directory.
+                Button("New Project Directory...") {
                     NotificationCenter.default.post(name: .addProject, object: nil)
                 }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
