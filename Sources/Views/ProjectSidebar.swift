@@ -53,19 +53,13 @@ struct ProjectSidebar: View {
     @State private var cachedWorkstreamIndex: [UUID: (Int, Int)] = [:]
     @State private var showWorktreeError = false
     @State private var showNotGitRepoError = false
-    @AppStorage("dockyard.sortOrder") private var sortOrder: ProjectSortOrder = .recent
 
     private var currentVersionLooksLikeRelease: Bool {
         AppConstants.version.range(of: "^[0-9]+\\.[0-9]+\\.[0-9]+$", options: .regularExpression) != nil
     }
 
     private func recomputeSortedIDs() -> [UUID] {
-        switch sortOrder {
-        case .recent:
-            return projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }.map(\.id)
-        case .alphabetical:
-            return projects.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }.map(\.id)
-        }
+        return projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }.map(\.id)
     }
 
     private func rebuildIndices() {
@@ -436,18 +430,6 @@ struct ProjectSidebar: View {
                         projectRows()
                     }
                     .listStyle(.sidebar)
-                    .safeAreaInset(edge: .top) {
-                        if projects.count > 1 {
-                            Picker("", selection: $sortOrder) {
-                                ForEach(ProjectSortOrder.allCases, id: \.self) { order in
-                                    Text(order.rawValue).tag(order)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                        }
-                    }
                     .onChange(of: selection) { _, sel in
                         guard let sel else { return }
                         deferSelectionExpansion(sel, projectIDByWorkstreamID: projectIDByWorkstreamIDSnapshot(), scrollProxy: scrollProxy)
@@ -465,18 +447,15 @@ struct ProjectSidebar: View {
             projects[pi].lastAccessedAt = now
             projects[pi].workstreams[wi].lastAccessedAt = now
             onProjectsChanged()
-            if sortOrder == .recent {
-                cachedSortedIDs = recomputeSortedIDs()
-                cachedSortedWorkstreamIDs[projects[pi].id] = projects[pi].workstreams
-                    .sorted { $0.lastAccessedAt > $1.lastAccessedAt }
-                    .map(\.id)
-            }
+            cachedSortedIDs = recomputeSortedIDs()
+            cachedSortedWorkstreamIDs[projects[pi].id] = projects[pi].workstreams
+                .sorted { $0.lastAccessedAt > $1.lastAccessedAt }
+                .map(\.id)
         }
         .onAppear {
             cachedSortedIDs = recomputeSortedIDs()
             rebuildIndices()
         }
-        .onChange(of: sortOrder) { _, _ in cachedSortedIDs = recomputeSortedIDs() }
         .onChange(of: expandedProjects) { _, newValue in SidebarState.saveExpanded(newValue) }
         .onChange(of: projects.count) { _, _ in
             cachedSortedIDs = recomputeSortedIDs()
