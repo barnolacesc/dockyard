@@ -1,1 +1,1 @@
-enum AppCommit { static let hash = "b7662a2"; static let sourcePath = "/Users/cesc/repos/dockyard"; static let configuration = "Debug" }
+enum AppCommit { static let hash = "518ea32"; static let sourcePath = "/Users/cesc/.dockyard/worktrees/dockyard/split-deep-cfg"; static let configuration = "Debug" }
