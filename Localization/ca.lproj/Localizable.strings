@@ -343,11 +343,6 @@
 "New project directory" = "Nou directori de projecte";
 "New Project Directory..." = "Nou directori de projecte...";
 
-/* Chrome remote debugging */
-"Chrome remote debugging" = "Depuració remota de Chrome";
-"Launch Chrome (or other Chromium browsers) with --remote-debugging-port so the agent can attach via CDP/WebMCP. Uses a separate profile to avoid clobbering your main session." = "Llança Chrome (o altres navegadors basats en Chromium) amb --remote-debugging-port perquè l'agent s'hi pugui connectar via CDP/WebMCP. Utilitza un perfil separat per no afectar la sessió principal.";
-"Debugger port" = "Port del depurador";
-"Default 9222. The agent reads DOCKYARD_CHROME_DEBUG_PORT." = "Per defecte 9222. L'agent llegeix DOCKYARD_CHROME_DEBUG_PORT.";
 
 /* Split orientation */
 "Toggle Split Orientation" = "Canvia l'orientació de la divisió";

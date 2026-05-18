@@ -22,17 +22,6 @@ struct SettingsView: View {
     @AppStorage("dockyard.quickActionDebug") private var quickActionDebug: Bool = false
     @AppStorage("dockyard.bleedingEdge") private var bleedingEdge: Bool = false
     @AppStorage("dockyard.baseDirectory") private var baseDirectory: String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? ""
-    @AppStorage("dockyard.chromeRemoteDebugging") private var chromeRemoteDebugging: Bool = false
-    @AppStorage("dockyard.chromeRemoteDebuggingPort") private var chromeRemoteDebuggingPort: Int = 9222
-
-    private var portFormatter: NumberFormatter {
-        let f = NumberFormatter()
-        f.numberStyle = .none
-        f.minimum = 1024
-        f.maximum = 65535
-        f.allowsFloats = false
-        return f
-    }
 
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
 
@@ -349,27 +338,6 @@ struct SettingsView: View {
                             }
                         }
                         .tag(app.bundleID)
-                    }
-                }
-
-                SettingToggle(
-                    "Chrome remote debugging",
-                    isOn: $chromeRemoteDebugging,
-                    description: "Launch Chrome (or other Chromium browsers) with --remote-debugging-port so the agent can attach via CDP/WebMCP. Uses a separate profile to avoid clobbering your main session."
-                )
-
-                if chromeRemoteDebugging {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Debugger port")
-                            Text("Default 9222. The agent reads DOCKYARD_CHROME_DEBUG_PORT.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        TextField("", value: $chromeRemoteDebuggingPort, formatter: portFormatter)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: 80)
                     }
                 }
             }

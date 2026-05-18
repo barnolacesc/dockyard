@@ -343,11 +343,6 @@
 "New project directory" = "Ny projektkatalog";
 "New Project Directory..." = "Ny projektkatalog...";
 
-/* Chrome remote debugging */
-"Chrome remote debugging" = "Chrome-fjärrfelsökning";
-"Launch Chrome (or other Chromium browsers) with --remote-debugging-port so the agent can attach via CDP/WebMCP. Uses a separate profile to avoid clobbering your main session." = "Starta Chrome (eller andra Chromium-baserade webbläsare) med --remote-debugging-port så att agenten kan ansluta via CDP/WebMCP. Använder en separat profil för att inte påverka din huvudsession.";
-"Debugger port" = "Felsökningsport";
-"Default 9222. The agent reads DOCKYARD_CHROME_DEBUG_PORT." = "Standard 9222. Agenten läser DOCKYARD_CHROME_DEBUG_PORT.";
 
 /* Split orientation */
 "Toggle Split Orientation" = "Växla delningsorientering";

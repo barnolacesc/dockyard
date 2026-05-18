@@ -22,8 +22,8 @@
 
 ## Future
 
-- [~] **Embedded Browser Claude Integration**: Foundation shipped — embedded WKWebView writes URL / title / recent console logs to `~/Library/Caches/dockyard/browser-state/<id>.json`, exposed via `DOCKYARD_BROWSER_STATE_FILE`. Full bidirectional CDP control still TODO; recommended path is to use the external Chrome integration for now.
-- [x] External Chrome integration: launch with --remote-debugging-port for WebMCP/CDP (Settings → Coding Agent → "Chrome remote debugging"; port via `DOCKYARD_CHROME_DEBUG_PORT`).
+- [~] **Embedded Browser Claude Integration**: Foundation shipped — embedded WKWebView writes URL / title / recent console logs to `~/Library/Caches/dockyard/browser-state/<id>.json`, exposed via `DOCKYARD_BROWSER_STATE_FILE`. Full bidirectional CDP control deferred (WKWebView cannot run Chrome extensions, so this needs its own design).
+- [ ] External Chrome integration: launch with --remote-debugging-port for WebMCP/CDP — dropped, doesn't unlock "Claude in Chrome" extension since that lives inside Chrome and doesn't talk CDP.
 - [x] Horizontal terminal splits within a tab: split panes existed already (Cmd+Shift+T/B/Return). Added Cmd+Shift+D to toggle between horizontal (side-by-side) and vertical (stacked) layouts.
 
 ## Done
