@@ -265,6 +265,8 @@ struct TerminalContainerView: View {
     @EnvironmentObject var appEnv: AppEnvironment
     @AppStorage("dockyard.codingCLI") private var codingCLIRaw: String = ""
     @AppStorage("dockyard.defaultBrowser") private var defaultBrowser: String = ""
+    @AppStorage("dockyard.chromeRemoteDebugging") private var chromeRemoteDebugging: Bool = false
+    @AppStorage("dockyard.chromeRemoteDebuggingPort") private var chromeRemoteDebuggingPort: Int = 9222
     @AppStorage("dockyard.tmuxMode") private var tmuxMode: Bool = false
     @AppStorage("dockyard.agentTeams") private var agentTeams: Bool = false
     @AppStorage("dockyard.autoRenameBranch") private var autoRenameBranch: Bool = true
@@ -840,13 +842,7 @@ struct TerminalContainerView: View {
             .onReceive(NotificationCenter.default.publisher(for: .openExternalBrowser)) { _ in
                 guard isActive else { return }
                 guard let url = URL(string: browserDefaultURL) else { return }
-                if defaultBrowser.isEmpty {
-                    NSWorkspace.shared.open(url)
-                } else if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: defaultBrowser) {
-                    NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: NSWorkspace.OpenConfiguration())
-                } else {
-                    NSWorkspace.shared.open(url)
-                }
+                openInExternalBrowser(url)
             }
             .toolbar {
                 if isActive {
@@ -992,6 +988,47 @@ struct TerminalContainerView: View {
         } else {
             splitTab = target
         }
+    }
+
+    private static let chromiumBundleIDs: Set<String> = [
+        "com.google.Chrome",
+        "com.google.Chrome.canary",
+        "com.google.Chrome.beta",
+        "com.google.Chrome.dev",
+        "org.chromium.Chromium",
+        "com.brave.Browser",
+        "com.brave.Browser.beta",
+        "com.brave.Browser.nightly",
+        "com.microsoft.edgemac",
+        "com.microsoft.edgemac.Beta",
+        "com.microsoft.edgemac.Dev",
+        "com.vivaldi.Vivaldi",
+        "com.operasoftware.Opera",
+    ]
+
+    private func openInExternalBrowser(_ url: URL) {
+        if defaultBrowser.isEmpty {
+            NSWorkspace.shared.open(url)
+            return
+        }
+        guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: defaultBrowser) else {
+            NSWorkspace.shared.open(url)
+            return
+        }
+
+        let config = NSWorkspace.OpenConfiguration()
+        if chromeRemoteDebugging, Self.chromiumBundleIDs.contains(defaultBrowser) {
+            let port = max(1024, min(65535, chromeRemoteDebuggingPort == 0 ? 9222 : chromeRemoteDebuggingPort))
+            let profileDir = (NSHomeDirectory() as NSString).appendingPathComponent(".dockyard/chrome-debug-profile")
+            try? FileManager.default.createDirectory(atPath: profileDir, withIntermediateDirectories: true)
+            config.arguments = [
+                "--remote-debugging-port=\(port)",
+                "--user-data-dir=\(profileDir)",
+                url.absoluteString,
+            ]
+        }
+
+        NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: config) { _, _ in }
     }
 
     private func addTerminal() {

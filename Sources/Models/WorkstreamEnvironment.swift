@@ -43,6 +43,13 @@ enum WorkstreamEnvironment {
             vars["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "1"
         }
 
+        // Expose Chrome CDP debugger port so agents can attach via WebMCP/CDP
+        // when the user has enabled remote debugging for the external browser.
+        if UserDefaults.standard.bool(forKey: "dockyard.chromeRemoteDebugging") {
+            let port = UserDefaults.standard.integer(forKey: "dockyard.chromeRemoteDebuggingPort")
+            vars["DOCKYARD_CHROME_DEBUG_PORT"] = "\(port == 0 ? 9222 : port)"
+        }
+
         switch scriptSource {
         case "conductor.json":
             vars["CONDUCTOR_WORKSPACE_NAME"] = workstreamName

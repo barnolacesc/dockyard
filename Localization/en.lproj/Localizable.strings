@@ -342,3 +342,9 @@
 "New workstream or add existing project" = "New workstream or add existing project";
 "New project directory" = "New project directory";
 "New Project Directory..." = "New Project Directory...";
+
+/* Chrome remote debugging */
+"Chrome remote debugging" = "Chrome remote debugging";
+"Launch Chrome (or other Chromium browsers) with --remote-debugging-port so the agent can attach via CDP/WebMCP. Uses a separate profile to avoid clobbering your main session." = "Launch Chrome (or other Chromium browsers) with --remote-debugging-port so the agent can attach via CDP/WebMCP. Uses a separate profile to avoid clobbering your main session.";
+"Debugger port" = "Debugger port";
+"Default 9222. The agent reads DOCKYARD_CHROME_DEBUG_PORT." = "Default 9222. The agent reads DOCKYARD_CHROME_DEBUG_PORT.";
