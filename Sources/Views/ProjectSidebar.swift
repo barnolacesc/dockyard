@@ -35,7 +35,6 @@ struct ProjectSidebar: View {
 
     @StateObject private var appUpdater = AppUpdater()
 
-    @State private var showingAddProjectChoice = false
     @State private var showingNewProjectName = false
     @State private var newProjectName = ""
     @State private var newProjectError = ""
@@ -275,9 +274,18 @@ struct ProjectSidebar: View {
             .minimumScaleFactor(0.8)
 
             HStack {
-                SidebarBottomButton(icon: "plus") {
-                    showingAddProjectChoice = true
+                Menu {
+                    Button("Add Existing Directory…") { openDirectoryPicker() }
+                    Button("Create New Project…") { presentNewProjectSheet() }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 32, height: 32)
                 }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
                 .accessibilityLabel("Add project")
                 Spacer()
                 SidebarBottomButton(icon: "questionmark.circle") {
@@ -366,21 +374,6 @@ struct ProjectSidebar: View {
 
     private var sidebar: some View {
         sidebarList
-            .sheet(isPresented: $showingAddProjectChoice) {
-                AddProjectChoiceSheet(
-                    onNewProject: {
-                        showingAddProjectChoice = false
-                        newProjectName = ""
-                        newProjectError = ""
-                        showingNewProjectName = true
-                    },
-                    onExistingDirectory: {
-                        showingAddProjectChoice = false
-                        openDirectoryPicker()
-                    },
-                    onCancel: { showingAddProjectChoice = false }
-                )
-            }
             .sheet(isPresented: $showingNewProjectName) {
                 NewProjectSheet(
                     name: $newProjectName,
@@ -409,7 +402,7 @@ struct ProjectSidebar: View {
                 Text("This will rename the git branch. Use kebab-case without spaces.")
             }
             .onReceive(NotificationCenter.default.publisher(for: .addProject)) { _ in
-                showingAddProjectChoice = true
+                presentNewProjectSheet()
             }
             .onReceive(NotificationCenter.default.publisher(for: .addNew)) { _ in
                 if case let .workstream(wsID) = selection,
@@ -419,7 +412,9 @@ struct ProjectSidebar: View {
                 } else if case let .project(pid) = selection {
                     addWorkstream(for: pid)
                 } else {
-                    showingAddProjectChoice = true
+                    // No selection: jump straight to the directory picker (the 99% case is
+                    // adding an existing folder). Create New is Cmd+Shift+N / the + menu.
+                    openDirectoryPicker()
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .openDirectory)) { notification in
@@ -677,6 +672,12 @@ struct ProjectSidebar: View {
 
     @AppStorage("dockyard.baseDirectory") private var baseDirectory: String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? ""
     @AppStorage("dockyard.branchPrefix") private var branchPrefix: String = "dy"
+
+    private func presentNewProjectSheet() {
+        newProjectName = ""
+        newProjectError = ""
+        showingNewProjectName = true
+    }
 
     private func openDirectoryPicker() {
         let panel = NSOpenPanel()
@@ -1095,71 +1096,6 @@ private struct SidebarBottomButton: View {
                 NSCursor.pop()
             }
         }
-    }
-}
-
-private struct AddProjectChoiceSheet: View {
-    let onNewProject: () -> Void
-    let onExistingDirectory: () -> Void
-    let onCancel: () -> Void
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("Add Project")
-                .font(.headline)
-
-            VStack(spacing: 12) {
-                Button(action: onNewProject) {
-                    HStack {
-                        Image(systemName: "plus.rectangle.on.folder")
-                            .font(.system(size: 20))
-                            .frame(width: 32)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("New Project")
-                                .font(.system(.body, weight: .medium))
-                            Text("Create a new directory in the base directory")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(12)
-                    .background(Color.primary.opacity(0.04))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-                .buttonStyle(.borderless)
-                .keyboardShortcut(.defaultAction)
-
-                Button(action: onExistingDirectory) {
-                    HStack {
-                        Image(systemName: "folder")
-                            .font(.system(size: 20))
-                            .frame(width: 32)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Existing Directory")
-                                .font(.system(.body, weight: .medium))
-                            Text("Select an existing directory from disk")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(12)
-                    .background(Color.primary.opacity(0.04))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-                .buttonStyle(.borderless)
-            }
-
-            Button("Cancel", action: onCancel)
-                .keyboardShortcut(.cancelAction)
-        }
-        .padding(20)
-        .frame(width: 380)
     }
 }
 
