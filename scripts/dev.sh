@@ -30,10 +30,17 @@ ensure_monaco_editor() {
   fi
 }
 
+# AppCommit.swift is a gitignored, generated source. It must exist before xcodegen
+# validates project.yml's source paths (the Xcode prebuild that writes it runs too late).
+ensure_appcommit() {
+  bash scripts/gen-appcommit.sh
+}
+
 case "${1:-build}" in
   build)
     ensure_ghostty_resources
     ensure_monaco_editor
+    ensure_appcommit
     [ -x "$(command -v xcodegen)" ] && xcodegen generate
     xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Debug \
       -derivedDataPath "$BUILD_DIR" -clonedSourcePackagesDirPath "$SPM_CACHE" \
@@ -68,6 +75,7 @@ case "${1:-build}" in
     shift 2>/dev/null || true
     ensure_ghostty_resources
     ensure_monaco_editor
+    ensure_appcommit
     [ -x "$(command -v xcodegen)" ] && xcodegen generate
     xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Debug \
       -derivedDataPath "$BUILD_DIR" -clonedSourcePackagesDirPath "$SPM_CACHE" \
@@ -98,6 +106,7 @@ case "${1:-build}" in
   test)
     ensure_ghostty_resources
     ensure_monaco_editor
+    ensure_appcommit
     xcodegen generate
     xcodebuild -project "$PROJECT" -scheme "$TEST_SCHEME" -configuration Debug \
       -derivedDataPath "$BUILD_DIR" -clonedSourcePackagesDirPath "$SPM_CACHE" \
@@ -108,6 +117,7 @@ case "${1:-build}" in
     COMMIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "dev")
     ensure_ghostty_resources
     ensure_monaco_editor
+    ensure_appcommit
     xcodegen generate
     xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Release \
       -derivedDataPath "$RELEASE_DIR" -clonedSourcePackagesDirPath "$SPM_CACHE" \

@@ -47,6 +47,7 @@ jobs:
 
       - name: Build Dockyard
         run: |
+          ./scripts/gen-appcommit.sh
           xcodegen generate
           xcodebuild -project Dockyard.xcodeproj -scheme Dockyard -configuration Debug -destination 'generic/platform=macOS' build
 
