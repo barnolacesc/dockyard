@@ -11,12 +11,14 @@
 ## Bugs
 
 - [x] Branch name doesn't appear in sidebar after workstream creation until the 15s refresh timer fires. Fixed: call `refreshPathValidity` immediately in the `.workstreamWorktreeReady` handler.
+- [x] Branch/workstream renames lagged up to 15s. Fixed: FSEvents `WorktreeHeadWatcher` syncs the name instantly on `.git/HEAD` change; 15s poll remains a backstop.
+- [x] `AppCommit.swift` dirtied the tree on every build. Fixed: gitignored + generated via `scripts/gen-appcommit.sh` prebuild on all consuming targets.
 
 ## UI improvements
 
-- [ ] **Refactor Cmd+N behavior**: Default to a file picker to add an existing folder (the 99% use case), rather than prompting for a new directory name. Move "Create New" to a secondary action (e.g. Cmd+Shift+N).
-- [ ] **Declutter Sidebar**: Remove the "Recent" and "A-Z" sorting options from the sidebar to reduce visual noise.
-- [ ] **Sidebar Density**: The left sidebar feels too empty. Explore ways to utilize the space better (e.g., global PR status, recent activity, quick access to docs, or global settings).
+- [x] **Refactor Cmd+N behavior**: Cmd+N goes straight to the directory picker (add existing folder), Cmd+Shift+N creates a new project, the + button offers both via a menu.
+- [x] **Declutter Sidebar**: Removed the Recent/A-Z segmented picker (sort defaults to recent).
+- [x] **Sidebar Density**: Added a status strip (project/workstream/PR counts + Claude usage meter), global Open PRs section, Recent workstreams section, and richer rows (agent-state dot, branch, PR, ±N uncommitted-changes hint).
 - [x] Sidebar workstream rows: removed repetitive terminal icons, kept warning icon only for invalid paths
 - [x] Sidebar workstream subtext: show PR title (#number) when available, fall back to branch name only when it differs from the workstream name
 
