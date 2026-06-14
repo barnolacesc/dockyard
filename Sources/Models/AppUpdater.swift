@@ -84,17 +84,27 @@ final class AppUpdater: ObservableObject {
     func applyUpdate() {
         let path = AppCommit.sourcePath
         let isDebug = AppCommit.configuration == "Debug"
-        
-        // If Debug, we build but maybe we shouldn't kill if we don't want to lose state?
-        // But debug usually runs out of Xcode or derived data, so `br` kills it.
-        // For Release (what the user runs), use install-bg so we don't interrupt them.
-        let buildScript = isDebug ? "./scripts/dev.sh br" : "./scripts/dev.sh install-bg"
 
-        // Create an AppleScript to open Terminal and run the commands
+        // Debug builds run from derived data, so `br` kills and relaunches. Release (what the
+        // user runs) uses install-bg so we don't interrupt them.
+        let buildMode = isDebug ? "br" : "install-bg"
+
+        // Delegate the git reconciliation + build to a hardened, idempotent script so the
+        // update survives divergent branches and dirty build artifacts. Fall back to the
+        // inline pull only if the script is missing (older checkouts).
+        let scriptPath = "\(path)/scripts/self-update.sh"
+        let command: String
+        if FileManager.default.isExecutableFile(atPath: scriptPath) {
+            command = "cd '\(path)' && ./scripts/self-update.sh \(buildMode)"
+        } else {
+            command = "cd '\(path)' && git fetch origin main && git merge --ff-only origin/main && ./scripts/dev.sh \(buildMode)"
+        }
+
+        // Create an AppleScript to open Terminal and run the command.
         let scriptSource = """
         tell application "Terminal"
             activate
-            do script "cd '\(path)' && echo 'Pulling latest changes...' && git pull origin main && echo 'Building Dockyard...' && \(buildScript) && echo 'Update complete. Restart the app when ready.'"
+            do script "\(command)"
         end tell
         """
 
