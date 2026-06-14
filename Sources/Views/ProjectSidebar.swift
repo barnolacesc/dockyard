@@ -173,6 +173,7 @@ struct ProjectSidebar: View {
                             prTitle: pr?.title,
                             prNumber: pr?.number,
                             prState: pr?.state,
+                            uncommittedCount: workstream.worktreePath.map { appEnv.worktreeState(for: $0).uncommittedCount } ?? 0,
                             onRemove: { workstreamToRemove = workstream.id },
                             onPurge: { confirmPurge(workstream) },
                             onRename: {
@@ -431,18 +432,6 @@ struct ProjectSidebar: View {
                         projectRows()
                     }
                     .listStyle(.sidebar)
-                    .safeAreaInset(edge: .top) {
-                        if projects.count > 1 {
-                            Picker("", selection: $sortOrder) {
-                                ForEach(ProjectSortOrder.allCases, id: \.self) { order in
-                                    Text(order.rawValue).tag(order)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                        }
-                    }
                     .onChange(of: selection) { _, sel in
                         guard let sel else { return }
                         deferSelectionExpansion(sel, projectIDByWorkstreamID: projectIDByWorkstreamIDSnapshot(), scrollProxy: scrollProxy)
@@ -893,6 +882,7 @@ private struct WorkstreamRow: View {
     var prTitle: String?
     var prNumber: Int?
     var prState: String?
+    var uncommittedCount: Int = 0
     let onRemove: () -> Void
     let onPurge: () -> Void
     var onRename: (() -> Void)? = nil
@@ -920,6 +910,11 @@ private struct WorkstreamRow: View {
         return nil
     }
 
+    /// Show a compact dirty hint (e.g. `±3`) for valid worktrees with uncommitted changes.
+    private var dirtyCount: Int {
+        isPathValid ? uncommittedCount : 0
+    }
+
     var body: some View {
         HStack(spacing: 4) {
             ActivityIndicator(state: agentState, isPathValid: isPathValid)
@@ -937,15 +932,22 @@ private struct WorkstreamRow: View {
                             .foregroundStyle(.green)
                     }
                 }
-                if let subtitle {
+                if subtitle != nil || dirtyCount > 0 {
                     HStack(spacing: 3) {
                         if prState == "MERGED" {
                             Image(systemName: "arrow.triangle.merge")
                                 .font(.system(size: 8))
                                 .foregroundStyle(.purple)
                         }
-                        Text(subtitle)
-                            .lineLimit(1)
+                        if let subtitle {
+                            Text(subtitle)
+                                .lineLimit(1)
+                        }
+                        if dirtyCount > 0 {
+                            Text("±\(dirtyCount)")
+                                .foregroundStyle(.orange)
+                                .help(NSLocalizedString("Uncommitted changes", comment: ""))
+                        }
                     }
                     .font(.system(size: 9, design: .monospaced))
                     .foregroundStyle(agentState == .waiting ? AnyShapeStyle(Color.accentColor.opacity(0.8)) : (prState == "MERGED" ? AnyShapeStyle(.purple) : AnyShapeStyle(.tertiary)))
