@@ -1,5 +1,5 @@
-// ABOUTME: Compact status strip at the bottom of the sidebar: project/workstream/PR counts
-// ABOUTME: plus a Claude usage meter (rolling 5-hour block, with optional % vs plan tier).
+// ABOUTME: Status strip at the bottom of the sidebar: a Claude usage meter (Current 5-hour
+// ABOUTME: block + Weekly 7-day window with % bars) plus a thin project/workstream/PR count line.
 
 import SwiftUI
 
@@ -14,17 +14,72 @@ struct SidebarStatusStrip: View {
 
     private var planTier: ClaudePlanTier { ClaudePlanTier(rawValue: planTierRaw) ?? .none }
 
+    /// Lime green for the weekly bar, to contrast with the orange 5-hour bar.
+    private static let weeklyTint = Color(red: 0.62, green: 0.80, blue: 0.30)
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            countsLine
+        VStack(alignment: .leading, spacing: 8) {
             if usageStore.snapshot.hasData {
-                usageLine
+                usageMeter
             }
+            countsLine
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10)
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
     }
+
+    // MARK: - Usage meter
+
+    private var usageMeter: some View {
+        // Recompute the reset countdown roughly every 30s without a manual timer.
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 4) {
+                    Image(systemName: "gauge.with.needle.fill")
+                        .foregroundStyle(Color.accentColor)
+                    Text("Usage")
+                        .font(.system(size: 11, weight: .semibold))
+                    Spacer()
+                }
+                .foregroundStyle(.secondary)
+
+                UsageMeterRow(
+                    label: NSLocalizedString("Current", comment: "Claude 5-hour usage window"),
+                    tint: .orange,
+                    tokens: usageStore.snapshot.fiveHour.tokens,
+                    budget: planTier.fiveHourTokenBudget,
+                    subtitle: currentSubtitle(now: context.date)
+                )
+                UsageMeterRow(
+                    label: NSLocalizedString("Weekly", comment: "Claude 7-day usage window"),
+                    tint: Self.weeklyTint,
+                    tokens: usageStore.snapshot.sevenDay.tokens,
+                    budget: planTier.weeklyTokenBudget,
+                    subtitle: NSLocalizedString("rolling 7 days", comment: "Claude weekly usage window")
+                )
+            }
+            .help(usageTooltip)
+        }
+    }
+
+    private func currentSubtitle(now: Date) -> String? {
+        guard let resetAt = usageStore.snapshot.fiveHour.resetAt, resetAt > now else { return nil }
+        return String(
+            format: NSLocalizedString("resets in %@", comment: "usage window reset countdown"),
+            Self.formatDuration(resetAt.timeIntervalSince(now))
+        )
+    }
+
+    private var usageTooltip: String {
+        let snap = usageStore.snapshot
+        let five = String(format: NSLocalizedString("Last 5 hours: %@ tokens", comment: ""), Self.formatTokens(snap.fiveHour.tokens))
+        let week = String(format: NSLocalizedString("Last 7 days: %@ tokens", comment: ""), Self.formatTokens(snap.sevenDay.tokens))
+        let note = NSLocalizedString("Estimated from local Claude Code transcripts (CLI only, not your full account). Percentages are approximate.", comment: "")
+        return "\(five)\n\(week)\n\(note)"
+    }
+
+    // MARK: - Counts
 
     private var countsLine: some View {
         HStack(spacing: 8) {
@@ -50,44 +105,7 @@ struct SidebarStatusStrip: View {
         }
     }
 
-    private var usageLine: some View {
-        // Refresh the reset countdown roughly every 30s without a manual timer.
-        TimelineView(.periodic(from: .now, by: 30)) { context in
-            HStack(spacing: 4) {
-                Image(systemName: "gauge.with.needle")
-                Text(usageText(now: context.date))
-            }
-            .font(.system(size: 9, design: .monospaced))
-            .foregroundStyle(.secondary)
-            .help(usageTooltip)
-        }
-    }
-
-    private func usageText(now: Date) -> String {
-        let window = usageStore.snapshot.fiveHour
-        var parts: [String] = []
-
-        if let budget = planTier.fiveHourTokenBudget, budget > 0 {
-            let remaining = max(0, budget - window.tokens)
-            let pct = Int((Double(remaining) / Double(budget) * 100).rounded())
-            parts.append(String(format: NSLocalizedString("5h: ~%d%% left", comment: "Claude usage, 5-hour window"), pct))
-        } else {
-            parts.append(String(format: NSLocalizedString("5h: %@", comment: "Claude usage tokens, 5-hour window"), Self.formatTokens(window.tokens)))
-        }
-
-        if let resetAt = window.resetAt, resetAt > now {
-            parts.append(String(format: NSLocalizedString("resets in %@", comment: "usage window reset countdown"), Self.formatDuration(resetAt.timeIntervalSince(now))))
-        }
-        return parts.joined(separator: " · ")
-    }
-
-    private var usageTooltip: String {
-        let snap = usageStore.snapshot
-        let five = String(format: NSLocalizedString("Last 5 hours: %@ tokens", comment: ""), Self.formatTokens(snap.fiveHour.tokens))
-        let week = String(format: NSLocalizedString("Last 7 days: %@ tokens", comment: ""), Self.formatTokens(snap.sevenDay.tokens))
-        let note = NSLocalizedString("Estimated from local Claude transcripts. Percentages are approximate.", comment: "")
-        return "\(five)\n\(week)\n\(note)"
-    }
+    // MARK: - Formatting
 
     static func formatTokens(_ n: Int) -> String {
         if n >= 1_000_000 { return String(format: "%.1fM", Double(n) / 1_000_000) }
@@ -97,9 +115,75 @@ struct SidebarStatusStrip: View {
 
     static func formatDuration(_ seconds: TimeInterval) -> String {
         let total = Int(seconds)
-        let hours = total / 3600
+        let days = total / 86_400
+        let hours = (total % 86_400) / 3600
         let minutes = (total % 3600) / 60
-        if hours > 0 { return "\(hours)h\(minutes)m" }
+        if days > 0 { return "\(days)d \(hours)h" }
+        if hours > 0 { return "\(hours)h \(minutes)m" }
         return "\(minutes)m"
+    }
+}
+
+/// One row of the usage meter: a big percent (or token count when no budget is configured),
+/// a window label pill, a filling colored bar, and a small subtitle.
+private struct UsageMeterRow: View {
+    let label: String
+    let tint: Color
+    let tokens: Int
+    let budget: Int?
+    let subtitle: String?
+
+    private var fraction: Double {
+        guard let budget, budget > 0 else { return 0 }
+        return min(1, Double(tokens) / Double(budget))
+    }
+
+    private var headline: String {
+        budget != nil ? "\(Int((fraction * 100).rounded()))%" : SidebarStatusStrip.formatTokens(tokens)
+    }
+
+    /// Shift toward red as the window approaches its (approximate) limit.
+    private var barTint: Color {
+        fraction >= 0.9 ? .red : tint
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(headline)
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                Spacer()
+                Text(label)
+                    .font(.system(size: 9, weight: .semibold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.primary.opacity(0.08), in: Capsule())
+                    .foregroundStyle(.secondary)
+            }
+            UsageBar(fraction: fraction, tint: barTint)
+            if let subtitle {
+                Text(subtitle)
+                    .font(.system(size: 9))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+}
+
+/// A rounded progress bar that fills from the leading edge to `fraction` (0...1).
+private struct UsageBar: View {
+    let fraction: Double
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.primary.opacity(0.1))
+                Capsule()
+                    .fill(tint)
+                    .frame(width: max(0, geo.size.width * fraction))
+            }
+        }
+        .frame(height: 6)
     }
 }

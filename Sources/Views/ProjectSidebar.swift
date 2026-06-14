@@ -234,27 +234,37 @@ struct ProjectSidebar: View {
     }
 
     /// Collapsible "Recent" section with the most recently touched workstreams for fast
-    /// switching, independent of project grouping.
+    /// switching, independent of project grouping. Rendered outside the scrolling List and
+    /// pinned above the bottom bar, so Recent stays put and is visually separated from the
+    /// live project tree.
     @ViewBuilder
-    private func recentSection() -> some View {
-        let recents = recentWorkstreams(limit: 5)
+    private var pinnedRecentSection: some View {
+        let recents = recentWorkstreams(limit: 4)
         if recents.count > 1 {
-            SidebarSectionHeader(
-                title: NSLocalizedString("Recent", comment: "Sidebar recent workstreams section"),
-                systemImage: "clock",
-                count: nil,
-                isExpanded: showRecent,
-                onToggle: { withAnimation(.easeInOut(duration: 0.15)) { showRecent.toggle() } }
-            )
-            if showRecent {
-                ForEach(recents, id: \.workstream.id) { entry in
-                    RecentRow(
-                        name: entry.workstream.name,
-                        projectName: entry.project.name,
-                        onSelect: { selection = .workstream(entry.workstream.id) }
-                    )
+            VStack(spacing: 0) {
+                Divider()
+                SidebarSectionHeader(
+                    title: NSLocalizedString("Recent", comment: "Sidebar recent workstreams section"),
+                    systemImage: "clock",
+                    count: nil,
+                    isExpanded: showRecent,
+                    onToggle: { withAnimation(.easeInOut(duration: 0.15)) { showRecent.toggle() } }
+                )
+                .padding(.horizontal, 8)
+                .padding(.top, 4)
+                if showRecent {
+                    ForEach(recents, id: \.workstream.id) { entry in
+                        RecentRow(
+                            name: entry.workstream.name,
+                            projectName: entry.project.name,
+                            onSelect: { selection = .workstream(entry.workstream.id) }
+                        )
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                    }
                 }
             }
+            .padding(.bottom, 2)
         }
     }
 
@@ -515,7 +525,6 @@ struct ProjectSidebar: View {
                     List(selection: $selection) {
                         projectRows()
                         globalPRsSection()
-                        recentSection()
                     }
                     .listStyle(.sidebar)
                     .onChange(of: selection) { _, sel in
@@ -523,6 +532,10 @@ struct ProjectSidebar: View {
                         deferSelectionExpansion(sel, projectIDByWorkstreamID: projectIDByWorkstreamIDSnapshot(), scrollProxy: scrollProxy)
                     }
                 } // ScrollViewReader
+
+                // Recent is pinned to the bottom (separated from the live project tree)
+                // so it stays reachable without scrolling.
+                pinnedRecentSection
 
                 // Bottom bar (always visible)
                 bottomBar

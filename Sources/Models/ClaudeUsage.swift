@@ -29,9 +29,20 @@ enum ClaudePlanTier: String, CaseIterable, Identifiable {
     var fiveHourTokenBudget: Int? {
         switch self {
         case .none: return nil
-        case .pro: return 220_000
-        case .max5: return 1_100_000
-        case .max20: return 4_400_000
+        case .pro: return 200_000
+        case .max5: return 1_000_000
+        case .max20: return 4_000_000
+        }
+    }
+
+    /// Approximate "work token" budget for the rolling 7-day window. Same caveat as
+    /// `fiveHourTokenBudget`: a rough estimate, easy to tune here.
+    var weeklyTokenBudget: Int? {
+        switch self {
+        case .none: return nil
+        case .pro: return 1_500_000
+        case .max5: return 7_500_000
+        case .max20: return 30_000_000
         }
     }
 }
@@ -176,10 +187,12 @@ enum ClaudeUsageParser {
                 case cacheReadInputTokens = "cache_read_input_tokens"
             }
 
-            /// Tokens that represent real work for limit purposes. Cache *reads* are excluded
-            /// because they replay existing context rather than consuming new budget.
+            /// Tokens that represent real work for limit purposes. Both cache reads *and*
+            /// cache creation are excluded: they replay/establish context rather than
+            /// reflecting new conversational work, and cache-creation volume is so large and
+            /// bursty that it makes the percentage estimate meaningless.
             var workTokens: Int {
-                (inputTokens ?? 0) + (outputTokens ?? 0) + (cacheCreationInputTokens ?? 0)
+                (inputTokens ?? 0) + (outputTokens ?? 0)
             }
         }
     }

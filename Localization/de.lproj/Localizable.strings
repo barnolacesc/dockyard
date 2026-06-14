@@ -329,3 +329,10 @@
 "Toggle split orientation" = "Splitausrichtung umschalten";
 
 "Agents waiting on you" = "Agenten warten auf dich";
+
+/* Usage meter (Current / Weekly bars) */
+"Usage" = "Nutzung";
+"Current" = "Aktuell";
+"Weekly" = "Wöchentlich";
+"rolling 7 days" = "rollierende 7 Tage";
+"Estimated from local Claude Code transcripts (CLI only, not your full account). Percentages are approximate." = "Geschätzt aus lokalen Claude-Code-Transkripten (nur CLI, nicht dein gesamtes Konto). Prozentangaben sind ungefähr.";

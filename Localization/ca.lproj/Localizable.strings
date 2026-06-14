@@ -361,3 +361,10 @@
 "Toggle split orientation" = "Canvia l'orientació de la divisió";
 
 "Agents waiting on you" = "Agents esperant-te";
+
+/* Usage meter (Current / Weekly bars) */
+"Usage" = "Ús";
+"Current" = "Actual";
+"Weekly" = "Setmanal";
+"rolling 7 days" = "7 dies mòbils";
+"Estimated from local Claude Code transcripts (CLI only, not your full account). Percentages are approximate." = "Estimat a partir de transcripcions locals de Claude Code (només CLI, no tot el compte). Els percentatges són aproximats.";

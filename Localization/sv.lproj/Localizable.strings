@@ -361,3 +361,10 @@
 "Toggle split orientation" = "Växla delningsorientering";
 
 "Agents waiting on you" = "Agenter väntar på dig";
+
+/* Usage meter (Current / Weekly bars) */
+"Usage" = "Användning";
+"Current" = "Aktuell";
+"Weekly" = "Veckovis";
+"rolling 7 days" = "rullande 7 dagar";
+"Estimated from local Claude Code transcripts (CLI only, not your full account). Percentages are approximate." = "Uppskattat från lokala Claude Code-transkript (endast CLI, inte hela ditt konto). Procentsatserna är ungefärliga.";
