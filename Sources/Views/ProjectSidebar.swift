@@ -52,7 +52,6 @@ struct ProjectSidebar: View {
     @State private var cachedWorkstreamIndex: [UUID: (Int, Int)] = [:]
     @State private var showWorktreeError = false
     @State private var showNotGitRepoError = false
-    @AppStorage("dockyard.sortOrder") private var sortOrder: ProjectSortOrder = .recent
     @AppStorage("dockyard.showOpenPRs") private var showOpenPRs: Bool = true
     @AppStorage("dockyard.showRecent") private var showRecent: Bool = true
 
@@ -61,12 +60,7 @@ struct ProjectSidebar: View {
     }
 
     private func recomputeSortedIDs() -> [UUID] {
-        switch sortOrder {
-        case .recent:
-            return projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }.map(\.id)
-        case .alphabetical:
-            return projects.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }.map(\.id)
-        }
+        return projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }.map(\.id)
     }
 
     private func rebuildIndices() {
@@ -200,8 +194,15 @@ struct ProjectSidebar: View {
         }
     }
 
-    private var workstreamCount: Int {
-        projects.reduce(0) { $0 + $1.workstreams.count }
+    /// Number of agents currently waiting on the user, for the status strip.
+    private var waitingAgentCount: Int {
+        var waiting = 0
+        for project in projects {
+            for ws in project.workstreams where agentStateStore.agentState(for: ws.id) == .waiting {
+                waiting += 1
+            }
+        }
+        return waiting
     }
 
     /// Collapsible section listing every open PR across all projects.
@@ -273,14 +274,16 @@ struct ProjectSidebar: View {
 
     private var bottomBar: some View {
         VStack(spacing: 4) {
-            SidebarStatusStrip(
-                projectCount: projects.count,
-                workstreamCount: workstreamCount,
-                openPRCount: appEnv.openPullRequests(projects: projects).count
-            )
-            Divider()
-                .padding(.horizontal, 8)
-
+            if !projects.isEmpty {
+                SidebarStatusStrip(
+                    projectCount: projects.count,
+                    workstreamCount: totalWorkstreamCount(),
+                    openPRCount: appEnv.openPullRequests(projects: projects).count,
+                    waitingCount: waitingAgentCount
+                )
+                Divider()
+                    .padding(.horizontal, 8)
+            }
             HStack(alignment: .center, spacing: 6) {
                 Text(AppConstants.displayVersion)
                     .font(.system(size: 10, design: .monospaced))
@@ -532,18 +535,15 @@ struct ProjectSidebar: View {
             projects[pi].lastAccessedAt = now
             projects[pi].workstreams[wi].lastAccessedAt = now
             onProjectsChanged()
-            if sortOrder == .recent {
-                cachedSortedIDs = recomputeSortedIDs()
-                cachedSortedWorkstreamIDs[projects[pi].id] = projects[pi].workstreams
-                    .sorted { $0.lastAccessedAt > $1.lastAccessedAt }
-                    .map(\.id)
-            }
+            cachedSortedIDs = recomputeSortedIDs()
+            cachedSortedWorkstreamIDs[projects[pi].id] = projects[pi].workstreams
+                .sorted { $0.lastAccessedAt > $1.lastAccessedAt }
+                .map(\.id)
         }
         .onAppear {
             cachedSortedIDs = recomputeSortedIDs()
             rebuildIndices()
         }
-        .onChange(of: sortOrder) { _, _ in cachedSortedIDs = recomputeSortedIDs() }
         .onChange(of: expandedProjects) { _, newValue in SidebarState.saveExpanded(newValue) }
         .onChange(of: projects.count) { _, _ in
             cachedSortedIDs = recomputeSortedIDs()

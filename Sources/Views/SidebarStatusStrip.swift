@@ -7,6 +7,7 @@ struct SidebarStatusStrip: View {
     let projectCount: Int
     let workstreamCount: Int
     let openPRCount: Int
+    var waitingCount: Int = 0
 
     @EnvironmentObject private var usageStore: ClaudeUsageStore
     @AppStorage("dockyard.claudePlanTier") private var planTierRaw = ClaudePlanTier.none.rawValue
@@ -31,6 +32,11 @@ struct SidebarStatusStrip: View {
             countItem(systemImage: "rectangle.stack", count: workstreamCount)
             if openPRCount > 0 {
                 countItem(systemImage: "arrow.triangle.pull", count: openPRCount)
+            }
+            if waitingCount > 0 {
+                countItem(systemImage: "bell.fill", count: waitingCount)
+                    .foregroundStyle(Color.accentColor)
+                    .help(NSLocalizedString("Agents waiting on you", comment: ""))
             }
         }
         .font(.system(size: 9))

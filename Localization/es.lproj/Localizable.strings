@@ -343,3 +343,21 @@
 "Not set" = "Sin definir";
 "Claude usage plan" = "Plan de uso de Claude";
 "Sets your subscription tier so the sidebar usage meter can show an approximate percentage remaining. Consumption is read from local Claude transcripts; limits are estimates." = "Define tu nivel de suscripción para que el medidor de uso de la barra lateral pueda mostrar un porcentaje restante aproximado. El consumo se lee de transcripciones locales de Claude; los límites son estimaciones.";
+/* Updates */
+"Updates" = "Actualizaciones";
+"Automatically check for updates" = "Buscar actualizaciones automáticamente";
+"Sparkle checks daily and prompts when a new release is available." = "Sparkle comprueba a diario y avisa cuando hay una nueva versión.";
+"Check now" = "Comprobar ahora";
+"Fetches the latest appcast and installs any available update." = "Descarga el appcast más reciente e instala cualquier actualización disponible.";
+
+/* New shortcut copy */
+"New workstream or add existing project" = "Nuevo workstream o añadir proyecto existente";
+"New project directory" = "Nuevo directorio de proyecto";
+"New Project Directory..." = "Nuevo directorio de proyecto...";
+
+
+/* Split orientation */
+"Toggle Split Orientation" = "Cambiar orientación de la división";
+"Toggle split orientation" = "Cambiar orientación de la división";
+
+"Agents waiting on you" = "Agentes esperándote";

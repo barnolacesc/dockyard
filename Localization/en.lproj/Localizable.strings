@@ -343,3 +343,21 @@
 "Not set" = "Not set";
 "Claude usage plan" = "Claude usage plan";
 "Sets your subscription tier so the sidebar usage meter can show an approximate percentage remaining. Consumption is read from local Claude transcripts; limits are estimates." = "Sets your subscription tier so the sidebar usage meter can show an approximate percentage remaining. Consumption is read from local Claude transcripts; limits are estimates.";
+/* Updates */
+"Updates" = "Updates";
+"Automatically check for updates" = "Automatically check for updates";
+"Sparkle checks daily and prompts when a new release is available." = "Sparkle checks daily and prompts when a new release is available.";
+"Check now" = "Check now";
+"Fetches the latest appcast and installs any available update." = "Fetches the latest appcast and installs any available update.";
+
+/* New shortcut copy */
+"New workstream or add existing project" = "New workstream or add existing project";
+"New project directory" = "New project directory";
+"New Project Directory..." = "New Project Directory...";
+
+
+/* Split orientation */
+"Toggle Split Orientation" = "Toggle Split Orientation";
+"Toggle split orientation" = "Toggle split orientation";
+
+"Agents waiting on you" = "Agents waiting on you";

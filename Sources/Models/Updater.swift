@@ -44,6 +44,16 @@ final class Updater: ObservableObject {
         updater != nil
     }
 
+    /// Background check cadence. When enabled, Sparkle checks on its own schedule
+    /// (default 24h) and prompts the user when an update is available.
+    var automaticallyChecksForUpdates: Bool {
+        get { updater?.automaticallyChecksForUpdates ?? false }
+        set {
+            updater?.automaticallyChecksForUpdates = newValue
+            objectWillChange.send()
+        }
+    }
+
     func checkForUpdates() {
         updater?.checkForUpdates()
     }

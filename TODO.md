@@ -6,7 +6,7 @@
 
 ## Post-release
 
-- [ ] Auto-update mechanism (Sparkle): in-app update for direct DMG users
+- [x] Auto-update mechanism (Sparkle): in-app update for direct DMG users (Settings → Updates, plus existing Check for Updates menu)
 
 ## Bugs
 
@@ -18,15 +18,15 @@
 
 - [x] **Refactor Cmd+N behavior**: Cmd+N goes straight to the directory picker (add existing folder), Cmd+Shift+N creates a new project, the + button offers both via a menu.
 - [x] **Declutter Sidebar**: Removed the Recent/A-Z segmented picker (sort defaults to recent).
-- [x] **Sidebar Density**: Added a status strip (project/workstream/PR counts + Claude usage meter), global Open PRs section, Recent workstreams section, and richer rows (agent-state dot, branch, PR, ±N uncommitted-changes hint).
+- [x] **Sidebar Density**: Added a status strip (project / workstream / open-PR / waiting-agent counts + Claude usage meter), global Open PRs section, Recent workstreams section, and richer rows (agent-state dot, branch, PR, ±N uncommitted-changes hint).
 - [x] Sidebar workstream rows: removed repetitive terminal icons, kept warning icon only for invalid paths
 - [x] Sidebar workstream subtext: show PR title (#number) when available, fall back to branch name only when it differs from the workstream name
 
 ## Future
 
-- [ ] **Embedded Browser Claude Integration**: Implement Chrome extension-like capabilities (WebMCP/CDP) directly into the app's internal WKWebView browser, allowing the agent to analyze and interact with web pages natively inside the IDE.
-- [ ] External Chrome integration: launch with --remote-debugging-port for WebMCP/CDP
-- [ ] Horizontal terminal splits within a tab (ghostty C API supports splits)
+- [~] **Embedded Browser Claude Integration**: Foundation shipped — embedded WKWebView writes URL / title / recent console logs to `~/Library/Caches/dockyard/browser-state/<id>.json`, exposed via `DOCKYARD_BROWSER_STATE_FILE`. Full bidirectional CDP control deferred (WKWebView cannot run Chrome extensions, so this needs its own design).
+- [ ] External Chrome integration: launch with --remote-debugging-port for WebMCP/CDP — dropped, doesn't unlock "Claude in Chrome" extension since that lives inside Chrome and doesn't talk CDP.
+- [x] Horizontal terminal splits within a tab: split panes existed already (Cmd+Shift+T/B/Return). Added Cmd+Shift+D to toggle between horizontal (side-by-side) and vertical (stacked) layouts.
 
 ## Done
 - [x] PR management: create and manage PRs from workstreams via Quick Actions

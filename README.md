@@ -113,8 +113,8 @@ Every workstream terminal has access to:
 
 | Shortcut | Action |
 |---|---|
-| `Cmd+N` | New workstream or project |
-| `Cmd+Shift+N` | New project |
+| `Cmd+N` | New workstream, or add existing project |
+| `Cmd+Shift+N` | New project directory |
 | `Cmd+,` | Settings |
 | `Cmd+/` | Help |
 | `Cmd+Option+S` | Toggle sidebar |
@@ -135,6 +135,7 @@ Every workstream terminal has access to:
 | `Cmd+Shift+T` | Split Terminal pane |
 | `Cmd+B` | New Browser |
 | `Cmd+Shift+B` | Split Browser pane |
+| `Cmd+Shift+D` | Toggle split orientation (horizontal/vertical) |
 | `Cmd+O` | New Editor |
 | `Cmd+S` | Save (Editor) |
 | `Cmd+Shift+S` | Save As (Editor) |

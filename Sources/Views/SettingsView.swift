@@ -27,6 +27,7 @@ struct SettingsView: View {
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
 
     @EnvironmentObject private var appEnv: AppEnvironment
+    @EnvironmentObject private var updater: Updater
     @State private var showingClearConfirm = false
     #if DEBUG
         private static let cliName = "ff-debug"
@@ -203,6 +204,35 @@ struct SettingsView: View {
                 )
                 .onChange(of: launchAtLogin) { _, newValue in
                     LaunchAtLogin.setEnabled(newValue)
+                }
+            }
+
+            // MARK: - Updates
+
+            if updater.isConfigured {
+                Section("Updates") {
+                    SettingToggle(
+                        "Automatically check for updates",
+                        isOn: Binding(
+                            get: { updater.automaticallyChecksForUpdates },
+                            set: { updater.automaticallyChecksForUpdates = $0 }
+                        ),
+                        description: "Sparkle checks daily and prompts when a new release is available."
+                    )
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Check now")
+                            Text("Fetches the latest appcast and installs any available update.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Check for Updates...") {
+                            updater.checkForUpdates()
+                        }
+                        .disabled(!updater.canCheckForUpdates)
+                    }
                 }
             }
 

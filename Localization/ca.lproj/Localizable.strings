@@ -343,3 +343,21 @@
 "Not set" = "Sense definir";
 "Claude usage plan" = "Pla d'ús de Claude";
 "Sets your subscription tier so the sidebar usage meter can show an approximate percentage remaining. Consumption is read from local Claude transcripts; limits are estimates." = "Defineix el teu nivell de subscripció perquè el mesurador d'ús de la barra lateral pugui mostrar un percentatge restant aproximat. El consum es llegeix de transcripcions locals de Claude; els límits són estimacions.";
+/* Updates */
+"Updates" = "Actualitzacions";
+"Automatically check for updates" = "Comprova actualitzacions automàticament";
+"Sparkle checks daily and prompts when a new release is available." = "Sparkle comprova diàriament i avisa quan hi ha una nova versió disponible.";
+"Check now" = "Comprova ara";
+"Fetches the latest appcast and installs any available update." = "Descarrega l'appcast més recent i instal·la qualsevol actualització disponible.";
+
+/* New shortcut copy */
+"New workstream or add existing project" = "Nou workstream o afegir projecte existent";
+"New project directory" = "Nou directori de projecte";
+"New Project Directory..." = "Nou directori de projecte...";
+
+
+/* Split orientation */
+"Toggle Split Orientation" = "Canvia l'orientació de la divisió";
+"Toggle split orientation" = "Canvia l'orientació de la divisió";
+
+"Agents waiting on you" = "Agents esperant-te";
