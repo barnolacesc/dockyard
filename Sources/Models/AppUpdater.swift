@@ -12,7 +12,11 @@ private let logger = Logger(subsystem: "dockyard", category: "appUpdater")
 final class AppUpdater: ObservableObject {
     @Published var commitsAhead: Int = 0
     @Published var isChecking: Bool = false
+    /// Set once per session when an update is first detected, so the UI can surface a
+    /// one-time prompt instead of silently showing a small button.
+    @Published var shouldPromptUpdate: Bool = false
 
+    private var hasPromptedThisSession = false
     private var updateTask: Task<Void, Never>?
 
     init() {
@@ -67,6 +71,10 @@ final class AppUpdater: ObservableObject {
                     await MainActor.run {
                         self.commitsAhead = count
                         self.isChecking = false
+                        if count > 0 && !self.hasPromptedThisSession {
+                            self.hasPromptedThisSession = true
+                            self.shouldPromptUpdate = true
+                        }
                     }
                 } else {
                     await MainActor.run {
@@ -86,8 +94,9 @@ final class AppUpdater: ObservableObject {
         let isDebug = AppCommit.configuration == "Debug"
 
         // Debug builds run from derived data, so `br` kills and relaunches. Release (what the
-        // user runs) uses install-bg so we don't interrupt them.
-        let buildMode = isDebug ? "br" : "install-bg"
+        // user runs) uses `install`, which rebuilds then swaps the bundle in /Applications and
+        // relaunches it automatically — no manual restart needed.
+        let buildMode = isDebug ? "br" : "install"
 
         // Delegate the git reconciliation + build to a hardened, idempotent script so the
         // update survives divergent branches and dirty build artifacts. Fall back to the
