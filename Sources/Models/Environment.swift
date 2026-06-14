@@ -6,6 +6,15 @@ import SwiftUI
 
 private let logger = Logger(subsystem: "dockyard", category: "environment")
 
+/// A GitHub PR plus the project/workstream it belongs to, for the global Open PRs list.
+struct OpenPRItem: Identifiable, Equatable {
+    let pr: GitHubPR
+    let projectName: String
+    let projectDirectory: String
+    let workstreamID: UUID?
+    var id: String { "\(projectDirectory)#\(pr.number)" }
+}
+
 struct WorktreeState {
     var hasUncommittedChanges: Bool = false
     var hasUnpushedCommits: Bool = false
@@ -418,6 +427,31 @@ final class AppEnvironment: ObservableObject {
 
     func githubPR(for directory: String, branch: String) -> GitHubPR? {
         githubBranchPRCache["\(directory)|\(branch)"]
+    }
+
+    /// All open PRs across the given projects, derived from the per-workstream branch PR
+    /// cache. Used by the sidebar status strip (count) and the global Open PRs section.
+    func openPullRequests(projects: [Project]) -> [OpenPRItem] {
+        var items: [OpenPRItem] = []
+        var seen: Set<String> = []
+        for project in projects {
+            for ws in project.workstreams {
+                guard let path = ws.worktreePath,
+                      let branch = branchNameCache[path],
+                      let pr = githubBranchPRCache["\(project.directory)|\(branch)"],
+                      pr.state == "OPEN" else { continue }
+                let key = "\(project.directory)#\(pr.number)"
+                if seen.contains(key) { continue }
+                seen.insert(key)
+                items.append(OpenPRItem(
+                    pr: pr,
+                    projectName: project.name,
+                    projectDirectory: project.directory,
+                    workstreamID: ws.id
+                ))
+            }
+        }
+        return items.sorted { $0.pr.number > $1.pr.number }
     }
 
     func clearBranchPR(for directory: String, branch: String) {

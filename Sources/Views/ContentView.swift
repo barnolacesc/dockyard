@@ -113,6 +113,7 @@ struct ContentView: View {
     @StateObject private var appEnvironment = AppEnvironment()
     @StateObject private var activityTracker = WorkstreamActivityTracker()
     @StateObject private var agentStateStore = AgentStateStore.shared
+    @StateObject private var claudeUsageStore = ClaudeUsageStore.shared
     @State private var saveWork: DispatchWorkItem?
     @State private var workstreamToRemove: UUID?
     @State private var workstreamToPurge: UUID?
@@ -380,6 +381,7 @@ struct ContentView: View {
         .environmentObject(appEnvironment)
         .environmentObject(activityTracker)
         .environmentObject(agentStateStore)
+        .environmentObject(claudeUsageStore)
         .onAppear {
             appEnvironment.refresh()
             appEnvironment.refreshAllRepoInfo(projects: projects)
@@ -483,6 +485,7 @@ struct ContentView: View {
             appEnvironment.fetchOrigin(projects: projects)
             syncWorkstreamNamesFromBranches()
             headWatcher.sync(paths: currentWorktreePaths())
+            claudeUsageStore.refresh()
         }
         .onReceive(NotificationCenter.default.publisher(for: .worktreeHeadChanged)) { notification in
             guard let path = notification.object as? String else { return }

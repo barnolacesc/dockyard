@@ -11,6 +11,7 @@ struct SettingsView: View {
     @AppStorage("dockyard.allowOutsideWorktree") private var allowOutsideWorktree: Bool = false
     @AppStorage("dockyard.agentTeams") private var agentTeams: Bool = false
     @AppStorage("dockyard.autoRenameBranch") private var autoRenameBranch: Bool = true
+    @AppStorage("dockyard.claudePlanTier") private var claudePlanTier: String = ClaudePlanTier.none.rawValue
     @AppStorage("dockyard.defaultTerminal") private var defaultTerminal: String = ""
     @AppStorage("dockyard.defaultBrowser") private var defaultBrowser: String = ""
     @AppStorage("dockyard.branchPrefix") private var branchPrefix: String = "dy"
@@ -253,6 +254,15 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.orange)
                 }
+
+                Picker("Claude usage plan", selection: $claudePlanTier) {
+                    ForEach(ClaudePlanTier.allCases) { tier in
+                        Text(tier.displayName).tag(tier.rawValue)
+                    }
+                }
+                Text("Sets your subscription tier so the sidebar usage meter can show an approximate percentage remaining. Consumption is read from local Claude transcripts; limits are estimates.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
                 SettingToggle(
                     "Tmux Mode",

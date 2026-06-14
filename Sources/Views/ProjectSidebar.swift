@@ -198,8 +198,20 @@ struct ProjectSidebar: View {
         }
     }
 
+    private var workstreamCount: Int {
+        projects.reduce(0) { $0 + $1.workstreams.count }
+    }
+
     private var bottomBar: some View {
         VStack(spacing: 4) {
+            SidebarStatusStrip(
+                projectCount: projects.count,
+                workstreamCount: workstreamCount,
+                openPRCount: appEnv.openPullRequests(projects: projects).count
+            )
+            Divider()
+                .padding(.horizontal, 8)
+
             HStack(alignment: .center, spacing: 6) {
                 Text(AppConstants.displayVersion)
                     .font(.system(size: 10, design: .monospaced))
