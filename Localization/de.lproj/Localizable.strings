@@ -336,3 +336,6 @@
 "Weekly" = "Wöchentlich";
 "rolling 7 days" = "rollierende 7 Tage";
 "Estimated from local Claude Code transcripts (CLI only, not your full account). Percentages are approximate." = "Geschätzt aus lokalen Claude-Code-Transkripten (nur CLI, nicht dein gesamtes Konto). Prozentangaben sind ungefähr.";
+
+"resets %@" = "Reset %@";
+"Real usage from Claude Code's /usage. Click to refresh." = "Echte Nutzung aus /usage von Claude Code. Zum Aktualisieren klicken.";

@@ -19,7 +19,7 @@ struct SidebarStatusStrip: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if usageStore.snapshot.hasData {
+            if usageStore.hasAnyData {
                 usageMeter
             }
             countsLine
@@ -44,20 +44,8 @@ struct SidebarStatusStrip: View {
                 }
                 .foregroundStyle(.secondary)
 
-                UsageMeterRow(
-                    label: NSLocalizedString("Current", comment: "Claude 5-hour usage window"),
-                    tint: .orange,
-                    tokens: usageStore.snapshot.fiveHour.tokens,
-                    budget: planTier.fiveHourTokenBudget,
-                    subtitle: currentSubtitle(now: context.date)
-                )
-                UsageMeterRow(
-                    label: NSLocalizedString("Weekly", comment: "Claude 7-day usage window"),
-                    tint: Self.weeklyTint,
-                    tokens: usageStore.snapshot.sevenDay.tokens,
-                    budget: planTier.weeklyTokenBudget,
-                    subtitle: NSLocalizedString("rolling 7 days", comment: "Claude weekly usage window")
-                )
+                currentRow(now: context.date)
+                weeklyRow
             }
             .contentShape(Rectangle())
             .onTapGesture { usageStore.refresh(force: true) }
@@ -68,15 +56,76 @@ struct SidebarStatusStrip: View {
         }
     }
 
-    private func currentSubtitle(now: Date) -> String? {
-        guard let resetAt = usageStore.snapshot.fiveHour.resetAt, resetAt > now else { return nil }
+    /// Current (5-hour) window. Prefers the real `/usage` figure, falls back to the estimate.
+    private func currentRow(now: Date) -> UsageMeterRow {
+        let label = NSLocalizedString("Current", comment: "Claude 5-hour usage window")
+        if let session = usageStore.report?.session {
+            return UsageMeterRow(
+                headline: "\(session.percentUsed)%",
+                label: label,
+                tint: .orange,
+                fraction: Double(session.percentUsed) / 100,
+                subtitle: session.resetText.map(Self.resetsString)
+            )
+        }
+        let window = usageStore.snapshot.fiveHour
+        return UsageMeterRow(
+            headline: estimateHeadline(tokens: window.tokens, budget: planTier.fiveHourTokenBudget),
+            label: label,
+            tint: .orange,
+            fraction: fraction(tokens: window.tokens, budget: planTier.fiveHourTokenBudget),
+            subtitle: estimateResetSubtitle(window.resetAt, now: now)
+        )
+    }
+
+    /// Weekly (7-day) window. Prefers the real `/usage` figure, falls back to the estimate.
+    private var weeklyRow: UsageMeterRow {
+        let label = NSLocalizedString("Weekly", comment: "Claude 7-day usage window")
+        if let week = usageStore.report?.week {
+            return UsageMeterRow(
+                headline: "\(week.percentUsed)%",
+                label: label,
+                tint: Self.weeklyTint,
+                fraction: Double(week.percentUsed) / 100,
+                subtitle: week.resetText.map(Self.resetsString)
+            )
+        }
+        let window = usageStore.snapshot.sevenDay
+        return UsageMeterRow(
+            headline: estimateHeadline(tokens: window.tokens, budget: planTier.weeklyTokenBudget),
+            label: label,
+            tint: Self.weeklyTint,
+            fraction: fraction(tokens: window.tokens, budget: planTier.weeklyTokenBudget),
+            subtitle: NSLocalizedString("rolling 7 days", comment: "Claude weekly usage window")
+        )
+    }
+
+    private func fraction(tokens: Int, budget: Int?) -> Double {
+        guard let budget, budget > 0 else { return 0 }
+        return min(1, Double(tokens) / Double(budget))
+    }
+
+    private func estimateHeadline(tokens: Int, budget: Int?) -> String {
+        guard let budget, budget > 0 else { return Self.formatTokens(tokens) }
+        return "\(Int((min(1, Double(tokens) / Double(budget)) * 100).rounded()))%"
+    }
+
+    private func estimateResetSubtitle(_ resetAt: Date?, now: Date) -> String? {
+        guard let resetAt, resetAt > now else { return nil }
         return String(
             format: NSLocalizedString("resets in %@", comment: "usage window reset countdown"),
             Self.formatDuration(resetAt.timeIntervalSince(now))
         )
     }
 
+    private static func resetsString(_ text: String) -> String {
+        String(format: NSLocalizedString("resets %@", comment: "usage window reset time"), text)
+    }
+
     private var usageTooltip: String {
+        if usageStore.report != nil {
+            return NSLocalizedString("Real usage from Claude Code's /usage. Click to refresh.", comment: "")
+        }
         let snap = usageStore.snapshot
         let five = String(format: NSLocalizedString("Last 5 hours: %@ tokens", comment: ""), Self.formatTokens(snap.fiveHour.tokens))
         let week = String(format: NSLocalizedString("Last 7 days: %@ tokens", comment: ""), Self.formatTokens(snap.sevenDay.tokens))
@@ -129,25 +178,16 @@ struct SidebarStatusStrip: View {
     }
 }
 
-/// One row of the usage meter: a big percent (or token count when no budget is configured),
-/// a window label pill, a filling colored bar, and a small subtitle.
+/// One row of the usage meter: a big headline (% or token count), a window label pill, a
+/// filling colored bar, and a small subtitle.
 private struct UsageMeterRow: View {
+    let headline: String
     let label: String
     let tint: Color
-    let tokens: Int
-    let budget: Int?
+    let fraction: Double
     let subtitle: String?
 
-    private var fraction: Double {
-        guard let budget, budget > 0 else { return 0 }
-        return min(1, Double(tokens) / Double(budget))
-    }
-
-    private var headline: String {
-        budget != nil ? "\(Int((fraction * 100).rounded()))%" : SidebarStatusStrip.formatTokens(tokens)
-    }
-
-    /// Shift toward red as the window approaches its (approximate) limit.
+    /// Shift toward red as the window approaches its limit.
     private var barTint: Color {
         fraction >= 0.9 ? .red : tint
     }

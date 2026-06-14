@@ -1,5 +1,5 @@
-// ABOUTME: Observable store that periodically recomputes Claude usage from local transcripts
-// ABOUTME: and publishes a snapshot for the sidebar usage meter.
+// ABOUTME: Observable store for Claude usage. Prefers the real `/usage` report (via
+// ABOUTME: ClaudeUsageProbe) and keeps the local-transcript estimate as a fallback.
 
 import Foundation
 
@@ -7,33 +7,50 @@ import Foundation
 final class ClaudeUsageStore: ObservableObject {
     static let shared = ClaudeUsageStore()
 
+    /// Local-transcript estimate (instant, free, Claude Code CLI only). Fallback.
     @Published private(set) var snapshot = ClaudeUsageSnapshot()
+    /// Authoritative figures from `claude -p /usage` when available.
+    @Published private(set) var report: ClaudeUsageReport?
 
-    /// Parsing reads every recent transcript, so throttle refreshes even when callers (e.g.
-    /// the 15s poll) ask more often.
-    private static let minRefreshInterval: TimeInterval = 60
-    private var lastRefresh: Date?
+    /// The cheap local estimate may refresh often; the probe spawns a `claude` process so it
+    /// runs far less frequently (but always on an explicit, forced refresh — e.g. a click).
+    private static let minEstimateInterval: TimeInterval = 60
+    private static let minProbeInterval: TimeInterval = 180
+    private var lastEstimate: Date?
+    private var lastProbe: Date?
     private var isRefreshing = false
 
     init() {
-        refresh()
+        refresh(force: true)
     }
 
-    /// Recompute the snapshot off the main actor. No-op if refreshed within the throttle
-    /// interval, unless `force` is set.
+    /// Recompute usage off the main actor. The local estimate is throttled to
+    /// `minEstimateInterval`; the `/usage` probe to `minProbeInterval`. `force` (e.g. a user
+    /// click) bypasses both throttles.
     func refresh(force: Bool = false) {
-        if !force, let last = lastRefresh, Date().timeIntervalSince(last) < Self.minRefreshInterval {
-            return
-        }
-        guard !isRefreshing else { return }
+        let now = Date()
+        let doEstimate = force || lastEstimate == nil || now.timeIntervalSince(lastEstimate!) >= Self.minEstimateInterval
+        let doProbe = force || lastProbe == nil || now.timeIntervalSince(lastProbe!) >= Self.minProbeInterval
+        guard doEstimate || doProbe, !isRefreshing else { return }
+
         isRefreshing = true
-        lastRefresh = Date()
+        if doEstimate { lastEstimate = now }
+        if doProbe { lastProbe = now }
+
         Task.detached(priority: .utility) {
-            let snapshot = ClaudeUsageParser.compute()
+            let snapshot = doEstimate ? ClaudeUsageParser.compute() : nil
+            let report = doProbe ? ClaudeUsageProbe.fetch() : nil
             await MainActor.run {
-                self.snapshot = snapshot
+                if let snapshot { self.snapshot = snapshot }
+                // Keep the last good report if a probe transiently fails.
+                if let report { self.report = report }
                 self.isRefreshing = false
             }
         }
+    }
+
+    /// Whether there's anything to show (real report or local estimate).
+    var hasAnyData: Bool {
+        report != nil || snapshot.hasData
     }
 }

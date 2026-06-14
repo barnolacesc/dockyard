@@ -368,3 +368,6 @@
 "Weekly" = "Weekly";
 "rolling 7 days" = "rolling 7 days";
 "Estimated from local Claude Code transcripts (CLI only, not your full account). Percentages are approximate." = "Estimated from local Claude Code transcripts (CLI only, not your full account). Percentages are approximate.";
+
+"resets %@" = "resets %@";
+"Real usage from Claude Code's /usage. Click to refresh." = "Real usage from Claude Code's /usage. Click to refresh.";

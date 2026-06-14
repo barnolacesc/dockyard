@@ -368,3 +368,6 @@
 "Weekly" = "Veckovis";
 "rolling 7 days" = "rullande 7 dagar";
 "Estimated from local Claude Code transcripts (CLI only, not your full account). Percentages are approximate." = "Uppskattat från lokala Claude Code-transkript (endast CLI, inte hela ditt konto). Procentsatserna är ungefärliga.";
+
+"resets %@" = "återställs %@";
+"Real usage from Claude Code's /usage. Click to refresh." = "Verklig användning från Claude Codes /usage. Klicka för att uppdatera.";
