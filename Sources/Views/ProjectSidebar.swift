@@ -53,6 +53,8 @@ struct ProjectSidebar: View {
     @State private var showWorktreeError = false
     @State private var showNotGitRepoError = false
     @AppStorage("dockyard.sortOrder") private var sortOrder: ProjectSortOrder = .recent
+    @AppStorage("dockyard.showOpenPRs") private var showOpenPRs: Bool = true
+    @AppStorage("dockyard.showRecent") private var showRecent: Bool = true
 
     private var currentVersionLooksLikeRelease: Bool {
         AppConstants.version.range(of: "^[0-9]+\\.[0-9]+\\.[0-9]+$", options: .regularExpression) != nil
@@ -200,6 +202,73 @@ struct ProjectSidebar: View {
 
     private var workstreamCount: Int {
         projects.reduce(0) { $0 + $1.workstreams.count }
+    }
+
+    /// Collapsible section listing every open PR across all projects.
+    @ViewBuilder
+    private func globalPRsSection() -> some View {
+        let prs = appEnv.openPullRequests(projects: projects)
+        if !prs.isEmpty {
+            SidebarSectionHeader(
+                title: NSLocalizedString("Open PRs", comment: "Sidebar global pull requests section"),
+                systemImage: "arrow.triangle.pull",
+                count: prs.count,
+                isExpanded: showOpenPRs,
+                onToggle: { withAnimation(.easeInOut(duration: 0.15)) { showOpenPRs.toggle() } }
+            )
+            if showOpenPRs {
+                ForEach(prs) { item in
+                    GlobalPRRow(
+                        item: item,
+                        onSelect: {
+                            if let wsID = item.workstreamID { selection = .workstream(wsID) }
+                        },
+                        onOpenURL: {
+                            if let url = URL(string: item.pr.url) { NSWorkspace.shared.open(url) }
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    /// Collapsible "Recent" section with the most recently touched workstreams for fast
+    /// switching, independent of project grouping.
+    @ViewBuilder
+    private func recentSection() -> some View {
+        let recents = recentWorkstreams(limit: 5)
+        if recents.count > 1 {
+            SidebarSectionHeader(
+                title: NSLocalizedString("Recent", comment: "Sidebar recent workstreams section"),
+                systemImage: "clock",
+                count: nil,
+                isExpanded: showRecent,
+                onToggle: { withAnimation(.easeInOut(duration: 0.15)) { showRecent.toggle() } }
+            )
+            if showRecent {
+                ForEach(recents, id: \.workstream.id) { entry in
+                    RecentRow(
+                        name: entry.workstream.name,
+                        projectName: entry.project.name,
+                        onSelect: { selection = .workstream(entry.workstream.id) }
+                    )
+                }
+            }
+        }
+    }
+
+    /// Workstreams (with a usable worktree path) across all projects, most recently
+    /// accessed first, capped at `limit`.
+    private func recentWorkstreams(limit: Int) -> [(project: Project, workstream: Workstream)] {
+        var all: [(project: Project, workstream: Workstream)] = []
+        for project in projects {
+            for ws in project.workstreams where ws.worktreePath != nil {
+                all.append((project: project, workstream: ws))
+            }
+        }
+        return Array(
+            all.sorted { $0.workstream.lastAccessedAt > $1.workstream.lastAccessedAt }.prefix(limit)
+        )
     }
 
     private var bottomBar: some View {
@@ -442,6 +511,8 @@ struct ProjectSidebar: View {
                 ScrollViewReader { scrollProxy in
                     List(selection: $selection) {
                         projectRows()
+                        globalPRsSection()
+                        recentSection()
                     }
                     .listStyle(.sidebar)
                     .onChange(of: selection) { _, sel in
@@ -1063,6 +1134,101 @@ struct ActivityIndicator: View {
             // state == nil (unknown) draws nothing
         }
         .frame(width: 12)
+    }
+}
+
+/// Collapsible header row for an auxiliary sidebar section (Open PRs, Recent).
+private struct SidebarSectionHeader: View {
+    let title: String
+    let systemImage: String
+    var count: Int?
+    let isExpanded: Bool
+    let onToggle: () -> Void
+
+    var body: some View {
+        Button(action: onToggle) {
+            HStack(spacing: 6) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                Image(systemName: systemImage)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                Text(title)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                if let count {
+                    Text("\(count)")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                }
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowSeparator(.hidden)
+    }
+}
+
+/// A single global Open-PRs row: click to jump to its workstream, GitHub icon to open it.
+private struct GlobalPRRow: View {
+    let item: OpenPRItem
+    let onSelect: () -> Void
+    let onOpenURL: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text("#\(item.pr.number)")
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(item.pr.title)
+                    .font(.system(size: 11))
+                    .lineLimit(1)
+                Text(item.projectName)
+                    .font(.system(size: 9))
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+            }
+            Spacer()
+            SidebarIconButton(icon: "arrow.up.right.square", action: onOpenURL)
+                .opacity(isHovering ? 1 : 0)
+        }
+        .padding(.leading, 16)
+        .contentShape(Rectangle())
+        .onHover { isHovering = $0 }
+        .onTapGesture(perform: onSelect)
+        .help(item.pr.title)
+    }
+}
+
+/// A single "Recent" workstream row: click to select it.
+private struct RecentRow: View {
+    let name: String
+    let projectName: String
+    let onSelect: () -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 9))
+                .foregroundStyle(.tertiary)
+            Text(name)
+                .font(.system(size: 11))
+                .lineLimit(1)
+            Text(projectName)
+                .font(.system(size: 9))
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
+            Spacer()
+        }
+        .padding(.leading, 16)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onSelect)
     }
 }
 
