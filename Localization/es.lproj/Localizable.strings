@@ -330,3 +330,16 @@
 "Run in terminal" = "Ejecutar en terminal";
 
 "View log" = "Ver registro";
+
+/* Daily-driver polish: Cmd+N menu, usage meter, plan tier */
+"Add Existing Directory…" = "Añadir directorio existente…";
+"Create New Project…" = "Crear proyecto nuevo…";
+"5h: ~%d%% left" = "5h: ~%d%% restante";
+"5h: %@" = "5h: %@";
+"resets in %@" = "se reinicia en %@";
+"Last 5 hours: %@ tokens" = "Últimas 5 horas: %@ tokens";
+"Last 7 days: %@ tokens" = "Últimos 7 días: %@ tokens";
+"Estimated from local Claude transcripts. Percentages are approximate." = "Estimado a partir de transcripciones locales de Claude. Los porcentajes son aproximados.";
+"Not set" = "Sin definir";
+"Claude usage plan" = "Plan de uso de Claude";
+"Sets your subscription tier so the sidebar usage meter can show an approximate percentage remaining. Consumption is read from local Claude transcripts; limits are estimates." = "Define tu nivel de suscripción para que el medidor de uso de la barra lateral pueda mostrar un porcentaje restante aproximado. El consumo se lee de transcripciones locales de Claude; los límites son estimaciones.";
