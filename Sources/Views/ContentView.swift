@@ -13,6 +13,7 @@ extension Notification.Name {
     static let workstreamCreationFailed = Notification.Name("dockyard.workstreamCreationFailed")
     static let projectCreated = Notification.Name("dockyard.projectCreated")
     static let purgeWorkstream = Notification.Name("dockyard.purgeWorkstream")
+    static let worktreeHeadChanged = Notification.Name("dockyard.worktreeHeadChanged")
 }
 
 final class ProjectList: ObservableObject {
@@ -119,6 +120,12 @@ struct ContentView: View {
     @State private var removedProjectNames: [String] = []
     @AppStorage("dockyard.sortOrder") private var sortOrder: ProjectSortOrder = .recent
     @State private var keyMonitorInstalled = false
+
+    /// Fires when a worktree's git HEAD changes (e.g. `git branch -m`) so the sidebar can
+    /// resync the workstream name instantly instead of waiting for the 15s poll.
+    @State private var headWatcher = WorktreeHeadWatcher { path in
+        NotificationCenter.default.post(name: .worktreeHeadChanged, object: path)
+    }
 
     private static func initialSelection() -> SidebarSelection? {
         let projects = ProjectStore.load()
@@ -378,6 +385,7 @@ struct ContentView: View {
             appEnvironment.refreshAllRepoInfo(projects: projects)
             appEnvironment.refreshPathValidity(projects: projects)
             appEnvironment.fetchOrigin(projects: projects)
+            headWatcher.sync(paths: currentWorktreePaths())
             // Apply saved appearance
             switch UserDefaults.standard.string(forKey: "dockyard.appearance") ?? "system" {
             case "light": NSApp.appearance = NSAppearance(named: .aqua)
@@ -435,6 +443,7 @@ struct ContentView: View {
                     projects[pi].workstreams[wi].worktreePath = worktreePath
                     ProjectStore.save(projects)
                     appEnvironment.refreshPathValidity(projects: projects)
+                    headWatcher.sync(paths: currentWorktreePaths())
                     logger.warning("[Dockyard] workstreamWorktreeReady: updated \(workstreamID, privacy: .public) with path \(worktreePath, privacy: .public)")
                     Telemetry.shared.track("workstream_created", url: "/workstream/create", title: "Workstream Created")
                     return
@@ -473,7 +482,26 @@ struct ContentView: View {
             appEnvironment.refreshAllBranchPRs(projects: projects)
             appEnvironment.fetchOrigin(projects: projects)
             syncWorkstreamNamesFromBranches()
+            headWatcher.sync(paths: currentWorktreePaths())
         }
+        .onReceive(NotificationCenter.default.publisher(for: .worktreeHeadChanged)) { notification in
+            guard let path = notification.object as? String else { return }
+            Task { @MainActor in
+                await appEnvironment.refreshBranchAndDescription(for: path)
+                syncWorkstreamNamesFromBranches()
+            }
+        }
+    }
+
+    /// All worktree paths currently known across projects, for the HEAD watcher.
+    private func currentWorktreePaths() -> Set<String> {
+        var paths: Set<String> = []
+        for project in projects {
+            for ws in project.workstreams {
+                if let path = ws.worktreePath { paths.insert(path) }
+            }
+        }
+        return paths
     }
 
     private func workstreamSubtitle(project: Project, workstream: Workstream) -> String {
