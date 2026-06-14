@@ -136,7 +136,7 @@ struct SidebarStatusStrip: View {
     // MARK: - Counts
 
     private var countsLine: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 12) {
             countItem(systemImage: "folder", count: projectCount)
             countItem(systemImage: "rectangle.stack", count: workstreamCount)
             if openPRCount > 0 {
@@ -148,12 +148,12 @@ struct SidebarStatusStrip: View {
                     .help(NSLocalizedString("Agents waiting on you", comment: ""))
             }
         }
-        .font(.system(size: 9))
+        .font(.system(size: 12))
         .foregroundStyle(.tertiary)
     }
 
     private func countItem(systemImage: String, count: Int) -> some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 3) {
             Image(systemName: systemImage)
             Text("\(count)")
         }
@@ -208,7 +208,7 @@ private struct UsageMeterRow: View {
             UsageBar(fraction: fraction, tint: barTint)
             if let subtitle {
                 Text(subtitle)
-                    .font(.system(size: 9))
+                    .font(.system(size: 11))
                     .foregroundStyle(.tertiary)
             }
         }
