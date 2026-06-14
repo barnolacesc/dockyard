@@ -25,9 +25,6 @@ struct HelpView: View {
                     Text("Version \(AppConstants.displayVersion)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    (Text("Made with ") + Text("\u{2764}\u{FE0F}") + Text(" in Poblenou, Barcelona"))
-                        .font(.system(size: 10))
-                        .foregroundStyle(.tertiary)
                 }
                 .padding(.top, 24)
                 .padding(.bottom, -4)
@@ -36,7 +33,7 @@ struct HelpView: View {
                     HStack(spacing: 0) {
                         Text("by ")
                             .foregroundStyle(.tertiary)
-                        Link("David Poblador i Garcia.", destination: URL(string: "https://davidpoblador.com/")!)
+                        Link("Francesc Barnola", destination: URL(string: "https://github.com/barnolacesc")!)
                             .foregroundStyle(.secondary)
                     }
                     HStack(spacing: 0) {
@@ -109,8 +106,6 @@ struct HelpView: View {
                         ShortcutRow(keys: "1-9", description: "Switch tab")
                         ShortcutRow(keys: "[", shift: true, description: "Previous tab")
                         ShortcutRow(keys: "]", shift: true, description: "Next tab")
-                        ShortcutRow(keys: "R", description: "Reload browser")
-                        ShortcutRow(keys: "R", shift: true, description: "Hard reload browser")
                     } header: {
                         ShortcutSectionHeader(title: "Workstream", description: "When a workstream is active")
                     }
@@ -140,18 +135,9 @@ struct HelpView: View {
 
                 // Credits
                 VStack(spacing: 4) {
-                    Text("Built by David Poblador i Garcia")
+                    Link("github.com/barnolacesc/dockyard", destination: URL(string: "https://github.com/barnolacesc/dockyard")!)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    HStack(spacing: 4) {
-                        Text("with the support of")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                        Link("David Poblador i Garcia", destination: URL(string: "https://barnolacesc.com")!)
-                            .font(.caption)
-                    }
-                    Link("davidpoblador.com", destination: URL(string: "https://davidpoblador.com")!)
-                        .font(.caption)
                 }
                 .padding(.bottom, 32)
             }

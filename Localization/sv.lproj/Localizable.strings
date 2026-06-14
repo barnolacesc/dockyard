@@ -371,3 +371,8 @@
 
 "resets %@" = "återställs %@";
 "Real usage from Claude Code's /usage. Click to refresh." = "Verklig användning från Claude Codes /usage. Klicka för att uppdatera.";
+
+"Update Available" = "Uppdatering tillgänglig";
+"Update & Relaunch" = "Uppdatera och starta om";
+"Later" = "Senare";
+"A new version of Dockyard is ready. It will rebuild and relaunch automatically." = "En ny version av Dockyard är klar. Den byggs om och startas om automatiskt.";

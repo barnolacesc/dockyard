@@ -399,6 +399,12 @@ struct ProjectSidebar: View {
 
     var body: some View {
         sidebar
+            .alert("Update Available", isPresented: $appUpdater.shouldPromptUpdate) {
+                Button("Update & Relaunch") { appUpdater.applyUpdate() }
+                Button("Later", role: .cancel) {}
+            } message: {
+                Text("A new version of Dockyard is ready. It will rebuild and relaunch automatically.")
+            }
             .alert(
                 "Remove Project",
                 isPresented: Binding(

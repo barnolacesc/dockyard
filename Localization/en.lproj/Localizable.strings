@@ -371,3 +371,8 @@
 
 "resets %@" = "resets %@";
 "Real usage from Claude Code's /usage. Click to refresh." = "Real usage from Claude Code's /usage. Click to refresh.";
+
+"Update Available" = "Update Available";
+"Update & Relaunch" = "Update & Relaunch";
+"Later" = "Later";
+"A new version of Dockyard is ready. It will rebuild and relaunch automatically." = "A new version of Dockyard is ready. It will rebuild and relaunch automatically.";

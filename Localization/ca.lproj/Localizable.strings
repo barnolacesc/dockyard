@@ -371,3 +371,8 @@
 
 "resets %@" = "es reinicia %@";
 "Real usage from Claude Code's /usage. Click to refresh." = "Ús real des de /usage de Claude Code. Fes clic per actualitzar.";
+
+"Update Available" = "Actualització disponible";
+"Update & Relaunch" = "Actualitza i reinicia";
+"Later" = "Més tard";
+"A new version of Dockyard is ready. It will rebuild and relaunch automatically." = "Hi ha una versió nova de Dockyard a punt. Es reconstruirà i es reiniciarà automàticament.";

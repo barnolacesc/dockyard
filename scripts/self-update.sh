@@ -9,7 +9,10 @@
 #   - Refuses to touch real uncommitted changes, and aborts cleanly on a rebase
 #     conflict instead of leaving a half-finished state.
 #
-# Usage: scripts/self-update.sh [br|install-bg]   (run from the repo root)
+# Usage: scripts/self-update.sh [br|install|install-bg]   (run from the repo root)
+#   br          rebuild and relaunch the debug build (dev)
+#   install     rebuild, swap the /Applications bundle, and relaunch it (release)
+#   install-bg  rebuild and swap the bundle without relaunching
 set -eu
 
 BUILD_MODE="${1:-br}"
@@ -58,4 +61,9 @@ fi
 
 echo "Building Dockyard…"
 ./scripts/dev.sh "$BUILD_MODE"
-echo "Update complete. Restart the app when ready."
+
+if [ "$BUILD_MODE" = "install-bg" ]; then
+    echo "Update complete. Restart Dockyard when ready."
+else
+    echo "Update complete. Dockyard has relaunched."
+fi

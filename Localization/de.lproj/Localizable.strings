@@ -339,3 +339,8 @@
 
 "resets %@" = "Reset %@";
 "Real usage from Claude Code's /usage. Click to refresh." = "Echte Nutzung aus /usage von Claude Code. Zum Aktualisieren klicken.";
+
+"Update Available" = "Update verfügbar";
+"Update & Relaunch" = "Aktualisieren und neu starten";
+"Later" = "Später";
+"A new version of Dockyard is ready. It will rebuild and relaunch automatically." = "Eine neue Version von Dockyard ist bereit. Sie wird automatisch neu erstellt und neu gestartet.";
