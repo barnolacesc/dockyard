@@ -59,6 +59,11 @@ struct SidebarStatusStrip: View {
                     subtitle: NSLocalizedString("rolling 7 days", comment: "Claude weekly usage window")
                 )
             }
+            .contentShape(Rectangle())
+            .onTapGesture { usageStore.refresh(force: true) }
+            .onHover { hovering in
+                if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+            }
             .help(usageTooltip)
         }
     }
