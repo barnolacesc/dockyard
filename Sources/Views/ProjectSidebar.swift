@@ -35,7 +35,6 @@ struct ProjectSidebar: View {
 
     @StateObject private var appUpdater = AppUpdater()
 
-    @State private var showingAddProjectChoice = false
     @State private var showingNewProjectName = false
     @State private var newProjectName = ""
     @State private var newProjectError = ""
@@ -53,6 +52,8 @@ struct ProjectSidebar: View {
     @State private var cachedWorkstreamIndex: [UUID: (Int, Int)] = [:]
     @State private var showWorktreeError = false
     @State private var showNotGitRepoError = false
+    @AppStorage("dockyard.showOpenPRs") private var showOpenPRs: Bool = true
+    @AppStorage("dockyard.showRecent") private var showRecent: Bool = true
 
     private var currentVersionLooksLikeRelease: Bool {
         AppConstants.version.range(of: "^[0-9]+\\.[0-9]+\\.[0-9]+$", options: .regularExpression) != nil
@@ -168,6 +169,7 @@ struct ProjectSidebar: View {
                             prTitle: pr?.title,
                             prNumber: pr?.number,
                             prState: pr?.state,
+                            uncommittedCount: workstream.worktreePath.map { appEnv.worktreeState(for: $0).uncommittedCount } ?? 0,
                             onRemove: { workstreamToRemove = workstream.id },
                             onPurge: { confirmPurge(workstream) },
                             onRename: {
@@ -192,54 +194,105 @@ struct ProjectSidebar: View {
         }
     }
 
-    private var summaryStats: (workstreams: Int, openPRs: Int, waiting: Int) {
-        var openPRs = 0
+    /// Number of agents currently waiting on the user, for the status strip.
+    private var waitingAgentCount: Int {
         var waiting = 0
         for project in projects {
-            for ws in project.workstreams {
-                if let branch = appEnv.branchName(for: ws.worktreePath),
-                   let pr = appEnv.githubPR(for: project.directory, branch: branch),
-                   pr.state.uppercased() == "OPEN"
-                {
-                    openPRs += 1
-                }
-                if agentStateStore.agentState(for: ws.id) == .waiting {
-                    waiting += 1
-                }
+            for ws in project.workstreams where agentStateStore.agentState(for: ws.id) == .waiting {
+                waiting += 1
             }
         }
-        return (totalWorkstreamCount(), openPRs, waiting)
+        return waiting
     }
 
-    private var summaryBar: some View {
-        let stats = summaryStats
-        return HStack(spacing: 10) {
-            Label("\(stats.workstreams)", systemImage: "rectangle.stack")
-                .help("\(stats.workstreams) workstream\(stats.workstreams == 1 ? "" : "s")")
-            if stats.openPRs > 0 {
-                Label("\(stats.openPRs)", systemImage: "arrow.triangle.pull")
-                    .help("\(stats.openPRs) open PR\(stats.openPRs == 1 ? "" : "s")")
+    /// Collapsible section listing every open PR across all projects.
+    @ViewBuilder
+    private func globalPRsSection() -> some View {
+        let prs = appEnv.openPullRequests(projects: projects)
+        if !prs.isEmpty {
+            SidebarSectionHeader(
+                title: NSLocalizedString("Open PRs", comment: "Sidebar global pull requests section"),
+                systemImage: "arrow.triangle.pull",
+                count: prs.count,
+                isExpanded: showOpenPRs,
+                onToggle: { withAnimation(.easeInOut(duration: 0.15)) { showOpenPRs.toggle() } }
+            )
+            if showOpenPRs {
+                ForEach(prs) { item in
+                    GlobalPRRow(
+                        item: item,
+                        onSelect: {
+                            if let wsID = item.workstreamID { selection = .workstream(wsID) }
+                        },
+                        onOpenURL: {
+                            if let url = URL(string: item.pr.url) { NSWorkspace.shared.open(url) }
+                        }
+                    )
+                }
             }
-            if stats.waiting > 0 {
-                Label("\(stats.waiting)", systemImage: "bell.fill")
-                    .foregroundStyle(Color.accentColor)
-                    .help("\(stats.waiting) agent\(stats.waiting == 1 ? "" : "s") waiting")
-            }
-            Spacer()
         }
-        .font(.system(size: 10))
-        .foregroundStyle(.secondary)
-        .labelStyle(.titleAndIcon)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+    }
+
+    /// Collapsible "Recent" section with the most recently touched workstreams for fast
+    /// switching, independent of project grouping. Rendered outside the scrolling List and
+    /// pinned above the bottom bar, so Recent stays put and is visually separated from the
+    /// live project tree.
+    @ViewBuilder
+    private var pinnedRecentSection: some View {
+        let recents = recentWorkstreams(limit: 4)
+        if recents.count > 1 {
+            VStack(spacing: 0) {
+                Divider()
+                SidebarSectionHeader(
+                    title: NSLocalizedString("Recent", comment: "Sidebar recent workstreams section"),
+                    systemImage: "clock",
+                    count: nil,
+                    isExpanded: showRecent,
+                    onToggle: { withAnimation(.easeInOut(duration: 0.15)) { showRecent.toggle() } }
+                )
+                .padding(.horizontal, 8)
+                .padding(.top, 4)
+                if showRecent {
+                    ForEach(recents, id: \.workstream.id) { entry in
+                        RecentRow(
+                            name: entry.workstream.name,
+                            projectName: entry.project.name,
+                            onSelect: { selection = .workstream(entry.workstream.id) }
+                        )
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                    }
+                }
+            }
+            .padding(.bottom, 2)
+        }
+    }
+
+    /// Workstreams (with a usable worktree path) across all projects, most recently
+    /// accessed first, capped at `limit`.
+    private func recentWorkstreams(limit: Int) -> [(project: Project, workstream: Workstream)] {
+        var all: [(project: Project, workstream: Workstream)] = []
+        for project in projects {
+            for ws in project.workstreams where ws.worktreePath != nil {
+                all.append((project: project, workstream: ws))
+            }
+        }
+        return Array(
+            all.sorted { $0.workstream.lastAccessedAt > $1.workstream.lastAccessedAt }.prefix(limit)
+        )
     }
 
     private var bottomBar: some View {
         VStack(spacing: 4) {
             if !projects.isEmpty {
-                summaryBar
+                SidebarStatusStrip(
+                    projectCount: projects.count,
+                    workstreamCount: totalWorkstreamCount(),
+                    openPRCount: appEnv.openPullRequests(projects: projects).count,
+                    waitingCount: waitingAgentCount
+                )
                 Divider()
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, 8)
             }
             HStack(alignment: .center, spacing: 6) {
                 Text(AppConstants.displayVersion)
@@ -316,9 +369,18 @@ struct ProjectSidebar: View {
             .minimumScaleFactor(0.8)
 
             HStack {
-                SidebarBottomButton(icon: "plus") {
-                    showingAddProjectChoice = true
+                Menu {
+                    Button("Add Existing Directory…") { openDirectoryPicker() }
+                    Button("Create New Project…") { presentNewProjectSheet() }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 32, height: 32)
                 }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
                 .accessibilityLabel("Add project")
                 Spacer()
                 SidebarBottomButton(icon: "questionmark.circle") {
@@ -407,21 +469,6 @@ struct ProjectSidebar: View {
 
     private var sidebar: some View {
         sidebarList
-            .sheet(isPresented: $showingAddProjectChoice) {
-                AddProjectChoiceSheet(
-                    onNewProject: {
-                        showingAddProjectChoice = false
-                        newProjectName = ""
-                        newProjectError = ""
-                        showingNewProjectName = true
-                    },
-                    onExistingDirectory: {
-                        showingAddProjectChoice = false
-                        openDirectoryPicker()
-                    },
-                    onCancel: { showingAddProjectChoice = false }
-                )
-            }
             .sheet(isPresented: $showingNewProjectName) {
                 NewProjectSheet(
                     name: $newProjectName,
@@ -450,9 +497,7 @@ struct ProjectSidebar: View {
                 Text("This will rename the git branch. Use kebab-case without spaces.")
             }
             .onReceive(NotificationCenter.default.publisher(for: .addProject)) { _ in
-                newProjectName = ""
-                newProjectError = ""
-                showingNewProjectName = true
+                presentNewProjectSheet()
             }
             .onReceive(NotificationCenter.default.publisher(for: .addNew)) { _ in
                 if case let .workstream(wsID) = selection,
@@ -462,6 +507,8 @@ struct ProjectSidebar: View {
                 } else if case let .project(pid) = selection {
                     addWorkstream(for: pid)
                 } else {
+                    // No selection: jump straight to the directory picker (the 99% case is
+                    // adding an existing folder). Create New is Cmd+Shift+N / the + menu.
                     openDirectoryPicker()
                 }
             }
@@ -477,6 +524,7 @@ struct ProjectSidebar: View {
                 ScrollViewReader { scrollProxy in
                     List(selection: $selection) {
                         projectRows()
+                        globalPRsSection()
                     }
                     .listStyle(.sidebar)
                     .onChange(of: selection) { _, sel in
@@ -484,6 +532,10 @@ struct ProjectSidebar: View {
                         deferSelectionExpansion(sel, projectIDByWorkstreamID: projectIDByWorkstreamIDSnapshot(), scrollProxy: scrollProxy)
                     }
                 } // ScrollViewReader
+
+                // Recent is pinned to the bottom (separated from the live project tree)
+                // so it stays reachable without scrolling.
+                pinnedRecentSection
 
                 // Bottom bar (always visible)
                 bottomBar
@@ -706,6 +758,12 @@ struct ProjectSidebar: View {
     @AppStorage("dockyard.baseDirectory") private var baseDirectory: String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? ""
     @AppStorage("dockyard.branchPrefix") private var branchPrefix: String = "dy"
 
+    private func presentNewProjectSheet() {
+        newProjectName = ""
+        newProjectError = ""
+        showingNewProjectName = true
+    }
+
     private func openDirectoryPicker() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
@@ -920,6 +978,7 @@ private struct WorkstreamRow: View {
     var prTitle: String?
     var prNumber: Int?
     var prState: String?
+    var uncommittedCount: Int = 0
     let onRemove: () -> Void
     let onPurge: () -> Void
     var onRename: (() -> Void)? = nil
@@ -947,6 +1006,11 @@ private struct WorkstreamRow: View {
         return nil
     }
 
+    /// Show a compact dirty hint (e.g. `±3`) for valid worktrees with uncommitted changes.
+    private var dirtyCount: Int {
+        isPathValid ? uncommittedCount : 0
+    }
+
     var body: some View {
         HStack(spacing: 4) {
             ActivityIndicator(state: agentState, isPathValid: isPathValid)
@@ -964,15 +1028,22 @@ private struct WorkstreamRow: View {
                             .foregroundStyle(.green)
                     }
                 }
-                if let subtitle {
+                if subtitle != nil || dirtyCount > 0 {
                     HStack(spacing: 3) {
                         if prState == "MERGED" {
                             Image(systemName: "arrow.triangle.merge")
                                 .font(.system(size: 8))
                                 .foregroundStyle(.purple)
                         }
-                        Text(subtitle)
-                            .lineLimit(1)
+                        if let subtitle {
+                            Text(subtitle)
+                                .lineLimit(1)
+                        }
+                        if dirtyCount > 0 {
+                            Text("±\(dirtyCount)")
+                                .foregroundStyle(.orange)
+                                .help(NSLocalizedString("Uncommitted changes", comment: ""))
+                        }
                     }
                     .font(.system(size: 9, design: .monospaced))
                     .foregroundStyle(agentState == .waiting ? AnyShapeStyle(Color.accentColor.opacity(0.8)) : (prState == "MERGED" ? AnyShapeStyle(.purple) : AnyShapeStyle(.tertiary)))
@@ -1079,6 +1150,101 @@ struct ActivityIndicator: View {
     }
 }
 
+/// Collapsible header row for an auxiliary sidebar section (Open PRs, Recent).
+private struct SidebarSectionHeader: View {
+    let title: String
+    let systemImage: String
+    var count: Int?
+    let isExpanded: Bool
+    let onToggle: () -> Void
+
+    var body: some View {
+        Button(action: onToggle) {
+            HStack(spacing: 6) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                Image(systemName: systemImage)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                Text(title)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                if let count {
+                    Text("\(count)")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                }
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowSeparator(.hidden)
+    }
+}
+
+/// A single global Open-PRs row: click to jump to its workstream, GitHub icon to open it.
+private struct GlobalPRRow: View {
+    let item: OpenPRItem
+    let onSelect: () -> Void
+    let onOpenURL: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text("#\(item.pr.number)")
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(item.pr.title)
+                    .font(.system(size: 11))
+                    .lineLimit(1)
+                Text(item.projectName)
+                    .font(.system(size: 9))
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+            }
+            Spacer()
+            SidebarIconButton(icon: "arrow.up.right.square", action: onOpenURL)
+                .opacity(isHovering ? 1 : 0)
+        }
+        .padding(.leading, 16)
+        .contentShape(Rectangle())
+        .onHover { isHovering = $0 }
+        .onTapGesture(perform: onSelect)
+        .help(item.pr.title)
+    }
+}
+
+/// A single "Recent" workstream row: click to select it.
+private struct RecentRow: View {
+    let name: String
+    let projectName: String
+    let onSelect: () -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 9))
+                .foregroundStyle(.tertiary)
+            Text(name)
+                .font(.system(size: 11))
+                .lineLimit(1)
+            Text(projectName)
+                .font(.system(size: 9))
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
+            Spacer()
+        }
+        .padding(.leading, 16)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onSelect)
+    }
+}
+
 private struct SidebarIconButton: View {
     let icon: String
     let action: () -> Void
@@ -1123,71 +1289,6 @@ private struct SidebarBottomButton: View {
                 NSCursor.pop()
             }
         }
-    }
-}
-
-private struct AddProjectChoiceSheet: View {
-    let onNewProject: () -> Void
-    let onExistingDirectory: () -> Void
-    let onCancel: () -> Void
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("Add Project")
-                .font(.headline)
-
-            VStack(spacing: 12) {
-                Button(action: onNewProject) {
-                    HStack {
-                        Image(systemName: "plus.rectangle.on.folder")
-                            .font(.system(size: 20))
-                            .frame(width: 32)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("New Project")
-                                .font(.system(.body, weight: .medium))
-                            Text("Create a new directory in the base directory")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(12)
-                    .background(Color.primary.opacity(0.04))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-                .buttonStyle(.borderless)
-                .keyboardShortcut(.defaultAction)
-
-                Button(action: onExistingDirectory) {
-                    HStack {
-                        Image(systemName: "folder")
-                            .font(.system(size: 20))
-                            .frame(width: 32)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Existing Directory")
-                                .font(.system(.body, weight: .medium))
-                            Text("Select an existing directory from disk")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(12)
-                    .background(Color.primary.opacity(0.04))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-                .buttonStyle(.borderless)
-            }
-
-            Button("Cancel", action: onCancel)
-                .keyboardShortcut(.cancelAction)
-        }
-        .padding(20)
-        .frame(width: 380)
     }
 }
 

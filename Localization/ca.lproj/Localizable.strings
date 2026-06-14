@@ -331,6 +331,18 @@
 
 "View log" = "Mostra el registre";
 
+/* Daily-driver polish: Cmd+N menu, usage meter, plan tier */
+"Add Existing Directory…" = "Afegeix un directori existent…";
+"Create New Project…" = "Crea un projecte nou…";
+"5h: ~%d%% left" = "5h: ~%d%% restant";
+"5h: %@" = "5h: %@";
+"resets in %@" = "es reinicia en %@";
+"Last 5 hours: %@ tokens" = "Últimes 5 hores: %@ tokens";
+"Last 7 days: %@ tokens" = "Últims 7 dies: %@ tokens";
+"Estimated from local Claude transcripts. Percentages are approximate." = "Estimat a partir de transcripcions locals de Claude. Els percentatges són aproximats.";
+"Not set" = "Sense definir";
+"Claude usage plan" = "Pla d'ús de Claude";
+"Sets your subscription tier so the sidebar usage meter can show an approximate percentage remaining. Consumption is read from local Claude transcripts; limits are estimates." = "Defineix el teu nivell de subscripció perquè el mesurador d'ús de la barra lateral pugui mostrar un percentatge restant aproximat. El consum es llegeix de transcripcions locals de Claude; els límits són estimacions.";
 /* Updates */
 "Updates" = "Actualitzacions";
 "Automatically check for updates" = "Comprova actualitzacions automàticament";
@@ -347,3 +359,15 @@
 /* Split orientation */
 "Toggle Split Orientation" = "Canvia l'orientació de la divisió";
 "Toggle split orientation" = "Canvia l'orientació de la divisió";
+
+"Agents waiting on you" = "Agents esperant-te";
+
+/* Usage meter (Current / Weekly bars) */
+"Usage" = "Ús";
+"Current" = "Actual";
+"Weekly" = "Setmanal";
+"rolling 7 days" = "7 dies mòbils";
+"Estimated from local Claude Code transcripts (CLI only, not your full account). Percentages are approximate." = "Estimat a partir de transcripcions locals de Claude Code (només CLI, no tot el compte). Els percentatges són aproximats.";
+
+"resets %@" = "es reinicia %@";
+"Real usage from Claude Code's /usage. Click to refresh." = "Ús real des de /usage de Claude Code. Fes clic per actualitzar.";

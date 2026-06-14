@@ -15,6 +15,9 @@ DerivedData/
 ghostty/zig-out/
 ghostty/.zig-cache/
 
+# Generated build metadata (regenerated per-build by scripts/gen-appcommit.sh)
+Sources/Models/AppCommit.swift
+
 # Monaco editor build output (rebuild with scripts/build-editor.sh)
 Resources/MonacoEditor/
 

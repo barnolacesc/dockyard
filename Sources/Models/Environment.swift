@@ -6,6 +6,15 @@ import SwiftUI
 
 private let logger = Logger(subsystem: "dockyard", category: "environment")
 
+/// A GitHub PR plus the project/workstream it belongs to, for the global Open PRs list.
+struct OpenPRItem: Identifiable, Equatable {
+    let pr: GitHubPR
+    let projectName: String
+    let projectDirectory: String
+    let workstreamID: UUID?
+    var id: String { "\(projectDirectory)#\(pr.number)" }
+}
+
 struct WorktreeState {
     var hasUncommittedChanges: Bool = false
     var hasUnpushedCommits: Bool = false
@@ -252,6 +261,35 @@ final class AppEnvironment: ObservableObject {
         return taskDescriptionCache[path]
     }
 
+    /// Refresh just the branch name and task description for a single worktree path.
+    /// Used by the HEAD watcher for an instant update after a `git branch -m`, instead of
+    /// waiting for the next full poll. Awaits the git read off the main actor, then commits
+    /// the cache change so callers can read the fresh branch name immediately afterwards.
+    func refreshBranchAndDescription(for worktreePath: String) async {
+        let path = worktreePath
+        let (branch, description): (String?, String?) = await Task.detached {
+            let branch = GitOperations.currentBranch(at: path)
+            var description: String?
+            let descURL = URL(fileURLWithPath: path).appendingPathComponent(".dockyard-state/description")
+            if let data = try? Data(contentsOf: descURL),
+               let text = String(data: data, encoding: .utf8)
+            {
+                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty { description = trimmed }
+            }
+            return (branch, description)
+        }.value
+
+        commitChanges {
+            if let branch, branch != "HEAD" {
+                self.branchNameCache[path] = branch
+            }
+            if let description {
+                self.taskDescriptionCache[path] = description
+            }
+        }
+    }
+
     /// Returns IDs of projects whose directories no longer exist.
     var missingProjectIDs: Set<UUID> = []
 
@@ -389,6 +427,31 @@ final class AppEnvironment: ObservableObject {
 
     func githubPR(for directory: String, branch: String) -> GitHubPR? {
         githubBranchPRCache["\(directory)|\(branch)"]
+    }
+
+    /// All open PRs across the given projects, derived from the per-workstream branch PR
+    /// cache. Used by the sidebar status strip (count) and the global Open PRs section.
+    func openPullRequests(projects: [Project]) -> [OpenPRItem] {
+        var items: [OpenPRItem] = []
+        var seen: Set<String> = []
+        for project in projects {
+            for ws in project.workstreams {
+                guard let path = ws.worktreePath,
+                      let branch = branchNameCache[path],
+                      let pr = githubBranchPRCache["\(project.directory)|\(branch)"],
+                      pr.state == "OPEN" else { continue }
+                let key = "\(project.directory)#\(pr.number)"
+                if seen.contains(key) { continue }
+                seen.insert(key)
+                items.append(OpenPRItem(
+                    pr: pr,
+                    projectName: project.name,
+                    projectDirectory: project.directory,
+                    workstreamID: ws.id
+                ))
+            }
+        }
+        return items.sorted { $0.pr.number > $1.pr.number }
     }
 
     func clearBranchPR(for directory: String, branch: String) {

@@ -157,6 +157,10 @@ targets:
     preBuildScripts:
       - script: |
           set -e
+          "${PROJECT_DIR}/scripts/gen-appcommit.sh"
+        name: Generate AppCommit
+      - script: |
+          set -e
           "${PROJECT_DIR}/scripts/build-editor.sh"
         name: Build Monaco Editor
         inputFiles:
@@ -193,8 +197,7 @@ targets:
     preBuildScripts:
       - script: |
           set -e
-          HASH=$(git rev-parse --short HEAD || echo "unknown")
-          echo "enum AppCommit { static let hash = \"$HASH\"; static let sourcePath = \"${PROJECT_DIR}\"; static let configuration = \"${CONFIGURATION}\" }" > "${PROJECT_DIR}/Sources/Models/AppCommit.swift"
+          "${PROJECT_DIR}/scripts/gen-appcommit.sh"
         name: Generate AppCommit
     sources:
       - path: Sources/Launcher
@@ -214,6 +217,11 @@ targets:
   DyAgentState:
     type: tool
     platform: macOS
+    preBuildScripts:
+      - script: |
+          set -e
+          "${PROJECT_DIR}/scripts/gen-appcommit.sh"
+        name: Generate AppCommit
     sources:
       - path: Sources/AgentStateHelper
       - path: Sources/Models/AgentState.swift
