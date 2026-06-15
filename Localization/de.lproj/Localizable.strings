@@ -322,6 +322,13 @@
 "New workstream or add existing project" = "Neuer Workstream oder bestehendes Projekt hinzufügen";
 "New project directory" = "Neues Projektverzeichnis";
 "New Project Directory..." = "Neues Projektverzeichnis...";
+"Toggle Sidebar Width" = "Seitenleistenbreite umschalten";
+"Toggle sidebar width" = "Seitenleistenbreite umschalten";
+"Collapse sidebar" = "Seitenleiste einklappen";
+"Expand sidebar" = "Seitenleiste ausklappen";
+"Check for updates" = "Nach Updates suchen";
+"Pull latest changes from main and rebuild" = "Neueste Änderungen von main holen und neu bauen";
+"Update" = "Aktualisieren";
 
 
 /* Split orientation */

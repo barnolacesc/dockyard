@@ -138,6 +138,8 @@ other = "Navigering"
 other = "Ny workstream eller projekt"
 [sc_settings]
 other = "Inställningar"
+[sc_sidebar_width]
+other = "Växla sidopanelens bredd"
 [sc_back]
 other = "Tillbaka till projektet"
 [sc_tabs]

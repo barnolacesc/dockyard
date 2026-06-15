@@ -152,6 +152,7 @@ Dockyard är tangentbord-först. Här är allt.
 | ⌘, | Inställningar |
 | ⌘/ | Hjälp |
 | ⌘Option+S | Visa/dölj sidopanel |
+| ⌘Option+. | Växla sidopanelens bredd |
 
 #### Workstream {#workstream}
 
