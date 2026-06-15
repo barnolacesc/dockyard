@@ -118,6 +118,7 @@ Every workstream terminal has access to:
 | `Cmd+,` | Settings |
 | `Cmd+/` | Help |
 | `Cmd+Option+S` | Toggle sidebar |
+| `Cmd+Option+.` | Toggle sidebar width |
 
 #### Workstream
 

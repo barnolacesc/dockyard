@@ -354,6 +354,13 @@
 "New workstream or add existing project" = "New workstream or add existing project";
 "New project directory" = "New project directory";
 "New Project Directory..." = "New Project Directory...";
+"Toggle Sidebar Width" = "Toggle Sidebar Width";
+"Toggle sidebar width" = "Toggle sidebar width";
+"Collapse sidebar" = "Collapse sidebar";
+"Expand sidebar" = "Expand sidebar";
+"Check for updates" = "Check for updates";
+"Pull latest changes from main and rebuild" = "Pull latest changes from main and rebuild";
+"Update" = "Update";
 
 
 /* Split orientation */

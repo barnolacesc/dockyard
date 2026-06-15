@@ -152,6 +152,7 @@ Dockyard prioritza el teclat. Aquí tens tot.
 | ⌘, | Configuració |
 | ⌘/ | Ajuda |
 | ⌘Option+S | Commuta barra lateral |
+| ⌘Option+. | Commuta l'amplada de la barra lateral |
 
 #### Workstream {#workstream}
 

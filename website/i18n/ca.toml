@@ -145,6 +145,8 @@ other = "Navegació"
 other = "Nou workstream o projecte"
 [sc_settings]
 other = "Configuració"
+[sc_sidebar_width]
+other = "Commuta l'amplada de la barra lateral"
 [sc_back]
 other = "Torna al projecte"
 [sc_tabs]

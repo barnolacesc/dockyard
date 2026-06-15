@@ -139,6 +139,8 @@ other = "Navegación"
 other = "Nuevo workstream o proyecto"
 [sc_settings]
 other = "Ajustes"
+[sc_sidebar_width]
+other = "Cambiar anchura de la barra lateral"
 [sc_back]
 other = "Volver al proyecto"
 [sc_tabs]

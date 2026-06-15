@@ -354,6 +354,13 @@
 "New workstream or add existing project" = "Nou workstream o afegir projecte existent";
 "New project directory" = "Nou directori de projecte";
 "New Project Directory..." = "Nou directori de projecte...";
+"Toggle Sidebar Width" = "Commuta l'amplada de la barra lateral";
+"Toggle sidebar width" = "Commuta l'amplada de la barra lateral";
+"Collapse sidebar" = "Replega la barra lateral";
+"Expand sidebar" = "Expandeix la barra lateral";
+"Check for updates" = "Comprova si hi ha actualitzacions";
+"Pull latest changes from main and rebuild" = "Baixa els últims canvis de main i reconstrueix";
+"Update" = "Actualitza";
 
 
 /* Split orientation */

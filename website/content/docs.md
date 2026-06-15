@@ -159,6 +159,7 @@ Dockyard is keyboard-first. Here's everything.
 | ⌘, | Settings |
 | ⌘/ | Help |
 | ⌘Option+S | Toggle sidebar |
+| ⌘Option+. | Toggle sidebar width |
 
 #### Workstream
 

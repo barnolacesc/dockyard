@@ -152,6 +152,7 @@ Dockyard ist tastaturorientiert. Hier ist alles.
 | ⌘, | Einstellungen |
 | ⌘/ | Hilfe |
 | ⌘Option+S | Seitenleiste ein-/ausblenden |
+| ⌘Option+. | Seitenleistenbreite umschalten |
 
 #### Workstream {#workstream}
 

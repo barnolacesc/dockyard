@@ -354,6 +354,13 @@
 "New workstream or add existing project" = "Nuevo workstream o añadir proyecto existente";
 "New project directory" = "Nuevo directorio de proyecto";
 "New Project Directory..." = "Nuevo directorio de proyecto...";
+"Toggle Sidebar Width" = "Cambiar anchura de la barra lateral";
+"Toggle sidebar width" = "Cambiar anchura de la barra lateral";
+"Collapse sidebar" = "Contraer barra lateral";
+"Expand sidebar" = "Expandir barra lateral";
+"Check for updates" = "Buscar actualizaciones";
+"Pull latest changes from main and rebuild" = "Traer los últimos cambios de main y reconstruir";
+"Update" = "Actualizar";
 
 
 /* Split orientation */

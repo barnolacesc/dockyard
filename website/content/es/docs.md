@@ -152,6 +152,7 @@ Dockyard prioriza el teclado. Aquí está todo.
 | ⌘, | Ajustes |
 | ⌘/ | Ayuda |
 | ⌘Option+S | Mostrar/ocultar barra lateral |
+| ⌘Option+. | Cambiar anchura de la barra lateral |
 
 #### Workstream {#workstream}
 

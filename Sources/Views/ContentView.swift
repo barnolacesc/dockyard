@@ -120,6 +120,9 @@ struct ContentView: View {
     @State private var purgeWarningMessage: String?
     @State private var removedProjectNames: [String] = []
     @State private var keyMonitorInstalled = false
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @AppStorage(SidebarMode.storageKey) private var sidebarModeRaw = SidebarMode.expanded.rawValue
+    @AppStorage(SidebarMode.lastVisibleStorageKey) private var lastVisibleSidebarModeRaw = SidebarMode.expanded.rawValue
 
     /// Fires when a worktree's git HEAD changes (e.g. `git branch -m`) so the sidebar can
     /// resync the workstream name instantly instead of waiting for the 15s poll.
@@ -131,6 +134,15 @@ struct ContentView: View {
         let projects = ProjectStore.load()
         guard let mostRecent = projects.max(by: { $0.lastAccessedAt < $1.lastAccessedAt }) else { return nil }
         return .project(mostRecent.id)
+    }
+
+    private var sidebarMode: SidebarMode {
+        SidebarMode(rawValue: sidebarModeRaw) ?? .expanded
+    }
+
+    private var lastVisibleSidebarMode: SidebarMode {
+        let mode = SidebarMode(rawValue: lastVisibleSidebarModeRaw) ?? .expanded
+        return mode.isVisible ? mode : .expanded
     }
 
     private var activeProject: Project? {
@@ -221,7 +233,10 @@ struct ContentView: View {
     var body: some View {
         navigationView
             .onReceive(NotificationCenter.default.publisher(for: .toggleSidebar)) { _ in
-                NSApp.sendAction(#selector(NSSplitViewController.toggleSidebar(_:)), to: nil, from: nil)
+                toggleSidebarVisibility()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .toggleSidebarWidth)) { _ in
+                toggleSidebarWidth()
             }
             .onReceive(NotificationCenter.default.publisher(for: .openHelp)) { _ in
                 if selection == .help {
@@ -366,133 +381,179 @@ struct ContentView: View {
     }
 
     private var navigationViewBase: some View {
-        NavigationSplitView {
-            ProjectSidebar(
-                projects: $projectList.items,
-                selection: $selection,
-                onProjectsChanged: { ProjectStore.save(projects) }
-            )
-            .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 350)
+        navigationViewProjectEvents
+    }
+
+    private var navigationViewEnvironment: some View {
+        navigationSplitView
+            .environmentObject(surfaceCache)
+            .environmentObject(appEnvironment)
+            .environmentObject(activityTracker)
+            .environmentObject(agentStateStore)
+            .environmentObject(claudeUsageStore)
+    }
+
+    private var navigationViewLifecycle: some View {
+        navigationViewEnvironment
+            .onAppear {
+                syncColumnVisibilityWithSidebarMode()
+                appEnvironment.refresh()
+                appEnvironment.refreshAllRepoInfo(projects: projects)
+                appEnvironment.refreshPathValidity(projects: projects)
+                appEnvironment.fetchOrigin(projects: projects)
+                headWatcher.sync(paths: currentWorktreePaths())
+                // Apply saved appearance
+                switch UserDefaults.standard.string(forKey: "dockyard.appearance") ?? "system" {
+                case "light": NSApp.appearance = NSAppearance(named: .aqua)
+                case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
+                default: NSApp.appearance = nil
+                }
+            }
+            .onChange(of: sidebarModeRaw) { _, _ in
+                syncColumnVisibilityWithSidebarMode()
+            }
+            .onChange(of: columnVisibility) { _, visibility in
+                syncSidebarModeWithColumnVisibility(visibility)
+            }
+    }
+
+    private var navigationViewShortcutEvents: some View {
+        navigationViewLifecycle
+            .onReceive(NotificationCenter.default.publisher(for: .switchToProject)) { _ in
+                // Go back to project view from any workstream
+                if let wsID = selection?.workstreamID,
+                   let project = projects.first(where: { $0.workstreams.contains(where: { $0.id == wsID }) })
+                {
+                    selection = .project(project.id)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .nextWorkstream)) { _ in
+                cycleWorkstream(direction: 1)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .prevWorkstream)) { _ in
+                cycleWorkstream(direction: -1)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .nextGlobalWorkstream)) { _ in
+                cycleGlobalWorkstream(direction: 1)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .prevGlobalWorkstream)) { _ in
+                cycleGlobalWorkstream(direction: -1)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .nextProject)) { _ in
+                cycleProject(direction: 1)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .prevProject)) { _ in
+                cycleProject(direction: -1)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .archiveWorkstream)) { _ in
+                if let wsID = selection?.workstreamID {
+                    workstreamToRemove = wsID
+                }
+            }
+    }
+
+    private var navigationViewProjectEvents: some View {
+        navigationViewShortcutEvents
+            .onReceive(NotificationCenter.default.publisher(for: .workstreamCreated)) { notification in
+                guard let info = notification.userInfo,
+                      let projectID = info["projectID"] as? UUID,
+                      let workstream = info["workstream"] as? Workstream,
+                      let index = projects.firstIndex(where: { $0.id == projectID }) else { return }
+                projects[index].workstreams.append(workstream)
+                selection = .workstream(workstream.id)
+                ProjectStore.save(projects)
+                logger.warning("[Dockyard] workstreamCreated notification handled: \(workstream.name, privacy: .public)")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .workstreamWorktreeReady)) { notification in
+                guard let info = notification.userInfo,
+                      let workstreamID = info["workstreamID"] as? UUID,
+                      let worktreePath = info["worktreePath"] as? String else { return }
+                for pi in projects.indices {
+                    if let wi = projects[pi].workstreams.firstIndex(where: { $0.id == workstreamID }) {
+                        projects[pi].workstreams[wi].worktreePath = worktreePath
+                        ProjectStore.save(projects)
+                        appEnvironment.refreshPathValidity(projects: projects)
+                        headWatcher.sync(paths: currentWorktreePaths())
+                        logger.warning("[Dockyard] workstreamWorktreeReady: updated \(workstreamID, privacy: .public) with path \(worktreePath, privacy: .public)")
+                        Telemetry.shared.track("workstream_created", url: "/workstream/create", title: "Workstream Created")
+                        return
+                    }
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .workstreamCreationFailed)) { notification in
+                guard let info = notification.userInfo,
+                      let projectID = info["projectID"] as? UUID,
+                      let workstreamID = info["workstreamID"] as? UUID,
+                      let pi = projects.firstIndex(where: { $0.id == projectID }) else { return }
+                projects[pi].workstreams.removeAll { $0.id == workstreamID }
+                if case let .workstream(selectedID) = selection, selectedID == workstreamID {
+                    selection = .project(projectID)
+                }
+                ProjectStore.save(projects)
+                logger.warning("[Dockyard] workstreamCreationFailed: removed \(workstreamID, privacy: .public)")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .projectCreated)) { notification in
+                guard let project = notification.userInfo?["project"] as? Project else { return }
+                projects.append(project)
+                selection = .project(project.id)
+                ProjectStore.save(projects)
+                appEnvironment.refreshPathValidity(projects: projects)
+                appEnvironment.refreshAllRepoInfo(projects: projects)
+                logger.warning("[Dockyard] projectCreated notification handled: \(project.name, privacy: .public)")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .worktreeHeadChanged)) { notification in
+                guard let path = notification.object as? String else { return }
+                Task { @MainActor in
+                    await appEnvironment.refreshBranchAndDescription(for: path)
+                    syncWorkstreamNamesFromBranches()
+                }
+            }
+            .onReceive(Timer.publish(every: 15, on: .main, in: .common).autoconnect()) { _ in
+                appEnvironment.refreshAllRepoInfo(projects: projects)
+                appEnvironment.refreshPathValidity(projects: projects)
+                appEnvironment.refreshAllBranchPRs(projects: projects)
+                appEnvironment.fetchOrigin(projects: projects)
+                syncWorkstreamNamesFromBranches()
+                headWatcher.sync(paths: currentWorktreePaths())
+                claudeUsageStore.refresh()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .purgeWorkstream)) { notification in
+                guard let wsID = notification.object as? UUID else { return }
+                confirmPurge(wsID)
+            }
+    }
+
+    private var navigationSplitView: some View {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
+            sidebarColumn
         } detail: {
             detailView
         }
-        .environmentObject(surfaceCache)
-        .environmentObject(appEnvironment)
-        .environmentObject(activityTracker)
-        .environmentObject(agentStateStore)
-        .environmentObject(claudeUsageStore)
-        .onAppear {
-            appEnvironment.refresh()
-            appEnvironment.refreshAllRepoInfo(projects: projects)
-            appEnvironment.refreshPathValidity(projects: projects)
-            appEnvironment.fetchOrigin(projects: projects)
-            headWatcher.sync(paths: currentWorktreePaths())
-            // Apply saved appearance
-            switch UserDefaults.standard.string(forKey: "dockyard.appearance") ?? "system" {
-            case "light": NSApp.appearance = NSAppearance(named: .aqua)
-            case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
-            default: NSApp.appearance = nil
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .switchToProject)) { _ in
-            // Go back to project view from any workstream
-            if let wsID = selection?.workstreamID,
-               let project = projects.first(where: { $0.workstreams.contains(where: { $0.id == wsID }) })
-            {
-                selection = .project(project.id)
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .nextWorkstream)) { _ in
-            cycleWorkstream(direction: 1)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .prevWorkstream)) { _ in
-            cycleWorkstream(direction: -1)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .nextGlobalWorkstream)) { _ in
-            cycleGlobalWorkstream(direction: 1)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .prevGlobalWorkstream)) { _ in
-            cycleGlobalWorkstream(direction: -1)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .nextProject)) { _ in
-            cycleProject(direction: 1)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .prevProject)) { _ in
-            cycleProject(direction: -1)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .archiveWorkstream)) { _ in
-            if let wsID = selection?.workstreamID {
-                workstreamToRemove = wsID
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .workstreamCreated)) { notification in
-            guard let info = notification.userInfo,
-                  let projectID = info["projectID"] as? UUID,
-                  let workstream = info["workstream"] as? Workstream,
-                  let index = projects.firstIndex(where: { $0.id == projectID }) else { return }
-            projects[index].workstreams.append(workstream)
-            selection = .workstream(workstream.id)
-            ProjectStore.save(projects)
-            logger.warning("[Dockyard] workstreamCreated notification handled: \(workstream.name, privacy: .public)")
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .workstreamWorktreeReady)) { notification in
-            guard let info = notification.userInfo,
-                  let workstreamID = info["workstreamID"] as? UUID,
-                  let worktreePath = info["worktreePath"] as? String else { return }
-            for pi in projects.indices {
-                if let wi = projects[pi].workstreams.firstIndex(where: { $0.id == workstreamID }) {
-                    projects[pi].workstreams[wi].worktreePath = worktreePath
-                    ProjectStore.save(projects)
-                    appEnvironment.refreshPathValidity(projects: projects)
-                    headWatcher.sync(paths: currentWorktreePaths())
-                    logger.warning("[Dockyard] workstreamWorktreeReady: updated \(workstreamID, privacy: .public) with path \(worktreePath, privacy: .public)")
-                    Telemetry.shared.track("workstream_created", url: "/workstream/create", title: "Workstream Created")
-                    return
-                }
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .workstreamCreationFailed)) { notification in
-            guard let info = notification.userInfo,
-                  let projectID = info["projectID"] as? UUID,
-                  let workstreamID = info["workstreamID"] as? UUID,
-                  let pi = projects.firstIndex(where: { $0.id == projectID }) else { return }
-            projects[pi].workstreams.removeAll { $0.id == workstreamID }
-            if case let .workstream(selectedID) = selection, selectedID == workstreamID {
-                selection = .project(projectID)
-            }
-            ProjectStore.save(projects)
-            logger.warning("[Dockyard] workstreamCreationFailed: removed \(workstreamID, privacy: .public)")
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .projectCreated)) { notification in
-            guard let project = notification.userInfo?["project"] as? Project else { return }
-            projects.append(project)
-            selection = .project(project.id)
-            ProjectStore.save(projects)
-            appEnvironment.refreshPathValidity(projects: projects)
-            appEnvironment.refreshAllRepoInfo(projects: projects)
-            logger.warning("[Dockyard] projectCreated notification handled: \(project.name, privacy: .public)")
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .purgeWorkstream)) { notification in
-            if let wsID = notification.object as? UUID {
-                confirmPurge(wsID)
-            }
-        }
-        .onReceive(Timer.publish(every: 15, on: .main, in: .common).autoconnect()) { _ in
-            appEnvironment.refreshAllRepoInfo(projects: projects)
-            appEnvironment.refreshPathValidity(projects: projects)
-            appEnvironment.refreshAllBranchPRs(projects: projects)
-            appEnvironment.fetchOrigin(projects: projects)
-            syncWorkstreamNamesFromBranches()
-            headWatcher.sync(paths: currentWorktreePaths())
-            claudeUsageStore.refresh()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .worktreeHeadChanged)) { notification in
-            guard let path = notification.object as? String else { return }
-            Task { @MainActor in
-                await appEnvironment.refreshBranchAndDescription(for: path)
-                syncWorkstreamNamesFromBranches()
-            }
-        }
+    }
+
+    private var sidebarColumn: some View {
+        ProjectSidebar(
+            projects: $projectList.items,
+            selection: $selection,
+            onProjectsChanged: { ProjectStore.save(projects) }
+        )
+        .navigationSplitViewColumnWidth(
+            min: sidebarColumnMinimumWidth,
+            ideal: sidebarColumnIdealWidth,
+            max: sidebarColumnMaximumWidth
+        )
+    }
+
+    private var sidebarColumnMinimumWidth: CGFloat {
+        sidebarMode == .collapsed ? 60 : 160
+    }
+
+    private var sidebarColumnIdealWidth: CGFloat {
+        sidebarMode == .collapsed ? 60 : 200
+    }
+
+    private var sidebarColumnMaximumWidth: CGFloat {
+        sidebarMode == .collapsed ? 60 : 350
     }
 
     /// All worktree paths currently known across projects, for the HEAD watcher.
@@ -533,6 +594,53 @@ struct ContentView: View {
         } else if let terminalURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal") {
             let config = NSWorkspace.OpenConfiguration()
             NSWorkspace.shared.open([URL(fileURLWithPath: dir)], withApplicationAt: terminalURL, configuration: config)
+        }
+    }
+
+    private func setSidebarMode(_ mode: SidebarMode) {
+        if mode.isVisible {
+            lastVisibleSidebarModeRaw = mode.rawValue
+            columnVisibility = .all
+        } else {
+            columnVisibility = .detailOnly
+        }
+        sidebarModeRaw = mode.rawValue
+    }
+
+    private func toggleSidebarVisibility() {
+        if sidebarMode == .hidden {
+            setSidebarMode(lastVisibleSidebarMode)
+        } else {
+            lastVisibleSidebarModeRaw = sidebarMode.rawValue
+            setSidebarMode(.hidden)
+        }
+    }
+
+    private func toggleSidebarWidth() {
+        let currentVisibleMode = sidebarMode == .hidden ? lastVisibleSidebarMode : sidebarMode
+        let nextMode: SidebarMode = currentVisibleMode == .collapsed ? .expanded : .collapsed
+        if sidebarMode == .hidden {
+            lastVisibleSidebarModeRaw = nextMode.rawValue
+        } else {
+            setSidebarMode(nextMode)
+        }
+    }
+
+    private func syncColumnVisibilityWithSidebarMode() {
+        columnVisibility = sidebarMode == .hidden ? .detailOnly : .all
+        if sidebarMode.isVisible {
+            lastVisibleSidebarModeRaw = sidebarMode.rawValue
+        }
+    }
+
+    private func syncSidebarModeWithColumnVisibility(_ visibility: NavigationSplitViewVisibility) {
+        if visibility == .detailOnly {
+            if sidebarMode.isVisible {
+                lastVisibleSidebarModeRaw = sidebarMode.rawValue
+                sidebarModeRaw = SidebarMode.hidden.rawValue
+            }
+        } else if sidebarMode == .hidden {
+            sidebarModeRaw = lastVisibleSidebarMode.rawValue
         }
     }
 

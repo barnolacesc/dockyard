@@ -354,6 +354,13 @@
 "New workstream or add existing project" = "Ny workstream eller lägg till befintligt projekt";
 "New project directory" = "Ny projektkatalog";
 "New Project Directory..." = "Ny projektkatalog...";
+"Toggle Sidebar Width" = "Växla sidopanelens bredd";
+"Toggle sidebar width" = "Växla sidopanelens bredd";
+"Collapse sidebar" = "Fäll ihop sidopanel";
+"Expand sidebar" = "Expandera sidopanel";
+"Check for updates" = "Sök efter uppdateringar";
+"Pull latest changes from main and rebuild" = "Hämta senaste ändringarna från main och bygg om";
+"Update" = "Uppdatera";
 
 
 /* Split orientation */
