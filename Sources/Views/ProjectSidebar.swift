@@ -54,9 +54,21 @@ struct ProjectSidebar: View {
     @State private var showNotGitRepoError = false
     @AppStorage("dockyard.showOpenPRs") private var showOpenPRs: Bool = true
     @AppStorage("dockyard.showRecent") private var showRecent: Bool = true
+    @AppStorage(SidebarMode.storageKey) private var sidebarModeRaw = SidebarMode.expanded.rawValue
+    @AppStorage(SidebarMode.lastVisibleStorageKey) private var lastVisibleSidebarModeRaw = SidebarMode.expanded.rawValue
 
     private var currentVersionLooksLikeRelease: Bool {
         AppConstants.version.range(of: "^[0-9]+\\.[0-9]+\\.[0-9]+$", options: .regularExpression) != nil
+    }
+
+    private var sidebarMode: SidebarMode {
+        SidebarMode(rawValue: sidebarModeRaw) ?? .expanded
+    }
+
+    private func setVisibleSidebarMode(_ mode: SidebarMode) {
+        guard mode.isVisible else { return }
+        lastVisibleSidebarModeRaw = mode.rawValue
+        sidebarModeRaw = mode.rawValue
     }
 
     private func recomputeSortedIDs() -> [UUID] {
@@ -118,6 +130,18 @@ struct ProjectSidebar: View {
                 scrollProxy.scrollTo(selected, anchor: .center)
             }
         }
+    }
+
+    private func handleTerminalActivity(for workstreamID: UUID) {
+        guard let (pi, wi) = cachedWorkstreamIndex[workstreamID] else { return }
+        let now = Date()
+        projects[pi].lastAccessedAt = now
+        projects[pi].workstreams[wi].lastAccessedAt = now
+        onProjectsChanged()
+        cachedSortedIDs = recomputeSortedIDs()
+        cachedSortedWorkstreamIDs[projects[pi].id] = projects[pi].workstreams
+            .sorted { $0.lastAccessedAt > $1.lastAccessedAt }
+            .map(\.id)
     }
 
     private func projectRows() -> some View {
@@ -474,7 +498,7 @@ struct ProjectSidebar: View {
     }
 
     private var sidebar: some View {
-        sidebarList
+        sidebarContent
             .sheet(isPresented: $showingNewProjectName) {
                 NewProjectSheet(
                     name: $newProjectName,
@@ -524,9 +548,50 @@ struct ProjectSidebar: View {
             }
     }
 
+    @ViewBuilder
+    private var sidebarContent: some View {
+        if sidebarMode == .collapsed {
+            SidebarRail(
+                projects: $projects,
+                selection: $selection,
+                appUpdater: appUpdater,
+                onExpand: { setVisibleSidebarMode(.expanded) },
+                onAddExistingDirectory: { openDirectoryPicker() },
+                onCreateNewProject: { presentNewProjectSheet() }
+            )
+            .onReceive(NotificationCenter.default.publisher(for: .terminalActivity)) { notification in
+                guard let wsID = notification.object as? UUID else { return }
+                handleTerminalActivity(for: wsID)
+            }
+            .onAppear {
+                cachedSortedIDs = recomputeSortedIDs()
+                rebuildIndices()
+            }
+        } else {
+            sidebarList
+        }
+    }
+
     private var sidebarList: some View {
         GeometryReader { _ in
             VStack(spacing: 0) {
+                HStack {
+                    Button {
+                        setVisibleSidebarMode(.collapsed)
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 12, weight: .semibold))
+                            .frame(width: 28, height: 26)
+                    }
+                    .buttonStyle(.plain)
+                    .help(NSLocalizedString("Collapse sidebar", comment: "Expanded sidebar collapse button tooltip"))
+                    .accessibilityLabel("Collapse sidebar")
+                    Spacer()
+                }
+                .padding(.horizontal, 8)
+                .padding(.top, 6)
+                .padding(.bottom, 2)
+
                 ScrollViewReader { scrollProxy in
                     List(selection: $selection) {
                         projectRows()
@@ -549,15 +614,7 @@ struct ProjectSidebar: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .terminalActivity)) { notification in
             guard let wsID = notification.object as? UUID else { return }
-            guard let (pi, wi) = cachedWorkstreamIndex[wsID] else { return }
-            let now = Date()
-            projects[pi].lastAccessedAt = now
-            projects[pi].workstreams[wi].lastAccessedAt = now
-            onProjectsChanged()
-            cachedSortedIDs = recomputeSortedIDs()
-            cachedSortedWorkstreamIDs[projects[pi].id] = projects[pi].workstreams
-                .sorted { $0.lastAccessedAt > $1.lastAccessedAt }
-                .map(\.id)
+            handleTerminalActivity(for: wsID)
         }
         .onAppear {
             cachedSortedIDs = recomputeSortedIDs()

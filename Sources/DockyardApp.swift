@@ -23,6 +23,7 @@ extension Notification.Name {
     static let openHelp = Notification.Name("dockyard.openHelp")
     static let switchToProject = Notification.Name("dockyard.switchToProject")
     static let toggleSidebar = Notification.Name("dockyard.toggleSidebar")
+    static let toggleSidebarWidth = Notification.Name("dockyard.toggleSidebarWidth")
     static let switchByNumber = Notification.Name("dockyard.switchByNumber") // object: Int (1-9)
     static let dismissOverlay = Notification.Name("dockyard.dismissOverlay")
     static let openExternalBrowser = Notification.Name("dockyard.openExternalBrowser")
@@ -296,6 +297,11 @@ struct DockyardApp: App {
                     NotificationCenter.default.post(name: .toggleSidebar, object: nil)
                 }
                 .keyboardShortcut("s", modifiers: [.command, .option])
+
+                Button("Toggle Sidebar Width") {
+                    NotificationCenter.default.post(name: .toggleSidebarWidth, object: nil)
+                }
+                .keyboardShortcut(".", modifiers: [.command, .option])
             }
             // Tabs
             CommandGroup(after: .toolbar) {

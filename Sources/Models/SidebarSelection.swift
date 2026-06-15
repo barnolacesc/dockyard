@@ -54,3 +54,37 @@ enum SidebarState {
         UserDefaults.standard.set(data, forKey: userDefaultsKey)
     }
 }
+
+enum SidebarMode: String, CaseIterable {
+    case expanded
+    case collapsed
+    case hidden
+
+    static let storageKey = "dockyard.sidebarMode"
+    static let lastVisibleStorageKey = "dockyard.sidebarLastVisibleMode"
+
+    var isVisible: Bool {
+        self != .hidden
+    }
+
+    static func load(defaults: UserDefaults = .standard) -> SidebarMode {
+        SidebarMode(rawValue: defaults.string(forKey: storageKey) ?? "") ?? .expanded
+    }
+
+    static func loadLastVisible(defaults: UserDefaults = .standard) -> SidebarMode {
+        let mode = SidebarMode(rawValue: defaults.string(forKey: lastVisibleStorageKey) ?? "") ?? .expanded
+        return mode.isVisible ? mode : .expanded
+    }
+
+    static func save(_ mode: SidebarMode, defaults: UserDefaults = .standard) {
+        if mode.isVisible {
+            defaults.set(mode.rawValue, forKey: lastVisibleStorageKey)
+        }
+        defaults.set(mode.rawValue, forKey: storageKey)
+    }
+
+    static func saveLastVisible(_ mode: SidebarMode, defaults: UserDefaults = .standard) {
+        guard mode.isVisible else { return }
+        defaults.set(mode.rawValue, forKey: lastVisibleStorageKey)
+    }
+}
