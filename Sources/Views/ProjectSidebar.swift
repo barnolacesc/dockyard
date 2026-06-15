@@ -503,7 +503,7 @@ struct ProjectSidebar: View {
                 Text("This will rename the git branch. Use kebab-case without spaces.")
             }
             .onReceive(NotificationCenter.default.publisher(for: .addProject)) { _ in
-                presentNewProjectSheet()
+                openDirectoryPicker()
             }
             .onReceive(NotificationCenter.default.publisher(for: .addNew)) { _ in
                 if case let .workstream(wsID) = selection,

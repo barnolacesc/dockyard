@@ -253,8 +253,8 @@ struct DockyardApp: App {
                 }
                 .keyboardShortcut("n", modifiers: .command)
 
-                // Cmd+Shift+N: create a brand-new project directory.
-                Button("New Project Directory...") {
+                // Cmd+Shift+N: open directory picker to add an existing project.
+                Button("Open Project Directory...") {
                     NotificationCenter.default.post(name: .addProject, object: nil)
                 }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
