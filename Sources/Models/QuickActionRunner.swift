@@ -1,5 +1,5 @@
-// ABOUTME: Spawns one-shot coding CLI subprocesses or git/gh commands for quick actions.
-// ABOUTME: Uses the selected CLI for context-aware tasks like commit message and PR creation.
+// ABOUTME: Runs direct git/gh subprocesses for quick actions.
+// ABOUTME: Agent-delegated quick actions are routed through the live terminal surface.
 
 import Foundation
 import os
@@ -34,8 +34,8 @@ enum QuickAction: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Whether this action requires the selected coding CLI (vs direct git/gh command).
-    var usesLLM: Bool {
+    /// Whether this action should be sent to the live Coding Agent.
+    var delegatesToAgent: Bool {
         switch self {
         case .commit, .createPR: return true
         case .push, .closePR: return false
@@ -58,6 +58,13 @@ enum QuickAction: String, CaseIterable, Identifiable {
         case .push, .closePR:
             return nil
         }
+    }
+
+    func disabledReason(ghPath: String?) -> String? {
+        if self == .closePR, ghPath == nil {
+            return NSLocalizedString("gh CLI is not installed.", comment: "")
+        }
+        return nil
     }
 }
 
@@ -87,12 +94,11 @@ final class QuickActionRunner: ObservableObject {
 
     func run(
         action: QuickAction,
-        codingCLI: CodingCLI,
-        codingCLIPath: String?,
         ghPath: String?,
         workingDirectory: String,
         branchName: String? = nil
     ) {
+        guard !action.delegatesToAgent else { return }
         guard case .idle = state else { return }
 
         state = .running(action)
@@ -100,11 +106,7 @@ final class QuickActionRunner: ObservableObject {
 
         switch action {
         case .commit, .createPR:
-            guard let codingCLIPath else {
-                state = .idle
-                return
-            }
-            runLLMAction(action: action, codingCLI: codingCLI, codingCLIPath: codingCLIPath, workingDirectory: workingDirectory)
+            break
         case .push:
             runPush(workingDirectory: workingDirectory)
         case .closePR:
@@ -114,24 +116,6 @@ final class QuickActionRunner: ObservableObject {
             }
             runClosePR(ghPath: ghPath, branchName: branchName, workingDirectory: workingDirectory)
         }
-    }
-
-    private func runLLMAction(action: QuickAction, codingCLI: CodingCLI, codingCLIPath: String, workingDirectory: String) {
-        guard let prompt = action.prompt else { return }
-
-        let command = CodingCLICommandBuilder.buildQuickActionCommand(
-            cli: codingCLI,
-            cliPath: codingCLIPath,
-            prompt: prompt,
-            workingDirectory: workingDirectory
-        )
-        runShellCommand(
-            action: action,
-            shell: command.shell,
-            arguments: command.arguments,
-            workingDirectory: workingDirectory,
-            parseJSON: command.parseJSON
-        )
     }
 
     private func runPush(workingDirectory: String) {
@@ -197,58 +181,6 @@ final class QuickActionRunner: ObservableObject {
         }
     }
 
-    private func runShellCommand(action: QuickAction, shell: String, arguments: [String], workingDirectory: String, parseJSON: Bool) {
-        let fullCommand = "\(shell) \(arguments.joined(separator: " "))"
-        let entryID = appendLog(action: action, command: fullCommand)
-        let actionRaw = action.rawValue
-        let dir = workingDirectory
-
-        logger.info("Quick action \(actionRaw) starting in \(dir)")
-        logger.info("Command: \(fullCommand)")
-
-        Task.detached {
-            let process = Process()
-            let pipe = Pipe()
-            process.executableURL = URL(fileURLWithPath: shell)
-            process.arguments = arguments
-            process.currentDirectoryURL = URL(fileURLWithPath: dir)
-            process.standardOutput = pipe
-            process.standardError = pipe
-
-            let success: Bool
-            let output: String
-            do {
-                try process.run()
-                await MainActor.run { self.runningProcess = process }
-                process.waitUntilExit()
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                output = String(data: data, encoding: .utf8) ?? ""
-                if parseJSON {
-                    success = Self.parseSuccess(output: output, exitCode: process.terminationStatus)
-                } else {
-                    success = process.terminationStatus == 0
-                }
-            } catch {
-                output = "Failed to launch: \(error.localizedDescription)"
-                success = false
-            }
-
-            let exitCode = process.terminationStatus
-            await MainActor.run {
-                if let idx = self.log.firstIndex(where: { $0.id == entryID }) {
-                    self.log[idx].output = output
-                    self.log[idx].exitCode = exitCode
-                }
-                self.runningProcess = nil
-                self.state = success ? .succeeded(action) : .failed(action)
-                if success {
-                    self.onSuccess?(action)
-                }
-                self.scheduleDismiss()
-            }
-        }
-    }
-
     @discardableResult
     private func appendLog(action: QuickAction, command: String) -> UUID {
         let entry = QuickActionLogEntry(
@@ -275,17 +207,6 @@ final class QuickActionRunner: ObservableObject {
 
     func clearLog() {
         log.removeAll()
-    }
-
-    private nonisolated static func parseSuccess(output: String, exitCode: Int32) -> Bool {
-        guard exitCode == 0 else { return false }
-        guard let data = output.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-        else {
-            return true
-        }
-        let isError = json["is_error"] as? Bool ?? false
-        return !isError
     }
 
     private func scheduleDismiss() {

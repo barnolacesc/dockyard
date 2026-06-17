@@ -858,15 +858,17 @@ struct TerminalContainerView: View {
 
                         GitHubActionMenu(
                             runner: quickActionRunner,
-                            codingCLI: selectedCodingCLI,
-                            codingCLIPath: selectedCodingCLIPath,
                             ghPath: appEnv.toolStatus.gh.path,
                             workingDirectory: workingDirectory,
                             branchName: appEnv.branchName(for: workingDirectory),
-                            bypassPermissions: bypassPermissions,
                             worktreeState: appEnv.worktreeState(for: workingDirectory),
                             hasGitHubRemote: appEnv.hasGitHubRemote(projectDirectory),
-                            branchPR: branchPR
+                            branchPR: branchPR,
+                            onSendToAgent: { action in
+                                guard let prompt = action.prompt else { return }
+                                activeTab = .agent
+                                surfaceCache.sendText(to: agentID, text: prompt + "\r")
+                            }
                         )
                     }
                 }
@@ -1461,15 +1463,13 @@ private struct WorkspaceTabDropDelegate: DropDelegate {
 
 private struct GitHubActionMenu: View {
     @ObservedObject var runner: QuickActionRunner
-    let codingCLI: CodingCLI
-    let codingCLIPath: String?
     let ghPath: String?
     let workingDirectory: String
     let branchName: String?
-    let bypassPermissions: Bool
     let worktreeState: WorktreeState
     let hasGitHubRemote: Bool
     let branchPR: GitHubPR?
+    let onSendToAgent: (QuickAction) -> Void
 
     private var prState: String? {
         branchPR?.state
@@ -1552,26 +1552,17 @@ private struct GitHubActionMenu: View {
     }
 
     private func disabledReason(for action: QuickAction) -> String? {
-        if action.usesLLM {
-            if codingCLIPath == nil {
-                return codingCLI.quickActionNotInstalledMessage
-            }
-            if !bypassPermissions {
-                return NSLocalizedString("Enable \"Bypass permission prompts\" in Settings.", comment: "")
-            }
-        }
-        if action == .closePR, ghPath == nil {
-            return NSLocalizedString("gh CLI is not installed.", comment: "")
-        }
-        return nil
+        action.disabledReason(ghPath: ghPath)
     }
 
     private func runAction(_ action: QuickAction) {
         guard disabledReason(for: action) == nil else { return }
+        if action.delegatesToAgent {
+            onSendToAgent(action)
+            return
+        }
         runner.run(
             action: action,
-            codingCLI: codingCLI,
-            codingCLIPath: codingCLIPath,
             ghPath: ghPath,
             workingDirectory: workingDirectory,
             branchName: branchName
