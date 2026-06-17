@@ -87,6 +87,72 @@ final class ProjectTests: XCTestCase {
     func testWorkstreamCreation() {
         let ws = Workstream(name: "feature-auth")
         XCTAssertEqual(ws.name, "feature-auth")
+        XCTAssertEqual(ws.stage, .auto)
+    }
+
+    func testWorkstreamStageAutoFollowsPullRequestState() {
+        XCTAssertEqual(WorkstreamStage.auto.displayStage(prState: "MERGED"), .done)
+        XCTAssertEqual(WorkstreamStage.auto.displayStage(prState: "OPEN"), .review)
+        XCTAssertEqual(WorkstreamStage.auto.displayStage(prState: nil), .normal)
+        XCTAssertEqual(WorkstreamStage.auto.displayStage(prState: "CLOSED"), .normal)
+    }
+
+    func testWorkstreamStageManualOverridesPullRequestState() {
+        XCTAssertEqual(WorkstreamStage.working.displayStage(prState: "MERGED"), .normal)
+        XCTAssertEqual(WorkstreamStage.review.displayStage(prState: nil), .review)
+        XCTAssertEqual(WorkstreamStage.done.displayStage(prState: "OPEN"), .done)
+    }
+
+    func testWorkstreamReportsManualStageOnlyForOverrides() {
+        XCTAssertFalse(Workstream(name: "auto").isStageManuallySet)
+        XCTAssertTrue(Workstream(name: "review", stage: .review).isStageManuallySet)
+    }
+
+    func testWorkstreamDecodingWithoutStageDefaultsToAuto() throws {
+        let id = UUID()
+        let json = """
+        {
+          "id": "\(id.uuidString)",
+          "name": "legacy",
+          "worktreePath": "/tmp/legacy",
+          "bypassPermissions": false,
+          "lastAccessedAt": 0
+        }
+        """
+
+        let decoded = try JSONDecoder().decode(Workstream.self, from: Data(json.utf8))
+
+        XCTAssertEqual(decoded.stage, .auto)
+        XCTAssertEqual(decoded.id, id)
+        XCTAssertEqual(decoded.name, "legacy")
+        XCTAssertEqual(decoded.worktreePath, "/tmp/legacy")
+    }
+
+    func testWorkstreamDecodingUnknownStageDefaultsToAuto() throws {
+        let json = """
+        {
+          "id": "\(UUID().uuidString)",
+          "name": "future",
+          "worktreePath": null,
+          "bypassPermissions": true,
+          "lastAccessedAt": 0,
+          "stage": "blocked"
+        }
+        """
+
+        let decoded = try JSONDecoder().decode(Workstream.self, from: Data(json.utf8))
+
+        XCTAssertEqual(decoded.stage, .auto)
+    }
+
+    func testWorkstreamCodablePreservesExplicitStage() throws {
+        let original = Workstream(name: "review-me", stage: .review)
+
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(Workstream.self, from: data)
+
+        XCTAssertEqual(decoded.stage, .review)
+        XCTAssertEqual(decoded, original)
     }
 
     func testProjectWithWorkstreams() {

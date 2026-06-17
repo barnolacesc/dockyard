@@ -83,6 +83,72 @@ final class SidebarRailTests: XCTestCase {
         XCTAssertEqual(dirtyStatus, SidebarRailStatus(isWaiting: false, dirtyCount: 2))
     }
 
+    func testWorkstreamStageStyleReviewStageShowsFilledPillWithoutReceding() {
+        let style = WorkstreamStageStyle(
+            displayStage: .review,
+            isManuallySet: false,
+            prNumber: 24
+        )
+
+        XCTAssertFalse(style.recedesRow)
+        XCTAssertEqual(
+            style.stagePill,
+            WorkstreamStagePillStyle(
+                appearance: .filled,
+                iconSystemName: "arrow.triangle.pull",
+                titleKey: "Review",
+                prNumber: 24,
+                showsManualMark: false
+            )
+        )
+    }
+
+    func testWorkstreamStageStyleDoneStageShowsOutlinePillAndRecedes() {
+        let style = WorkstreamStageStyle(
+            displayStage: .done,
+            isManuallySet: false,
+            prNumber: 24
+        )
+
+        XCTAssertTrue(style.recedesRow)
+        XCTAssertEqual(
+            style.stagePill,
+            WorkstreamStagePillStyle(
+                appearance: .outline,
+                iconSystemName: "checkmark",
+                titleKey: "Merged",
+                prNumber: 24,
+                showsManualMark: false
+            )
+        )
+    }
+
+    func testWorkstreamStageStyleNormalStageShowsNoPillUnlessManual() {
+        XCTAssertNil(WorkstreamStageStyle(displayStage: .normal, isManuallySet: false, prNumber: nil).stagePill)
+
+        XCTAssertEqual(
+            WorkstreamStageStyle(displayStage: .normal, isManuallySet: true, prNumber: nil).stagePill,
+            WorkstreamStagePillStyle(
+                appearance: .bare,
+                iconSystemName: nil,
+                titleKey: "Working",
+                prNumber: nil,
+                showsManualMark: true
+            )
+        )
+    }
+
+    func testWorkstreamStageStyleManualDoneUsesDoneLabelAndManualMark() {
+        let style = WorkstreamStageStyle(
+            displayStage: .done,
+            isManuallySet: true,
+            prNumber: nil
+        )
+
+        XCTAssertEqual(style.stagePill?.titleKey, "Done")
+        XCTAssertEqual(style.stagePill?.showsManualMark, true)
+    }
+
     func testSidebarModePersistenceRoundTripsAndKeepsLastVisibleMode() {
         SidebarMode.save(.collapsed, defaults: defaults)
         SidebarMode.save(.hidden, defaults: defaults)

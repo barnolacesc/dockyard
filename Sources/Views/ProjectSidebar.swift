@@ -37,6 +37,60 @@ extension Notification.Name {
     static let addNew = Notification.Name("dockyard.addNew")
 }
 
+struct WorkstreamStagePillStyle: Equatable {
+    enum Appearance: Equatable {
+        case filled
+        case outline
+        case bare
+    }
+
+    let appearance: Appearance
+    let iconSystemName: String?
+    let titleKey: String
+    let prNumber: Int?
+    let showsManualMark: Bool
+}
+
+struct WorkstreamStageStyle: Equatable {
+    let displayStage: WorkstreamDisplayStage
+    let isManuallySet: Bool
+    let prNumber: Int?
+
+    var recedesRow: Bool {
+        displayStage == .done
+    }
+
+    var stagePill: WorkstreamStagePillStyle? {
+        switch displayStage {
+        case .normal:
+            guard isManuallySet else { return nil }
+            return WorkstreamStagePillStyle(
+                appearance: .bare,
+                iconSystemName: nil,
+                titleKey: "Working",
+                prNumber: nil,
+                showsManualMark: true
+            )
+        case .review:
+            return WorkstreamStagePillStyle(
+                appearance: .filled,
+                iconSystemName: "arrow.triangle.pull",
+                titleKey: "Review",
+                prNumber: prNumber,
+                showsManualMark: isManuallySet
+            )
+        case .done:
+            return WorkstreamStagePillStyle(
+                appearance: .outline,
+                iconSystemName: "checkmark",
+                titleKey: isManuallySet ? "Done" : "Merged",
+                prNumber: prNumber,
+                showsManualMark: isManuallySet
+            )
+        }
+    }
+}
+
 struct ProjectSidebar: View {
     @Binding var projects: [Project]
     @Binding var selection: SidebarSelection?
@@ -200,12 +254,21 @@ struct ProjectSidebar: View {
                             prTitle: pr?.title,
                             prNumber: pr?.number,
                             prState: pr?.state,
+                            stage: workstream.stage,
                             uncommittedCount: workstream.worktreePath.map { appEnv.worktreeState(for: $0).uncommittedCount } ?? 0,
                             onRemove: { workstreamToRemove = workstream.id },
                             onPurge: { confirmPurge(workstream) },
                             onRename: {
                                 workstreamToRename = workstream.id
                                 newWorkstreamName = workstream.name
+                            },
+                            onSetStage: { newStage in
+                                guard let (pi, wi) = cachedWorkstreamIndex[workstream.id],
+                                      projects.indices.contains(pi),
+                                      projects[pi].workstreams.indices.contains(wi)
+                                else { return }
+                                projects[pi].workstreams[wi].stage = newStage
+                                onProjectsChanged()
                             }
                         )
                         .tag(SidebarSelection.workstream(workstream.id))
@@ -1205,10 +1268,12 @@ private struct WorkstreamRow: View {
     var prTitle: String?
     var prNumber: Int?
     var prState: String?
+    var stage: WorkstreamStage = .auto
     var uncommittedCount: Int = 0
     let onRemove: () -> Void
     let onPurge: () -> Void
     var onRename: (() -> Void)? = nil
+    var onSetStage: ((WorkstreamStage) -> Void)? = nil
 
     @State private var isHovering = false
 
@@ -1238,8 +1303,28 @@ private struct WorkstreamRow: View {
         isPathValid ? uncommittedCount : 0
     }
 
+    private var displayStage: WorkstreamDisplayStage {
+        stage.displayStage(prState: prState)
+    }
+
+    private var stageStyle: WorkstreamStageStyle {
+        WorkstreamStageStyle(
+            displayStage: displayStage,
+            isManuallySet: stage != .auto,
+            prNumber: prNumber
+        )
+    }
+
     private var statusStyle: WorkstreamStatusStyle {
         WorkstreamStatusStyle(agentState: agentState, isPathValid: isPathValid)
+    }
+
+    private var contentOpacity: Double {
+        stageStyle.recedesRow ? 0.65 : 1
+    }
+
+    private var labelStyle: AnyShapeStyle {
+        stageStyle.recedesRow ? AnyShapeStyle(.secondary) : statusStyle.labelStyle
     }
 
     var body: some View {
@@ -1284,6 +1369,18 @@ private struct WorkstreamRow: View {
             if worktreePath != nil || githubURL != nil {
                 Divider()
             }
+            if let onSetStage {
+                Menu {
+                    stageMenuButton(.auto, titleKey: "Auto", onSetStage: onSetStage)
+                    Divider()
+                    stageMenuButton(.working, titleKey: "Still working", onSetStage: onSetStage)
+                    stageMenuButton(.review, titleKey: "Needs review", onSetStage: onSetStage)
+                    stageMenuButton(.done, titleKey: "Done / merged", onSetStage: onSetStage)
+                } label: {
+                    Label("Status", systemImage: "tag")
+                }
+                Divider()
+            }
             if let onRename {
                 Button(action: onRename) {
                     Label("Rename", systemImage: "pencil")
@@ -1313,12 +1410,25 @@ private struct WorkstreamRow: View {
         }
     }
 
+    @ViewBuilder
+    private func stageMenuButton(_ option: WorkstreamStage, titleKey: LocalizedStringKey, onSetStage: @escaping (WorkstreamStage) -> Void) -> some View {
+        Button {
+            onSetStage(option)
+        } label: {
+            if stage == option {
+                Label(titleKey, systemImage: "checkmark")
+            } else {
+                Text(titleKey)
+            }
+        }
+    }
+
     private var subtitleStyle: AnyShapeStyle {
+        if stageStyle.recedesRow {
+            return AnyShapeStyle(.secondary)
+        }
         if statusStyle.labelColor == .blue {
             return statusStyle.subtitleStyle
-        }
-        if prState == "MERGED" {
-            return AnyShapeStyle(.purple)
         }
         return statusStyle.subtitleStyle
     }
@@ -1326,13 +1436,14 @@ private struct WorkstreamRow: View {
     private var rowContent: some View {
         HStack(spacing: 4) {
             ActivityIndicator(state: agentState, isPathValid: isPathValid)
+                .opacity(contentOpacity)
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 4) {
                     Text(headline)
                         .font(.system(size: 12))
                         .strikethrough(!isPathValid)
-                        .foregroundStyle(statusStyle.labelStyle)
+                        .foregroundStyle(labelStyle)
                         .lineLimit(1)
                     if hasActivePort {
                         Image(systemName: "circle.fill")
@@ -1342,11 +1453,6 @@ private struct WorkstreamRow: View {
                 }
                 if subtitle != nil || dirtyCount > 0 {
                     HStack(spacing: 3) {
-                        if prState == "MERGED" {
-                            Image(systemName: "arrow.triangle.merge")
-                                .font(.system(size: 8))
-                                .foregroundStyle(.purple)
-                        }
                         if let subtitle {
                             Text(subtitle)
                                 .lineLimit(1)
@@ -1361,13 +1467,78 @@ private struct WorkstreamRow: View {
                     .foregroundStyle(subtitleStyle)
                 }
             }
+            .opacity(contentOpacity)
 
             Spacer()
+
+            if let pill = stageStyle.stagePill {
+                StagePill(style: pill)
+                    .opacity(contentOpacity * (isHovering ? 0.75 : 1))
+            }
 
             SidebarIconButton(icon: "xmark", action: onRemove)
                 .accessibilityLabel("Remove workstream")
                 .opacity(isHovering ? 1 : 0)
         }
+    }
+}
+
+private struct StagePill: View {
+    let style: WorkstreamStagePillStyle
+
+    private var foregroundColor: Color {
+        switch style.appearance {
+        case .filled:
+            return .white
+        case .outline, .bare:
+            return Color.purple.opacity(0.75)
+        }
+    }
+
+    private var fillColor: Color {
+        style.appearance == .filled ? Color.purple : Color.clear
+    }
+
+    private var strokeColor: Color {
+        switch style.appearance {
+        case .filled:
+            return Color.clear
+        case .outline:
+            return Color.purple.opacity(0.5)
+        case .bare:
+            return Color.purple.opacity(0.35)
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 3) {
+            if style.showsManualMark {
+                Image(systemName: "pin.fill")
+                    .font(.system(size: 7, weight: .semibold))
+            }
+            if let iconSystemName = style.iconSystemName {
+                Image(systemName: iconSystemName)
+                    .font(.system(size: 9, weight: .semibold))
+            }
+            Text(LocalizedStringKey(style.titleKey))
+            if let prNumber = style.prNumber {
+                Text("#\(prNumber)")
+            }
+        }
+        .font(.system(size: 9, weight: .semibold))
+        .lineLimit(1)
+        .foregroundStyle(foregroundColor)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(
+            Capsule()
+                .fill(fillColor)
+        )
+        .overlay(
+            Capsule()
+                .stroke(strokeColor, lineWidth: 1)
+        )
+        .help(NSLocalizedString("Workstream lifecycle status", comment: ""))
     }
 }
 

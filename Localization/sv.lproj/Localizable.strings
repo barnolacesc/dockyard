@@ -227,6 +227,17 @@
 "Not a git repository" = "Inte ett git-repository";
 "Description" = "Beskrivning";
 
+/* Workstream stage */
+"Auto" = "Automatisk";
+"Still working" = "Arbetar fortfarande";
+"Needs review" = "Behöver granskning";
+"Done / merged" = "Klar / sammanslagen";
+"Review" = "Granskning";
+"Merged" = "Sammanslagen";
+"Done" = "Klar";
+"Working" = "Arbetar";
+"Workstream lifecycle status" = "Workstreamens livscykelstatus";
+
 /* Initialization errors */
 "Dockyard cannot start" = "Dockyard kan inte starta";
 "The terminal engine (Ghostty) failed to initialize. This may indicate a system compatibility issue." = "Terminalmotorn (Ghostty) kunde inte initialiseras. Detta kan tyda på ett systemkompatibilitetsproblem.";
