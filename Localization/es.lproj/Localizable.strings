@@ -141,6 +141,9 @@
 "Claude Code" = "Claude Code";
 "Codex" = "Codex";
 "Coding CLI" = "CLI de código";
+"Use Default (%@)" = "Usar valor predeterminado (%@)";
+"Use Default follows the Coding Agent selected in Settings." = "Usar valor predeterminado sigue el agente de código seleccionado en Ajustes.";
+"Used as the default for workstreams that have not chosen their own Coding Agent." = "Se usa como valor predeterminado para los flujos de trabajo que no han elegido su propio agente de código.";
 "Agent Teams" = "Equipos de agentes";
 "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams." = "Activa la coordinación experimental multi-agente. Los agentes pueden crear compañeros, delegar tareas y colaborar entre flujos de trabajo.";
 "Agent Teams is only available with Claude Code." = "Los equipos de agentes solo están disponibles con Claude Code.";

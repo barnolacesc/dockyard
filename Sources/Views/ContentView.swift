@@ -240,6 +240,24 @@ struct ContentView: View {
                     snapshot: surfaceCache.restoreTabSnapshot(for: workstreamID),
                     savedTab: WorkspaceStateStore.load(for: workstreamID)
                 )
+                let codingCLIBinding = Binding<String?>(
+                    get: {
+                        guard let currentProjectIndex = projectList.items.firstIndex(where: { $0.id == project.id }),
+                              let currentWorkstreamIndex = projectList.items[currentProjectIndex].workstreams.firstIndex(where: { $0.id == workstreamID })
+                        else {
+                            return nil
+                        }
+                        return projectList.items[currentProjectIndex].workstreams[currentWorkstreamIndex].codingCLI
+                    },
+                    set: { newValue in
+                        guard let currentProjectIndex = projectList.items.firstIndex(where: { $0.id == project.id }),
+                              let currentWorkstreamIndex = projectList.items[currentProjectIndex].workstreams.firstIndex(where: { $0.id == workstreamID })
+                        else {
+                            return
+                        }
+                        projectList.items[currentProjectIndex].workstreams[currentWorkstreamIndex].codingCLI = newValue
+                    }
+                )
                 TerminalContainerView(
                     workstreamID: workstreamID,
                     workingDirectory: workstream.workingDirectory(projectDirectory: project.directory),
@@ -247,6 +265,7 @@ struct ContentView: View {
                     projectName: project.name,
                     workstreamName: workstream.name,
                     bypassPermissions: workstream.bypassPermissions,
+                    workstreamCodingCLI: codingCLIBinding,
                     isActive: true,
                     scriptConfig: scriptConfig,
                     initialTabState: initialTabState

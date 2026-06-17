@@ -260,6 +260,7 @@ struct TerminalContainerView: View {
     let projectName: String
     let workstreamName: String
     let bypassPermissions: Bool
+    @Binding var workstreamCodingCLI: String?
     let isActive: Bool
 
     @EnvironmentObject var surfaceCache: TerminalSurfaceCache
@@ -307,6 +308,7 @@ struct TerminalContainerView: View {
         projectName: String,
         workstreamName: String,
         bypassPermissions: Bool,
+        workstreamCodingCLI: Binding<String?> = .constant(nil),
         isActive: Bool,
         scriptConfig: ScriptConfig = .empty,
         initialTabState: WorkspaceTabSnapshot = startupWorkspaceTabState(snapshot: nil, savedTab: nil)
@@ -317,6 +319,7 @@ struct TerminalContainerView: View {
         self.projectName = projectName
         self.workstreamName = workstreamName
         self.bypassPermissions = bypassPermissions
+        _workstreamCodingCLI = workstreamCodingCLI
         self.isActive = isActive
         _activeTab = State(initialValue: initialTabState.activeTab)
         _tabs = State(initialValue: initialTabState.tabs)
@@ -334,7 +337,11 @@ struct TerminalContainerView: View {
     }
 
     private var selectedCodingCLI: CodingCLI {
-        appEnv.toolStatus.resolvedCodingCLI(storedValue: codingCLIRaw)
+        appEnv.toolStatus.resolvedCodingCLI(storedValue: effectiveCodingCLIStoredValue)
+    }
+
+    private var effectiveCodingCLIStoredValue: String {
+        effectiveCodingCLIRaw(workstream: workstreamCodingCLI, global: codingCLIRaw)
     }
 
     private var selectedCodingCLIPath: String? {
@@ -583,6 +590,7 @@ struct TerminalContainerView: View {
                 scriptConfig: scriptConfig,
                 useTmux: useTmux,
                 environmentVars: terminalEnvVars,
+                workstreamCodingCLI: $workstreamCodingCLI,
                 runStoppedManually: $runStoppedManually,
                 runStarted: $runStarted,
                 sessionMode: sessionMode,
@@ -669,7 +677,7 @@ struct TerminalContainerView: View {
             .onChange(of: autoRenameBranch) { rebuildAgentCommand() }
             .onChange(of: allowOutsideWorktree) { rebuildAgentCommand() }
             .onChange(of: workstreamName) { rebuildAgentCommand() }
-            .onChange(of: codingCLIRaw) {
+            .onChange(of: effectiveCodingCLIStoredValue) {
                 surfaceCache.removeSurface(for: agentID)
                 rebuildAgentCommand()
                 preloadSurfaces()

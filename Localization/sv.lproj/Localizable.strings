@@ -141,6 +141,9 @@
 "Claude Code" = "Claude Code";
 "Codex" = "Codex";
 "Coding CLI" = "Kod-CLI";
+"Use Default (%@)" = "Använd standard (%@)";
+"Use Default follows the Coding Agent selected in Settings." = "Använd standard följer kodningsagenten som valts i Inställningar.";
+"Used as the default for workstreams that have not chosen their own Coding Agent." = "Används som standard för arbetsflöden som inte har valt en egen kodningsagent.";
 "Agent Teams" = "Agentteam";
 "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams." = "Aktiverar experimentell multi-agentkoordinering. Agenter kan skapa teammedlemmar, delegera uppgifter och samarbeta mellan arbetsflöden.";
 "Agent Teams is only available with Claude Code." = "Agentteam är bara tillgängligt med Claude Code.";

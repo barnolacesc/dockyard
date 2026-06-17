@@ -12,6 +12,7 @@ struct WorkstreamInfoView: View {
     var scriptConfig: ScriptConfig = .empty
     var useTmux: Bool = false
     var environmentVars: [String: String] = [:]
+    @Binding var workstreamCodingCLI: String?
     @Binding var runStoppedManually: Bool
     @Binding var runStarted: Bool
     var sessionMode: TerminalSessionMode = .standard
@@ -20,6 +21,7 @@ struct WorkstreamInfoView: View {
 
     @EnvironmentObject var appEnv: AppEnvironment
     @AppStorage("dockyard.defaultTerminal") private var defaultTerminal: String = ""
+    @AppStorage("dockyard.codingCLI") private var globalCodingCLIRaw: String = ""
     @State private var branchName: String?
     @State private var copiedBranch = false
     @State private var copiedPath = false
@@ -211,6 +213,33 @@ struct WorkstreamInfoView: View {
                     }
                 }
 
+                Section("Coding Agent") {
+                    Picker("Coding Agent", selection: $workstreamCodingCLI) {
+                        Text(defaultCodingAgentLabel).tag(String?.none)
+                        ForEach(CodingCLI.allCases) { cli in
+                            Text(cli.displayName).tag(String?.some(cli.rawValue))
+                        }
+                    }
+
+                    Text("Use Default follows the Coding Agent selected in Settings.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if !appEnv.toolStatus.status(for: selectedCodingCLI).isInstalled {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .foregroundStyle(.orange)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(selectedCodingCLI.missingTitle)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Link(selectedCodingCLI.installLabel, destination: selectedCodingCLI.installURL)
+                                    .font(.caption)
+                            }
+                        }
+                    }
+                }
+
                 if scriptConfig.hasAnyScript {
                     Section {
                         if let setup = scriptConfig.setup {
@@ -306,6 +335,19 @@ struct WorkstreamInfoView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { loadInfo() }
     } // body
+
+    private var effectiveCodingCLIStoredValue: String {
+        effectiveCodingCLIRaw(workstream: workstreamCodingCLI, global: globalCodingCLIRaw)
+    }
+
+    private var selectedCodingCLI: CodingCLI {
+        appEnv.toolStatus.resolvedCodingCLI(storedValue: effectiveCodingCLIStoredValue)
+    }
+
+    private var defaultCodingAgentLabel: String {
+        let defaultCLI = appEnv.toolStatus.resolvedCodingCLI(storedValue: globalCodingCLIRaw)
+        return String(format: NSLocalizedString("Use Default (%@)", comment: ""), defaultCLI.displayName)
+    }
 
     private func formattedBaseString(baseBranch: String, createdDate: Date?) -> String {
         let dateFormatter = DateFormatter()
