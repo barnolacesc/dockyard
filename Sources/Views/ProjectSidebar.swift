@@ -23,6 +23,15 @@ func expandedProjectIDs(afterSelecting selection: SidebarSelection?, current: Se
     return expanded
 }
 
+func moveProjects(_ projects: inout [Project], fromOffsets source: IndexSet, toOffset destination: Int) {
+    projects.move(fromOffsets: source, toOffset: destination)
+}
+
+func moveWorkstreams(in projects: inout [Project], projectID: UUID, fromOffsets source: IndexSet, toOffset destination: Int) {
+    guard let projectIndex = projects.firstIndex(where: { $0.id == projectID }) else { return }
+    projects[projectIndex].workstreams.move(fromOffsets: source, toOffset: destination)
+}
+
 extension Notification.Name {
     static let addProject = Notification.Name("dockyard.addProject")
     static let addNew = Notification.Name("dockyard.addNew")
@@ -42,7 +51,7 @@ struct WorkstreamStagePillStyle: Equatable {
     let showsManualMark: Bool
 }
 
-struct WorkstreamStatusStyle {
+struct WorkstreamStageStyle: Equatable {
     let displayStage: WorkstreamDisplayStage
     let isManuallySet: Bool
     let prNumber: Int?
@@ -126,7 +135,7 @@ struct ProjectSidebar: View {
     }
 
     private func recomputeSortedIDs() -> [UUID] {
-        return projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }.map(\.id)
+        projects.map(\.id)
     }
 
     private func rebuildIndices() {
@@ -137,9 +146,7 @@ struct ProjectSidebar: View {
             for (wi, ws) in project.workstreams.enumerated() {
                 wsIndex[ws.id] = (pi, wi)
             }
-            sortedWS[project.id] = project.workstreams
-                .sorted { $0.lastAccessedAt > $1.lastAccessedAt }
-                .map(\.id)
+            sortedWS[project.id] = project.workstreams.map(\.id)
         }
         cachedWorkstreamIndex = wsIndex
         cachedSortedWorkstreamIDs = sortedWS
@@ -192,10 +199,6 @@ struct ProjectSidebar: View {
         projects[pi].lastAccessedAt = now
         projects[pi].workstreams[wi].lastAccessedAt = now
         onProjectsChanged()
-        cachedSortedIDs = recomputeSortedIDs()
-        cachedSortedWorkstreamIDs[projects[pi].id] = projects[pi].workstreams
-            .sorted { $0.lastAccessedAt > $1.lastAccessedAt }
-            .map(\.id)
     }
 
     private func projectRows() -> some View {
@@ -233,14 +236,18 @@ struct ProjectSidebar: View {
                        projects[pIdx].workstreams.indices.contains(wIdx)
                     {
                         let workstream = projects[pIdx].workstreams[wIdx]
+                        let agentState = agentStateStore.agentState(for: workstream.id)
+                        let isPathValid = appEnv.isPathValid(workstream.worktreePath)
+                        let statusStyle = WorkstreamStatusStyle(agentState: agentState, isPathValid: isPathValid)
                         let branch = appEnv.branchName(for: workstream.worktreePath)
                         let pr = branch.flatMap { appEnv.githubPR(for: project.directory, branch: $0) }
                         WorkstreamRow(
                             name: workstream.name,
                             branchName: branch,
                             worktreePath: workstream.worktreePath,
-                            agentState: agentStateStore.agentState(for: workstream.id),
-                            isPathValid: appEnv.isPathValid(workstream.worktreePath),
+                            agentState: agentState,
+                            isPathValid: isPathValid,
+                            isSelected: selection == .workstream(workstream.id),
                             hasActivePort: appEnv.hasActivePort(workstream.id),
                             githubURL: appEnv.githubURL(for: project.directory, branch: branch),
                             taskDescription: appEnv.taskDescription(for: workstream.worktreePath),
@@ -268,17 +275,34 @@ struct ProjectSidebar: View {
                         .padding(.leading, 28)
                         .listRowBackground(
                             Group {
-                                if agentStateStore.agentState(for: workstream.id) == .waiting && selection != .workstream(workstream.id) {
-                                    Color.accentColor.opacity(0.15)
-                                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                                        .padding(.horizontal, 4)
+                                if selection != .workstream(workstream.id) {
+                                    WorkstreamRowBackground(statusStyle: statusStyle)
                                 }
                             }
                         )
                     }
                 }
+                .onMove { source, destination in
+                    moveWorkstreamRows(in: project.id, fromOffsets: source, toOffset: destination)
+                }
             }
         }
+        .onMove { source, destination in
+            moveProjectRows(fromOffsets: source, toOffset: destination)
+        }
+    }
+
+    private func moveProjectRows(fromOffsets source: IndexSet, toOffset destination: Int) {
+        moveProjects(&projects, fromOffsets: source, toOffset: destination)
+        cachedSortedIDs = recomputeSortedIDs()
+        rebuildIndices()
+        onProjectsChanged()
+    }
+
+    private func moveWorkstreamRows(in projectID: UUID, fromOffsets source: IndexSet, toOffset destination: Int) {
+        moveWorkstreams(in: &projects, projectID: projectID, fromOffsets: source, toOffset: destination)
+        rebuildIndices()
+        onProjectsChanged()
     }
 
     /// Number of agents currently waiting on the user, for the status strip.
@@ -1035,7 +1059,7 @@ private struct ProjectHeaderRow: View {
                 }
 
                 Text(project.directory.abbreviatedPath)
-                    .font(.system(size: 10))
+                    .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -1092,12 +1116,152 @@ private struct ProjectHeaderRow: View {
     }
 }
 
+enum WorkstreamStatusColor: Equatable {
+    case primary
+    case secondary
+    case tertiary
+    case green
+    case blue
+    case orange
+
+    func shapeStyle(opacity: Double = 1) -> AnyShapeStyle {
+        switch self {
+        case .primary:
+            return AnyShapeStyle(Color.primary.opacity(opacity))
+        case .secondary:
+            return AnyShapeStyle(Color.secondary.opacity(opacity))
+        case .tertiary:
+            return opacity == 1 ? AnyShapeStyle(.tertiary) : AnyShapeStyle(Color.secondary.opacity(0.5 * opacity))
+        case .green:
+            return AnyShapeStyle(Color.green.opacity(opacity))
+        case .blue:
+            return AnyShapeStyle(Color.blue.opacity(opacity))
+        case .orange:
+            return AnyShapeStyle(Color.orange.opacity(opacity))
+        }
+    }
+
+    func tintColor(opacity: Double = 1) -> Color? {
+        switch self {
+        case .primary, .secondary, .tertiary:
+            return nil
+        case .green:
+            return Color.green.opacity(opacity)
+        case .blue:
+            return Color.blue.opacity(opacity)
+        case .orange:
+            return Color.orange.opacity(opacity)
+        }
+    }
+}
+
+struct WorkstreamStatusStyle: Equatable {
+    enum IndicatorShape: Equatable {
+        case none
+        case circle
+        case warningTriangle
+    }
+
+    let indicatorShape: IndicatorShape
+    let indicatorColor: WorkstreamStatusColor?
+    let indicatorSize: CGFloat
+    let pulses: Bool
+    let labelColor: WorkstreamStatusColor
+    let subtitleColor: WorkstreamStatusColor
+    let subtitleOpacity: Double
+    let rowTintColor: WorkstreamStatusColor?
+    let rowTintOpacity: Double
+
+    init(agentState: AgentState?, isPathValid: Bool) {
+        if !isPathValid {
+            indicatorShape = .warningTriangle
+            indicatorColor = .orange
+            indicatorSize = 10
+            pulses = false
+            labelColor = .secondary
+            subtitleColor = .tertiary
+            subtitleOpacity = 1
+            rowTintColor = nil
+            rowTintOpacity = 0
+            return
+        }
+
+        switch agentState {
+        case .working:
+            indicatorShape = .circle
+            indicatorColor = .green
+            indicatorSize = 6
+            pulses = true
+            labelColor = .primary
+            subtitleColor = .tertiary
+            subtitleOpacity = 1
+            rowTintColor = nil
+            rowTintOpacity = 0
+        case .waiting:
+            indicatorShape = .circle
+            indicatorColor = .blue
+            indicatorSize = 6
+            pulses = false
+            labelColor = .blue
+            subtitleColor = .blue
+            subtitleOpacity = 0.8
+            rowTintColor = .blue
+            rowTintOpacity = 0.10
+        case .idle:
+            indicatorShape = .circle
+            indicatorColor = .tertiary
+            indicatorSize = 5
+            pulses = false
+            labelColor = .primary
+            subtitleColor = .tertiary
+            subtitleOpacity = 1
+            rowTintColor = nil
+            rowTintOpacity = 0
+        case nil:
+            indicatorShape = .none
+            indicatorColor = nil
+            indicatorSize = 0
+            pulses = false
+            labelColor = .primary
+            subtitleColor = .tertiary
+            subtitleOpacity = 1
+            rowTintColor = nil
+            rowTintOpacity = 0
+        }
+    }
+
+    var labelStyle: AnyShapeStyle {
+        labelColor.shapeStyle()
+    }
+
+    var subtitleStyle: AnyShapeStyle {
+        subtitleColor.shapeStyle(opacity: subtitleOpacity)
+    }
+}
+
+private struct WorkstreamRowBackground: View {
+    let statusStyle: WorkstreamStatusStyle
+
+    var body: some View {
+        Group {
+            if let rowTintColor = statusStyle.rowTintColor,
+               let tintColor = rowTintColor.tintColor(opacity: statusStyle.rowTintOpacity)
+            {
+                tintColor
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .padding(.horizontal, 4)
+            }
+        }
+    }
+}
+
 private struct WorkstreamRow: View {
     let name: String
     var branchName: String?
     var worktreePath: String?
     var agentState: AgentState? = nil
     var isPathValid: Bool = false
+    var isSelected: Bool = false
     var hasActivePort: Bool = false
     var githubURL: URL?
     var taskDescription: String?
@@ -1143,77 +1307,40 @@ private struct WorkstreamRow: View {
         stage.displayStage(prState: prState)
     }
 
-    private var statusStyle: WorkstreamStatusStyle {
-        WorkstreamStatusStyle(
+    private var stageStyle: WorkstreamStageStyle {
+        WorkstreamStageStyle(
             displayStage: displayStage,
             isManuallySet: stage != .auto,
             prNumber: prNumber
         )
     }
 
+    private var statusStyle: WorkstreamStatusStyle {
+        WorkstreamStatusStyle(agentState: agentState, isPathValid: isPathValid)
+    }
+
     private var contentOpacity: Double {
-        statusStyle.recedesRow ? 0.65 : 1
+        stageStyle.recedesRow ? 0.65 : 1
     }
 
-    private var headlineForegroundStyle: AnyShapeStyle {
-        if !isPathValid { return AnyShapeStyle(.secondary) }
-        if agentState == .waiting { return AnyShapeStyle(Color.accentColor) }
-        if statusStyle.recedesRow { return AnyShapeStyle(.secondary) }
-        return AnyShapeStyle(.primary)
-    }
-
-    private var subtitleForegroundStyle: AnyShapeStyle {
-        if agentState == .waiting { return AnyShapeStyle(Color.accentColor.opacity(0.8)) }
-        if statusStyle.recedesRow { return AnyShapeStyle(.secondary) }
-        return AnyShapeStyle(.tertiary)
+    private var labelStyle: AnyShapeStyle {
+        stageStyle.recedesRow ? AnyShapeStyle(.secondary) : statusStyle.labelStyle
     }
 
     var body: some View {
-        HStack(spacing: 4) {
-            ActivityIndicator(state: agentState, isPathValid: isPathValid)
-                .opacity(contentOpacity)
-
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 4) {
-                    Text(headline)
-                        .font(.system(size: 12))
-                        .strikethrough(!isPathValid)
-                        .foregroundStyle(headlineForegroundStyle)
-                        .lineLimit(1)
-                    if hasActivePort {
-                        Image(systemName: "circle.fill")
-                            .font(.system(size: 5))
-                            .foregroundStyle(.green)
-                    }
+        ZStack(alignment: .leading) {
+            if isSelected {
+                HStack(spacing: 0) {
+                    Rectangle()
+                        .fill(Color.accentColor)
+                        .frame(width: 3)
+                    Color.accentColor.opacity(0.10)
                 }
-                if subtitle != nil || dirtyCount > 0 {
-                    HStack(spacing: 3) {
-                        if let subtitle {
-                            Text(subtitle)
-                                .lineLimit(1)
-                        }
-                        if dirtyCount > 0 {
-                            Text("±\(dirtyCount)")
-                                .foregroundStyle(.secondary)
-                                .help(NSLocalizedString("Uncommitted changes", comment: ""))
-                        }
-                    }
-                    .font(.system(size: 9, design: .monospaced))
-                    .foregroundStyle(subtitleForegroundStyle)
-                }
-            }
-            .opacity(contentOpacity)
-
-            Spacer()
-
-            if let pill = statusStyle.stagePill {
-                StagePill(style: pill)
-                    .opacity(contentOpacity * (isHovering ? 0.75 : 1))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
             }
 
-            SidebarIconButton(icon: "xmark", action: onRemove)
-                .accessibilityLabel("Remove workstream")
-                .opacity(isHovering ? 1 : 0)
+            rowContent
+                .padding(.leading, isSelected ? 6 : 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
@@ -1295,6 +1422,65 @@ private struct WorkstreamRow: View {
             }
         }
     }
+
+    private var subtitleStyle: AnyShapeStyle {
+        if stageStyle.recedesRow {
+            return AnyShapeStyle(.secondary)
+        }
+        if statusStyle.labelColor == .blue {
+            return statusStyle.subtitleStyle
+        }
+        return statusStyle.subtitleStyle
+    }
+
+    private var rowContent: some View {
+        HStack(spacing: 4) {
+            ActivityIndicator(state: agentState, isPathValid: isPathValid)
+                .opacity(contentOpacity)
+
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 4) {
+                    Text(headline)
+                        .font(.system(size: 12))
+                        .strikethrough(!isPathValid)
+                        .foregroundStyle(labelStyle)
+                        .lineLimit(1)
+                    if hasActivePort {
+                        Image(systemName: "circle.fill")
+                            .font(.system(size: 5))
+                            .foregroundStyle(.green)
+                    }
+                }
+                if subtitle != nil || dirtyCount > 0 {
+                    HStack(spacing: 3) {
+                        if let subtitle {
+                            Text(subtitle)
+                                .lineLimit(1)
+                        }
+                        if dirtyCount > 0 {
+                            Text("±\(dirtyCount)")
+                                .foregroundStyle(.secondary)
+                                .help(NSLocalizedString("Uncommitted changes", comment: ""))
+                        }
+                    }
+                    .font(.system(size: 9, design: .monospaced))
+                    .foregroundStyle(subtitleStyle)
+                }
+            }
+            .opacity(contentOpacity)
+
+            Spacer()
+
+            if let pill = stageStyle.stagePill {
+                StagePill(style: pill)
+                    .opacity(contentOpacity * (isHovering ? 0.75 : 1))
+            }
+
+            SidebarIconButton(icon: "xmark", action: onRemove)
+                .accessibilityLabel("Remove workstream")
+                .opacity(isHovering ? 1 : 0)
+        }
+    }
 }
 
 private struct StagePill: View {
@@ -1362,30 +1548,26 @@ struct ActivityIndicator: View {
 
     @State private var isPulsing = false
 
+    private var statusStyle: WorkstreamStatusStyle {
+        WorkstreamStatusStyle(agentState: state, isPathValid: isPathValid)
+    }
+
     var body: some View {
         Group {
-            if !isPathValid {
+            if statusStyle.indicatorShape == .warningTriangle {
                 Image(systemName: "exclamationmark.triangle")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(statusStyle.indicatorColor?.shapeStyle() ?? AnyShapeStyle(.tertiary))
                     .font(.system(size: 10))
-            } else if state == .waiting {
+            } else if statusStyle.indicatorShape == .circle, let indicatorColor = statusStyle.indicatorColor {
                 Circle()
-                    .fill(Color.accentColor)
-                    .frame(width: 6, height: 6)
-                    .opacity(isPulsing ? 0.4 : 1.0)
-                    .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: isPulsing)
-                    .onAppear { isPulsing = true }
-            } else if state == .working {
-                Circle()
-                    .fill(.green)
-                    .frame(width: 6, height: 6)
-                    .opacity(isPulsing ? 0.4 : 1.0)
+                    .foregroundStyle(indicatorColor.shapeStyle())
+                    .frame(width: statusStyle.indicatorSize, height: statusStyle.indicatorSize)
+                    .opacity(statusStyle.pulses && isPulsing ? 0.4 : 1.0)
                     .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isPulsing)
-                    .onAppear { isPulsing = true }
-            } else if state == .idle {
-                Circle()
-                    .fill(.tertiary)
-                    .frame(width: 6, height: 6)
+                    .onAppear { isPulsing = statusStyle.pulses }
+                    .onChange(of: statusStyle.pulses) { _, pulses in
+                        isPulsing = pulses
+                    }
             }
             // state == nil (unknown) draws nothing
         }
@@ -1471,13 +1653,13 @@ private struct RecentRow: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 9))
+                .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
             Text(name)
-                .font(.system(size: 11))
+                .font(.system(size: 12))
                 .lineLimit(1)
             Text(projectName)
-                .font(.system(size: 9))
+                .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
                 .lineLimit(1)
             Spacer()

@@ -12,7 +12,7 @@ final class SidebarRailTests: XCTestCase {
         super.tearDown()
     }
 
-    func testProjectNumberMappingUsesSidebarSortOrder() {
+    func testProjectNumberMappingUsesManualOrder() {
         let oldest = Project(
             name: "oldest",
             directory: "/repo/oldest",
@@ -34,18 +34,18 @@ final class SidebarRailTests: XCTestCase {
 
         let sorted = sidebarRailSortedProjects([oldest, newest, middle])
 
-        XCTAssertEqual(sorted.map(\.id), [newest.id, middle.id, oldest.id])
+        XCTAssertEqual(sorted.map(\.id), [oldest.id, newest.id, middle.id])
         XCTAssertEqual(sorted.indices.map(sidebarRailProjectLabel), ["1", "2", "3"])
     }
 
-    func testWorkstreamLetterMappingUsesSidebarSortOrder() {
+    func testWorkstreamLetterMappingUsesManualOrder() {
         let a = Workstream(name: "a", id: UUID(), lastAccessedAt: Date(timeIntervalSince1970: 10))
         let b = Workstream(name: "b", id: UUID(), lastAccessedAt: Date(timeIntervalSince1970: 30))
         let c = Workstream(name: "c", id: UUID(), lastAccessedAt: Date(timeIntervalSince1970: 20))
 
         let sorted = sidebarRailSortedWorkstreams([a, b, c])
 
-        XCTAssertEqual(sorted.map(\.id), [b.id, c.id, a.id])
+        XCTAssertEqual(sorted.map(\.id), [a.id, b.id, c.id])
         XCTAssertEqual(sorted.indices.map(sidebarRailWorkstreamLabel), ["a", "b", "c"])
     }
 
@@ -83,8 +83,8 @@ final class SidebarRailTests: XCTestCase {
         XCTAssertEqual(dirtyStatus, SidebarRailStatus(isWaiting: false, dirtyCount: 2))
     }
 
-    func testWorkstreamStatusStyleReviewStageShowsFilledPillWithoutReceding() {
-        let style = WorkstreamStatusStyle(
+    func testWorkstreamStageStyleReviewStageShowsFilledPillWithoutReceding() {
+        let style = WorkstreamStageStyle(
             displayStage: .review,
             isManuallySet: false,
             prNumber: 24
@@ -103,8 +103,8 @@ final class SidebarRailTests: XCTestCase {
         )
     }
 
-    func testWorkstreamStatusStyleDoneStageShowsOutlinePillAndRecedes() {
-        let style = WorkstreamStatusStyle(
+    func testWorkstreamStageStyleDoneStageShowsOutlinePillAndRecedes() {
+        let style = WorkstreamStageStyle(
             displayStage: .done,
             isManuallySet: false,
             prNumber: 24
@@ -123,11 +123,11 @@ final class SidebarRailTests: XCTestCase {
         )
     }
 
-    func testWorkstreamStatusStyleNormalStageShowsNoPillUnlessManual() {
-        XCTAssertNil(WorkstreamStatusStyle(displayStage: .normal, isManuallySet: false, prNumber: nil).stagePill)
+    func testWorkstreamStageStyleNormalStageShowsNoPillUnlessManual() {
+        XCTAssertNil(WorkstreamStageStyle(displayStage: .normal, isManuallySet: false, prNumber: nil).stagePill)
 
         XCTAssertEqual(
-            WorkstreamStatusStyle(displayStage: .normal, isManuallySet: true, prNumber: nil).stagePill,
+            WorkstreamStageStyle(displayStage: .normal, isManuallySet: true, prNumber: nil).stagePill,
             WorkstreamStagePillStyle(
                 appearance: .bare,
                 iconSystemName: nil,
@@ -138,8 +138,8 @@ final class SidebarRailTests: XCTestCase {
         )
     }
 
-    func testWorkstreamStatusStyleManualDoneUsesDoneLabelAndManualMark() {
-        let style = WorkstreamStatusStyle(
+    func testWorkstreamStageStyleManualDoneUsesDoneLabelAndManualMark() {
+        let style = WorkstreamStageStyle(
             displayStage: .done,
             isManuallySet: true,
             prNumber: nil

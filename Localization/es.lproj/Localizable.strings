@@ -132,6 +132,10 @@
 "Choose base directory for projects" = "Elige el directorio base para los proyectos";
 "Default location when adding new projects." = "Ubicación predeterminada al añadir nuevos proyectos.";
 "Branch prefix" = "Prefijo de rama";
+"Open editor in a terminal" = "Abrir editor en un terminal";
+"Open your editor in a terminal tab (Cmd+O) instead of the built-in editor." = "Abre tu editor en una pestaña de terminal (Cmd+O) en lugar del editor integrado.";
+"Editor command" = "Comando del editor";
+"Runs in the worktree directory when you open an editor (Cmd+O)." = "Se ejecuta en el directorio del worktree cuando abres un editor (Cmd+O).";
 "Theme" = "Tema";
 "System" = "Sistema";
 "Light" = "Claro";
@@ -141,6 +145,9 @@
 "Claude Code" = "Claude Code";
 "Codex" = "Codex";
 "Coding CLI" = "CLI de código";
+"Use Default (%@)" = "Usar valor predeterminado (%@)";
+"Use Default follows the Coding Agent selected in Settings." = "Usar valor predeterminado sigue el agente de código seleccionado en Ajustes.";
+"Used as the default for workstreams that have not chosen their own Coding Agent." = "Se usa como valor predeterminado para los flujos de trabajo que no han elegido su propio agente de código.";
 "Agent Teams" = "Equipos de agentes";
 "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams." = "Activa la coordinación experimental multi-agente. Los agentes pueden crear compañeros, delegar tareas y colaborar entre flujos de trabajo.";
 "Agent Teams is only available with Claude Code." = "Los equipos de agentes solo están disponibles con Claude Code.";
@@ -309,7 +316,7 @@
 "Enable \"Bypass permission prompts\" in Settings." = "Activa \"Omitir permisos\" en Configuración.";
 "No GitHub remote found for this project." = "No se encontró un remoto de GitHub para este proyecto.";
 "Quick action debug" = "Depuración de acciones rápidas";
-"Show a debug panel with command output from quick actions (Create PR, Commit & Push)." = "Muestra un panel de depuración con la salida de las acciones rápidas (Crear PR, Commit y Push).";
+"Show a debug panel with command output from quick actions." = "Muestra un panel de depuración con la salida de las acciones rápidas.";
 
 /* Workstream Info Git Stats */
 "Ahead" = "Ahead";

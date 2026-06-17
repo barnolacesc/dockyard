@@ -40,9 +40,9 @@ final class AgentStateTests: XCTestCase {
 final class AgentStateStoreTests: XCTestCase {
     private var tempDir: URL!
 
-    private func writeSnapshot(_ state: AgentState, pid: Int32, for id: UUID) throws {
+    private func writeSnapshot(_ state: AgentState, pid: Int32, updatedAt: Date = Date(), for id: UUID) throws {
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-        let snapshot = AgentStateSnapshot(state: state, updatedAt: Date(), pid: pid)
+        let snapshot = AgentStateSnapshot(state: state, updatedAt: updatedAt, pid: pid)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
@@ -90,5 +90,49 @@ final class AgentStateStoreTests: XCTestCase {
     func testReturnsNilForUnknownID() {
         let store = AgentStateStore(directoryURL: tempDir)
         XCTAssertNil(store.agentState(for: UUID()))
+    }
+
+    func testDecaysWorkingOlderThanThirtyMinutesToIdle() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let snapshot = AgentStateSnapshot(
+            state: .working,
+            updatedAt: now.addingTimeInterval(-31 * 60),
+            pid: Int32(getpid())
+        )
+
+        XCTAssertEqual(AgentStateStore.decayedState(snapshot, now: now), .idle)
+    }
+
+    func testKeepsRecentWorkingState() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let snapshot = AgentStateSnapshot(
+            state: .working,
+            updatedAt: now.addingTimeInterval(-5 * 60),
+            pid: Int32(getpid())
+        )
+
+        XCTAssertEqual(AgentStateStore.decayedState(snapshot, now: now), .working)
+    }
+
+    func testKeepsWaitingAfterThirtyOneMinutes() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let snapshot = AgentStateSnapshot(
+            state: .waiting,
+            updatedAt: now.addingTimeInterval(-31 * 60),
+            pid: Int32(getpid())
+        )
+
+        XCTAssertEqual(AgentStateStore.decayedState(snapshot, now: now), .waiting)
+    }
+
+    func testDecaysWaitingOlderThanTwoHoursToIdle() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let snapshot = AgentStateSnapshot(
+            state: .waiting,
+            updatedAt: now.addingTimeInterval(-3 * 60 * 60),
+            pid: Int32(getpid())
+        )
+
+        XCTAssertEqual(AgentStateStore.decayedState(snapshot, now: now), .idle)
     }
 }

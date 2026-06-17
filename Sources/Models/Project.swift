@@ -47,14 +47,16 @@ struct Workstream: Identifiable, Hashable, Codable {
     var name: String
     var worktreePath: String?
     var bypassPermissions: Bool
+    var codingCLI: String?
     var lastAccessedAt: Date
     var stage: WorkstreamStage
 
-    init(name: String, worktreePath: String? = nil, bypassPermissions: Bool = false, id: UUID = UUID(), lastAccessedAt: Date = Date(), stage: WorkstreamStage = .auto) {
+    init(name: String, worktreePath: String? = nil, bypassPermissions: Bool = false, codingCLI: String? = nil, id: UUID = UUID(), lastAccessedAt: Date = Date(), stage: WorkstreamStage = .auto) {
         self.id = id
         self.name = name
         self.worktreePath = worktreePath
         self.bypassPermissions = bypassPermissions
+        self.codingCLI = codingCLI
         self.lastAccessedAt = lastAccessedAt
         self.stage = stage
     }
@@ -64,6 +66,7 @@ struct Workstream: Identifiable, Hashable, Codable {
         case name
         case worktreePath
         case bypassPermissions
+        case codingCLI
         case lastAccessedAt
         case stage
     }
@@ -74,6 +77,7 @@ struct Workstream: Identifiable, Hashable, Codable {
         name = try container.decode(String.self, forKey: .name)
         worktreePath = try container.decodeIfPresent(String.self, forKey: .worktreePath)
         bypassPermissions = try container.decode(Bool.self, forKey: .bypassPermissions)
+        codingCLI = try container.decodeIfPresent(String.self, forKey: .codingCLI)
         lastAccessedAt = try container.decode(Date.self, forKey: .lastAccessedAt)
         stage = try container.decodeIfPresent(WorkstreamStage.self, forKey: .stage) ?? .auto
     }

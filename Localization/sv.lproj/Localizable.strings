@@ -132,6 +132,10 @@
 "Choose base directory for projects" = "Välj baskatalog för projekt";
 "Default location when adding new projects." = "Standardplats när nya projekt läggs till.";
 "Branch prefix" = "Grenprefix";
+"Open editor in a terminal" = "Öppna redigeraren i en terminal";
+"Open your editor in a terminal tab (Cmd+O) instead of the built-in editor." = "Öppna din redigerare i en terminalflik (Cmd+O) i stället för den inbyggda redigeraren.";
+"Editor command" = "Redigerarkommando";
+"Runs in the worktree directory when you open an editor (Cmd+O)." = "Körs i worktree-katalogen när du öppnar en redigerare (Cmd+O).";
 "Theme" = "Tema";
 "System" = "System";
 "Light" = "Ljust";
@@ -141,6 +145,9 @@
 "Claude Code" = "Claude Code";
 "Codex" = "Codex";
 "Coding CLI" = "Kod-CLI";
+"Use Default (%@)" = "Använd standard (%@)";
+"Use Default follows the Coding Agent selected in Settings." = "Använd standard följer kodningsagenten som valts i Inställningar.";
+"Used as the default for workstreams that have not chosen their own Coding Agent." = "Används som standard för arbetsflöden som inte har valt en egen kodningsagent.";
 "Agent Teams" = "Agentteam";
 "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams." = "Aktiverar experimentell multi-agentkoordinering. Agenter kan skapa teammedlemmar, delegera uppgifter och samarbeta mellan arbetsflöden.";
 "Agent Teams is only available with Claude Code." = "Agentteam är bara tillgängligt med Claude Code.";
@@ -309,7 +316,7 @@
 "Enable \"Bypass permission prompts\" in Settings." = "Aktivera \"Hoppa över behörighetsfrågor\" i Inställningar.";
 "No GitHub remote found for this project." = "Ingen GitHub-fjärrserver hittades för detta projekt.";
 "Quick action debug" = "Felsökning av snabbåtgärder";
-"Show a debug panel with command output from quick actions (Create PR, Commit & Push)." = "Visa en felsökningspanel med kommandoutdata från snabbåtgärder (Skapa PR, Commit & Push).";
+"Show a debug panel with command output from quick actions." = "Visa en felsökningspanel med kommandoutdata från snabbåtgärder.";
 
 /* Workstream Info Git Stats */
 "Ahead" = "Ahead";
