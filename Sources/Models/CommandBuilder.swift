@@ -177,19 +177,6 @@ enum CodingCLI: String, CaseIterable, Identifiable {
         }
     }
 
-    var quickActionNotInstalledMessage: String {
-        switch self {
-        case .claude:
-            return NSLocalizedString("Claude Code is not installed.", comment: "")
-        case .codex:
-            return NSLocalizedString("Codex is not installed.", comment: "")
-        case .opencode:
-            return NSLocalizedString("OpenCode is not installed.", comment: "")
-        case .gemini:
-            return NSLocalizedString("Gemini CLI is not installed.", comment: "")
-        }
-    }
-
     var supportsAgentTeams: Bool {
         self == .claude
     }
@@ -264,13 +251,6 @@ struct AgentLaunchCommand {
     let intermediateCommands: [String]
 }
 
-struct CLIQuickActionCommand {
-    let shell: String
-    let arguments: [String]
-    let command: String
-    let parseJSON: Bool
-}
-
 enum CodingCLICommandBuilder {
     static func buildAgentCommand(
         cli: CodingCLI,
@@ -333,53 +313,6 @@ enum CodingCLICommandBuilder {
         }
 
         return command
-    }
-
-    static func buildQuickActionCommand(
-        cli: CodingCLI,
-        cliPath: String,
-        prompt: String,
-        workingDirectory: String
-    ) -> CLIQuickActionCommand {
-        let innerCommand: String
-        let parseJSON: Bool
-
-        switch cli {
-        case .claude:
-            var command = CommandBuilder(cliPath)
-            command.flag("-p")
-            command.arg(CommandBuilder.shellQuote(prompt))
-            command.option("--output-format", "json")
-            command.flag("--continue")
-            command.flag("--fork-session")
-            command.flag("--no-session-persistence")
-            command.flag("--dangerously-skip-permissions")
-            innerCommand = command.command
-            parseJSON = true
-        case .codex:
-            var command = CommandBuilder(cliPath)
-            command.arg("exec")
-            command.flag("--json")
-            command.flag("--dangerously-bypass-approvals-and-sandbox")
-            command.option("-C", workingDirectory)
-            command.arg(CommandBuilder.shellQuote(prompt))
-            innerCommand = command.command
-            parseJSON = false
-        case .opencode, .gemini:
-            var command = CommandBuilder(cliPath)
-            command.arg(CommandBuilder.shellQuote(prompt))
-            innerCommand = command.command
-            parseJSON = false
-        }
-
-        let shell = CommandBuilder.userShell
-        let arguments = ["-lic", innerCommand]
-        return CLIQuickActionCommand(
-            shell: shell,
-            arguments: arguments,
-            command: "\(shell) \(arguments.joined(separator: " "))",
-            parseJSON: parseJSON
-        )
     }
 
     private static func buildClaudeAgentCommand(

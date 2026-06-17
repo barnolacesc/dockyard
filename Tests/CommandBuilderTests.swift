@@ -368,19 +368,4 @@ final class CommandBuilderTests: XCTestCase {
                        "expected no --settings flag, got: \(command.finalCommand)")
     }
 
-    func testBuildCodexQuickActionCommandUsesExec() {
-        let command = CodingCLICommandBuilder.buildQuickActionCommand(
-            cli: .codex,
-            cliPath: "/usr/local/bin/codex",
-            prompt: "do thing",
-            workingDirectory: "/tmp/worktree"
-        )
-
-        XCTAssertEqual(command.shell, CommandBuilder.userShell)
-        XCTAssertEqual(
-            command.arguments,
-            ["-lic", "/usr/local/bin/codex exec --json --dangerously-bypass-approvals-and-sandbox -C /tmp/worktree 'do thing'"]
-        )
-        XCTAssertFalse(command.parseJSON)
-    }
 }

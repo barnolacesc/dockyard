@@ -388,7 +388,7 @@ struct SettingsView: View {
                 SettingToggle(
                     "Quick action debug",
                     isOn: $quickActionDebug,
-                    description: "Show a debug panel with command output from quick actions (Create PR, Commit & Push)."
+                    description: "Show a debug panel with command output from quick actions."
                 )
 
                 SettingToggle(
