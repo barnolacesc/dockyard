@@ -312,6 +312,73 @@ final class WorkspaceTabStateTests: XCTestCase {
 
         XCTAssertEqual(id, previousID)
     }
+
+    func testCycleWorkstreamUsesManualOrderNotRecency() throws {
+        let firstID = try XCTUnwrap(UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"))
+        let secondID = try XCTUnwrap(UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"))
+        let project = Project(
+            name: "app",
+            directory: "/app",
+            workstreams: [
+                Workstream(name: "first", worktreePath: "/app/first", id: firstID, lastAccessedAt: Date(timeIntervalSince1970: 10)),
+                Workstream(name: "second", worktreePath: "/app/second", id: secondID, lastAccessedAt: Date(timeIntervalSince1970: 30)),
+            ]
+        )
+
+        let id = cycledWorkstreamID(
+            in: project,
+            selectedWorkstreamID: nil,
+            direction: 1,
+            pathExists: { _ in true }
+        )
+
+        XCTAssertEqual(id, firstID)
+    }
+
+    func testCycleGlobalWorkstreamUsesProjectAndWorkstreamManualOrder() throws {
+        let oldRecentID = try XCTUnwrap(UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"))
+        let firstManualID = try XCTUnwrap(UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"))
+        let projects = [
+            Project(
+                name: "first",
+                directory: "/first",
+                workstreams: [
+                    Workstream(name: "old-recent", worktreePath: "/first/old", id: oldRecentID, lastAccessedAt: Date(timeIntervalSince1970: 10)),
+                ],
+                lastAccessedAt: Date(timeIntervalSince1970: 10)
+            ),
+            Project(
+                name: "second",
+                directory: "/second",
+                workstreams: [
+                    Workstream(name: "new-recent", worktreePath: "/second/new", id: firstManualID, lastAccessedAt: Date(timeIntervalSince1970: 30)),
+                ],
+                lastAccessedAt: Date(timeIntervalSince1970: 30)
+            ),
+        ]
+
+        let id = cycledGlobalWorkstreamID(
+            in: projects,
+            selectedWorkstreamID: nil,
+            direction: 1,
+            pathExists: { _ in true }
+        )
+
+        XCTAssertEqual(id, oldRecentID)
+    }
+
+    func testCycleProjectUsesManualOrderNotRecency() throws {
+        let firstID = try XCTUnwrap(UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"))
+        let secondID = try XCTUnwrap(UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"))
+        let projects = [
+            Project(name: "first", directory: "/first", id: firstID, lastAccessedAt: Date(timeIntervalSince1970: 10)),
+            Project(name: "second", directory: "/second", id: secondID, lastAccessedAt: Date(timeIntervalSince1970: 30)),
+        ]
+
+        let id = cycledProjectID(in: projects, selectedProjectID: nil, direction: 1)
+
+        XCTAssertEqual(id, firstID)
+    }
 }
 
 final class SidebarExpansionTests: XCTestCase {
