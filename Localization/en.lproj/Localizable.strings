@@ -132,6 +132,10 @@
 "Choose base directory for projects" = "Choose base directory for projects";
 "Default location when adding new projects." = "Default location when adding new projects.";
 "Branch prefix" = "Branch prefix";
+"Open editor in a terminal" = "Open editor in a terminal";
+"Open your editor in a terminal tab (Cmd+O) instead of the built-in editor." = "Open your editor in a terminal tab (Cmd+O) instead of the built-in editor.";
+"Editor command" = "Editor command";
+"Runs in the worktree directory when you open an editor (Cmd+O)." = "Runs in the worktree directory when you open an editor (Cmd+O).";
 "Theme" = "Theme";
 "System" = "System";
 "Light" = "Light";

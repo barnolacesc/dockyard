@@ -103,6 +103,7 @@ struct WorkspaceTabSnapshot: Codable {
     var editorFilePaths: [UUID: String]
     var runStarted: Bool
     var runStoppedManually: Bool
+    var terminalEditorCommands: [UUID: String] = [:]
 
     /// Returns a copy with dead terminal tabs removed.
     /// Browser and editor tabs are kept regardless (they don't use terminal surfaces).
@@ -114,6 +115,7 @@ struct WorkspaceTabSnapshot: Codable {
             return true
         }
         let resolvedActiveTab = filteredTabs.contains(activeTab) ? activeTab : .agent
+        let liveTerminalEditorCommands = terminalEditorCommands.filter { liveSurfaceIDs.contains($0.key) }
         return WorkspaceTabSnapshot(
             tabs: filteredTabs,
             terminalCount: terminalCount,
@@ -124,7 +126,8 @@ struct WorkspaceTabSnapshot: Codable {
             terminalTitles: terminalTitles,
             editorFilePaths: editorFilePaths,
             runStarted: runStarted,
-            runStoppedManually: runStoppedManually
+            runStoppedManually: runStoppedManually,
+            terminalEditorCommands: liveTerminalEditorCommands
         )
     }
 }
@@ -182,7 +185,8 @@ private func defaultWorkspaceTabSnapshot() -> WorkspaceTabSnapshot {
         terminalTitles: [:],
         editorFilePaths: [:],
         runStarted: false,
-        runStoppedManually: false
+        runStoppedManually: false,
+        terminalEditorCommands: [:]
     )
 }
 
@@ -228,6 +232,11 @@ func workspaceEnvironmentVariables(
     )
 }
 
+func resolvedTerminalEditorCommand(_ raw: String) -> String {
+    let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    return trimmed.isEmpty ? "nvim ." : trimmed
+}
+
 enum TerminalSessionMode: Equatable {
     case standard
     case tmux
@@ -267,6 +276,8 @@ struct TerminalContainerView: View {
     @AppStorage("dockyard.quickActionDebug") private var quickActionDebug: Bool = false
     @AppStorage("dockyard.editorTabActive") private var editorTabActive: Bool = false
     @AppStorage("dockyard.editorFileDirty") private var editorFileDirty: Bool = false
+    @AppStorage("dockyard.useTerminalEditor") private var useTerminalEditor: Bool = false
+    @AppStorage("dockyard.terminalEditorCommand") private var terminalEditorCommand: String = "nvim ."
     @State private var activeTab: WorkspaceTab = .info
     @State private var splitTab: WorkspaceTab?
     @AppStorage("dockyard.splitOrientation") private var splitOrientation: String = "horizontal"
@@ -278,6 +289,7 @@ struct TerminalContainerView: View {
     @State private var scriptConfig: ScriptConfig = .empty
     @State private var browserTitles: [UUID: String] = [:]
     @State private var terminalTitles: [UUID: String] = [:]
+    @State private var terminalEditorCommands: [UUID: String] = [:]
     @State private var editorFilePaths: [UUID: String] = [:]
     @State private var editorDirtyState: [UUID: Bool] = [:]
     @State private var editorBridge: MonacoEditorBridge?
@@ -322,6 +334,7 @@ struct TerminalContainerView: View {
         _editorCount = State(initialValue: initialTabState.editorCount)
         _browserTitles = State(initialValue: initialTabState.browserTitles)
         _terminalTitles = State(initialValue: initialTabState.terminalTitles)
+        _terminalEditorCommands = State(initialValue: initialTabState.terminalEditorCommands)
         _editorFilePaths = State(initialValue: initialTabState.editorFilePaths)
         _runStoppedManually = State(initialValue: initialTabState.runStoppedManually)
         _runStarted = State(initialValue: initialTabState.runStarted)
@@ -624,6 +637,7 @@ struct TerminalContainerView: View {
                 surfaceID: id,
                 workstreamID: workstreamID,
                 workingDirectory: workingDirectory,
+                command: terminalEditorCommands[id],
                 isFocused: true,
                 environmentVars: terminalEnvVars
             )
@@ -897,7 +911,10 @@ struct TerminalContainerView: View {
         switch tab {
         case .info: return NSLocalizedString("Info", comment: "")
         case .agent: return NSLocalizedString("Agent", comment: "")
-        case .terminal:
+        case let .terminal(id):
+            if terminalEditorCommands[id] != nil {
+                return NSLocalizedString("Editor", comment: "")
+            }
             return nil
         case let .browser(id):
             guard !useCompactTabs else { return nil }
@@ -914,7 +931,7 @@ struct TerminalContainerView: View {
         switch tab {
         case .info: return "info.circle"
         case .agent: return "sparkle"
-        case .terminal: return "terminal"
+        case let .terminal(id): return terminalEditorCommands[id] != nil ? "doc.text" : "terminal"
         case .browser: return "globe"
         case .editor: return "doc.text"
         }
@@ -1037,7 +1054,22 @@ struct TerminalContainerView: View {
     }
 
     private func openEditor() {
-        addEditor()
+        if useTerminalEditor {
+            addTerminalEditor()
+        } else {
+            addEditor()
+        }
+    }
+
+    private func addTerminalEditor() {
+        terminalCount += 1
+        let id = derivedUUID(from: workstreamID, salt: "terminal-\(terminalCount)")
+        terminalEditorCommands[id] = resolvedTerminalEditorCommand(terminalEditorCommand)
+        let tab = WorkspaceTab.terminal(id)
+        tabs.append(tab)
+        activeTab = tab
+        saveTabSnapshot()
+        Telemetry.shared.track("tab_opened", url: "/tab/editor", title: "Editor Tab", data: ["kind": "terminal-editor"])
     }
 
     private func addEditor(filePath: String? = nil) {
@@ -1189,6 +1221,7 @@ struct TerminalContainerView: View {
         // Clean up cached views
         switch tab {
         case let .terminal(id):
+            terminalEditorCommands.removeValue(forKey: id)
             surfaceCache.removeSurface(for: id)
         case let .browser(id):
             surfaceCache.removeWebView(for: id)
@@ -1219,7 +1252,8 @@ struct TerminalContainerView: View {
             terminalTitles: terminalTitles,
             editorFilePaths: editorFilePaths,
             runStarted: runStarted,
-            runStoppedManually: runStoppedManually
+            runStoppedManually: runStoppedManually,
+            terminalEditorCommands: terminalEditorCommands
         )
     }
 
@@ -1234,6 +1268,7 @@ struct TerminalContainerView: View {
         editorFilePaths = snapshot.editorFilePaths
         runStarted = snapshot.runStarted
         runStoppedManually = snapshot.runStoppedManually
+        terminalEditorCommands = snapshot.terminalEditorCommands
     }
 
     private func saveTabSnapshot() {

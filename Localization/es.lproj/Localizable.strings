@@ -132,6 +132,10 @@
 "Choose base directory for projects" = "Elige el directorio base para los proyectos";
 "Default location when adding new projects." = "Ubicación predeterminada al añadir nuevos proyectos.";
 "Branch prefix" = "Prefijo de rama";
+"Open editor in a terminal" = "Abrir editor en un terminal";
+"Open your editor in a terminal tab (Cmd+O) instead of the built-in editor." = "Abre tu editor en una pestaña de terminal (Cmd+O) en lugar del editor integrado.";
+"Editor command" = "Comando del editor";
+"Runs in the worktree directory when you open an editor (Cmd+O)." = "Se ejecuta en el directorio del worktree cuando abres un editor (Cmd+O).";
 "Theme" = "Tema";
 "System" = "Sistema";
 "Light" = "Claro";

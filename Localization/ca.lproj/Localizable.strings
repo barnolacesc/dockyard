@@ -132,6 +132,10 @@
 "Choose base directory for projects" = "Tria el directori base per als projectes";
 "Default location when adding new projects." = "Ubicació per defecte en afegir nous projectes.";
 "Branch prefix" = "Prefix de branca";
+"Open editor in a terminal" = "Obre l'editor en un terminal";
+"Open your editor in a terminal tab (Cmd+O) instead of the built-in editor." = "Obre el teu editor en una pestanya de terminal (Cmd+O) en lloc de l'editor integrat.";
+"Editor command" = "Comanda de l'editor";
+"Runs in the worktree directory when you open an editor (Cmd+O)." = "S'executa al directori del worktree quan obres un editor (Cmd+O).";
 "Theme" = "Tema";
 "System" = "Sistema";
 "Light" = "Clar";

@@ -132,6 +132,10 @@
 "Choose base directory for projects" = "Välj baskatalog för projekt";
 "Default location when adding new projects." = "Standardplats när nya projekt läggs till.";
 "Branch prefix" = "Grenprefix";
+"Open editor in a terminal" = "Öppna redigeraren i en terminal";
+"Open your editor in a terminal tab (Cmd+O) instead of the built-in editor." = "Öppna din redigerare i en terminalflik (Cmd+O) i stället för den inbyggda redigeraren.";
+"Editor command" = "Redigerarkommando";
+"Runs in the worktree directory when you open an editor (Cmd+O)." = "Körs i worktree-katalogen när du öppnar en redigerare (Cmd+O).";
 "Theme" = "Tema";
 "System" = "System";
 "Light" = "Ljust";
