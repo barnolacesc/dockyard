@@ -220,6 +220,17 @@
 "Not a git repository" = "No es un repositorio git";
 "Description" = "Descripción";
 
+/* Workstream stage */
+"Auto" = "Automático";
+"Still working" = "Aún en curso";
+"Needs review" = "Necesita revisión";
+"Done / merged" = "Hecho / fusionado";
+"Review" = "Revisión";
+"Merged" = "Fusionado";
+"Done" = "Hecho";
+"Working" = "En curso";
+"Workstream lifecycle status" = "Estado del ciclo de vida del workstream";
+
 /* Initialization errors */
 "Dockyard cannot start" = "Dockyard no puede iniciarse";
 "The terminal engine (Ghostty) failed to initialize. This may indicate a system compatibility issue." = "El motor de terminal (Ghostty) no se pudo inicializar. Esto puede indicar un problema de compatibilidad del sistema.";
