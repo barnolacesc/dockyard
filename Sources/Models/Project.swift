@@ -8,13 +8,15 @@ struct Workstream: Identifiable, Hashable, Codable {
     var name: String
     var worktreePath: String?
     var bypassPermissions: Bool
+    var codingCLI: String?
     var lastAccessedAt: Date
 
-    init(name: String, worktreePath: String? = nil, bypassPermissions: Bool = false, id: UUID = UUID(), lastAccessedAt: Date = Date()) {
+    init(name: String, worktreePath: String? = nil, bypassPermissions: Bool = false, codingCLI: String? = nil, id: UUID = UUID(), lastAccessedAt: Date = Date()) {
         self.id = id
         self.name = name
         self.worktreePath = worktreePath
         self.bypassPermissions = bypassPermissions
+        self.codingCLI = codingCLI
         self.lastAccessedAt = lastAccessedAt
     }
 

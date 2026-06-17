@@ -145,6 +145,9 @@
 "Claude Code" = "Claude Code";
 "Codex" = "Codex";
 "Coding CLI" = "Coding CLI";
+"Use Default (%@)" = "Use Default (%@)";
+"Use Default follows the Coding Agent selected in Settings." = "Use Default follows the Coding Agent selected in Settings.";
+"Used as the default for workstreams that have not chosen their own Coding Agent." = "Used as the default for workstreams that have not chosen their own Coding Agent.";
 "Agent Teams" = "Agent Teams";
 "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams." = "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams.";
 "Agent Teams is only available with Claude Code." = "Agent Teams is only available with Claude Code.";
@@ -302,7 +305,7 @@
 "Enable \"Bypass permission prompts\" in Settings." = "Enable \"Bypass permission prompts\" in Settings.";
 "No GitHub remote found for this project." = "No GitHub remote found for this project.";
 "Quick action debug" = "Quick action debug";
-"Show a debug panel with command output from quick actions (Create PR, Commit & Push)." = "Show a debug panel with command output from quick actions (Create PR, Commit & Push).";
+"Show a debug panel with command output from quick actions." = "Show a debug panel with command output from quick actions.";
 
 /* Workstream Info Git Stats */
 "Ahead" = "Ahead";

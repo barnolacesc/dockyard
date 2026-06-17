@@ -265,6 +265,9 @@ struct SettingsView: View {
                         Text(cli.displayName).tag(cli.rawValue)
                     }
                 }
+                Text("Used as the default for workstreams that have not chosen their own Coding Agent.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
                 SettingToggle(
                     "Bypass permission prompts",
@@ -409,7 +412,7 @@ struct SettingsView: View {
                 SettingToggle(
                     "Quick action debug",
                     isOn: $quickActionDebug,
-                    description: "Show a debug panel with command output from quick actions (Create PR, Commit & Push)."
+                    description: "Show a debug panel with command output from quick actions."
                 )
 
                 SettingToggle(

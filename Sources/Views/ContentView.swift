@@ -20,7 +20,32 @@ final class ProjectList: ObservableObject {
     @Published var items: [Project]
 
     init() {
-        items = ProjectStore.load()
+        items = SidebarManualOrderMigration.seedIfNeeded()
+    }
+}
+
+enum SidebarManualOrderMigration {
+    static let seededKey = "dockyard.sidebarManualOrderSeeded"
+
+    static func seedIfNeeded(defaults: UserDefaults = .standard) -> [Project] {
+        guard !defaults.bool(forKey: seededKey) else {
+            return ProjectStore.load(defaults: defaults)
+        }
+
+        var projects = ProjectStore.load(defaults: defaults)
+        seedManualOrder(&projects)
+        ProjectStore.save(projects, defaults: defaults)
+        defaults.set(true, forKey: seededKey)
+        return projects
+    }
+
+    static func seedManualOrder(_ projects: inout [Project]) {
+        projects = projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }
+        for index in projects.indices {
+            projects[index].workstreams = projects[index].workstreams.sorted {
+                $0.lastAccessedAt > $1.lastAccessedAt
+            }
+        }
     }
 }
 
@@ -46,17 +71,45 @@ func cycledWorkstreamID(
     direction: Int,
     pathExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
 ) -> UUID? {
-    let sorted = project.workstreams
+    let workstreams = project.workstreams
         .filter { workstreamHasUsablePath($0, pathExists: pathExists) }
-        .sorted { $0.lastAccessedAt > $1.lastAccessedAt }
-    guard !sorted.isEmpty else { return nil }
+    guard !workstreams.isEmpty else { return nil }
     guard let selectedWorkstreamID,
-          let currentIndex = sorted.firstIndex(where: { $0.id == selectedWorkstreamID })
+          let currentIndex = workstreams.firstIndex(where: { $0.id == selectedWorkstreamID })
     else {
-        return direction > 0 ? sorted.first?.id : sorted.last?.id
+        return direction > 0 ? workstreams.first?.id : workstreams.last?.id
     }
-    let next = (currentIndex + direction + sorted.count) % sorted.count
-    return sorted[next].id
+    let next = (currentIndex + direction + workstreams.count) % workstreams.count
+    return workstreams[next].id
+}
+
+func cycledGlobalWorkstreamID(
+    in projects: [Project],
+    selectedWorkstreamID: UUID?,
+    direction: Int,
+    pathExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
+) -> UUID? {
+    let workstreams = projects.flatMap(\.workstreams)
+        .filter { workstreamHasUsablePath($0, pathExists: pathExists) }
+    guard !workstreams.isEmpty else { return nil }
+    guard let selectedWorkstreamID,
+          let currentIndex = workstreams.firstIndex(where: { $0.id == selectedWorkstreamID })
+    else {
+        return direction > 0 ? workstreams.first?.id : workstreams.last?.id
+    }
+    let next = (currentIndex + direction + workstreams.count) % workstreams.count
+    return workstreams[next].id
+}
+
+func cycledProjectID(in projects: [Project], selectedProjectID: UUID?, direction: Int) -> UUID? {
+    guard !projects.isEmpty else { return nil }
+    guard let selectedProjectID,
+          let currentIndex = projects.firstIndex(where: { $0.id == selectedProjectID })
+    else {
+        return direction > 0 ? projects.first?.id : projects.last?.id
+    }
+    let next = (currentIndex + direction + projects.count) % projects.count
+    return projects[next].id
 }
 
 func commandKeyNotification(charactersIgnoringModifiers chars: String?, modifierFlags: NSEvent.ModifierFlags) -> Notification.Name? {
@@ -185,7 +238,25 @@ struct ContentView: View {
                 let scriptConfig = ScriptConfig.load(from: workstream.workingDirectory(projectDirectory: project.directory), fallbackDirectory: project.directory)
                 let initialTabState = startupWorkspaceTabState(
                     snapshot: surfaceCache.restoreTabSnapshot(for: workstreamID),
-                    savedTab: WorkspaceStateStore.load(for: workstreamID)
+                    persistedSnapshot: WorkspaceTabSnapshotStore.load(for: workstreamID)
+                )
+                let codingCLIBinding = Binding<String?>(
+                    get: {
+                        guard let currentProjectIndex = projectList.items.firstIndex(where: { $0.id == project.id }),
+                              let currentWorkstreamIndex = projectList.items[currentProjectIndex].workstreams.firstIndex(where: { $0.id == workstreamID })
+                        else {
+                            return nil
+                        }
+                        return projectList.items[currentProjectIndex].workstreams[currentWorkstreamIndex].codingCLI
+                    },
+                    set: { newValue in
+                        guard let currentProjectIndex = projectList.items.firstIndex(where: { $0.id == project.id }),
+                              let currentWorkstreamIndex = projectList.items[currentProjectIndex].workstreams.firstIndex(where: { $0.id == workstreamID })
+                        else {
+                            return
+                        }
+                        projectList.items[currentProjectIndex].workstreams[currentWorkstreamIndex].codingCLI = newValue
+                    }
                 )
                 TerminalContainerView(
                     workstreamID: workstreamID,
@@ -194,6 +265,7 @@ struct ContentView: View {
                     projectName: project.name,
                     workstreamName: workstream.name,
                     bypassPermissions: workstream.bypassPermissions,
+                    workstreamCodingCLI: codingCLIBinding,
                     isActive: true,
                     scriptConfig: scriptConfig,
                     initialTabState: initialTabState
@@ -352,12 +424,6 @@ struct ContentView: View {
                 if newValue != .settings && newValue != .help {
                     newValue?.save()
                 }
-                // Auto-focus terminal when selecting a workstream
-                if case .workstream = newValue {
-                    DispatchQueue.main.async {
-                        NotificationCenter.default.post(name: .focusAgent, object: nil)
-                    }
-                }
             }
             .onKeyPress(.escape) {
                 if selection == .settings || selection == .help {
@@ -459,7 +525,7 @@ struct ContentView: View {
                       let projectID = info["projectID"] as? UUID,
                       let workstream = info["workstream"] as? Workstream,
                       let index = projects.firstIndex(where: { $0.id == projectID }) else { return }
-                projects[index].workstreams.append(workstream)
+                projects[index].workstreams.insert(workstream, at: 0)
                 selection = .workstream(workstream.id)
                 ProjectStore.save(projects)
                 logger.warning("[Dockyard] workstreamCreated notification handled: \(workstream.name, privacy: .public)")
@@ -494,7 +560,7 @@ struct ContentView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .projectCreated)) { notification in
                 guard let project = notification.userInfo?["project"] as? Project else { return }
-                projects.append(project)
+                projects.insert(project, at: 0)
                 selection = .project(project.id)
                 ProjectStore.save(projects)
                 appEnvironment.refreshPathValidity(projects: projects)
@@ -678,29 +744,12 @@ struct ContentView: View {
 
     /// Cycle through all workstreams globally across all projects.
     private func cycleGlobalWorkstream(direction: Int) {
-        let sortedProjects = projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }
-
-        var allWorkstreams: [(Project, Workstream)] = []
-        for project in sortedProjects {
-            let sortedWorkstreams = project.workstreams
-                .filter { workstreamHasUsablePath($0) }
-                .sorted { $0.lastAccessedAt > $1.lastAccessedAt }
-            for ws in sortedWorkstreams {
-                allWorkstreams.append((project, ws))
-            }
-        }
-
-        guard !allWorkstreams.isEmpty else { return }
-
-        if let currentWsID = selection?.workstreamID,
-           let currentIndex = allWorkstreams.firstIndex(where: { $0.1.id == currentWsID }) {
-            let nextIndex = (currentIndex + direction + allWorkstreams.count) % allWorkstreams.count
-            deferSelection(.workstream(allWorkstreams[nextIndex].1.id))
-        } else {
-            // If nothing is selected, select the first or last depending on direction
-            let index = direction > 0 ? 0 : allWorkstreams.count - 1
-            deferSelection(.workstream(allWorkstreams[index].1.id))
-        }
+        guard let id = cycledGlobalWorkstreamID(
+            in: projects,
+            selectedWorkstreamID: selection?.workstreamID,
+            direction: direction
+        ) else { return }
+        deferSelection(.workstream(id))
     }
 
     private func deferSelection(_ target: SidebarSelection) {
@@ -712,18 +761,8 @@ struct ContentView: View {
 
     /// Cycle through projects in sidebar display order.
     private func cycleProject(direction: Int) {
-        let sorted = projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }
-        guard !sorted.isEmpty else { return }
-
-        guard let current = activeProject,
-              let currentIndex = sorted.firstIndex(where: { $0.id == current.id })
-        else {
-            // No active project: jump to first
-            selection = .project(sorted.first!.id)
-            return
-        }
-        let next = (currentIndex + direction + sorted.count) % sorted.count
-        selection = .project(sorted[next].id)
+        guard let id = cycledProjectID(in: projects, selectedProjectID: activeProject?.id, direction: direction) else { return }
+        selection = .project(id)
     }
 
     private func confirmPurge(_ wsID: UUID) {

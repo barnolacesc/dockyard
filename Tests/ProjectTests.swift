@@ -114,6 +114,43 @@ final class ProjectTests: XCTestCase {
         XCTAssertEqual(decoded.workstreams[1].name, "bugfix")
     }
 
+    func testWorkstreamCodingCLIDecodesMissingValueAsNil() throws {
+        let json = """
+        {
+          "id": "11111111-2222-3333-4444-555555555555",
+          "name": "legacy",
+          "worktreePath": "/repo/.dockyard/worktrees/legacy",
+          "bypassPermissions": false,
+          "lastAccessedAt": "2026-06-17T18:00:00Z"
+        }
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let decoded = try decoder.decode(Workstream.self, from: Data(json.utf8))
+
+        XCTAssertNil(decoded.codingCLI)
+    }
+
+    func testWorkstreamCodingCLIRoundTripsSetValue() throws {
+        let original = Workstream(
+            name: "use-codex",
+            worktreePath: "/repo/.dockyard/worktrees/use-codex",
+            codingCLI: "codex"
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(original)
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(Workstream.self, from: data)
+
+        XCTAssertEqual(decoded.codingCLI, "codex")
+        XCTAssertEqual(decoded.name, original.name)
+        XCTAssertEqual(decoded.worktreePath, original.worktreePath)
+    }
+
     func testProjectStoreWithWorkstreams() {
         let projects = [
             Project(name: "one", directory: "/one", workstreams: [
@@ -124,5 +161,75 @@ final class ProjectTests: XCTestCase {
         let loaded = ProjectStore.load(defaults: testDefaults)
         XCTAssertEqual(loaded.first?.workstreams.count, 1)
         XCTAssertEqual(loaded.first?.workstreams.first?.name, "dev")
+    }
+
+    func testMoveProjectsPreservesWorkstreams() {
+        let carriedWorkstream = Workstream(name: "carried")
+        let first = Project(name: "first", directory: "/first", workstreams: [carriedWorkstream])
+        let second = Project(name: "second", directory: "/second")
+        let third = Project(name: "third", directory: "/third")
+        var projects = [first, second, third]
+
+        moveProjects(&projects, fromOffsets: IndexSet(integer: 0), toOffset: projects.count)
+
+        XCTAssertEqual(projects.map(\.id), [second.id, third.id, first.id])
+        XCTAssertEqual(projects.last?.workstreams.map(\.id), [carriedWorkstream.id])
+    }
+
+    func testMoveWorkstreamsOnlyChangesTargetProject() {
+        let targetFirst = Workstream(name: "target-first")
+        let targetSecond = Workstream(name: "target-second")
+        let other = Workstream(name: "other")
+        let targetProject = Project(name: "target", directory: "/target", workstreams: [targetFirst, targetSecond])
+        let otherProject = Project(name: "other", directory: "/other", workstreams: [other])
+        var projects = [targetProject, otherProject]
+
+        moveWorkstreams(
+            in: &projects,
+            projectID: targetProject.id,
+            fromOffsets: IndexSet(integer: 0),
+            toOffset: 2
+        )
+
+        XCTAssertEqual(projects[0].workstreams.map(\.id), [targetSecond.id, targetFirst.id])
+        XCTAssertEqual(projects[1].workstreams.map(\.id), [other.id])
+    }
+
+    func testSidebarManualOrderMigrationSeedsByRecencyOnce() {
+        let oldWorkstream = Workstream(
+            name: "old-workstream",
+            id: UUID(),
+            lastAccessedAt: Date(timeIntervalSince1970: 10)
+        )
+        let newWorkstream = Workstream(
+            name: "new-workstream",
+            id: UUID(),
+            lastAccessedAt: Date(timeIntervalSince1970: 30)
+        )
+        let oldProject = Project(
+            name: "old-project",
+            directory: "/old-project",
+            workstreams: [oldWorkstream, newWorkstream],
+            lastAccessedAt: Date(timeIntervalSince1970: 10)
+        )
+        let newProject = Project(
+            name: "new-project",
+            directory: "/new-project",
+            lastAccessedAt: Date(timeIntervalSince1970: 30)
+        )
+
+        ProjectStore.save([oldProject, newProject], defaults: testDefaults)
+
+        let seeded = SidebarManualOrderMigration.seedIfNeeded(defaults: testDefaults)
+
+        XCTAssertEqual(seeded.map(\.id), [newProject.id, oldProject.id])
+        XCTAssertEqual(seeded[1].workstreams.map(\.id), [newWorkstream.id, oldWorkstream.id])
+        XCTAssertTrue(testDefaults.bool(forKey: SidebarManualOrderMigration.seededKey))
+
+        ProjectStore.save([oldProject, newProject], defaults: testDefaults)
+        let secondRun = SidebarManualOrderMigration.seedIfNeeded(defaults: testDefaults)
+
+        XCTAssertEqual(secondRun.map(\.id), [oldProject.id, newProject.id])
+        XCTAssertEqual(secondRun[0].workstreams.map(\.id), [oldWorkstream.id, newWorkstream.id])
     }
 }

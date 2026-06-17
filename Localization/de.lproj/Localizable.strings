@@ -142,6 +142,12 @@
 "Dark" = "Dunkel";
 
 /* Settings - Coding Agent */
+"Claude Code" = "Claude Code";
+"Codex" = "Codex";
+"Coding CLI" = "Coding-CLI";
+"Use Default (%@)" = "Standard verwenden (%@)";
+"Use Default follows the Coding Agent selected in Settings." = "Standard verwenden folgt dem in den Einstellungen ausgewählten Coding-Agent.";
+"Used as the default for workstreams that have not chosen their own Coding Agent." = "Wird als Standard für Workstreams verwendet, die keinen eigenen Coding-Agent gewählt haben.";
 "Agent Teams" = "Agent-Teams";
 "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams." = "Aktiviert experimentelle Multi-Agent-Koordination. Agenten können Teammitglieder erstellen, Aufgaben delegieren und workstream-übergreifend zusammenarbeiten.";
 "Auto-rename branch" = "Branch automatisch umbenennen";
@@ -289,7 +295,7 @@
 "Enable \"Bypass permission prompts\" in Settings." = "Aktiviere \"Berechtigungsabfragen überspringen\" in den Einstellungen.";
 "No GitHub remote found for this project." = "Kein GitHub-Remote für dieses Projekt gefunden.";
 "Quick action debug" = "Schnellaktionen-Debug";
-"Show a debug panel with command output from quick actions (Create PR, Commit & Push)." = "Zeige ein Debug-Panel mit Befehlsausgaben der Schnellaktionen (PR erstellen, Commit & Push).";
+"Show a debug panel with command output from quick actions." = "Zeige ein Debug-Panel mit Befehlsausgaben der Schnellaktionen.";
 
 "Setup running…" = "Setup läuft…";
 

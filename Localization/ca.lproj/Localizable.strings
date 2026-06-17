@@ -145,6 +145,9 @@
 "Claude Code" = "Claude Code";
 "Codex" = "Codex";
 "Coding CLI" = "CLI de codi";
+"Use Default (%@)" = "Utilitza el valor per defecte (%@)";
+"Use Default follows the Coding Agent selected in Settings." = "Utilitza el valor per defecte segueix l'agent de codi seleccionat a Configuració.";
+"Used as the default for workstreams that have not chosen their own Coding Agent." = "S'utilitza com a valor per defecte per als fluxos de treball que no han triat el seu propi agent de codi.";
 "Agent Teams" = "Equips d'agents";
 "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams." = "Activa la coordinació experimental multi-agent. Els agents poden crear companys d'equip, delegar tasques i col·laborar entre fluxos de treball.";
 "Agent Teams is only available with Claude Code." = "Els equips d'agents només estan disponibles amb Claude Code.";
@@ -302,7 +305,7 @@
 "Enable \"Bypass permission prompts\" in Settings." = "Activa \"Ometre els permisos\" a Configuració.";
 "No GitHub remote found for this project." = "No s'ha trobat cap remot de GitHub per a aquest projecte.";
 "Quick action debug" = "Depuració d'accions ràpides";
-"Show a debug panel with command output from quick actions (Create PR, Commit & Push)." = "Mostra un panell de depuració amb la sortida de les accions ràpides (Crear PR, Commit i Push).";
+"Show a debug panel with command output from quick actions." = "Mostra un panell de depuració amb la sortida de les accions ràpides.";
 
 /* Workstream Info Git Stats */
 "Ahead" = "Ahead";

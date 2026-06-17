@@ -26,30 +26,6 @@ extension Notification.Name {
     static let saveEditorAs = Notification.Name("dockyard.saveEditorAs")
 }
 
-enum RestorableWorkspaceTab: String, Codable {
-    case info
-    case agent
-    case environment
-
-    init(activeTab: WorkspaceTab) {
-        switch activeTab {
-        case .agent:
-            self = .agent
-        case .info, .terminal, .browser, .editor:
-            self = .info
-        }
-    }
-
-    func workspaceTab() -> WorkspaceTab {
-        switch self {
-        case .info, .environment:
-            return .info
-        case .agent:
-            return .agent
-        }
-    }
-}
-
 enum SetupStateStore {
     private static let userDefaultsKey = "dockyard.setupCompleted"
 
@@ -82,29 +58,6 @@ enum SetupStateStore {
     }
 }
 
-enum WorkspaceStateStore {
-    private static let userDefaultsKey = "dockyard.workspaceTabs"
-
-    static func load(for workstreamID: UUID) -> RestorableWorkspaceTab? {
-        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
-              let saved = try? JSONDecoder().decode([String: RestorableWorkspaceTab].self, from: data)
-        else { return nil }
-        return saved[workstreamID.uuidString]
-    }
-
-    static func save(_ tab: RestorableWorkspaceTab, for workstreamID: UUID) {
-        var saved: [String: RestorableWorkspaceTab] = [:]
-        if let data = UserDefaults.standard.data(forKey: userDefaultsKey),
-           let existing = try? JSONDecoder().decode([String: RestorableWorkspaceTab].self, from: data)
-        {
-            saved = existing
-        }
-        saved[workstreamID.uuidString] = tab
-        guard let data = try? JSONEncoder().encode(saved) else { return }
-        UserDefaults.standard.set(data, forKey: userDefaultsKey)
-    }
-}
-
 func reorderedCustomTabs(_ tabs: [WorkspaceTab], dragging draggedTab: WorkspaceTab, to targetTab: WorkspaceTab) -> [WorkspaceTab] {
     guard draggedTab != targetTab,
           draggedTab.isCloseable,
@@ -123,7 +76,7 @@ func reorderedCustomTabs(_ tabs: [WorkspaceTab], dragging draggedTab: WorkspaceT
 }
 
 /// A tab in the workspace. Info and Agent are permanent; terminals and browsers are closeable.
-enum WorkspaceTab: Hashable {
+enum WorkspaceTab: Codable, Hashable {
     case info
     case agent
     case terminal(UUID)
@@ -139,7 +92,7 @@ enum WorkspaceTab: Hashable {
 }
 
 /// Captured workspace tab state for a workstream, used to survive navigation.
-struct WorkspaceTabSnapshot {
+struct WorkspaceTabSnapshot: Codable {
     var tabs: [WorkspaceTab]
     var terminalCount: Int
     var browserCount: Int
@@ -179,31 +132,55 @@ struct WorkspaceTabSnapshot {
     }
 }
 
-func startupWorkspaceTabState(snapshot: WorkspaceTabSnapshot?, savedTab: RestorableWorkspaceTab?) -> WorkspaceTabSnapshot {
-    if let snapshot {
-        // Filter out any persisted environment tabs from before the merge
-        let filteredTabs = snapshot.tabs.filter { tab in
-            if case .info = tab { return true }
-            if case .agent = tab { return true }
-            if case .terminal = tab { return true }
-            if case .browser = tab { return true }
-            return false
-        }
-        var cleaned = snapshot
-        cleaned.tabs = filteredTabs
-        if !cleaned.tabs.contains(cleaned.activeTab) {
-            cleaned.activeTab = .info
-        }
-        return cleaned
+enum WorkspaceTabSnapshotStore {
+    private static let userDefaultsKey = "dockyard.workspaceTabSnapshots"
+
+    static func load(for workstreamID: UUID) -> WorkspaceTabSnapshot? {
+        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+              let saved = try? JSONDecoder().decode([String: WorkspaceTabSnapshot].self, from: data)
+        else { return nil }
+        return saved[workstreamID.uuidString]
     }
 
-    let tabs: [WorkspaceTab] = [.info, .agent]
-    return WorkspaceTabSnapshot(
-        tabs: tabs,
+    static func save(_ snapshot: WorkspaceTabSnapshot, for workstreamID: UUID) {
+        var saved: [String: WorkspaceTabSnapshot] = [:]
+        if let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+           let existing = try? JSONDecoder().decode([String: WorkspaceTabSnapshot].self, from: data)
+        {
+            saved = existing
+        }
+        saved[workstreamID.uuidString] = snapshot
+        guard let data = try? JSONEncoder().encode(saved) else { return }
+        UserDefaults.standard.set(data, forKey: userDefaultsKey)
+    }
+
+    static func remove(for workstreamID: UUID) {
+        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+              var saved = try? JSONDecoder().decode([String: WorkspaceTabSnapshot].self, from: data)
+        else { return }
+        saved.removeValue(forKey: workstreamID.uuidString)
+        guard let encoded = try? JSONEncoder().encode(saved) else { return }
+        UserDefaults.standard.set(encoded, forKey: userDefaultsKey)
+    }
+}
+
+func startupWorkspaceTabState(snapshot: WorkspaceTabSnapshot?, persistedSnapshot: WorkspaceTabSnapshot?) -> WorkspaceTabSnapshot {
+    if let snapshot {
+        return sanitizedWorkspaceTabSnapshot(snapshot)
+    }
+    if let persistedSnapshot {
+        return sanitizedWorkspaceTabSnapshot(persistedSnapshot)
+    }
+    return defaultWorkspaceTabSnapshot()
+}
+
+private func defaultWorkspaceTabSnapshot() -> WorkspaceTabSnapshot {
+    WorkspaceTabSnapshot(
+        tabs: [.info, .agent],
         terminalCount: 0,
         browserCount: 0,
         editorCount: 0,
-        activeTab: (savedTab ?? .info).workspaceTab(),
+        activeTab: .info,
         browserTitles: [:],
         terminalTitles: [:],
         editorFilePaths: [:],
@@ -211,6 +188,22 @@ func startupWorkspaceTabState(snapshot: WorkspaceTabSnapshot?, savedTab: Restora
         runStoppedManually: false,
         terminalEditorCommands: [:]
     )
+}
+
+private func sanitizedWorkspaceTabSnapshot(_ snapshot: WorkspaceTabSnapshot) -> WorkspaceTabSnapshot {
+    var cleaned = snapshot
+    var tabs: [WorkspaceTab] = []
+    for requiredTab in [WorkspaceTab.info, .agent] where !snapshot.tabs.contains(requiredTab) {
+        tabs.append(requiredTab)
+    }
+    for tab in snapshot.tabs where !tabs.contains(tab) {
+        tabs.append(tab)
+    }
+    cleaned.tabs = tabs
+    if !cleaned.tabs.contains(cleaned.activeTab) {
+        cleaned.activeTab = .info
+    }
+    return cleaned
 }
 
 func workspaceEnvironmentVariables(
@@ -269,6 +262,7 @@ struct TerminalContainerView: View {
     let projectName: String
     let workstreamName: String
     let bypassPermissions: Bool
+    @Binding var workstreamCodingCLI: String?
     let isActive: Bool
 
     @EnvironmentObject var surfaceCache: TerminalSurfaceCache
@@ -319,9 +313,10 @@ struct TerminalContainerView: View {
         projectName: String,
         workstreamName: String,
         bypassPermissions: Bool,
+        workstreamCodingCLI: Binding<String?> = .constant(nil),
         isActive: Bool,
         scriptConfig: ScriptConfig = .empty,
-        initialTabState: WorkspaceTabSnapshot = startupWorkspaceTabState(snapshot: nil, savedTab: nil)
+        initialTabState: WorkspaceTabSnapshot = startupWorkspaceTabState(snapshot: nil, persistedSnapshot: nil)
     ) {
         self.workstreamID = workstreamID
         self.workingDirectory = workingDirectory
@@ -329,6 +324,7 @@ struct TerminalContainerView: View {
         self.projectName = projectName
         self.workstreamName = workstreamName
         self.bypassPermissions = bypassPermissions
+        _workstreamCodingCLI = workstreamCodingCLI
         self.isActive = isActive
         _activeTab = State(initialValue: initialTabState.activeTab)
         _tabs = State(initialValue: initialTabState.tabs)
@@ -347,7 +343,11 @@ struct TerminalContainerView: View {
     }
 
     private var selectedCodingCLI: CodingCLI {
-        appEnv.toolStatus.resolvedCodingCLI(storedValue: codingCLIRaw)
+        appEnv.toolStatus.resolvedCodingCLI(storedValue: effectiveCodingCLIStoredValue)
+    }
+
+    private var effectiveCodingCLIStoredValue: String {
+        effectiveCodingCLIRaw(workstream: workstreamCodingCLI, global: codingCLIRaw)
     }
 
     private var selectedCodingCLIPath: String? {
@@ -596,6 +596,7 @@ struct TerminalContainerView: View {
                 scriptConfig: scriptConfig,
                 useTmux: useTmux,
                 environmentVars: terminalEnvVars,
+                workstreamCodingCLI: $workstreamCodingCLI,
                 runStoppedManually: $runStoppedManually,
                 runStarted: $runStarted,
                 sessionMode: sessionMode,
@@ -683,7 +684,7 @@ struct TerminalContainerView: View {
             .onChange(of: autoRenameBranch) { rebuildAgentCommand() }
             .onChange(of: allowOutsideWorktree) { rebuildAgentCommand() }
             .onChange(of: workstreamName) { rebuildAgentCommand() }
-            .onChange(of: codingCLIRaw) {
+            .onChange(of: effectiveCodingCLIStoredValue) {
                 surfaceCache.removeSurface(for: agentID)
                 rebuildAgentCommand()
                 preloadSurfaces()
@@ -761,13 +762,7 @@ struct TerminalContainerView: View {
             scriptConfig = ScriptConfig.load(from: workingDirectory, fallbackDirectory: projectDirectory)
             surfaceCache.respawnableIDs.insert(agentID)
             if let snapshot = surfaceCache.restoreTabSnapshot(for: workstreamID) {
-                tabs = snapshot.tabs
-                terminalCount = snapshot.terminalCount
-                browserCount = snapshot.browserCount
-                activeTab = snapshot.activeTab
-                browserTitles = snapshot.browserTitles
-                terminalTitles = snapshot.terminalTitles
-                terminalEditorCommands = snapshot.terminalEditorCommands
+                applyTabSnapshot(snapshot)
                 if scriptConfig.hasAnyScript && !tabs.contains(.info) {
                     tabs.insert(.info, at: 0)
                 }
@@ -777,6 +772,7 @@ struct TerminalContainerView: View {
                 }
             }
             if tabs.contains(where: { if case .editor = $0 { return true } else { return false } }) {
+                createEditorBridgeIfNeeded()
                 startFileTreeWatcherIfNeeded()
             }
             splitTab = surfaceCache.splitTabs[workstreamID]
@@ -790,7 +786,7 @@ struct TerminalContainerView: View {
                 editorFileDirty = false
             }
             guard workspaceStarted else { return }
-            surfaceCache.saveTabSnapshot(for: workstreamID, snapshot: currentTabSnapshot())
+            saveTabSnapshot()
         }
         .onChange(of: activeTab) {
             guard isActive else { return }
@@ -798,7 +794,7 @@ struct TerminalContainerView: View {
             editorTabActive = isEditorTabActive
             editorFileDirty = isActiveEditorDirty
             surfaceCache.updateOcclusion(visibleSurfaceIDs: visibleSurfaceIDs)
-            WorkspaceStateStore.save(RestorableWorkspaceTab(activeTab: activeTab), for: workstreamID)
+            saveTabSnapshot()
             appEnv.refreshWorktreeState(for: workingDirectory, projectDirectory: projectDirectory)
         }
         .onReceive(NotificationCenter.default.publisher(for: .terminalActivity)) { notification in
@@ -876,15 +872,17 @@ struct TerminalContainerView: View {
 
                         GitHubActionMenu(
                             runner: quickActionRunner,
-                            codingCLI: selectedCodingCLI,
-                            codingCLIPath: selectedCodingCLIPath,
                             ghPath: appEnv.toolStatus.gh.path,
                             workingDirectory: workingDirectory,
                             branchName: appEnv.branchName(for: workingDirectory),
-                            bypassPermissions: bypassPermissions,
                             worktreeState: appEnv.worktreeState(for: workingDirectory),
                             hasGitHubRemote: appEnv.hasGitHubRemote(projectDirectory),
-                            branchPR: branchPR
+                            branchPR: branchPR,
+                            onSendToAgent: { action in
+                                guard let prompt = action.prompt else { return }
+                                activeTab = .agent
+                                surfaceCache.sendText(to: agentID, text: prompt + "\r")
+                            }
                         )
                     }
                 }
@@ -895,7 +893,7 @@ struct TerminalContainerView: View {
                 if active {
                     surfaceCache.updateOcclusion(visibleSurfaceIDs: visibleSurfaceIDs)
                 } else {
-                    surfaceCache.saveTabSnapshot(for: workstreamID, snapshot: currentTabSnapshot())
+                    saveTabSnapshot()
                 }
             }
     }
@@ -1259,8 +1257,24 @@ struct TerminalContainerView: View {
         )
     }
 
+    private func applyTabSnapshot(_ snapshot: WorkspaceTabSnapshot) {
+        tabs = snapshot.tabs
+        terminalCount = snapshot.terminalCount
+        browserCount = snapshot.browserCount
+        editorCount = snapshot.editorCount
+        activeTab = snapshot.activeTab
+        browserTitles = snapshot.browserTitles
+        terminalTitles = snapshot.terminalTitles
+        editorFilePaths = snapshot.editorFilePaths
+        runStarted = snapshot.runStarted
+        runStoppedManually = snapshot.runStoppedManually
+        terminalEditorCommands = snapshot.terminalEditorCommands
+    }
+
     private func saveTabSnapshot() {
-        surfaceCache.saveTabSnapshot(for: workstreamID, snapshot: currentTabSnapshot())
+        let snapshot = currentTabSnapshot()
+        surfaceCache.saveTabSnapshot(for: workstreamID, snapshot: snapshot)
+        WorkspaceTabSnapshotStore.save(snapshot, for: workstreamID)
     }
 
     private func moveCustomTab(to targetTab: WorkspaceTab) {
@@ -1484,15 +1498,13 @@ private struct WorkspaceTabDropDelegate: DropDelegate {
 
 private struct GitHubActionMenu: View {
     @ObservedObject var runner: QuickActionRunner
-    let codingCLI: CodingCLI
-    let codingCLIPath: String?
     let ghPath: String?
     let workingDirectory: String
     let branchName: String?
-    let bypassPermissions: Bool
     let worktreeState: WorktreeState
     let hasGitHubRemote: Bool
     let branchPR: GitHubPR?
+    let onSendToAgent: (QuickAction) -> Void
 
     private var prState: String? {
         branchPR?.state
@@ -1575,26 +1587,17 @@ private struct GitHubActionMenu: View {
     }
 
     private func disabledReason(for action: QuickAction) -> String? {
-        if action.usesLLM {
-            if codingCLIPath == nil {
-                return codingCLI.quickActionNotInstalledMessage
-            }
-            if !bypassPermissions {
-                return NSLocalizedString("Enable \"Bypass permission prompts\" in Settings.", comment: "")
-            }
-        }
-        if action == .closePR, ghPath == nil {
-            return NSLocalizedString("gh CLI is not installed.", comment: "")
-        }
-        return nil
+        action.disabledReason(ghPath: ghPath)
     }
 
     private func runAction(_ action: QuickAction) {
         guard disabledReason(for: action) == nil else { return }
+        if action.delegatesToAgent {
+            onSendToAgent(action)
+            return
+        }
         runner.run(
             action: action,
-            codingCLI: codingCLI,
-            codingCLIPath: codingCLIPath,
             ghPath: ghPath,
             workingDirectory: workingDirectory,
             branchName: branchName
@@ -2149,6 +2152,7 @@ final class TerminalSurfaceCache: ObservableObject {
 
     func removeWorkstreamSurfaces(for workstreamID: UUID) {
         tabSnapshots.removeValue(forKey: workstreamID)
+        WorkspaceTabSnapshotStore.remove(for: workstreamID)
         if let runner = quickActionRunners.removeValue(forKey: workstreamID) {
             runner.cancel()
         }
@@ -2248,5 +2252,6 @@ final class TerminalSurfaceCache: ObservableObject {
 
     func removeTabSnapshot(for workstreamID: UUID) {
         tabSnapshots.removeValue(forKey: workstreamID)
+        WorkspaceTabSnapshotStore.remove(for: workstreamID)
     }
 }

@@ -24,11 +24,11 @@ func sidebarRailWorkstreamLabel(at index: Int) -> String {
 }
 
 func sidebarRailSortedProjects(_ projects: [Project]) -> [Project] {
-    projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }
+    projects
 }
 
 func sidebarRailSortedWorkstreams(_ workstreams: [Workstream]) -> [Workstream] {
-    workstreams.sorted { $0.lastAccessedAt > $1.lastAccessedAt }
+    workstreams
 }
 
 func sidebarRailProjectStatus(
