@@ -1,5 +1,5 @@
 // ABOUTME: Tests for workspace tab restoration and custom tab reordering.
-// ABOUTME: Verifies only fixed tabs are restored and custom tabs reorder deterministically.
+// ABOUTME: Verifies full-fidelity tab snapshots restore and custom tabs reorder deterministically.
 
 import AppKit
 @testable import Dockyard
@@ -31,6 +31,40 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         XCTAssertEqual(snapshot.activeTab, .terminal(terminalID))
         XCTAssertEqual(snapshot.browserTitles[browserID], "localhost")
         XCTAssertEqual(snapshot.terminalTitles[terminalID], "zsh")
+    }
+
+    func testCodableRoundTripPreservesAllTabState() throws {
+        let workstreamID = UUID()
+        let terminalID = derivedUUID(from: workstreamID, salt: "terminal-1")
+        let browserID = derivedUUID(from: workstreamID, salt: "browser-1")
+        let editorID = derivedUUID(from: workstreamID, salt: "editor-1")
+        let tabs: [WorkspaceTab] = [.info, .agent, .terminal(terminalID), .browser(browserID), .editor(editorID)]
+        let snapshot = WorkspaceTabSnapshot(
+            tabs: tabs,
+            terminalCount: 1,
+            browserCount: 1,
+            editorCount: 1,
+            activeTab: .editor(editorID),
+            browserTitles: [browserID: "localhost"],
+            terminalTitles: [terminalID: "zsh"],
+            editorFilePaths: [editorID: "Sources/App.swift"],
+            runStarted: true,
+            runStoppedManually: false
+        )
+
+        let data = try JSONEncoder().encode(snapshot)
+        let restored = try JSONDecoder().decode(WorkspaceTabSnapshot.self, from: data)
+
+        XCTAssertEqual(restored.tabs, tabs)
+        XCTAssertEqual(restored.terminalCount, 1)
+        XCTAssertEqual(restored.browserCount, 1)
+        XCTAssertEqual(restored.editorCount, 1)
+        XCTAssertEqual(restored.activeTab, .editor(editorID))
+        XCTAssertEqual(restored.browserTitles[browserID], "localhost")
+        XCTAssertEqual(restored.terminalTitles[terminalID], "zsh")
+        XCTAssertEqual(restored.editorFilePaths[editorID], "Sources/App.swift")
+        XCTAssertTrue(restored.runStarted)
+        XCTAssertFalse(restored.runStoppedManually)
     }
 
     func testReconcileFiltersDeadTerminals() {
@@ -141,7 +175,7 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
 
         let state = startupWorkspaceTabState(
             snapshot: snapshot,
-            savedTab: nil
+            persistedSnapshot: nil
         )
 
         XCTAssertEqual(state.tabs, [.info, .agent])
@@ -149,14 +183,63 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         XCTAssertTrue(state.runStarted)
     }
 
-    func testStartupStateUsesSavedFixedTabWithoutSnapshot() {
+    func testStartupStateUsesPersistedSnapshotWithoutMemorySnapshot() {
+        let workstreamID = UUID()
+        let terminalID = derivedUUID(from: workstreamID, salt: "terminal-1")
+        let browserID = derivedUUID(from: workstreamID, salt: "browser-1")
+        let editorID = derivedUUID(from: workstreamID, salt: "editor-1")
+        let snapshot = WorkspaceTabSnapshot(
+            tabs: [.info, .agent, .terminal(terminalID), .browser(browserID), .editor(editorID)],
+            terminalCount: 1,
+            browserCount: 1,
+            editorCount: 1,
+            activeTab: .editor(editorID),
+            browserTitles: [browserID: "localhost"],
+            terminalTitles: [terminalID: "zsh"],
+            editorFilePaths: [editorID: "Sources/App.swift"],
+            runStarted: true,
+            runStoppedManually: true
+        )
+
         let state = startupWorkspaceTabState(
             snapshot: nil,
-            savedTab: .agent
+            persistedSnapshot: snapshot
+        )
+
+        XCTAssertEqual(state.tabs, [.info, .agent, .terminal(terminalID), .browser(browserID), .editor(editorID)])
+        XCTAssertEqual(state.terminalCount, 1)
+        XCTAssertEqual(state.browserCount, 1)
+        XCTAssertEqual(state.editorCount, 1)
+        XCTAssertEqual(state.activeTab, .editor(editorID))
+        XCTAssertEqual(state.browserTitles[browserID], "localhost")
+        XCTAssertEqual(state.terminalTitles[terminalID], "zsh")
+        XCTAssertEqual(state.editorFilePaths[editorID], "Sources/App.swift")
+        XCTAssertTrue(state.runStarted)
+        XCTAssertTrue(state.runStoppedManually)
+    }
+
+    func testStartupStateFallsBackToInfoWhenPersistedActiveTabIsMissing() {
+        let terminalID = UUID()
+        let snapshot = WorkspaceTabSnapshot(
+            tabs: [.info, .agent],
+            terminalCount: 0,
+            browserCount: 0,
+            editorCount: 0,
+            activeTab: .terminal(terminalID),
+            browserTitles: [:],
+            terminalTitles: [:],
+            editorFilePaths: [:],
+            runStarted: false,
+            runStoppedManually: false
+        )
+
+        let state = startupWorkspaceTabState(
+            snapshot: nil,
+            persistedSnapshot: snapshot
         )
 
         XCTAssertEqual(state.tabs, [.info, .agent])
-        XCTAssertEqual(state.activeTab, .agent)
+        XCTAssertEqual(state.activeTab, .info)
     }
 
     func testWorkspaceEnvironmentUsesSuppliedDefaultBranch() throws {
@@ -208,15 +291,6 @@ final class WorkspaceTabStateTests: XCTestCase {
         XCTAssertNil(commandKeyNotification(charactersIgnoringModifiers: "[", modifierFlags: [.command, .option]))
         XCTAssertNil(commandKeyNotification(charactersIgnoringModifiers: "[", modifierFlags: [.command, .control]))
         XCTAssertNil(commandKeyNotification(charactersIgnoringModifiers: "x", modifierFlags: [.command]))
-    }
-
-    func testCustomTabsPersistAsInfo() {
-        XCTAssertEqual(RestorableWorkspaceTab(activeTab: .terminal(UUID())), .info)
-        XCTAssertEqual(RestorableWorkspaceTab(activeTab: .browser(UUID())), .info)
-    }
-
-    func testEnvironmentRestoresToInfo() {
-        XCTAssertEqual(RestorableWorkspaceTab.environment.workspaceTab(), .info)
     }
 
     func testReorderedCustomTabsKeepsFixedTabsInPlace() throws {

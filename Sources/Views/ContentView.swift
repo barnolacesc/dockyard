@@ -185,7 +185,7 @@ struct ContentView: View {
                 let scriptConfig = ScriptConfig.load(from: workstream.workingDirectory(projectDirectory: project.directory), fallbackDirectory: project.directory)
                 let initialTabState = startupWorkspaceTabState(
                     snapshot: surfaceCache.restoreTabSnapshot(for: workstreamID),
-                    savedTab: WorkspaceStateStore.load(for: workstreamID)
+                    persistedSnapshot: WorkspaceTabSnapshotStore.load(for: workstreamID)
                 )
                 TerminalContainerView(
                     workstreamID: workstreamID,
@@ -351,12 +351,6 @@ struct ContentView: View {
                 // Don't persist settings/help as saved selection
                 if newValue != .settings && newValue != .help {
                     newValue?.save()
-                }
-                // Auto-focus terminal when selecting a workstream
-                if case .workstream = newValue {
-                    DispatchQueue.main.async {
-                        NotificationCenter.default.post(name: .focusAgent, object: nil)
-                    }
                 }
             }
             .onKeyPress(.escape) {
