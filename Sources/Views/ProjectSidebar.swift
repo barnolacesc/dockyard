@@ -190,6 +190,7 @@ struct ProjectSidebar: View {
                             worktreePath: workstream.worktreePath,
                             agentState: agentState,
                             isPathValid: isPathValid,
+                            isSelected: selection == .workstream(workstream.id),
                             hasActivePort: appEnv.hasActivePort(workstream.id),
                             githubURL: appEnv.githubURL(for: project.directory, branch: branch),
                             taskDescription: appEnv.taskDescription(for: workstream.worktreePath),
@@ -207,10 +208,11 @@ struct ProjectSidebar: View {
                         .tag(SidebarSelection.workstream(workstream.id))
                         .padding(.leading, 28)
                         .listRowBackground(
-                            WorkstreamRowBackground(
-                                isSelected: selection == .workstream(workstream.id),
-                                statusStyle: statusStyle
-                            )
+                            Group {
+                                if selection != .workstream(workstream.id) {
+                                    WorkstreamRowBackground(statusStyle: statusStyle)
+                                }
+                            }
                         )
                     }
                 }
@@ -1054,14 +1056,10 @@ enum WorkstreamStatusColor: Equatable {
         }
     }
 
-    func color(opacity: Double = 1) -> Color {
+    func tintColor(opacity: Double = 1) -> Color? {
         switch self {
-        case .primary:
-            return Color.primary.opacity(opacity)
-        case .secondary:
-            return Color.secondary.opacity(opacity)
-        case .tertiary:
-            return Color.secondary.opacity(0.5 * opacity)
+        case .primary, .secondary, .tertiary:
+            return nil
         case .green:
             return Color.green.opacity(opacity)
         case .blue:
@@ -1157,22 +1155,14 @@ struct WorkstreamStatusStyle: Equatable {
 }
 
 private struct WorkstreamRowBackground: View {
-    let isSelected: Bool
     let statusStyle: WorkstreamStatusStyle
 
     var body: some View {
         Group {
-            if isSelected {
-                HStack(spacing: 0) {
-                    Rectangle()
-                        .fill(Color.accentColor)
-                        .frame(width: 3)
-                    Color.accentColor.opacity(0.10)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-                .padding(.horizontal, 4)
-            } else if let rowTintColor = statusStyle.rowTintColor {
-                rowTintColor.color(opacity: statusStyle.rowTintOpacity)
+            if let rowTintColor = statusStyle.rowTintColor,
+               let tintColor = rowTintColor.tintColor(opacity: statusStyle.rowTintOpacity)
+            {
+                tintColor
                     .clipShape(RoundedRectangle(cornerRadius: 6))
                     .padding(.horizontal, 4)
             }
@@ -1186,6 +1176,7 @@ private struct WorkstreamRow: View {
     var worktreePath: String?
     var agentState: AgentState? = nil
     var isPathValid: Bool = false
+    var isSelected: Bool = false
     var hasActivePort: Bool = false
     var githubURL: URL?
     var taskDescription: String?
@@ -1230,49 +1221,19 @@ private struct WorkstreamRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 4) {
-            ActivityIndicator(state: agentState, isPathValid: isPathValid)
-
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 4) {
-                    Text(headline)
-                        .font(.system(size: 12))
-                        .strikethrough(!isPathValid)
-                        .foregroundStyle(statusStyle.labelStyle)
-                        .lineLimit(1)
-                    if hasActivePort {
-                        Image(systemName: "circle.fill")
-                            .font(.system(size: 5))
-                            .foregroundStyle(.green)
-                    }
+        ZStack(alignment: .leading) {
+            if isSelected {
+                HStack(spacing: 0) {
+                    Rectangle()
+                        .fill(Color.accentColor)
+                        .frame(width: 3)
+                    Color.accentColor.opacity(0.10)
                 }
-                if subtitle != nil || dirtyCount > 0 {
-                    HStack(spacing: 3) {
-                        if prState == "MERGED" {
-                            Image(systemName: "arrow.triangle.merge")
-                                .font(.system(size: 8))
-                                .foregroundStyle(.purple)
-                        }
-                        if let subtitle {
-                            Text(subtitle)
-                                .lineLimit(1)
-                        }
-                        if dirtyCount > 0 {
-                            Text("±\(dirtyCount)")
-                                .foregroundStyle(.secondary)
-                                .help(NSLocalizedString("Uncommitted changes", comment: ""))
-                        }
-                    }
-                    .font(.system(size: 9, design: .monospaced))
-                    .foregroundStyle(statusStyle.subtitleStyle)
-                }
+                .clipShape(RoundedRectangle(cornerRadius: 6))
             }
 
-            Spacer()
-
-            SidebarIconButton(icon: "xmark", action: onRemove)
-                .accessibilityLabel("Remove workstream")
-                .opacity(isHovering ? 1 : 0)
+            rowContent
+                .padding(.leading, isSelected ? 6 : 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
@@ -1327,6 +1288,63 @@ private struct WorkstreamRow: View {
             Button(role: .destructive, action: onPurge) {
                 Label("Purge", systemImage: "trash")
             }
+        }
+    }
+
+    private var subtitleStyle: AnyShapeStyle {
+        if statusStyle.labelColor == .blue {
+            return statusStyle.subtitleStyle
+        }
+        if prState == "MERGED" {
+            return AnyShapeStyle(.purple)
+        }
+        return statusStyle.subtitleStyle
+    }
+
+    private var rowContent: some View {
+        HStack(spacing: 4) {
+            ActivityIndicator(state: agentState, isPathValid: isPathValid)
+
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 4) {
+                    Text(headline)
+                        .font(.system(size: 12))
+                        .strikethrough(!isPathValid)
+                        .foregroundStyle(statusStyle.labelStyle)
+                        .lineLimit(1)
+                    if hasActivePort {
+                        Image(systemName: "circle.fill")
+                            .font(.system(size: 5))
+                            .foregroundStyle(.green)
+                    }
+                }
+                if subtitle != nil || dirtyCount > 0 {
+                    HStack(spacing: 3) {
+                        if prState == "MERGED" {
+                            Image(systemName: "arrow.triangle.merge")
+                                .font(.system(size: 8))
+                                .foregroundStyle(.purple)
+                        }
+                        if let subtitle {
+                            Text(subtitle)
+                                .lineLimit(1)
+                        }
+                        if dirtyCount > 0 {
+                            Text("±\(dirtyCount)")
+                                .foregroundStyle(.secondary)
+                                .help(NSLocalizedString("Uncommitted changes", comment: ""))
+                        }
+                    }
+                    .font(.system(size: 9, design: .monospaced))
+                    .foregroundStyle(subtitleStyle)
+                }
+            }
+
+            Spacer()
+
+            SidebarIconButton(icon: "xmark", action: onRemove)
+                .accessibilityLabel("Remove workstream")
+                .opacity(isHovering ? 1 : 0)
         }
     }
 }

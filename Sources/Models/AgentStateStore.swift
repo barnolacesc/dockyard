@@ -85,7 +85,8 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
         let dirURL = directoryURL
         let next = Self.scanDirectory(at: dirURL, now: Date())
         DispatchQueue.main.async { [weak self] in
-            self?.states = next
+            guard let self, self.states != next else { return }
+            self.states = next
         }
     }
 
