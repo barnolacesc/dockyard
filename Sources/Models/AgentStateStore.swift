@@ -10,6 +10,7 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
 
     private let queue = DispatchQueue(label: "dockyard.agent-state-store")
     private var directorySource: DispatchSourceFileSystemObject?
+    private var refreshTimer: DispatchSourceTimer?
     let directoryURL: URL
 
     init(directoryURL: URL = AgentStateFiles.directoryURL) {
@@ -24,12 +25,15 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
     private func start() {
         try? FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         attachDirectoryWatcher()
+        attachRefreshTimer()
         refreshState()
     }
 
     private func stop() {
         directorySource?.cancel()
         directorySource = nil
+        refreshTimer?.cancel()
+        refreshTimer = nil
     }
 
     private func attachDirectoryWatcher() {
@@ -57,6 +61,16 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
         source.resume()
     }
 
+    private func attachRefreshTimer() {
+        let timer = DispatchSource.makeTimerSource(queue: queue)
+        timer.schedule(deadline: .now() + 60, repeating: 60)
+        timer.setEventHandler { [weak self] in
+            self?.refreshState()
+        }
+        refreshTimer = timer
+        timer.resume()
+    }
+
     func agentState(for workstreamID: UUID) -> AgentState? {
         states[workstreamID]
     }
@@ -69,13 +83,14 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
 
     func refreshState() {
         let dirURL = directoryURL
-        let next = Self.scanDirectory(at: dirURL)
+        let next = Self.scanDirectory(at: dirURL, now: Date())
         DispatchQueue.main.async { [weak self] in
-            self?.states = next
+            guard let self, self.states != next else { return }
+            self.states = next
         }
     }
 
-    private static func scanDirectory(at dirURL: URL) -> [UUID: AgentState] {
+    private static func scanDirectory(at dirURL: URL, now: Date) -> [UUID: AgentState] {
         guard let entries = try? FileManager.default.contentsOfDirectory(at: dirURL, includingPropertiesForKeys: nil) else {
             return [:]
         }
@@ -84,9 +99,21 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
             let basename = url.deletingPathExtension().lastPathComponent
             guard let id = UUID(uuidString: basename) else { continue }
             guard let snapshot = Self.loadValidated(from: url) else { continue }
-            result[id] = snapshot.state
+            result[id] = Self.decayedState(snapshot, now: now)
         }
         return result
+    }
+
+    static func decayedState(_ snapshot: AgentStateSnapshot, now: Date) -> AgentState {
+        let age = now.timeIntervalSince(snapshot.updatedAt)
+        switch snapshot.state {
+        case .working where age > 30 * 60:
+            return .idle
+        case .waiting where age > 2 * 60 * 60:
+            return .idle
+        case .working, .waiting, .idle:
+            return snapshot.state
+        }
     }
 
     private static func loadValidated(from url: URL) -> AgentStateSnapshot? {
