@@ -53,7 +53,7 @@ Dockyard is a native macOS app built on [Ghostty](https://ghostty.org)'s GPU-ren
 - **Tmux Persistence** &mdash; Agent sessions survive app restarts via tmux on a dedicated socket.
 - **Setup & Run Scripts** &mdash; Configure setup, run, and teardown scripts per project via `.dockyard.json`. Environment tab with split-pane terminals, Start/Rerun (⌘⇧⏎).
 - **Embedded Browser** &mdash; WKWebView tab with automatic port detection. The browser navigates to the port your run script opens.
-- **Code Editor** &mdash; Built-in Monaco editor (same engine as VS Code) embedded via WKWebView. Syntax highlighting, IntelliSense, and file tree. One file per tab, shared undo history.
+- **Code Editor** &mdash; Built-in Monaco editor (same engine as VS Code) embedded via WKWebView. Or enable the terminal editor setting to open your configured command, such as `nvim .`, in an in-app terminal tab.
 - **GitHub Integration** &mdash; Repo info, open PRs, and branch PR status via the `gh` CLI.
 - **Dynamic Tabs** &mdash; Open as many terminals, browsers, and editors as you need. Close with Cmd+W or Ctrl+D.
 - **Update Notifications** &mdash; Checks for new versions and shows a badge in the sidebar.

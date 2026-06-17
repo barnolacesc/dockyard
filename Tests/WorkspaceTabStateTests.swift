@@ -59,6 +59,33 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         XCTAssertEqual(reconciled.activeTab, .agent) // fell back since dead terminal was active
     }
 
+    func testReconcileFiltersDeadTerminalEditorCommands() {
+        let workstreamID = UUID()
+        let liveTerminalID = derivedUUID(from: workstreamID, salt: "terminal-1")
+        let deadTerminalID = derivedUUID(from: workstreamID, salt: "terminal-2")
+
+        let snapshot = WorkspaceTabSnapshot(
+            tabs: [.info, .agent, .terminal(liveTerminalID), .terminal(deadTerminalID)],
+            terminalCount: 2,
+            browserCount: 0,
+            editorCount: 0,
+            activeTab: .terminal(liveTerminalID),
+            browserTitles: [:],
+            terminalTitles: [:],
+            editorFilePaths: [:],
+            runStarted: false,
+            runStoppedManually: false,
+            terminalEditorCommands: [
+                liveTerminalID: "nvim .",
+                deadTerminalID: "hx .",
+            ]
+        )
+
+        let reconciled = snapshot.reconciled(liveSurfaceIDs: [liveTerminalID])
+
+        XCTAssertEqual(reconciled.terminalEditorCommands, [liveTerminalID: "nvim ."])
+    }
+
     func testReconcilePreservesActiveTabWhenAlive() {
         let workstreamID = UUID()
         let terminalID = derivedUUID(from: workstreamID, salt: "terminal-1")
@@ -177,6 +204,20 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
 
         XCTAssertEqual(vars["DY_DEFAULT_BRANCH"], "develop")
         XCTAssertEqual(vars["CONDUCTOR_DEFAULT_BRANCH"], "develop")
+    }
+
+    func testResolvedTerminalEditorCommandTrimsWhitespace() {
+        XCTAssertEqual(resolvedTerminalEditorCommand("  hx .\n"), "hx .")
+    }
+
+    func testResolvedTerminalEditorCommandFallsBackForEmptyInput() {
+        XCTAssertEqual(resolvedTerminalEditorCommand(""), "nvim .")
+        XCTAssertEqual(resolvedTerminalEditorCommand(" \n\t "), "nvim .")
+    }
+
+    func testResolvedTerminalEditorCommandKeepsCustomCommand() {
+        XCTAssertEqual(resolvedTerminalEditorCommand("vim"), "vim")
+        XCTAssertEqual(resolvedTerminalEditorCommand("hx ."), "hx .")
     }
 }
 

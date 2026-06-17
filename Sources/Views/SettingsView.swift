@@ -15,6 +15,8 @@ struct SettingsView: View {
     @AppStorage("dockyard.defaultTerminal") private var defaultTerminal: String = ""
     @AppStorage("dockyard.defaultBrowser") private var defaultBrowser: String = ""
     @AppStorage("dockyard.branchPrefix") private var branchPrefix: String = "dy"
+    @AppStorage("dockyard.useTerminalEditor") private var useTerminalEditor: Bool = false
+    @AppStorage("dockyard.terminalEditorCommand") private var terminalEditorCommand: String = "nvim ."
     @AppStorage("dockyard.appearance") private var appearance: String = "system"
     @AppStorage("dockyard.symlinkEnv") private var symlinkEnv: Bool = true
     @AppStorage("dockyard.confirmQuit") private var confirmQuit: Bool = true
@@ -166,6 +168,25 @@ struct SettingsView: View {
                     isOn: $symlinkEnv,
                     description: "Symlink .env and .env.local from the main repository into new worktrees."
                 )
+
+                SettingToggle(
+                    "Open editor in a terminal",
+                    isOn: $useTerminalEditor,
+                    description: "Open your editor in a terminal tab (Cmd+O) instead of the built-in editor."
+                )
+
+                if useTerminalEditor {
+                    VStack(alignment: .leading, spacing: 2) {
+                        LabeledContent("Editor command") {
+                            TextField("", text: $terminalEditorCommand)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(maxWidth: 200)
+                        }
+                        Text("Runs in the worktree directory when you open an editor (Cmd+O).")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
 
                 Picker("Theme", selection: $appearance) {
                     Text("System").tag("system")
