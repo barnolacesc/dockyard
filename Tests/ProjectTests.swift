@@ -114,6 +114,43 @@ final class ProjectTests: XCTestCase {
         XCTAssertEqual(decoded.workstreams[1].name, "bugfix")
     }
 
+    func testWorkstreamCodingCLIDecodesMissingValueAsNil() throws {
+        let json = """
+        {
+          "id": "11111111-2222-3333-4444-555555555555",
+          "name": "legacy",
+          "worktreePath": "/repo/.dockyard/worktrees/legacy",
+          "bypassPermissions": false,
+          "lastAccessedAt": "2026-06-17T18:00:00Z"
+        }
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let decoded = try decoder.decode(Workstream.self, from: Data(json.utf8))
+
+        XCTAssertNil(decoded.codingCLI)
+    }
+
+    func testWorkstreamCodingCLIRoundTripsSetValue() throws {
+        let original = Workstream(
+            name: "use-codex",
+            worktreePath: "/repo/.dockyard/worktrees/use-codex",
+            codingCLI: "codex"
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(original)
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(Workstream.self, from: data)
+
+        XCTAssertEqual(decoded.codingCLI, "codex")
+        XCTAssertEqual(decoded.name, original.name)
+        XCTAssertEqual(decoded.worktreePath, original.worktreePath)
+    }
+
     func testProjectStoreWithWorkstreams() {
         let projects = [
             Project(name: "one", directory: "/one", workstreams: [

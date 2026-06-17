@@ -244,6 +244,9 @@ struct SettingsView: View {
                         Text(cli.displayName).tag(cli.rawValue)
                     }
                 }
+                Text("Used as the default for workstreams that have not chosen their own Coding Agent.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
                 SettingToggle(
                     "Bypass permission prompts",

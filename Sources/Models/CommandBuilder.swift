@@ -199,6 +199,11 @@ enum CodingCLI: String, CaseIterable, Identifiable {
     }
 }
 
+func effectiveCodingCLIRaw(workstream: String?, global: String) -> String {
+    guard let workstream, !workstream.isEmpty else { return global }
+    return workstream
+}
+
 extension ToolStatus {
     func status(for cli: CodingCLI) -> BinaryStatus {
         switch cli {

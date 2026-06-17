@@ -293,6 +293,47 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertEqual(status.resolvedCodingCLI(storedValue: ""), .codex)
     }
 
+    func testEffectiveCodingCLIRawUsesWorkstreamOverride() {
+        XCTAssertEqual(effectiveCodingCLIRaw(workstream: "codex", global: "claude"), "codex")
+    }
+
+    func testEffectiveCodingCLIRawFallsBackToGlobalForNilOverride() {
+        XCTAssertEqual(effectiveCodingCLIRaw(workstream: nil, global: "claude"), "claude")
+    }
+
+    func testEffectiveCodingCLIRawFallsBackToGlobalForEmptyOverride() {
+        XCTAssertEqual(effectiveCodingCLIRaw(workstream: "", global: "opencode"), "opencode")
+    }
+
+    func testWorkstreamOverrideWinsBeforeResolvingCodingCLI() {
+        var status = ToolStatus()
+        status.claude = .found("/usr/local/bin/claude")
+        status.codex = .found("/usr/local/bin/codex")
+
+        let effective = effectiveCodingCLIRaw(workstream: "codex", global: "claude")
+
+        XCTAssertEqual(status.resolvedCodingCLI(storedValue: effective), .codex)
+    }
+
+    func testNilWorkstreamOverrideResolvesToGlobalCodingCLI() {
+        var status = ToolStatus()
+        status.claude = .found("/usr/local/bin/claude")
+        status.opencode = .found("/usr/local/bin/opencode")
+
+        let effective = effectiveCodingCLIRaw(workstream: nil, global: "opencode")
+
+        XCTAssertEqual(status.resolvedCodingCLI(storedValue: effective), .opencode)
+    }
+
+    func testUnknownEffectiveCodingCLIUsesAutoDetectChain() {
+        var status = ToolStatus()
+        status.gemini = .found("/usr/local/bin/gemini")
+        status.codex = .found("/usr/local/bin/codex")
+
+        XCTAssertEqual(status.resolvedCodingCLI(storedValue: "unknown"), .gemini)
+        XCTAssertEqual(status.resolvedCodingCLI(storedValue: ""), .gemini)
+    }
+
     func testBuildCodexAgentCommandUsesResumeLastAndSandbox() {
         let workstreamID = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
         let command = CodingCLICommandBuilder.buildAgentCommand(
