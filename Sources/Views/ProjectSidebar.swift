@@ -23,6 +23,15 @@ func expandedProjectIDs(afterSelecting selection: SidebarSelection?, current: Se
     return expanded
 }
 
+func moveProjects(_ projects: inout [Project], fromOffsets source: IndexSet, toOffset destination: Int) {
+    projects.move(fromOffsets: source, toOffset: destination)
+}
+
+func moveWorkstreams(in projects: inout [Project], projectID: UUID, fromOffsets source: IndexSet, toOffset destination: Int) {
+    guard let projectIndex = projects.firstIndex(where: { $0.id == projectID }) else { return }
+    projects[projectIndex].workstreams.move(fromOffsets: source, toOffset: destination)
+}
+
 extension Notification.Name {
     static let addProject = Notification.Name("dockyard.addProject")
     static let addNew = Notification.Name("dockyard.addNew")
@@ -72,7 +81,7 @@ struct ProjectSidebar: View {
     }
 
     private func recomputeSortedIDs() -> [UUID] {
-        return projects.sorted { $0.lastAccessedAt > $1.lastAccessedAt }.map(\.id)
+        projects.map(\.id)
     }
 
     private func rebuildIndices() {
@@ -83,9 +92,7 @@ struct ProjectSidebar: View {
             for (wi, ws) in project.workstreams.enumerated() {
                 wsIndex[ws.id] = (pi, wi)
             }
-            sortedWS[project.id] = project.workstreams
-                .sorted { $0.lastAccessedAt > $1.lastAccessedAt }
-                .map(\.id)
+            sortedWS[project.id] = project.workstreams.map(\.id)
         }
         cachedWorkstreamIndex = wsIndex
         cachedSortedWorkstreamIDs = sortedWS
@@ -138,10 +145,6 @@ struct ProjectSidebar: View {
         projects[pi].lastAccessedAt = now
         projects[pi].workstreams[wi].lastAccessedAt = now
         onProjectsChanged()
-        cachedSortedIDs = recomputeSortedIDs()
-        cachedSortedWorkstreamIDs[projects[pi].id] = projects[pi].workstreams
-            .sorted { $0.lastAccessedAt > $1.lastAccessedAt }
-            .map(\.id)
     }
 
     private func projectRows() -> some View {
@@ -216,8 +219,27 @@ struct ProjectSidebar: View {
                         )
                     }
                 }
+                .onMove { source, destination in
+                    moveWorkstreamRows(in: project.id, fromOffsets: source, toOffset: destination)
+                }
             }
         }
+        .onMove { source, destination in
+            moveProjectRows(fromOffsets: source, toOffset: destination)
+        }
+    }
+
+    private func moveProjectRows(fromOffsets source: IndexSet, toOffset destination: Int) {
+        moveProjects(&projects, fromOffsets: source, toOffset: destination)
+        cachedSortedIDs = recomputeSortedIDs()
+        rebuildIndices()
+        onProjectsChanged()
+    }
+
+    private func moveWorkstreamRows(in projectID: UUID, fromOffsets source: IndexSet, toOffset destination: Int) {
+        moveWorkstreams(in: &projects, projectID: projectID, fromOffsets: source, toOffset: destination)
+        rebuildIndices()
+        onProjectsChanged()
     }
 
     /// Number of agents currently waiting on the user, for the status strip.
