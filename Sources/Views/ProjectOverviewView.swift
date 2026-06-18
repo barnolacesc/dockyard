@@ -256,10 +256,13 @@ struct ProjectOverviewView: View {
         } // VStack
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
-            appEnv.refreshRepoInfo(for: project.directory)
-            appEnv.refreshGitHubInfo(for: project.directory)
-            refreshWorktrees()
-            loadDocFiles()
+            reloadProjectOverview()
+        }
+        .onChange(of: project.directory) { _, _ in
+            worktrees = []
+            docFiles = []
+            selectedDoc = nil
+            reloadProjectOverview()
         }
         .alert("Prune Worktrees", isPresented: $showingPruneConfirm) {
             Button("Cancel", role: .cancel) {}
@@ -298,11 +301,18 @@ struct ProjectOverviewView: View {
         )
     }
 
+    private func reloadProjectOverview() {
+        appEnv.refreshRepoInfo(for: project.directory)
+        appEnv.refreshGitHubInfo(for: project.directory)
+        refreshWorktrees()
+        loadDocFiles()
+    }
+
     private func refreshWorktrees() {
         let dir = project.directory
         Task.detached {
             let wts = GitOperations.listWorktreesWithInfo(at: dir)
-            await updateWorktrees(wts)
+            await updateWorktrees(wts, loadedFor: dir)
             // Populate PR cache for worktree branches
             let branches = Set(wts.compactMap(\.branch))
             await MainActor.run {
@@ -315,7 +325,7 @@ struct ProjectOverviewView: View {
         let dir = project.directory
         Task.detached {
             let found = DocFile.loadFrom(directory: dir)
-            await updateDocFiles(found)
+            await updateDocFiles(found, loadedFor: dir)
         }
     }
 
@@ -325,7 +335,7 @@ struct ProjectOverviewView: View {
         let pathsToPrune = prunablePaths
         Task.detached {
             GitOperations.pruneCleanWorktrees(at: dir, onlyPaths: pathsToPrune)
-            await applyPrunedWorktrees(pathsToPrune)
+            await applyPrunedWorktrees(pathsToPrune, loadedFor: dir)
         }
     }
 
@@ -339,17 +349,27 @@ struct ProjectOverviewView: View {
     }
 
     @MainActor
-    private func updateWorktrees(_ worktrees: [WorktreeInfo]) {
+    private func updateWorktrees(_ worktrees: [WorktreeInfo], loadedFor directory: String) {
+        guard let worktrees = ProjectOverviewState.worktreesToApply(
+            worktrees,
+            loadedFor: directory,
+            currentDirectory: project.directory
+        ) else { return }
         self.worktrees = worktrees
     }
 
     @MainActor
-    private func updateDocFiles(_ docFiles: [DocFile]) {
+    private func updateDocFiles(_ docFiles: [DocFile], loadedFor directory: String) {
+        guard ProjectOverviewState.matchesProject(loadedFor: directory, currentDirectory: project.directory) else { return }
         self.docFiles = docFiles
     }
 
     @MainActor
-    private func applyPrunedWorktrees(_ prunablePaths: Set<String>) {
+    private func applyPrunedWorktrees(_ prunablePaths: Set<String>, loadedFor directory: String) {
+        guard ProjectOverviewState.matchesProject(loadedFor: directory, currentDirectory: project.directory) else {
+            isPruning = false
+            return
+        }
         project.workstreams.removeAll { ws in
             guard let path = ws.worktreePath else { return false }
             return prunablePaths.contains(Self.standardizedPath(path))
@@ -357,6 +377,27 @@ struct ProjectOverviewView: View {
         onProjectChanged()
         isPruning = false
         refreshWorktrees()
+    }
+
+    private static func standardizedPath(_ path: String) -> String {
+        URL(fileURLWithPath: path).standardizedFileURL.path
+    }
+}
+
+enum ProjectOverviewState {
+    static func worktreesToApply(
+        _ worktrees: [WorktreeInfo],
+        loadedFor directory: String,
+        currentDirectory: String
+    ) -> [WorktreeInfo]? {
+        guard matchesProject(loadedFor: directory, currentDirectory: currentDirectory) else {
+            return nil
+        }
+        return worktrees
+    }
+
+    static func matchesProject(loadedFor directory: String, currentDirectory: String) -> Bool {
+        standardizedPath(directory) == standardizedPath(currentDirectory)
     }
 
     private static func standardizedPath(_ path: String) -> String {
