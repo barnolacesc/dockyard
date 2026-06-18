@@ -1,5 +1,5 @@
-// ABOUTME: dy-agent-state helper. Invoked by Claude Code hooks to write a one-line
-// ABOUTME: JSON state file at ~/Library/Caches/dockyard/agent-state/<wsID>.json.
+// ABOUTME: dy-agent-state helper. Invoked by coding agent lifecycle hooks to
+// ABOUTME: write JSON state at ~/Library/Caches/dockyard/agent-state/<wsID>.json.
 
 import Darwin
 import Foundation
@@ -24,9 +24,9 @@ else {
     usage()
 }
 
-// Record the parent's pid (the `claude` process that invoked us as a hook)
-// rather than our own — the helper exits immediately, but the agent process
-// stays alive. The store's loadValidated() uses this for liveness checks.
+// Record the parent agent process pid rather than our own. The helper exits
+// immediately, but the agent process stays alive. The store's loadValidated()
+// uses this for liveness checks.
 let agentPID = getppid()
 let snapshot = AgentStateSnapshot(state: state, updatedAt: Date(), pid: agentPID)
 
