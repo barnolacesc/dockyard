@@ -20,6 +20,8 @@ struct CodexUsageReport: Equatable {
 }
 
 enum CodexUsageProbe {
+    private static let probeTimeout: TimeInterval = 8
+
     static func fetch(shell: String = CommandBuilder.userShell) -> CodexUsageReport? {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: shell)
@@ -38,8 +40,16 @@ enum CodexUsageProbe {
             return nil
         }
 
+        let timeout = DispatchWorkItem {
+            if process.isRunning {
+                process.terminate()
+            }
+        }
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + probeTimeout, execute: timeout)
+
         let data = outPipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
+        timeout.cancel()
         guard process.terminationStatus == 0 else { return nil }
         return parse(data)
     }

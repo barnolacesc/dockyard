@@ -396,6 +396,9 @@
 
 "resets %@" = "es reinicia %@";
 "Real usage from Claude Code's /usage. Click to refresh." = "Ús real des de /usage de Claude Code. Fes clic per actualitzar.";
+"Real usage from Codex /status. Click to refresh." = "Ús real des de /status de Codex. Fes clic per actualitzar.";
+"Previous usage meter" = "Mesurador d'ús anterior";
+"Next usage meter" = "Mesurador d'ús següent";
 
 "Update Available" = "Actualització disponible";
 "Update & Relaunch" = "Actualitza i reinicia";
