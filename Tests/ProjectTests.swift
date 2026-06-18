@@ -50,6 +50,27 @@ final class ProjectTests: XCTestCase {
         XCTAssertEqual(project.directory, "/new")
     }
 
+    func testProjectOverviewRejectsWorktreesLoadedForPreviousProject() {
+        let staleWorktrees = [
+            WorktreeInfo(
+                path: "/Users/test/.dockyard/worktrees/dockyard/old-task",
+                branch: "dy/old-task",
+                isDirty: false,
+                isMain: false,
+                hasUnpushedCommits: false,
+                hasBranchCommits: false
+            ),
+        ]
+
+        XCTAssertNil(
+            ProjectOverviewState.worktreesToApply(
+                staleWorktrees,
+                loadedFor: "/Users/test/repos/dockyard",
+                currentDirectory: "/Users/test/repos/portfolio"
+            )
+        )
+    }
+
     func testCodableRoundTrip() throws {
         let projects = [
             Project(name: "alpha", directory: "/Users/test/alpha"),
