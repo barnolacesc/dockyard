@@ -367,6 +367,11 @@ final class CommandBuilderTests: XCTestCase {
     func testBuildClaudeAgentCommandIncludesSettingsFlag() {
         let id = UUID()
         let settingsURL = URL(fileURLWithPath: "/tmp/dockyard-test/settings.json")
+        let hookInvocation = AgentHookInvocation(
+            generatedConfigURL: settingsURL,
+            commandConfigOverrides: [],
+            commandFlags: []
+        )
         let command = CodingCLICommandBuilder.buildAgentCommand(
             cli: .claude,
             cliPath: "/usr/local/bin/claude",
@@ -381,7 +386,7 @@ final class CommandBuilderTests: XCTestCase {
             autoRenameBranch: false,
             envVars: [:],
             supportsSessionName: true,
-            settingsPath: settingsURL
+            hookInvocation: hookInvocation
         )
         XCTAssertTrue(command.finalCommand.contains("--settings /tmp/dockyard-test/settings.json"),
                       "expected --settings flag in command, got: \(command.finalCommand)")
@@ -403,10 +408,74 @@ final class CommandBuilderTests: XCTestCase {
             autoRenameBranch: false,
             envVars: [:],
             supportsSessionName: true,
-            settingsPath: nil
+            hookInvocation: nil
         )
         XCTAssertFalse(command.finalCommand.contains("--settings"),
                        "expected no --settings flag, got: \(command.finalCommand)")
+    }
+
+    func testBuildCodexAgentCommandIncludesHookConfigOverrides() {
+        let workstreamID = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+        let hookInvocation = AgentHookInvocation(
+            generatedConfigURL: nil,
+            commandConfigOverrides: [
+                #"hooks.UserPromptSubmit=[{hooks=[{type="command",command="true",timeout=10}]}]"#,
+                #"hooks.PermissionRequest=[{hooks=[{type="command",command="true",timeout=10}]}]"#,
+                #"hooks.Stop=[{hooks=[{type="command",command="true",timeout=10}]}]"#,
+            ],
+            commandFlags: ["--dangerously-bypass-hook-trust"]
+        )
+
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .codex,
+            cliPath: "/usr/local/bin/codex",
+            workingDirectory: "/tmp/worktree",
+            projectName: "dockyard",
+            workstreamName: "switch-cli",
+            workstreamID: workstreamID,
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: true,
+            allowOutsideWorktree: false,
+            autoRenameBranch: true,
+            envVars: [:],
+            supportsSessionName: false,
+            hookInvocation: hookInvocation
+        )
+
+        for builtCommand in command.intermediateCommands.prefix(2) {
+            XCTAssertTrue(builtCommand.contains("--config 'hooks.UserPromptSubmit="), "got: \(builtCommand)")
+            XCTAssertTrue(builtCommand.contains("--config 'hooks.PermissionRequest="), "got: \(builtCommand)")
+            XCTAssertTrue(builtCommand.contains("--config 'hooks.Stop="), "got: \(builtCommand)")
+            XCTAssertTrue(builtCommand.contains("--dangerously-bypass-hook-trust"), "got: \(builtCommand)")
+            XCTAssertTrue(builtCommand.contains("--sandbox workspace-write"), "got: \(builtCommand)")
+            XCTAssertTrue(builtCommand.contains("--ask-for-approval never"), "got: \(builtCommand)")
+        }
+    }
+
+    func testBuildCodexAgentCommandWithoutHooksHasNoTrustBypassFlag() {
+        let workstreamID = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .codex,
+            cliPath: "/usr/local/bin/codex",
+            workingDirectory: "/tmp/worktree",
+            projectName: "dockyard",
+            workstreamName: "switch-cli",
+            workstreamID: workstreamID,
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: false,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: false,
+            hookInvocation: nil
+        )
+
+        XCTAssertFalse(command.intermediateCommands[0].contains("--dangerously-bypass-hook-trust"))
+        XCTAssertFalse(command.intermediateCommands[1].contains("--dangerously-bypass-hook-trust"))
+        XCTAssertFalse(command.intermediateCommands[0].contains("--config"))
+        XCTAssertFalse(command.intermediateCommands[1].contains("--config"))
     }
 
 }

@@ -271,7 +271,7 @@ enum CodingCLICommandBuilder {
         autoRenameBranch: Bool,
         envVars: [String: String],
         supportsSessionName: Bool,
-        settingsPath: URL? = nil
+        hookInvocation: AgentHookInvocation? = nil
     ) -> AgentLaunchCommand {
         let command: AgentLaunchCommand
         switch cli {
@@ -286,14 +286,15 @@ enum CodingCLICommandBuilder {
                 allowOutsideWorktree: allowOutsideWorktree,
                 autoRenameBranch: autoRenameBranch,
                 supportsSessionName: supportsSessionName,
-                settingsPath: settingsPath
+                settingsPath: hookInvocation?.generatedConfigURL
             )
         case .codex:
             command = buildCodexAgentCommand(
                 cliPath: cliPath,
                 workingDirectory: workingDirectory,
                 bypassPermissions: bypassPermissions,
-                allowOutsideWorktree: allowOutsideWorktree
+                allowOutsideWorktree: allowOutsideWorktree,
+                hookInvocation: hookInvocation
             )
         case .opencode, .gemini:
             command = buildGenericAgentCommand(
@@ -396,7 +397,8 @@ enum CodingCLICommandBuilder {
         cliPath: String,
         workingDirectory: String,
         bypassPermissions: Bool,
-        allowOutsideWorktree: Bool
+        allowOutsideWorktree: Bool,
+        hookInvocation: AgentHookInvocation?
     ) -> AgentLaunchCommand {
         var resume = CommandBuilder(cliPath)
         resume.arg("resume")
@@ -407,6 +409,7 @@ enum CodingCLICommandBuilder {
             bypassPermissions: bypassPermissions,
             allowOutsideWorktree: allowOutsideWorktree
         )
+        applyCodexHookOptions(to: &resume, hookInvocation: hookInvocation)
 
         var fresh = CommandBuilder(cliPath)
         applyCodexInteractiveOptions(
@@ -415,6 +418,7 @@ enum CodingCLICommandBuilder {
             bypassPermissions: bypassPermissions,
             allowOutsideWorktree: allowOutsideWorktree
         )
+        applyCodexHookOptions(to: &fresh, hookInvocation: hookInvocation)
 
         let finalCommand = CommandBuilder.withFallback(
             resume.command,
@@ -448,5 +452,19 @@ enum CodingCLICommandBuilder {
         command.option("-C", workingDirectory)
         command.option("--sandbox", allowOutsideWorktree ? "danger-full-access" : "workspace-write")
         command.option("--ask-for-approval", bypassPermissions ? "never" : "on-request")
+    }
+
+    private static func applyCodexHookOptions(
+        to command: inout CommandBuilder,
+        hookInvocation: AgentHookInvocation?
+    ) {
+        guard let hookInvocation else { return }
+
+        for override in hookInvocation.commandConfigOverrides {
+            command.option("--config", override)
+        }
+        for flag in hookInvocation.commandFlags {
+            command.flag(flag)
+        }
     }
 }

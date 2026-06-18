@@ -14,23 +14,65 @@ final class AgentHooksTests: XCTestCase {
         super.tearDown()
     }
 
-    func testHookSettingsReturnsNilForCodex() {
-        XCTAssertNil(AgentHooks.settingsPathIfSupported(for: .codex))
+    func testHookInvocationReturnsNilForOpenCodeAndGemini() throws {
+        let helperPath = "/Applications/Dockyard.app/Contents/Helpers/dy-agent-state"
+
+        XCTAssertNil(try AgentHooks.hookInvocation(for: .opencode, workstreamID: UUID(), helperPath: helperPath))
+        XCTAssertNil(try AgentHooks.hookInvocation(for: .gemini, workstreamID: UUID(), helperPath: helperPath))
     }
 
-    func testHookSettingsReturnsNilForOpencode() {
-        XCTAssertNil(AgentHooks.settingsPathIfSupported(for: .opencode))
-    }
-
-    func testHookSettingsReturnsNilForGemini() {
-        XCTAssertNil(AgentHooks.settingsPathIfSupported(for: .gemini))
-    }
-
-    func testHookSettingsReturnsURLForClaude() {
+    func testHookInvocationReturnsURLForClaude() throws {
         let id = UUID()
-        let url = AgentHooks.settingsPathIfSupported(for: .claude, workstreamID: id)
-        XCTAssertNotNil(url)
-        XCTAssertTrue(url!.path.hasSuffix("claude-settings/\(id.uuidString.lowercased()).json"))
+        let helperPath = "/Applications/Dockyard.app/Contents/Helpers/dy-agent-state"
+        let invocation = try XCTUnwrap(AgentHooks.hookInvocation(for: .claude, workstreamID: id, helperPath: helperPath))
+
+        XCTAssertEqual(invocation.generatedConfigURL, AgentHooks.settingsURL(for: id))
+        XCTAssertEqual(invocation.commandConfigOverrides, [])
+        XCTAssertEqual(invocation.commandFlags, [])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: invocation.generatedConfigURL!.path))
+    }
+
+    func testCodexHookInvocationBuildsThreeConfigOverrides() throws {
+        let id = UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC")!
+        let helperPath = "/Applications/Dockyard.app/Contents/Helpers/dy-agent-state"
+        let invocation = try XCTUnwrap(AgentHooks.hookInvocation(for: .codex, workstreamID: id, helperPath: helperPath))
+
+        XCTAssertNil(invocation.generatedConfigURL)
+        XCTAssertEqual(invocation.commandFlags, ["--dangerously-bypass-hook-trust"])
+        XCTAssertEqual(invocation.commandConfigOverrides.count, 3)
+
+        XCTAssertTrue(invocation.commandConfigOverrides.contains { override in
+            override.hasPrefix("hooks.UserPromptSubmit=")
+                && override.contains("--workstream-id aabbccdd-1122-3344-5566-778899aabbcc")
+                && override.contains("--state working")
+        })
+        XCTAssertTrue(invocation.commandConfigOverrides.contains { override in
+            override.hasPrefix("hooks.PermissionRequest=")
+                && override.contains("--state waiting")
+        })
+        XCTAssertTrue(invocation.commandConfigOverrides.contains { override in
+            override.hasPrefix("hooks.Stop=")
+                && override.contains("--state idle")
+        })
+    }
+
+    func testCodexHookInvocationShellQuotesHelperPathWithSpacesAndApostrophes() throws {
+        let id = UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC")!
+        let helperPath = "/Applications/Dockyard's Debug.app/Contents/Helpers/dy-agent-state"
+        let invocation = try XCTUnwrap(AgentHooks.hookInvocation(for: .codex, workstreamID: id, helperPath: helperPath))
+        let joined = invocation.commandConfigOverrides.joined(separator: "\n")
+
+        XCTAssertTrue(joined.contains("'/Applications/Dockyard'\\\\''s Debug.app/Contents/Helpers/dy-agent-state'"))
+    }
+
+    func testCodexHookInvocationEscapesTomlStringContent() throws {
+        let id = UUID()
+        let helperPath = "/tmp/quote\"and\\slash/dy-agent-state"
+        let invocation = try XCTUnwrap(AgentHooks.hookInvocation(for: .codex, workstreamID: id, helperPath: helperPath))
+        let joined = invocation.commandConfigOverrides.joined(separator: "\n")
+
+        XCTAssertTrue(joined.contains("\\\""))
+        XCTAssertTrue(joined.contains("\\\\slash"))
     }
 
     func testWriteSettingsProducesValidJSONWithThreeHooks() throws {
