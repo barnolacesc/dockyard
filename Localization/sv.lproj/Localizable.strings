@@ -396,6 +396,9 @@
 
 "resets %@" = "återställs %@";
 "Real usage from Claude Code's /usage. Click to refresh." = "Verklig användning från Claude Codes /usage. Klicka för att uppdatera.";
+"Real usage from Codex /status. Click to refresh." = "Verklig användning från Codex /status. Klicka för att uppdatera.";
+"Previous usage meter" = "Föregående användningsmätare";
+"Next usage meter" = "Nästa användningsmätare";
 
 "Update Available" = "Uppdatering tillgänglig";
 "Update & Relaunch" = "Uppdatera och starta om";

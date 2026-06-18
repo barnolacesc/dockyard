@@ -95,6 +95,10 @@ struct ProjectSidebar: View {
     @Binding var projects: [Project]
     @Binding var selection: SidebarSelection?
     let onProjectsChanged: () -> Void
+    var selectedUsageProvider: UsageMeterProvider = .claude
+    var availableUsageProviders: [UsageMeterProvider] = [.claude]
+    var onPreviousUsageProvider: () -> Void = {}
+    var onNextUsageProvider: () -> Void = {}
 
     @StateObject private var appUpdater = AppUpdater()
 
@@ -400,7 +404,11 @@ struct ProjectSidebar: View {
                     projectCount: projects.count,
                     workstreamCount: totalWorkstreamCount(),
                     openPRCount: appEnv.openPullRequests(projects: projects).count,
-                    waitingCount: waitingAgentCount
+                    waitingCount: waitingAgentCount,
+                    selectedUsageProvider: selectedUsageProvider,
+                    availableUsageProviders: availableUsageProviders,
+                    onPreviousUsageProvider: onPreviousUsageProvider,
+                    onNextUsageProvider: onNextUsageProvider
                 )
                 Divider()
                     .padding(.horizontal, 8)
@@ -644,7 +652,9 @@ struct ProjectSidebar: View {
                 appUpdater: appUpdater,
                 onExpand: { setVisibleSidebarMode(.expanded) },
                 onAddExistingDirectory: { openDirectoryPicker() },
-                onCreateNewProject: { presentNewProjectSheet() }
+                onCreateNewProject: { presentNewProjectSheet() },
+                selectedUsageProvider: selectedUsageProvider,
+                availableUsageProviders: availableUsageProviders
             )
             .onReceive(NotificationCenter.default.publisher(for: .terminalActivity)) { notification in
                 guard let wsID = notification.object as? UUID else { return }

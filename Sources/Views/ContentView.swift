@@ -167,6 +167,7 @@ struct ContentView: View {
     @StateObject private var activityTracker = WorkstreamActivityTracker()
     @StateObject private var agentStateStore = AgentStateStore.shared
     @StateObject private var claudeUsageStore = ClaudeUsageStore.shared
+    @StateObject private var codexUsageStore = CodexUsageStore.shared
     @State private var saveWork: DispatchWorkItem?
     @State private var workstreamToRemove: UUID?
     @State private var workstreamToPurge: UUID?
@@ -174,6 +175,9 @@ struct ContentView: View {
     @State private var removedProjectNames: [String] = []
     @State private var keyMonitorInstalled = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @State private var selectedUsageProvider: UsageMeterProvider = .claude
+    @State private var previousPreferredUsageProvider: UsageMeterProvider?
+    @AppStorage("dockyard.codingCLI") private var codingCLIRaw: String = ""
     @AppStorage(SidebarMode.storageKey) private var sidebarModeRaw = SidebarMode.expanded.rawValue
     @AppStorage(SidebarMode.lastVisibleStorageKey) private var lastVisibleSidebarModeRaw = SidebarMode.expanded.rawValue
 
@@ -221,6 +225,27 @@ struct ContentView: View {
         guard let wsID = selection?.workstreamID,
               let project = activeProject else { return nil }
         return project.workstreams.first(where: { $0.id == wsID })
+    }
+
+    private var activeCodingCLI: CodingCLI? {
+        guard let activeWorkstream else { return nil }
+        let storedValue = effectiveCodingCLIRaw(workstream: activeWorkstream.codingCLI, global: codingCLIRaw)
+        return appEnvironment.toolStatus.resolvedCodingCLI(storedValue: storedValue)
+    }
+
+    private var preferredUsageProvider: UsageMeterProvider? {
+        activeCodingCLI.flatMap(UsageMeterProvider.preferred(for:))
+    }
+
+    private var availableUsageProviders: [UsageMeterProvider] {
+        var providers: [UsageMeterProvider] = []
+        if appEnvironment.toolStatus.claude.isInstalled || claudeUsageStore.hasAnyData {
+            providers.append(.claude)
+        }
+        if appEnvironment.toolStatus.codex.isInstalled || codexUsageStore.hasAnyData {
+            providers.append(.codex)
+        }
+        return providers.isEmpty ? [.claude] : providers
     }
 
     @ViewBuilder
@@ -345,6 +370,7 @@ struct ContentView: View {
                 let work = DispatchWorkItem { ProjectStore.save(newValue) }
                 saveWork = work
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: work)
+                syncSelectedUsageProvider()
             }
             .alert(
                 "Remove Workstream",
@@ -424,6 +450,7 @@ struct ContentView: View {
                 if newValue != .settings && newValue != .help {
                     newValue?.save()
                 }
+                syncSelectedUsageProvider()
             }
             .onKeyPress(.escape) {
                 if selection == .settings || selection == .help {
@@ -457,6 +484,7 @@ struct ContentView: View {
             .environmentObject(activityTracker)
             .environmentObject(agentStateStore)
             .environmentObject(claudeUsageStore)
+            .environmentObject(codexUsageStore)
     }
 
     private var navigationViewLifecycle: some View {
@@ -467,6 +495,8 @@ struct ContentView: View {
                 appEnvironment.refreshAllRepoInfo(projects: projects)
                 appEnvironment.refreshPathValidity(projects: projects)
                 appEnvironment.fetchOrigin(projects: projects)
+                syncSelectedUsageProvider()
+                codexUsageStore.refresh()
                 headWatcher.sync(paths: currentWorktreePaths())
                 // Apply saved appearance
                 switch UserDefaults.standard.string(forKey: "dockyard.appearance") ?? "system" {
@@ -477,6 +507,9 @@ struct ContentView: View {
             }
             .onChange(of: sidebarModeRaw) { _, _ in
                 syncColumnVisibilityWithSidebarMode()
+            }
+            .onChange(of: codingCLIRaw) { _, _ in
+                syncSelectedUsageProvider()
             }
             .onChange(of: columnVisibility) { _, visibility in
                 syncSidebarModeWithColumnVisibility(visibility)
@@ -582,6 +615,10 @@ struct ContentView: View {
                 syncWorkstreamNamesFromBranches()
                 headWatcher.sync(paths: currentWorktreePaths())
                 claudeUsageStore.refresh()
+                if appEnvironment.toolStatus.codex.isInstalled || codexUsageStore.hasAnyData {
+                    codexUsageStore.refresh()
+                }
+                syncSelectedUsageProvider()
             }
             .onReceive(NotificationCenter.default.publisher(for: .purgeWorkstream)) { notification in
                 guard let wsID = notification.object as? UUID else { return }
@@ -601,7 +638,11 @@ struct ContentView: View {
         ProjectSidebar(
             projects: $projectList.items,
             selection: $selection,
-            onProjectsChanged: { ProjectStore.save(projects) }
+            onProjectsChanged: { ProjectStore.save(projects) },
+            selectedUsageProvider: selectedUsageProvider,
+            availableUsageProviders: availableUsageProviders,
+            onPreviousUsageProvider: { cycleUsageProvider(direction: -1) },
+            onNextUsageProvider: { cycleUsageProvider(direction: 1) }
         )
         .navigationSplitViewColumnWidth(
             min: sidebarColumnMinimumWidth,
@@ -763,6 +804,26 @@ struct ContentView: View {
     private func cycleProject(direction: Int) {
         guard let id = cycledProjectID(in: projects, selectedProjectID: activeProject?.id, direction: direction) else { return }
         selection = .project(id)
+    }
+
+    private func syncSelectedUsageProvider() {
+        let preferred = preferredUsageProvider
+        selectedUsageProvider = resolvedUsageMeterProvider(
+            current: selectedUsageProvider,
+            preferred: preferred,
+            previousPreferred: previousPreferredUsageProvider,
+            available: availableUsageProviders
+        )
+        previousPreferredUsageProvider = preferred
+    }
+
+    private func cycleUsageProvider(direction: Int) {
+        selectedUsageProvider = cycledUsageMeterProvider(
+            current: selectedUsageProvider,
+            available: availableUsageProviders,
+            direction: direction
+        )
+        previousPreferredUsageProvider = preferredUsageProvider
     }
 
     private func confirmPurge(_ wsID: UUID) {

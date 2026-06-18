@@ -60,11 +60,14 @@ struct SidebarRail: View {
     let onExpand: () -> Void
     let onAddExistingDirectory: () -> Void
     let onCreateNewProject: () -> Void
+    var selectedUsageProvider: UsageMeterProvider = .claude
+    var availableUsageProviders: [UsageMeterProvider] = [.claude]
 
     @EnvironmentObject private var appEnv: AppEnvironment
     @EnvironmentObject private var agentStateStore: AgentStateStore
     @EnvironmentObject private var activityTracker: WorkstreamActivityTracker
     @EnvironmentObject private var usageStore: ClaudeUsageStore
+    @EnvironmentObject private var codexUsageStore: CodexUsageStore
 
     private var sortedProjects: [Project] {
         sidebarRailSortedProjects(projects)
@@ -132,9 +135,13 @@ struct SidebarRail: View {
 
             Spacer(minLength: 8)
 
-            SidebarUsageMeter(style: .compact)
+            SidebarUsageMeter(
+                style: .compact,
+                selectedProvider: selectedUsageProvider,
+                availableProviders: availableUsageProviders
+            )
                 .padding(.horizontal, 8)
-                .padding(.bottom, usageStore.hasAnyData ? 10 : 0)
+                .padding(.bottom, selectedUsageStoreHasData ? 10 : 0)
 
             VStack(spacing: 8) {
                 updateButton
@@ -167,6 +174,15 @@ struct SidebarRail: View {
             .padding(.bottom, 8)
         }
         .frame(width: 60)
+    }
+
+    private var selectedUsageStoreHasData: Bool {
+        switch selectedUsageProvider {
+        case .claude:
+            return usageStore.hasAnyData
+        case .codex:
+            return codexUsageStore.hasAnyData
+        }
     }
 
     @ViewBuilder

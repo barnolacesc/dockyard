@@ -1,5 +1,5 @@
-// ABOUTME: Status strip at the bottom of the sidebar: a Claude usage meter (Current 5-hour
-// ABOUTME: block + Weekly 7-day window with % bars) plus a thin project/workstream/PR count line.
+// ABOUTME: Status strip at the bottom of the sidebar: provider usage meters with current and
+// ABOUTME: weekly windows plus a thin project/workstream/PR count line.
 
 import SwiftUI
 
@@ -8,10 +8,20 @@ struct SidebarStatusStrip: View {
     let workstreamCount: Int
     let openPRCount: Int
     var waitingCount: Int = 0
+    var selectedUsageProvider: UsageMeterProvider = .claude
+    var availableUsageProviders: [UsageMeterProvider] = [.claude]
+    var onPreviousUsageProvider: () -> Void = {}
+    var onNextUsageProvider: () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SidebarUsageMeter(style: .expanded)
+            SidebarUsageMeter(
+                style: .expanded,
+                selectedProvider: selectedUsageProvider,
+                availableProviders: availableUsageProviders,
+                onPreviousProvider: onPreviousUsageProvider,
+                onNextProvider: onNextUsageProvider
+            )
             countsLine
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -71,8 +81,13 @@ struct SidebarUsageMeter: View {
     }
 
     let style: Style
+    var selectedProvider: UsageMeterProvider = .claude
+    var availableProviders: [UsageMeterProvider] = [.claude]
+    var onPreviousProvider: () -> Void = {}
+    var onNextProvider: () -> Void = {}
 
     @EnvironmentObject private var usageStore: ClaudeUsageStore
+    @EnvironmentObject private var codexUsageStore: CodexUsageStore
     @AppStorage("dockyard.claudePlanTier") private var planTierRaw = ClaudePlanTier.none.rawValue
 
     private var planTier: ClaudePlanTier { ClaudePlanTier(rawValue: planTierRaw) ?? .none }
@@ -81,25 +96,22 @@ struct SidebarUsageMeter: View {
     private static let weeklyTint = Color(red: 0.62, green: 0.80, blue: 0.30)
 
     var body: some View {
-        if usageStore.hasAnyData {
+        if hasAnyData {
             TimelineView(.periodic(from: .now, by: 30)) { context in
                 VStack(alignment: style == .compact ? .center : .leading, spacing: style == .compact ? 6 : 8) {
                     if style == .expanded {
-                        HStack(spacing: 4) {
-                            Image(systemName: "gauge.with.needle.fill")
-                                .foregroundStyle(Color.accentColor)
-                            Text("Usage")
-                                .font(.system(size: 11, weight: .semibold))
-                            Spacer()
-                        }
-                        .foregroundStyle(.secondary)
+                        expandedHeader
                     }
 
-                    currentRow(now: context.date)
-                    weeklyRow
+                    if let currentRow = currentRow(now: context.date) {
+                        currentRow
+                    }
+                    if let weeklyRow {
+                        weeklyRow
+                    }
                 }
                 .contentShape(Rectangle())
-                .onTapGesture { usageStore.refresh(force: true) }
+                .onTapGesture { refreshSelectedProvider() }
                 .onHover { hovering in
                     if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
                 }
@@ -108,8 +120,65 @@ struct SidebarUsageMeter: View {
         }
     }
 
+    private var expandedHeader: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "gauge.with.needle.fill")
+                .foregroundStyle(Color.accentColor)
+            Text("Usage")
+                .font(.system(size: 11, weight: .semibold))
+            Spacer(minLength: 4)
+            if availableProviders.count > 1 {
+                usageProviderButton(systemImage: "chevron.left", label: NSLocalizedString("Previous usage meter", comment: "Usage meter previous provider button")) {
+                    onPreviousProvider()
+                }
+            }
+            Text(selectedProvider.displayName)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: 78, alignment: .trailing)
+            if availableProviders.count > 1 {
+                usageProviderButton(systemImage: "chevron.right", label: NSLocalizedString("Next usage meter", comment: "Usage meter next provider button")) {
+                    onNextProvider()
+                }
+            }
+        }
+        .foregroundStyle(.secondary)
+    }
+
+    private func usageProviderButton(systemImage: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 9, weight: .bold))
+                .frame(width: 16, height: 16)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .help(label)
+        .accessibilityLabel(label)
+    }
+
+    private var hasAnyData: Bool {
+        switch selectedProvider {
+        case .claude:
+            return usageStore.hasAnyData
+        case .codex:
+            return codexUsageStore.hasAnyData
+        }
+    }
+
     /// Current (5-hour) window. Prefers the real `/usage` figure, falls back to the estimate.
-    private func currentRow(now: Date) -> UsageMeterRow {
+    private func currentRow(now: Date) -> UsageMeterRow? {
+        switch selectedProvider {
+        case .claude:
+            return claudeCurrentRow(now: now)
+        case .codex:
+            return codexCurrentRow
+        }
+    }
+
+    private func claudeCurrentRow(now: Date) -> UsageMeterRow {
         let label = NSLocalizedString("Current", comment: "Claude 5-hour usage window")
         if let session = usageStore.report?.session {
             return UsageMeterRow(
@@ -133,7 +202,16 @@ struct SidebarUsageMeter: View {
     }
 
     /// Weekly (7-day) window. Prefers the real `/usage` figure, falls back to the estimate.
-    private var weeklyRow: UsageMeterRow {
+    private var weeklyRow: UsageMeterRow? {
+        switch selectedProvider {
+        case .claude:
+            return claudeWeeklyRow
+        case .codex:
+            return codexWeeklyRow
+        }
+    }
+
+    private var claudeWeeklyRow: UsageMeterRow {
         let label = NSLocalizedString("Weekly", comment: "Claude 7-day usage window")
         if let week = usageStore.report?.week {
             return UsageMeterRow(
@@ -152,6 +230,35 @@ struct SidebarUsageMeter: View {
             tint: Self.weeklyTint,
             fraction: fraction(tokens: window.tokens, budget: planTier.weeklyTokenBudget),
             subtitle: NSLocalizedString("rolling 7 days", comment: "Claude weekly usage window"),
+            style: style
+        )
+    }
+
+    private var codexCurrentRow: UsageMeterRow? {
+        codexRow(
+            window: codexUsageStore.report?.fiveHour,
+            label: NSLocalizedString("Current", comment: "Codex 5-hour usage window"),
+            tint: .orange
+        )
+    }
+
+    private var codexWeeklyRow: UsageMeterRow? {
+        codexRow(
+            window: codexUsageStore.report?.week,
+            label: NSLocalizedString("Weekly", comment: "Codex weekly usage window"),
+            tint: Self.weeklyTint
+        )
+    }
+
+    private func codexRow(window: CodexUsageReport.Window?, label: String, tint: Color) -> UsageMeterRow? {
+        guard let window else { return nil }
+        let percentUsed = CodexUsageProbe.percentUsed(fromPercentLeft: window.percentLeft)
+        return UsageMeterRow(
+            headline: "\(percentUsed)%",
+            label: label,
+            tint: tint,
+            fraction: Double(percentUsed) / 100,
+            subtitle: window.resetText.map(Self.resetsString),
             style: style
         )
     }
@@ -178,7 +285,25 @@ struct SidebarUsageMeter: View {
         String(format: NSLocalizedString("resets %@", comment: "usage window reset time"), text)
     }
 
+    private func refreshSelectedProvider() {
+        switch selectedProvider {
+        case .claude:
+            usageStore.refresh(force: true)
+        case .codex:
+            codexUsageStore.refresh(force: true)
+        }
+    }
+
     private var usageTooltip: String {
+        switch selectedProvider {
+        case .claude:
+            return claudeUsageTooltip
+        case .codex:
+            return NSLocalizedString("Real usage from Codex /status. Click to refresh.", comment: "")
+        }
+    }
+
+    private var claudeUsageTooltip: String {
         if usageStore.report != nil {
             return NSLocalizedString("Real usage from Claude Code's /usage. Click to refresh.", comment: "")
         }
