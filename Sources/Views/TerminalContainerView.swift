@@ -261,7 +261,7 @@ struct TerminalContainerView: View {
     let projectDirectory: String
     let projectName: String
     let workstreamName: String
-    let bypassPermissions: Bool
+    @Binding var bypassPermissions: Bool
     @Binding var workstreamCodingCLI: String?
     let isActive: Bool
 
@@ -312,7 +312,7 @@ struct TerminalContainerView: View {
         projectDirectory: String,
         projectName: String,
         workstreamName: String,
-        bypassPermissions: Bool,
+        bypassPermissions: Binding<Bool> = .constant(false),
         workstreamCodingCLI: Binding<String?> = .constant(nil),
         isActive: Bool,
         scriptConfig: ScriptConfig = .empty,
@@ -323,7 +323,7 @@ struct TerminalContainerView: View {
         self.projectDirectory = projectDirectory
         self.projectName = projectName
         self.workstreamName = workstreamName
-        self.bypassPermissions = bypassPermissions
+        _bypassPermissions = bypassPermissions
         _workstreamCodingCLI = workstreamCodingCLI
         self.isActive = isActive
         _activeTab = State(initialValue: initialTabState.activeTab)
@@ -598,6 +598,7 @@ struct TerminalContainerView: View {
                 useTmux: useTmux,
                 environmentVars: terminalEnvVars,
                 workstreamCodingCLI: $workstreamCodingCLI,
+                bypassPermissions: $bypassPermissions,
                 runStoppedManually: $runStoppedManually,
                 runStarted: $runStarted,
                 sessionMode: sessionMode,

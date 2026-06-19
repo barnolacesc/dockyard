@@ -148,6 +148,7 @@
 "Use Default (%@)" = "Standard verwenden (%@)";
 "Use Default follows the Coding Agent selected in Settings." = "Standard verwenden folgt dem in den Einstellungen ausgewählten Coding-Agent.";
 "Used as the default for workstreams that have not chosen their own Coding Agent." = "Wird als Standard für Workstreams verwendet, die keinen eigenen Coding-Agent gewählt haben.";
+"Opens the Coding Agent without permission prompts for this workstream. Applies the next time the agent starts." = "Öffnet den Coding-Agent ohne Berechtigungsabfragen für diesen Workstream. Wird beim nächsten Start des Agents angewendet.";
 "Agent Teams" = "Agent-Teams";
 "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams." = "Aktiviert experimentelle Multi-Agent-Koordination. Agenten können Teammitglieder erstellen, Aufgaben delegieren und workstream-übergreifend zusammenarbeiten.";
 "Auto-rename branch" = "Branch automatisch umbenennen";

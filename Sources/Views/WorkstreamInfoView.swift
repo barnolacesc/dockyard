@@ -13,6 +13,7 @@ struct WorkstreamInfoView: View {
     var useTmux: Bool = false
     var environmentVars: [String: String] = [:]
     @Binding var workstreamCodingCLI: String?
+    @Binding var bypassPermissions: Bool
     @Binding var runStoppedManually: Bool
     @Binding var runStarted: Bool
     var sessionMode: TerminalSessionMode = .standard
@@ -238,6 +239,12 @@ struct WorkstreamInfoView: View {
                             }
                         }
                     }
+
+                    Toggle("Bypass permission prompts", isOn: $bypassPermissions)
+
+                    Text("Opens the Coding Agent without permission prompts for this workstream. Applies the next time the agent starts.")
+                        .font(.caption)
+                        .foregroundStyle(bypassPermissions ? .orange : .secondary)
                 }
 
                 if scriptConfig.hasAnyScript {
