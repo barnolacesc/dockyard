@@ -368,7 +368,7 @@
 
 "resets %@" = "Reset %@";
 "Real usage from Claude Code's /usage. Click to refresh." = "Echte Nutzung aus /usage von Claude Code. Zum Aktualisieren klicken.";
-"Real usage from Codex /status. Click to refresh." = "Echte Nutzung aus /status von Codex. Zum Aktualisieren klicken.";
+"Real usage from your Codex subscription. Click to refresh." = "Echte Nutzung aus deinem Codex-Abo. Zum Aktualisieren klicken.";
 "Previous usage meter" = "Vorherige Nutzungsanzeige";
 "Next usage meter" = "Nächste Nutzungsanzeige";
 "Fetching usage…" = "Nutzung wird geladen…";

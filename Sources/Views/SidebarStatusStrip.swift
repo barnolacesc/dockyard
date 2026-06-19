@@ -121,7 +121,7 @@ struct SidebarUsageMeter: View {
                         if let currentRow = currentRow(now: context.date) {
                             currentRow
                         }
-                        if let weeklyRow {
+                        if let weeklyRow = weeklyRow(now: context.date) {
                             weeklyRow
                         }
                     }
@@ -220,7 +220,7 @@ struct SidebarUsageMeter: View {
         case .claude:
             return claudeCurrentRow(now: now)
         case .codex:
-            return codexCurrentRow
+            return codexCurrentRow(now: now)
         }
     }
 
@@ -248,12 +248,12 @@ struct SidebarUsageMeter: View {
     }
 
     /// Weekly (7-day) window. Prefers the real `/usage` figure, falls back to the estimate.
-    private var weeklyRow: UsageMeterRow? {
+    private func weeklyRow(now: Date) -> UsageMeterRow? {
         switch selectedProvider {
         case .claude:
             return claudeWeeklyRow
         case .codex:
-            return codexWeeklyRow
+            return codexWeeklyRow(now: now)
         }
     }
 
@@ -280,31 +280,32 @@ struct SidebarUsageMeter: View {
         )
     }
 
-    private var codexCurrentRow: UsageMeterRow? {
+    private func codexCurrentRow(now: Date) -> UsageMeterRow? {
         codexRow(
             window: codexUsageStore.report?.fiveHour,
             label: NSLocalizedString("Current", comment: "Codex 5-hour usage window"),
-            tint: .orange
+            tint: .orange,
+            now: now
         )
     }
 
-    private var codexWeeklyRow: UsageMeterRow? {
+    private func codexWeeklyRow(now: Date) -> UsageMeterRow? {
         codexRow(
             window: codexUsageStore.report?.week,
             label: NSLocalizedString("Weekly", comment: "Codex weekly usage window"),
-            tint: Self.weeklyTint
+            tint: Self.weeklyTint,
+            now: now
         )
     }
 
-    private func codexRow(window: CodexUsageReport.Window?, label: String, tint: Color) -> UsageMeterRow? {
+    private func codexRow(window: CodexUsageReport.Window?, label: String, tint: Color, now: Date) -> UsageMeterRow? {
         guard let window else { return nil }
-        let percentUsed = CodexUsageProbe.percentUsed(fromPercentLeft: window.percentLeft)
         return UsageMeterRow(
-            headline: "\(percentUsed)%",
+            headline: "\(window.usedPercent)%",
             label: label,
             tint: tint,
-            fraction: Double(percentUsed) / 100,
-            subtitle: window.resetText.map(Self.resetsString),
+            fraction: Double(window.usedPercent) / 100,
+            subtitle: estimateResetSubtitle(window.resetsAt, now: now),
             style: style
         )
     }
@@ -345,7 +346,7 @@ struct SidebarUsageMeter: View {
         case .claude:
             return claudeUsageTooltip
         case .codex:
-            return NSLocalizedString("Real usage from Codex /status. Click to refresh.", comment: "")
+            return NSLocalizedString("Real usage from your Codex subscription. Click to refresh.", comment: "")
         }
     }
 

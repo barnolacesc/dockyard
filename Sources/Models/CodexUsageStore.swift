@@ -1,4 +1,4 @@
-// ABOUTME: Observable store for Codex usage fetched from the Codex `/status` command.
+// ABOUTME: Observable store for Codex usage fetched via the `codex app-server` rate-limits API.
 // ABOUTME: Keeps the last good report so transient CLI failures do not blank the sidebar.
 
 import Foundation

@@ -1,17 +1,19 @@
-// ABOUTME: Fetches and parses Codex `/status` output for sidebar usage meters.
-// ABOUTME: Codex reports remaining quota, which is adapted to Dockyard's used-percent UI.
+// ABOUTME: Fetches Codex usage limits via the `codex app-server` JSON-RPC `account/rateLimits/read`.
+// ABOUTME: Replaces fragile TUI scraping; maps primary/secondary windows to 5-hour and weekly rows.
 
 import Foundation
 
 struct CodexUsageReport: Equatable {
     struct Window: Equatable {
-        var percentLeft: Int
-        var resetText: String?
+        var usedPercent: Int
+        var resetsAt: Date?
+        var windowMinutes: Int?
     }
 
-    var model: String?
-    var account: String?
+    var planType: String?
+    /// Primary (short) window — Codex's 5-hour limit.
     var fiveHour: Window?
+    /// Secondary (long) window — Codex's weekly limit.
     var week: Window?
 
     var isEmpty: Bool {
@@ -22,15 +24,18 @@ struct CodexUsageReport: Equatable {
 enum CodexUsageProbe {
     private static let probeTimeout: TimeInterval = 8
 
+    /// Spawn `codex app-server`, perform the JSON-RPC handshake, and read the account rate limits.
+    /// This is the same data Codex's `/status` shows, but fetched over the stable app-server
+    /// protocol instead of scraping the interactive TUI.
     static func fetch(shell: String = CommandBuilder.userShell) -> CodexUsageReport? {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: shell)
-        process.arguments = [
-            "-lic",
-            "printf '/status\\r/quit\\r' | script -q /dev/null codex --no-alt-screen"
-        ]
+        process.arguments = ["-lic", "codex app-server"]
         process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
+
+        let inPipe = Pipe()
         let outPipe = Pipe()
+        process.standardInput = inPipe
         process.standardOutput = outPipe
         process.standardError = Pipe()
 
@@ -40,110 +45,109 @@ enum CodexUsageProbe {
             return nil
         }
 
-        let timeout = DispatchWorkItem {
-            if process.isRunning {
-                process.terminate()
-            }
-        }
-        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + probeTimeout, execute: timeout)
+        let outHandle = outPipe.fileHandleForReading
+        let collector = ResponseCollector()
+        let semaphore = DispatchSemaphore(value: 0)
 
-        let data = outPipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        timeout.cancel()
-        guard process.terminationStatus == 0 else { return nil }
-        return parse(data)
-    }
-
-    static func parse(_ data: Data) -> CodexUsageReport? {
-        guard let text = String(data: data, encoding: .utf8) else { return nil }
-        return parseText(text)
-    }
-
-    static func parseText(_ text: String) -> CodexUsageReport? {
-        let lines = stripANSI(text)
-            .split(whereSeparator: \.isNewline)
-            .map { normalizedLine(String($0)) }
-            .filter { !$0.isEmpty }
-
-        var report = CodexUsageReport()
-        for (index, line) in lines.enumerated() {
-            let lower = line.lowercased()
-            if lower.contains("model:"), report.model == nil {
-                report.model = value(afterColonIn: line)
-            } else if lower.contains("account:"), report.account == nil {
-                report.account = value(afterColonIn: line)
-            } else if lower.contains("5h limit:"),
-                      let percent = percentLeft(in: line)
-            {
-                report.fiveHour = CodexUsageReport.Window(
-                    percentLeft: percent,
-                    resetText: resetText(after: index, in: lines)
-                )
-            } else if lower.contains("weekly limit:"),
-                      let percent = percentLeft(in: line)
-            {
-                report.week = CodexUsageReport.Window(
-                    percentLeft: percent,
-                    resetText: resetText(after: index, in: lines)
-                )
+        // The readability handler is invoked serially, so its access to the collector is safe.
+        outHandle.readabilityHandler = { handle in
+            let chunk = handle.availableData
+            guard !chunk.isEmpty else { return }
+            if collector.ingest(chunk) {
+                semaphore.signal()
             }
         }
 
+        // `initialize` handshake then the rate-limits read, sent back-to-back. The app-server
+        // processes newline-delimited requests in order, so no need to wait for the init reply.
+        let requests = [
+            #"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"clientInfo":{"name":"dockyard","version":"1.0"},"capabilities":{"experimentalApi":true}}}"#,
+            #"{"jsonrpc":"2.0","id":2,"method":"account/rateLimits/read","params":{}}"#,
+        ].joined(separator: "\n") + "\n"
+        inPipe.fileHandleForWriting.write(Data(requests.utf8))
+
+        let outcome = semaphore.wait(timeout: .now() + probeTimeout)
+
+        outHandle.readabilityHandler = nil
+        try? inPipe.fileHandleForWriting.close() // EOF tells the app-server to exit
+        if process.isRunning { process.terminate() }
+
+        return outcome == .success ? collector.report : nil
+    }
+
+    /// Parse a single JSON-RPC response line into a usage report. Returns nil for any line that is
+    /// not a rate-limits response (the init reply, notifications, shell banners, non-JSON noise).
+    static func parseRateLimits(_ data: Data) -> CodexUsageReport? {
+        guard let envelope = try? JSONDecoder().decode(RPCEnvelope.self, from: data),
+              let limits = envelope.result?.rateLimits
+        else {
+            return nil
+        }
+        let report = CodexUsageReport(
+            planType: limits.planType,
+            fiveHour: limits.primary.map(window(from:)),
+            week: limits.secondary.map(window(from:))
+        )
         return report.isEmpty ? nil : report
     }
 
-    static func percentUsed(fromPercentLeft percentLeft: Int) -> Int {
-        max(0, min(100, 100 - percentLeft))
-    }
-
-    private static func stripANSI(_ text: String) -> String {
-        text.replacingOccurrences(
-            of: "\u{001B}\\[[0-9;?]*[ -/]*[@-~]",
-            with: "",
-            options: .regularExpression
+    private static func window(from raw: RPCWindow) -> CodexUsageReport.Window {
+        CodexUsageReport.Window(
+            usedPercent: max(0, min(100, raw.usedPercent)),
+            resetsAt: raw.resetsAt.map { Date(timeIntervalSince1970: TimeInterval($0)) },
+            windowMinutes: raw.windowDurationMins.map(Int.init)
         )
     }
 
-    private static func normalizedLine(_ line: String) -> String {
-        line.trimmingCharacters(in: CharacterSet(charactersIn: " \t\r\n|"))
-    }
+    // MARK: - JSON-RPC payload
 
-    private static func value(afterColonIn line: String) -> String? {
-        guard let colon = line.firstIndex(of: ":") else { return nil }
-        var value = String(line[line.index(after: colon)...])
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        if let separator = value.lastIndex(of: "|") {
-            value = String(value[..<separator])
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+    private struct RPCEnvelope: Decodable {
+        let result: Result?
+
+        struct Result: Decodable {
+            let rateLimits: RateLimits?
         }
-        return value.isEmpty ? nil : value
+
+        struct RateLimits: Decodable {
+            let primary: RPCWindow?
+            let secondary: RPCWindow?
+            let planType: String?
+        }
     }
 
-    private static func percentLeft(in line: String) -> Int? {
-        guard let range = line.range(
-            of: #"\d+\s*%\s*left"#,
-            options: [.regularExpression, .caseInsensitive]
-        ) else { return nil }
-        let match = String(line[range])
-        guard let percentRange = match.range(of: #"\d+"#, options: .regularExpression) else { return nil }
-        return Int(match[percentRange])
+    private struct RPCWindow: Decodable {
+        let usedPercent: Int
+        let resetsAt: Int64?
+        let windowDurationMins: Int64?
     }
 
-    private static func resetText(after index: Int, in lines: [String]) -> String? {
-        let nextIndex = index + 1
-        guard lines.indices.contains(nextIndex) else { return nil }
-        let line = lines[nextIndex]
-        guard let range = line.range(
-            of: #"resets\s+([^)]+)"#,
-            options: [.regularExpression, .caseInsensitive]
-        ) else { return nil }
-        var text = String(line[range])
-        text = text.replacingOccurrences(
-            of: #"(?i)^resets\s+"#,
-            with: "",
-            options: .regularExpression
-        )
-        text = text.trimmingCharacters(in: CharacterSet(charactersIn: "() |").union(.whitespacesAndNewlines))
-        return text.isEmpty ? nil : text
+    /// Buffers stdout and resolves the first line that parses as a rate-limits response. Guarded by
+    /// a lock because `FileHandle.readabilityHandler` runs on a background queue.
+    private final class ResponseCollector: @unchecked Sendable {
+        private let lock = NSLock()
+        private var buffer = Data()
+        private var found: CodexUsageReport?
+
+        var report: CodexUsageReport? {
+            lock.lock()
+            defer { lock.unlock() }
+            return found
+        }
+
+        /// Returns true once a rate-limits response has been found.
+        func ingest(_ chunk: Data) -> Bool {
+            lock.lock()
+            defer { lock.unlock() }
+            buffer.append(chunk)
+            while let newline = buffer.firstIndex(of: 0x0A) {
+                let line = buffer.subdata(in: buffer.startIndex..<newline)
+                buffer.removeSubrange(buffer.startIndex...newline)
+                if let report = CodexUsageProbe.parseRateLimits(line) {
+                    found = report
+                    return true
+                }
+            }
+            return false
+        }
     }
 }

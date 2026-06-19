@@ -1,54 +1,49 @@
-// ABOUTME: Tests parsing of Codex `/status` output into usage limit windows.
-// ABOUTME: Verifies Codex percent-left values are adapted to Dockyard percent-used rows.
+// ABOUTME: Tests parsing of the Codex app-server `account/rateLimits/read` JSON-RPC response.
+// ABOUTME: Verifies primary/secondary windows map to Dockyard's 5-hour and weekly usage rows.
 
 @testable import Dockyard
 import XCTest
 
 final class CodexUsageProbeTests: XCTestCase {
-    private let sample = """
-    OpenAI Codex (v0.139.0)
+    private let sample = Data("""
+    {"jsonrpc":"2.0","id":2,"result":{"rateLimits":{"limitId":"codex","limitName":null,"primary":{"usedPercent":33,"windowDurationMins":300,"resetsAt":1781918988},"secondary":{"usedPercent":36,"windowDurationMins":10080,"resetsAt":1782336604},"planType":"plus"}}}
+    """.utf8)
 
-    Model:                gpt-5.5 (reasoning high, summaries auto)
-    Account:              user@example.com (Plus)
+    func testParsesPrimaryAndSecondaryWindows() {
+        let report = CodexUsageProbe.parseRateLimits(sample)
 
-    5h limit:             [##############------] 68% left
-                          (resets 01:29 on 19 Jun)
-    Weekly limit:         [#################---] 85% left
-                          (resets 23:30 on 24 Jun)
-    """
-
-    func testParsesLimitRowsAndResetText() {
-        let report = CodexUsageProbe.parseText(sample)
-
-        XCTAssertEqual(report?.fiveHour?.percentLeft, 68)
-        XCTAssertEqual(report?.fiveHour?.resetText, "01:29 on 19 Jun")
-        XCTAssertEqual(report?.week?.percentLeft, 85)
-        XCTAssertEqual(report?.week?.resetText, "23:30 on 24 Jun")
+        XCTAssertEqual(report?.fiveHour?.usedPercent, 33)
+        XCTAssertEqual(report?.fiveHour?.resetsAt, Date(timeIntervalSince1970: 1_781_918_988))
+        XCTAssertEqual(report?.week?.usedPercent, 36)
+        XCTAssertEqual(report?.week?.resetsAt, Date(timeIntervalSince1970: 1_782_336_604))
+        XCTAssertEqual(report?.planType, "plus")
     }
 
-    func testParsesModelAndAccount() {
-        let report = CodexUsageProbe.parseText(sample)
+    func testParsesWhenSecondaryWindowMissing() {
+        let data = Data(#"{"id":2,"result":{"rateLimits":{"primary":{"usedPercent":10}}}}"#.utf8)
+        let report = CodexUsageProbe.parseRateLimits(data)
 
-        XCTAssertEqual(report?.model, "gpt-5.5 (reasoning high, summaries auto)")
-        XCTAssertEqual(report?.account, "user@example.com (Plus)")
+        XCTAssertEqual(report?.fiveHour?.usedPercent, 10)
+        XCTAssertNil(report?.fiveHour?.resetsAt)
+        XCTAssertNil(report?.week)
     }
 
-    func testReturnsNilWhenNoLimitRows() {
-        XCTAssertNil(CodexUsageProbe.parseText("Model: gpt-5.5\nNo usage here"))
+    func testClampsUsedPercentToValidRange() {
+        let data = Data(#"{"id":2,"result":{"rateLimits":{"primary":{"usedPercent":140},"secondary":{"usedPercent":-5}}}}"#.utf8)
+        let report = CodexUsageProbe.parseRateLimits(data)
+
+        XCTAssertEqual(report?.fiveHour?.usedPercent, 100)
+        XCTAssertEqual(report?.week?.usedPercent, 0)
     }
 
-    func testToleratesANSIEscapeSequences() {
-        let text = "\u{001B}[2m5h limit:\u{001B}[0m [####------] \u{001B}[1m68% left\u{001B}[0m\n(resets 01:29 on 19 Jun)"
-        let report = CodexUsageProbe.parseText(text)
-
-        XCTAssertEqual(report?.fiveHour?.percentLeft, 68)
-        XCTAssertEqual(report?.fiveHour?.resetText, "01:29 on 19 Jun")
+    func testReturnsNilForLinesWithoutRateLimits() {
+        XCTAssertNil(CodexUsageProbe.parseRateLimits(Data(#"{"id":1,"result":{}}"#.utf8)))
+        XCTAssertNil(CodexUsageProbe.parseRateLimits(Data(#"{"method":"thread/started","params":{}}"#.utf8)))
+        XCTAssertNil(CodexUsageProbe.parseRateLimits(Data("not json at all".utf8)))
     }
 
-    func testConvertsPercentLeftToPercentUsed() {
-        XCTAssertEqual(CodexUsageProbe.percentUsed(fromPercentLeft: 68), 32)
-        XCTAssertEqual(CodexUsageProbe.percentUsed(fromPercentLeft: 0), 100)
-        XCTAssertEqual(CodexUsageProbe.percentUsed(fromPercentLeft: 100), 0)
-        XCTAssertEqual(CodexUsageProbe.percentUsed(fromPercentLeft: 140), 0)
+    func testReturnsNilWhenBothWindowsMissing() {
+        let data = Data(#"{"id":2,"result":{"rateLimits":{"planType":"plus"}}}"#.utf8)
+        XCTAssertNil(CodexUsageProbe.parseRateLimits(data))
     }
 }
