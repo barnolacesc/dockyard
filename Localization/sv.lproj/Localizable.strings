@@ -148,6 +148,7 @@
 "Use Default (%@)" = "Använd standard (%@)";
 "Use Default follows the Coding Agent selected in Settings." = "Använd standard följer kodningsagenten som valts i Inställningar.";
 "Used as the default for workstreams that have not chosen their own Coding Agent." = "Används som standard för arbetsflöden som inte har valt en egen kodningsagent.";
+"Opens the Coding Agent without permission prompts for this workstream. Applies the next time the agent starts." = "Öppnar kodningsagenten utan behörighetsförfrågningar för detta arbetsflöde. Tillämpas nästa gång agenten startar.";
 "Agent Teams" = "Agentteam";
 "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams." = "Aktiverar experimentell multi-agentkoordinering. Agenter kan skapa teammedlemmar, delegera uppgifter och samarbeta mellan arbetsflöden.";
 "Agent Teams is only available with Claude Code." = "Agentteam är bara tillgängligt med Claude Code.";

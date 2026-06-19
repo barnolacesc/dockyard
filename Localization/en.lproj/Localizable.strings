@@ -147,6 +147,7 @@
 "Coding CLI" = "Coding CLI";
 "Use Default (%@)" = "Use Default (%@)";
 "Use Default follows the Coding Agent selected in Settings." = "Use Default follows the Coding Agent selected in Settings.";
+"Opens the Coding Agent without permission prompts for this workstream. Applies the next time the agent starts." = "Opens the Coding Agent without permission prompts for this workstream. Applies the next time the agent starts.";
 "Used as the default for workstreams that have not chosen their own Coding Agent." = "Used as the default for workstreams that have not chosen their own Coding Agent.";
 "Agent Teams" = "Agent Teams";
 "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams." = "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams.";
