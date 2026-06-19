@@ -14,11 +14,14 @@ final class ClaudeUsageStore: ObservableObject {
 
     /// The cheap local estimate may refresh often; the probe spawns a `claude` process so it
     /// runs far less frequently (but always on an explicit, forced refresh — e.g. a click).
+    /// Whether a refresh is currently in flight, so the sidebar can show a loading placeholder
+    /// while the selected provider has no data yet.
+    @Published private(set) var isRefreshing = false
+
     private static let minEstimateInterval: TimeInterval = 60
     private static let minProbeInterval: TimeInterval = 180
     private var lastEstimate: Date?
     private var lastProbe: Date?
-    private var isRefreshing = false
 
     init() {
         refresh(force: true)

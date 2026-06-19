@@ -9,9 +9,12 @@ final class CodexUsageStore: ObservableObject {
 
     @Published private(set) var report: CodexUsageReport?
 
+    /// Whether a probe is currently in flight, so the sidebar can show a loading placeholder
+    /// while the selected provider has no data yet.
+    @Published private(set) var isRefreshing = false
+
     private static let minProbeInterval: TimeInterval = 180
     private var lastProbe: Date?
-    private var isRefreshing = false
 
     init() {
         refresh(force: true)
