@@ -113,6 +113,8 @@
 "Active workstreams will be stopped." = "Els fluxos de treball actius s'aturaran.";
 "Quit" = "Sortir";
 "Confirm before quitting" = "Confirma abans de sortir";
+"Show shortcut hints while holding ⌘" = "Mostra les dreceres mentre mantens premuda ⌘";
+"Display contextual key badges over visible controls when you hold the Command key." = "Mostra insígnies de tecles contextuals sobre els controls visibles quan mantens premuda la tecla Ordre.";
 "Show a confirmation dialog when quitting with active workstreams." = "Mostra un diàleg de confirmació en sortir amb fluxos de treball actius.";
 "Launch at login" = "Obre en iniciar sessió";
 "Automatically open Dockyard when you log in." = "Obre Dockyard automàticament en iniciar sessió.";

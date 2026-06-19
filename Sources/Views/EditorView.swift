@@ -119,6 +119,7 @@ struct EditorView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(.bar)
+        .shortcutHint(ShortcutHint(command: "S", commandShift: "S"))
     }
 
     // MARK: - File Tree Panel

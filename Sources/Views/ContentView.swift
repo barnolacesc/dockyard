@@ -329,6 +329,7 @@ struct ContentView: View {
 
     var body: some View {
         navigationView
+            .shortcutHintOverlay()
             .onReceive(NotificationCenter.default.publisher(for: .toggleSidebar)) { _ in
                 toggleSidebarVisibility()
             }

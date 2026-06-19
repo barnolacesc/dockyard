@@ -86,6 +86,7 @@ struct EnvironmentTabView: View {
                     }
                     .buttonStyle(.borderless)
                     .help(NSLocalizedString("Start", comment: ""))
+                    .shortcutHint(ShortcutHint(commandShift: "↩"))
                 } else {
                     Image(systemName: "play")
                         .font(.system(size: 11))
@@ -159,6 +160,7 @@ struct EnvironmentTabView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 6))
                         }
                         .buttonStyle(.borderless)
+                        .shortcutHint(ShortcutHint(commandShift: "↩"))
                         Text(script)
                             .font(.system(size: 12, design: .monospaced))
                             .foregroundStyle(.tertiary)
@@ -351,5 +353,6 @@ private struct EnvActionButton: View {
         .buttonStyle(.borderless)
         .onHover { isHovering = $0 }
         .accessibilityLabel(label)
+        .shortcutHint(ShortcutHint(commandShift: shortcut.isEmpty ? nil : "↩"))
     }
 }

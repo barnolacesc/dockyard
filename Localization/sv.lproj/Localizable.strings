@@ -113,6 +113,8 @@
 "Active workstreams will be stopped." = "Aktiva arbetsflöden kommer att stoppas.";
 "Quit" = "Avsluta";
 "Confirm before quitting" = "Bekräfta innan avslut";
+"Show shortcut hints while holding ⌘" = "Visa kortkommandotips när ⌘ hålls ned";
+"Display contextual key badges over visible controls when you hold the Command key." = "Visar sammanhangsberoende tangentmärken över synliga reglage när kommandotangenten hålls ned.";
 "Show a confirmation dialog when quitting with active workstreams." = "Visa en bekräftelsedialog vid avslut med aktiva arbetsflöden.";
 "Launch at login" = "Öppna vid inloggning";
 "Automatically open Dockyard when you log in." = "Öppna Dockyard automatiskt vid inloggning.";
