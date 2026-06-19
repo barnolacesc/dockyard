@@ -35,7 +35,7 @@ struct ScriptConfig {
                 do {
                     return try candidate.loader(candidate.path)
                 } catch {
-                    logger.error("Failed to load \(candidate.path): \(error.localizedDescription)")
+                    logger.error("Failed to load \(candidate.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
                     return ScriptConfig(setup: nil, run: nil, teardown: nil, expectedPort: nil, source: candidate.source, loadError: error.localizedDescription)
                 }
             }

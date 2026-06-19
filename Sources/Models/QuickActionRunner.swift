@@ -124,7 +124,7 @@ final class QuickActionRunner: ObservableObject {
         let command = "git push -u origin HEAD"
 
         appendLog(action: .push, command: command)
-        logger.info("Quick action \(actionRaw) starting in \(dir)")
+        logger.info("Quick action \(actionRaw, privacy: .public) starting in \(dir, privacy: .public)")
 
         Task.detached {
             let result = GitOperations.pushCurrentBranch(at: dir)
@@ -144,7 +144,7 @@ final class QuickActionRunner: ObservableObject {
         let command = "\(ghPath) pr close \(branchName) --comment 'Closed from Dockyard'"
 
         appendLog(action: .closePR, command: command)
-        logger.info("Quick action closePR starting in \(workingDirectory)")
+        logger.info("Quick action closePR starting in \(workingDirectory, privacy: .public)")
 
         let dir = workingDirectory
         let path = ghPath

@@ -2092,7 +2092,7 @@ final class TerminalSurfaceCache: ObservableObject {
         surfaces[id] = view
         surfaceParams[id] = SurfaceParams(workingDirectory: workingDirectory, command: command, initialInput: initialInput, environmentVars: environmentVars, waitAfterCommand: waitAfterCommand)
         if view.surface == nil {
-            logger.error("Surface creation failed for \(id) command=\(command ?? "<shell>")")
+            logger.error("Surface creation failed for \(id, privacy: .public) command=\((command ?? "<shell>"), privacy: .public)")
             failedSurfaces[id] = command ?? "(default shell)"
             objectWillChange.send()
         } else {
@@ -2114,7 +2114,7 @@ final class TerminalSurfaceCache: ObservableObject {
         view.workstreamID = id
         surfaces[id] = view
         if view.surface == nil {
-            logger.error("Surface retry failed for \(id)")
+            logger.error("Surface retry failed for \(id, privacy: .public)")
             failedSurfaces[id] = params.command ?? "(default shell)"
         } else {
             creationTimes[id] = Date()
@@ -2181,7 +2181,7 @@ final class TerminalSurfaceCache: ObservableObject {
             let age = Date().timeIntervalSince(created)
             diedImmediately = age < Self.healthCheckWindow
             if diedImmediately {
-                logger.error("Surface \(id) died after \(String(format: "%.1f", age))s, treating as launch failure")
+                logger.error("Surface \(id, privacy: .public) died after \(String(format: "%.1f", age), privacy: .public)s, treating as launch failure")
             }
         } else {
             diedImmediately = false
@@ -2210,7 +2210,7 @@ final class TerminalSurfaceCache: ObservableObject {
             surfaces[id] = newView
             respawning.remove(id)
             if newView.surface == nil {
-                logger.error("Respawn failed for surface \(id)")
+                logger.error("Respawn failed for surface \(id, privacy: .public)")
                 failedSurfaces[id] = params.command ?? "(default shell)"
             } else {
                 creationTimes[id] = Date()

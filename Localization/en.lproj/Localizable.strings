@@ -404,3 +404,26 @@
 "Update & Relaunch" = "Update & Relaunch";
 "Later" = "Later";
 "A new version of Dockyard is ready. It will rebuild and relaunch automatically." = "A new version of Dockyard is ready. It will rebuild and relaunch automatically.";
+
+/* Logs Window */
+"Logs" = "Logs";
+"Show Logs" = "Show Logs";
+"Live" = "Live";
+"Pause" = "Pause";
+"Search logs" = "Search logs";
+"Category" = "Category";
+"All Categories" = "All Categories";
+"Minimum Level" = "Minimum Level";
+"Debug" = "Debug";
+"Notice" = "Notice";
+"Error" = "Error";
+"Fault" = "Fault";
+"Clear" = "Clear";
+"Copy" = "Copy";
+"Export" = "Export";
+"No Logs Yet" = "No Logs Yet";
+"Dockyard activity will appear here as it is recorded." = "Dockyard activity will appear here as it is recorded.";
+"Could Not Export Logs" = "Could Not Export Logs";
+"Logs Unavailable" = "Logs Unavailable";
+"Dockyard could not access the system log store." = "Dockyard could not access the system log store.";
+"Open Console.app" = "Open Console.app";

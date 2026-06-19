@@ -404,3 +404,26 @@
 "Update & Relaunch" = "Uppdatera och starta om";
 "Later" = "Senare";
 "A new version of Dockyard is ready. It will rebuild and relaunch automatically." = "En ny version av Dockyard är klar. Den byggs om och startas om automatiskt.";
+
+/* Logs Window */
+"Logs" = "Loggar";
+"Show Logs" = "Visa loggar";
+"Live" = "Live";
+"Pause" = "Paus";
+"Search logs" = "Sök i loggar";
+"Category" = "Kategori";
+"All Categories" = "Alla kategorier";
+"Minimum Level" = "Miniminivå";
+"Debug" = "Felsökning";
+"Notice" = "Meddelande";
+"Error" = "Fel";
+"Fault" = "Allvarligt fel";
+"Clear" = "Rensa";
+"Copy" = "Kopiera";
+"Export" = "Exportera";
+"No Logs Yet" = "Inga loggar ännu";
+"Dockyard activity will appear here as it is recorded." = "Dockyard-aktivitet visas här när den registreras.";
+"Could Not Export Logs" = "Det gick inte att exportera loggar";
+"Logs Unavailable" = "Loggar är inte tillgängliga";
+"Dockyard could not access the system log store." = "Dockyard kunde inte komma åt systemloggen.";
+"Open Console.app" = "Öppna Console.app";

@@ -404,3 +404,26 @@
 "Update & Relaunch" = "Actualizar y reiniciar";
 "Later" = "Más tarde";
 "A new version of Dockyard is ready. It will rebuild and relaunch automatically." = "Hay una nueva versión de Dockyard lista. Se reconstruirá y reiniciará automáticamente.";
+
+/* Logs Window */
+"Logs" = "Registros";
+"Show Logs" = "Mostrar registros";
+"Live" = "En directo";
+"Pause" = "Pausa";
+"Search logs" = "Buscar registros";
+"Category" = "Categoría";
+"All Categories" = "Todas las categorías";
+"Minimum Level" = "Nivel mínimo";
+"Debug" = "Depuración";
+"Notice" = "Aviso";
+"Error" = "Error";
+"Fault" = "Fallo";
+"Clear" = "Borrar";
+"Copy" = "Copiar";
+"Export" = "Exportar";
+"No Logs Yet" = "Aún no hay registros";
+"Dockyard activity will appear here as it is recorded." = "La actividad de Dockyard aparecerá aquí a medida que se registre.";
+"Could Not Export Logs" = "No se pudieron exportar los registros";
+"Logs Unavailable" = "Registros no disponibles";
+"Dockyard could not access the system log store." = "Dockyard no pudo acceder al registro del sistema.";
+"Open Console.app" = "Abrir Console.app";

@@ -158,6 +158,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     }
 }
 
+private struct LogsCommands: Commands {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some Commands {
+        CommandGroup(after: .appSettings) {
+            Button("Show Logs") {
+                openWindow(id: "logs")
+            }
+        }
+    }
+}
+
 @main
 struct DockyardApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -291,6 +303,7 @@ struct DockyardApp: App {
                 }
                 .keyboardShortcut("/", modifiers: .command)
             }
+            LogsCommands()
             // View menu
             CommandGroup(after: .sidebar) {
                 Button("Toggle Sidebar") {
@@ -444,5 +457,10 @@ struct DockyardApp: App {
                 .keyboardShortcut("w", modifiers: [.command, .shift])
             }
         }
+
+        Window("Logs", id: "logs") {
+            LogsWindowView()
+        }
+        .defaultSize(width: 1000, height: 560)
     }
 }
