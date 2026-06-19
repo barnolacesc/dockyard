@@ -399,6 +399,8 @@
 "Real usage from Codex /status. Click to refresh." = "Uso real desde /status de Codex. Haz clic para actualizar.";
 "Previous usage meter" = "Medidor de uso anterior";
 "Next usage meter" = "Medidor de uso siguiente";
+"Fetching usage…" = "Cargando uso…";
+"No usage data — tap to refresh" = "Sin datos de uso — toca para actualizar";
 
 "Update Available" = "Actualización disponible";
 "Update & Relaunch" = "Actualizar y reiniciar";

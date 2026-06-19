@@ -96,27 +96,73 @@ struct SidebarUsageMeter: View {
     private static let weeklyTint = Color(red: 0.62, green: 0.80, blue: 0.30)
 
     var body: some View {
-        if hasAnyData {
-            TimelineView(.periodic(from: .now, by: 30)) { context in
-                VStack(alignment: style == .compact ? .center : .leading, spacing: style == .compact ? 6 : 8) {
-                    if style == .expanded {
+        switch usageMeterDisplayState(selectedHasData: hasAnyData, providerCount: availableProviders.count) {
+        case .hidden:
+            EmptyView()
+        case .placeholder:
+            // The selected provider has no data yet but others exist. Keep the switcher visible
+            // (expanded only — the compact rail has no switcher) so the user can cycle back.
+            if style == .expanded {
+                meterShell {
+                    VStack(alignment: .leading, spacing: 8) {
                         expandedHeader
-                    }
-
-                    if let currentRow = currentRow(now: context.date) {
-                        currentRow
-                    }
-                    if let weeklyRow {
-                        weeklyRow
+                        placeholderRow
                     }
                 }
-                .contentShape(Rectangle())
-                .onTapGesture { refreshSelectedProvider() }
-                .onHover { hovering in
-                    if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
-                }
-                .help(usageTooltip)
             }
+        case .data:
+            TimelineView(.periodic(from: .now, by: 30)) { context in
+                meterShell {
+                    VStack(alignment: style == .compact ? .center : .leading, spacing: style == .compact ? 6 : 8) {
+                        if style == .expanded {
+                            expandedHeader
+                        }
+
+                        if let currentRow = currentRow(now: context.date) {
+                            currentRow
+                        }
+                        if let weeklyRow {
+                            weeklyRow
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Common interaction wrapper for the meter: tap to refresh, pointer cursor on hover, tooltip.
+    private func meterShell(@ViewBuilder _ content: () -> some View) -> some View {
+        content()
+            .contentShape(Rectangle())
+            .onTapGesture { refreshSelectedProvider() }
+            .onHover { hovering in
+                if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+            }
+            .help(usageTooltip)
+    }
+
+    @ViewBuilder
+    private var placeholderRow: some View {
+        HStack(spacing: 6) {
+            if isRefreshingSelectedProvider {
+                ProgressView()
+                    .controlSize(.small)
+                    .scaleEffect(0.7)
+                Text("Fetching usage…")
+            } else {
+                Text("No usage data — tap to refresh")
+            }
+        }
+        .font(.system(size: 11))
+        .foregroundStyle(.tertiary)
+    }
+
+    private var isRefreshingSelectedProvider: Bool {
+        switch selectedProvider {
+        case .claude:
+            return usageStore.isRefreshing
+        case .codex:
+            return codexUsageStore.isRefreshing
         }
     }
 

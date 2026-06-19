@@ -43,6 +43,26 @@ struct UsageMeterSnapshot: Equatable {
     var weekly: UsageMeterWindow?
 }
 
+/// What the sidebar usage meter should render for the currently selected provider.
+enum UsageMeterDisplayState: Equatable {
+    /// Nothing to show: the selected provider has no data and there is no switcher to keep around.
+    case hidden
+    /// The selected provider has no data yet, but other providers exist, so keep the switcher
+    /// visible (with a loading placeholder) so the user can cycle back instead of being stranded.
+    case placeholder
+    /// The selected provider has usage data to display.
+    case data
+}
+
+/// Decides how the usage meter should render. The switcher must stay visible whenever more than
+/// one provider is available, even if the selected provider has not produced data yet — otherwise
+/// switching to an empty provider hides the arrows and strands the user.
+func usageMeterDisplayState(selectedHasData: Bool, providerCount: Int) -> UsageMeterDisplayState {
+    if selectedHasData { return .data }
+    if providerCount > 1 { return .placeholder }
+    return .hidden
+}
+
 func cycledUsageMeterProvider(
     current: UsageMeterProvider,
     available: [UsageMeterProvider],

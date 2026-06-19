@@ -52,4 +52,19 @@ final class UsageMeterProviderTests: XCTestCase {
 
         XCTAssertEqual(selection, .claude)
     }
+
+    func testDisplayStateShowsDataWhenSelectedProviderHasData() {
+        XCTAssertEqual(usageMeterDisplayState(selectedHasData: true, providerCount: 1), .data)
+        XCTAssertEqual(usageMeterDisplayState(selectedHasData: true, providerCount: 2), .data)
+    }
+
+    func testDisplayStateKeepsSwitcherVisibleWhenSelectedProviderHasNoDataButOthersExist() {
+        // Regression: switching to a provider with no data yet must not hide the switcher,
+        // otherwise the user is stranded and cannot switch back.
+        XCTAssertEqual(usageMeterDisplayState(selectedHasData: false, providerCount: 2), .placeholder)
+    }
+
+    func testDisplayStateHiddenWhenNoDataAndOnlyOneProvider() {
+        XCTAssertEqual(usageMeterDisplayState(selectedHasData: false, providerCount: 1), .hidden)
+    }
 }
