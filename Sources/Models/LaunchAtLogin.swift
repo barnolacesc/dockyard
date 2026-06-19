@@ -5,7 +5,7 @@ import OSLog
 import ServiceManagement
 
 enum LaunchAtLogin {
-    private static let logger = Logger(subsystem: AppConstants.appID, category: "LaunchAtLogin")
+    private static let logger = Logger(subsystem: "dockyard", category: "LaunchAtLogin")
 
     static var isEnabled: Bool {
         SMAppService.mainApp.status == .enabled
@@ -21,7 +21,7 @@ enum LaunchAtLogin {
                 logger.info("Unregistered launch at login")
             }
         } catch {
-            logger.error("Failed to \(enabled ? "register" : "unregister") launch at login: \(error)")
+            logger.error("Failed to \((enabled ? "register" : "unregister"), privacy: .public) launch at login: \(error, privacy: .public)")
         }
     }
 }

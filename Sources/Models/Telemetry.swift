@@ -9,7 +9,7 @@ import os
 final class Telemetry {
     static let shared = Telemetry()
 
-    private let logger = Logger(subsystem: "com.barnolacesc.dockyard", category: "telemetry")
+    private let logger = Logger(subsystem: "dockyard", category: "telemetry")
     private let endpoint = URL(string: "https://meta.francesc.barnola.net/api/send")!
     private let websiteID = "0ad50276-0a54-4b71-b3f2-b953326a9452"
     private let hostname = "app.francesc.barnola.net"
@@ -83,10 +83,10 @@ final class Telemetry {
             do {
                 let (_, response) = try await URLSession.shared.data(for: request)
                 if let http = response as? HTTPURLResponse, http.statusCode != 200 {
-                    logger.debug("Telemetry request failed with status \(http.statusCode)")
+                    logger.debug("Telemetry request failed with status \(http.statusCode, privacy: .public)")
                 }
             } catch {
-                logger.debug("Telemetry request failed: \(error.localizedDescription)")
+                logger.debug("Telemetry request failed: \(error.localizedDescription, privacy: .public)")
             }
         }
     }

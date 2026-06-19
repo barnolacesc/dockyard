@@ -212,12 +212,12 @@ private func addDesktopNotification(
     center.add(request) { error in
         guard let error else { return }
         if Thread.isMainThread {
-            logger.warning("Failed to deliver notification: \(error.localizedDescription)")
+            logger.warning("Failed to deliver notification: \(error.localizedDescription, privacy: .public)")
             return
         }
 
         Task { @MainActor in
-            logger.warning("Failed to deliver notification: \(error.localizedDescription)")
+            logger.warning("Failed to deliver notification: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

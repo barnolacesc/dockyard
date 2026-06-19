@@ -121,7 +121,7 @@ final class AppUpdater: ObservableObject {
             var errorInfo: NSDictionary?
             appleScript.executeAndReturnError(&errorInfo)
             if let errorInfo = errorInfo {
-                logger.error("Failed to execute AppleScript for update: \(errorInfo.description)")
+                logger.error("Failed to execute AppleScript for update: \(errorInfo.description, privacy: .public)")
             }
         }
     }

@@ -404,3 +404,26 @@
 "Update & Relaunch" = "Actualitza i reinicia";
 "Later" = "Més tard";
 "A new version of Dockyard is ready. It will rebuild and relaunch automatically." = "Hi ha una versió nova de Dockyard a punt. Es reconstruirà i es reiniciarà automàticament.";
+
+/* Logs Window */
+"Logs" = "Registres";
+"Show Logs" = "Mostra els registres";
+"Live" = "En directe";
+"Pause" = "Pausa";
+"Search logs" = "Cerca als registres";
+"Category" = "Categoria";
+"All Categories" = "Totes les categories";
+"Minimum Level" = "Nivell mínim";
+"Debug" = "Depuració";
+"Notice" = "Avís";
+"Error" = "Error";
+"Fault" = "Fallada";
+"Clear" = "Esborra";
+"Copy" = "Copia";
+"Export" = "Exporta";
+"No Logs Yet" = "Encara no hi ha registres";
+"Dockyard activity will appear here as it is recorded." = "L'activitat de Dockyard apareixerà aquí a mesura que es registri.";
+"Could Not Export Logs" = "No s'han pogut exportar els registres";
+"Logs Unavailable" = "Registres no disponibles";
+"Dockyard could not access the system log store." = "Dockyard no ha pogut accedir al registre del sistema.";
+"Open Console.app" = "Obre Console.app";
