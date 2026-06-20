@@ -116,6 +116,7 @@ final class ShortcutHintController: ObservableObject {
     }
 
     private func dismiss() {
+        guard isActive else { return }
         isActive = false
     }
 }
