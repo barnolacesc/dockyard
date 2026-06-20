@@ -206,13 +206,16 @@ struct ProjectSidebar: View {
     }
 
     private func projectRows() -> some View {
-        ForEach(cachedSortedIDs, id: \.self) { projectID in
+        let projectIDByWorkstreamID = projectIDByWorkstreamIDSnapshot()
+        return ForEach(cachedSortedIDs, id: \.self) { projectID in
             let projectBind = projectBinding(for: projectID)
             let project = projectBind.wrappedValue
             let hasChildren = !project.workstreams.isEmpty
 
             ProjectHeaderRow(
                 project: project,
+                isSelected: selection == .project(project.id)
+                    || selection?.workstreamID.map { projectIDByWorkstreamID[$0] == project.id } == true,
                 isExpanded: expandedProjects.contains(project.id),
                 onToggle: hasChildren ? {
                     withAnimation(.easeInOut(duration: 0.15)) {
@@ -276,6 +279,10 @@ struct ProjectSidebar: View {
                             }
                         )
                         .tag(SidebarSelection.workstream(workstream.id))
+                        .shortcutHint(ShortcutHint(
+                            command: selection == .workstream(workstream.id) ? "[ ]" : nil,
+                            commandShift: selection == .workstream(workstream.id) ? "W" : nil
+                        ))
                         .padding(.leading, 28)
                         .listRowBackground(
                             Group {
@@ -417,7 +424,7 @@ struct ProjectSidebar: View {
                 Text(AppConstants.displayVersion)
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundStyle(.tertiary)
-                
+
                 if appUpdater.isChecking {
                     ProgressView()
                         .controlSize(.mini)
@@ -501,6 +508,7 @@ struct ProjectSidebar: View {
                 .menuIndicator(.hidden)
                 .fixedSize()
                 .accessibilityLabel("Add project")
+                .shortcutHint(ShortcutHint(command: "N", commandShift: "N"))
                 Spacer()
                 SidebarBottomButton(icon: "questionmark.circle") {
                     NotificationCenter.default.post(name: .openHelp, object: nil)
@@ -834,7 +842,7 @@ struct ProjectSidebar: View {
             let currentBranch = appEnv.branchName(for: worktreePath) ?? workstream.name
             let prefix = currentBranch.contains("/") ? String(currentBranch.split(separator: "/").dropLast().joined(separator: "/")) + "/" : ""
             let newBranchName = prefix + newName
-            
+
             if GitOperations.renameBranch(at: worktreePath, to: newBranchName) {
                 projects[pi].workstreams[wi].name = newName
                 ProjectStore.save(projects)
@@ -1017,6 +1025,7 @@ func openDirectoryInTerminal(_ directory: String) {
 
 private struct ProjectHeaderRow: View {
     let project: Project
+    let isSelected: Bool
     let isExpanded: Bool
     let onToggle: (() -> Void)?
     let isGitRepo: Bool
@@ -1098,6 +1107,7 @@ private struct ProjectHeaderRow: View {
         .padding(.vertical, 1)
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
+        .shortcutHint(ShortcutHint(command: isSelected ? "↑ ↓" : nil))
         .contextMenu {
             Button {
                 NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: project.directory)

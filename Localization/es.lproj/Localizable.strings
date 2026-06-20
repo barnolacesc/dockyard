@@ -113,6 +113,8 @@
 "Active workstreams will be stopped." = "Los flujos de trabajo activos se detendrán.";
 "Quit" = "Salir";
 "Confirm before quitting" = "Confirmar antes de salir";
+"Show shortcut hints while holding ⌘" = "Mostrar atajos al mantener pulsada ⌘";
+"Display contextual key badges over visible controls when you hold the Command key." = "Muestra indicadores de teclas contextuales sobre los controles visibles al mantener pulsada la tecla Comando.";
 "Show a confirmation dialog when quitting with active workstreams." = "Muestra un diálogo de confirmación al salir con flujos de trabajo activos.";
 "Launch at login" = "Abrir al iniciar sesión";
 "Automatically open Dockyard when you log in." = "Abre Dockyard automáticamente al iniciar sesión.";

@@ -134,6 +134,7 @@ struct BrowserView: View {
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel(isLoading ? "Stop loading" : "Reload")
+                .shortcutHint(ShortcutHint(command: "R", commandShift: "R"))
 
                 Button(action: { navigateTo(defaultURL) }) {
                     Image(systemName: "house")
@@ -147,6 +148,7 @@ struct BrowserView: View {
                     .font(.system(size: 12, design: .monospaced))
                     .focused($urlFieldFocused)
                     .onSubmit { navigateTo(urlText) }
+                    .shortcutHint(ShortcutHint(command: "L"))
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
@@ -408,7 +410,7 @@ struct WebViewRepresentable: NSViewRepresentable {
                 complete(panel.runModal())
             }
         }
-        
+
         @MainActor
         @available(macOS 12.0, *)
         func webView(

@@ -375,13 +375,13 @@ struct TerminalContainerView: View {
     /// Surface IDs that should be rendering for the active tab.
     private var visibleSurfaceIDs: Set<UUID>? {
         if activeTab == .info || splitTab == .info { return nil }
-        
+
         var ids: Set<UUID> = []
         let tabsToCheck = splitTab == nil ? [activeTab] : [activeTab, splitTab!]
-        
+
         for tab in tabsToCheck {
             switch tab {
-            case .agent: 
+            case .agent:
                 ids.insert(agentID)
             case let .terminal(id): ids.insert(id)
             case .info, .browser, .editor: break
@@ -519,8 +519,11 @@ struct TerminalContainerView: View {
             // Quick actions to add tabs
             HStack(spacing: 2) {
                 TabBarActionButton(icon: "terminal", shortcut: "\u{2318}T", tooltip: "New Terminal (\u{2318}T)", action: addTerminal)
+                    .shortcutHint(ShortcutHint(command: "T", commandShift: "T"))
                 TabBarActionButton(icon: "globe", shortcut: "\u{2318}B", tooltip: "New Browser (\u{2318}B)", action: addBrowser)
+                    .shortcutHint(ShortcutHint(command: "B", commandShift: "B"))
                 TabBarActionButton(icon: "doc.text", shortcut: "\u{2318}O", tooltip: "New Editor (\u{2318}O)", action: openEditor)
+                    .shortcutHint(ShortcutHint(command: "O"))
             }
             .fixedSize()
 
@@ -569,6 +572,7 @@ struct TerminalContainerView: View {
             onSelect: { activeTab = tab },
             onClose: tab.isCloseable ? { closeTab(tab) } : nil
         )
+        .shortcutHint(shortcutHint(for: tab))
 
         if tab.isCloseable {
             button
@@ -946,6 +950,16 @@ struct TerminalContainerView: View {
         return "\(idx + 1)"
     }
 
+    private func shortcutHint(for tab: WorkspaceTab) -> ShortcutHint {
+        guard let index = tabs.firstIndex(of: tab), index < 9 else {
+            return ShortcutHint()
+        }
+        return ShortcutHint(
+            command: "\(index + 1)",
+            commandOption: tab == .agent ? "↩" : nil
+        )
+    }
+
     private func tabShortcut(_ tab: WorkspaceTab) -> String? {
         switch tab {
         case .agent: return "\u{21A9}"
@@ -1291,7 +1305,7 @@ struct TerminalContainerView: View {
         guard let setupScript = scriptConfig.setup else { return }
         guard !SetupStateStore.isCompleted(for: workstreamID) else { return }
         guard setupRunner.state == .idle else { return }
-        
+
         setupRunner.start(
             script: setupScript,
             workingDirectory: workingDirectory,

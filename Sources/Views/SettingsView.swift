@@ -20,6 +20,7 @@ struct SettingsView: View {
     @AppStorage("dockyard.appearance") private var appearance: String = "system"
     @AppStorage("dockyard.symlinkEnv") private var symlinkEnv: Bool = true
     @AppStorage("dockyard.confirmQuit") private var confirmQuit: Bool = true
+    @AppStorage("dockyard.showShortcutHints") private var showShortcutHints: Bool = true
     @AppStorage("dockyard.telemetryEnabled") private var telemetryEnabled: Bool = true
     @AppStorage("dockyard.detailedLogging") private var detailedLogging: Bool = false
     @AppStorage("dockyard.quickActionDebug") private var quickActionDebug: Bool = false
@@ -30,6 +31,7 @@ struct SettingsView: View {
 
     @EnvironmentObject private var appEnv: AppEnvironment
     @EnvironmentObject private var updater: Updater
+    @EnvironmentObject private var shortcutHints: ShortcutHintController
     @State private var showingClearConfirm = false
     #if DEBUG
         private static let cliName = "ff-debug"
@@ -210,6 +212,15 @@ struct SettingsView: View {
                     Text("Restart the app for the language change to take effect.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+
+                SettingToggle(
+                    "Show shortcut hints while holding ⌘",
+                    isOn: $showShortcutHints,
+                    description: "Display contextual key badges over visible controls when you hold the Command key."
+                )
+                .onChange(of: showShortcutHints) { _, enabled in
+                    shortcutHints.setEnabled(enabled)
                 }
 
                 SettingToggle(

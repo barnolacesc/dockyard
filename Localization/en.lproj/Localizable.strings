@@ -113,6 +113,8 @@
 "Active workstreams will be stopped." = "Active workstreams will be stopped.";
 "Quit" = "Quit";
 "Confirm before quitting" = "Confirm before quitting";
+"Show shortcut hints while holding ⌘" = "Show shortcut hints while holding ⌘";
+"Display contextual key badges over visible controls when you hold the Command key." = "Display contextual key badges over visible controls when you hold the Command key.";
 "Show a confirmation dialog when quitting with active workstreams." = "Show a confirmation dialog when quitting with active workstreams.";
 "Launch at login" = "Launch at login";
 "Automatically open Dockyard when you log in." = "Automatically open Dockyard when you log in.";
