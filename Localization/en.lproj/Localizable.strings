@@ -432,3 +432,18 @@
 "Logs Unavailable" = "Logs Unavailable";
 "Dockyard could not access the system log store." = "Dockyard could not access the system log store.";
 "Open Console.app" = "Open Console.app";
+
+/* .dockyard.json generation (Info panel) */
+"Generate .dockyard.json" = "Generate .dockyard.json";
+"Regenerate…" = "Regenerate…";
+"No setup or run scripts are configured for this project." = "No setup or run scripts are configured for this project.";
+"Detects your stack and writes setup and run commands to the project root." = "Detects your stack and writes setup and run commands to the project root.";
+"Couldn't detect a stack" = "Couldn't detect a stack";
+"Dockyard couldn't recognize a known stack in this project. Add setup and run commands manually to .dockyard.json." = "Dockyard couldn't recognize a known stack in this project. Add setup and run commands manually to .dockyard.json.";
+"A .dockyard.json already exists. Review the proposed replacement before writing." = "A .dockyard.json already exists. Review the proposed replacement before writing.";
+"Proposed .dockyard.json for %@:" = "Proposed .dockyard.json for %@:";
+"Existing" = "Existing";
+"Proposed" = "Proposed";
+"Close" = "Close";
+"Overwrite" = "Overwrite";
+"Write File" = "Write File";

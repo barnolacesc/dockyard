@@ -607,7 +607,13 @@ struct TerminalContainerView: View {
                 runStarted: $runStarted,
                 sessionMode: sessionMode,
                 setupRunner: setupRunner,
-                onRunSetupInTerminal: { runSetupInNewTerminal() }
+                onRunSetupInTerminal: { runSetupInNewTerminal() },
+                onConfigGenerated: {
+                    scriptConfig = ScriptConfig.load(from: workingDirectory, fallbackDirectory: projectDirectory)
+                    if scriptConfig.hasAnyScript, !tabs.contains(.info) {
+                        tabs.insert(.info, at: 0)
+                    }
+                }
             )
         case .agent:
             if sessionMode == .waitingForTools || appEnv.isDetecting {

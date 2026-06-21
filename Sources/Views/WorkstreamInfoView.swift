@@ -19,6 +19,7 @@ struct WorkstreamInfoView: View {
     var sessionMode: TerminalSessionMode = .standard
     @ObservedObject var setupRunner: SetupRunner
     var onRunSetupInTerminal: () -> Void = {}
+    var onConfigGenerated: () -> Void = {}
 
     @EnvironmentObject var appEnv: AppEnvironment
     @AppStorage("dockyard.defaultTerminal") private var defaultTerminal: String = ""
@@ -29,6 +30,11 @@ struct WorkstreamInfoView: View {
     @State private var docFiles: [DocFile] = []
     @State private var selectedDoc: String?
     @State private var projectIcon: NSImage?
+    @State private var showGenerateSheet = false
+    @State private var isDetectingStack = false
+    @State private var configDraft: DockyardConfigDraft?
+    @State private var existingConfigText: String?
+    @State private var writeError: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -247,8 +253,8 @@ struct WorkstreamInfoView: View {
                         .foregroundStyle(bypassPermissions ? .orange : .secondary)
                 }
 
-                if scriptConfig.hasAnyScript {
-                    Section {
+                Section {
+                    if scriptConfig.hasAnyScript {
                         if let setup = scriptConfig.setup {
                             LabeledContent("Setup") {
                                 Text(setup)
@@ -270,15 +276,42 @@ struct WorkstreamInfoView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-                    } header: {
-                        HStack {
-                            Text("Scripts")
-                            Spacer()
+                    } else {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("No setup or run scripts are configured for this project.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Button(action: generateConfig) {
+                                HStack(spacing: 6) {
+                                    if isDetectingStack {
+                                        ProgressView().controlSize(.small)
+                                    } else {
+                                        Image(systemName: "wand.and.stars")
+                                    }
+                                    Text("Generate .dockyard.json")
+                                }
+                            }
+                            .disabled(isDetectingStack)
+                            Text("Detects your stack and writes setup and run commands to the project root.")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                } header: {
+                    HStack {
+                        Text("Scripts")
+                        Spacer()
+                        if scriptConfig.hasAnyScript {
                             if let source = scriptConfig.source {
                                 Text(source)
                                     .font(.caption2)
                                     .foregroundStyle(.quaternary)
                             }
+                            Button("Regenerate…", action: generateConfig)
+                                .font(.caption2)
+                                .buttonStyle(.borderless)
+                                .disabled(isDetectingStack)
                         }
                     }
                 }
@@ -341,7 +374,50 @@ struct WorkstreamInfoView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { loadInfo() }
+        .sheet(isPresented: $showGenerateSheet) {
+            GenerateConfigSheet(
+                draft: configDraft ?? DockyardConfigDraft(),
+                existingConfigText: existingConfigText,
+                projectName: projectName,
+                writeError: writeError,
+                onConfirm: confirmWrite,
+                onCancel: { showGenerateSheet = false }
+            )
+        }
     } // body
+
+    private func generateConfig() {
+        guard !isDetectingStack else { return }
+        isDetectingStack = true
+        writeError = nil
+        let dir = projectDirectory
+        Task.detached {
+            let draft = StackDetector.detect(at: dir)
+            let path = URL(fileURLWithPath: dir).appendingPathComponent(".dockyard.json").path
+            let existing = try? String(contentsOfFile: path, encoding: .utf8)
+            await MainActor.run {
+                configDraft = draft
+                existingConfigText = existing
+                isDetectingStack = false
+                showGenerateSheet = true
+            }
+        }
+    }
+
+    private func confirmWrite() {
+        guard let draft = configDraft, !draft.isEmpty else {
+            showGenerateSheet = false
+            return
+        }
+        do {
+            try DockyardConfigWriter.write(draft, to: projectDirectory)
+            writeError = nil
+            showGenerateSheet = false
+            onConfigGenerated()
+        } catch {
+            writeError = error.localizedDescription
+        }
+    }
 
     private var effectiveCodingCLIStoredValue: String {
         effectiveCodingCLIRaw(workstream: workstreamCodingCLI, global: globalCodingCLIRaw)
@@ -666,5 +742,109 @@ private struct SetupStatusBanner: View {
         case .failed: return .red
         case .succeeded: return .clear
         }
+    }
+}
+
+// MARK: - Generate .dockyard.json confirmation sheet
+
+private struct GenerateConfigSheet: View {
+    let draft: DockyardConfigDraft
+    let existingConfigText: String?
+    let projectName: String
+    let writeError: String?
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: "wand.and.stars")
+                    .foregroundStyle(Color.accentColor)
+                Text("Generate .dockyard.json")
+                    .font(.headline)
+            }
+
+            if draft.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Couldn't detect a stack", systemImage: "questionmark.folder")
+                        .font(.subheadline)
+                    Text("Dockyard couldn't recognize a known stack in this project. Add setup and run commands manually to .dockyard.json.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } else {
+                if existingConfigText != nil {
+                    Text("A .dockyard.json already exists. Review the proposed replacement before writing.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text(String(format: NSLocalizedString("Proposed .dockyard.json for %@:", comment: ""), projectName))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let existing = existingConfigText {
+                    HStack(alignment: .top, spacing: 10) {
+                        jsonColumn(title: NSLocalizedString("Existing", comment: ""), content: existing)
+                        jsonColumn(title: NSLocalizedString("Proposed", comment: ""), content: draft.jsonString())
+                    }
+                } else {
+                    jsonBox(draft.jsonString())
+                }
+            }
+
+            if let writeError {
+                Label(writeError, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack {
+                Spacer()
+                if draft.isEmpty {
+                    Button("Close", action: onCancel)
+                        .keyboardShortcut(.cancelAction)
+                } else {
+                    Button("Cancel", role: .cancel, action: onCancel)
+                        .keyboardShortcut(.cancelAction)
+                    if existingConfigText != nil {
+                        Button("Overwrite", action: onConfirm)
+                            .keyboardShortcut(.defaultAction)
+                            .buttonStyle(.borderedProminent)
+                    } else {
+                        Button("Write File", action: onConfirm)
+                            .keyboardShortcut(.defaultAction)
+                            .buttonStyle(.borderedProminent)
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .frame(width: existingConfigText != nil ? 620 : 440)
+    }
+
+    private func jsonColumn(title: String, content: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            jsonBox(content)
+        }
+    }
+
+    private func jsonBox(_ content: String) -> some View {
+        ScrollView {
+            Text(content)
+                .font(.system(size: 11, design: .monospaced))
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxHeight: 220)
+        .padding(8)
+        .background(Color.primary.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 }

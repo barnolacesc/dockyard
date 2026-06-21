@@ -432,3 +432,18 @@
 "Logs Unavailable" = "Registros no disponibles";
 "Dockyard could not access the system log store." = "Dockyard no pudo acceder al registro del sistema.";
 "Open Console.app" = "Abrir Console.app";
+
+/* .dockyard.json generation (Info panel) */
+"Generate .dockyard.json" = "Generar .dockyard.json";
+"Regenerate…" = "Regenerar…";
+"No setup or run scripts are configured for this project." = "No hay scripts de configuración ni de ejecución para este proyecto.";
+"Detects your stack and writes setup and run commands to the project root." = "Detecta tu stack y escribe los comandos de configuración y ejecución en la raíz del proyecto.";
+"Couldn't detect a stack" = "No se pudo detectar un stack";
+"Dockyard couldn't recognize a known stack in this project. Add setup and run commands manually to .dockyard.json." = "Dockyard no reconoció un stack conocido en este proyecto. Añade los comandos de configuración y ejecución manualmente en .dockyard.json.";
+"A .dockyard.json already exists. Review the proposed replacement before writing." = "Ya existe un .dockyard.json. Revisa el reemplazo propuesto antes de escribirlo.";
+"Proposed .dockyard.json for %@:" = ".dockyard.json propuesto para %@:";
+"Existing" = "Existente";
+"Proposed" = "Propuesto";
+"Close" = "Cerrar";
+"Overwrite" = "Sobrescribir";
+"Write File" = "Escribir archivo";
