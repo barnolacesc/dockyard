@@ -432,3 +432,18 @@
 "Logs Unavailable" = "Registres no disponibles";
 "Dockyard could not access the system log store." = "Dockyard no ha pogut accedir al registre del sistema.";
 "Open Console.app" = "Obre Console.app";
+
+/* .dockyard.json generation (Info panel) */
+"Generate .dockyard.json" = "Genera .dockyard.json";
+"Regenerate…" = "Torna a generar…";
+"No setup or run scripts are configured for this project." = "No hi ha scripts de configuració ni d'execució per a aquest projecte.";
+"Detects your stack and writes setup and run commands to the project root." = "Detecta la teva pila i escriu les ordres de configuració i execució a l'arrel del projecte.";
+"Couldn't detect a stack" = "No s'ha pogut detectar cap pila";
+"Dockyard couldn't recognize a known stack in this project. Add setup and run commands manually to .dockyard.json." = "Dockyard no ha reconegut cap pila coneguda en aquest projecte. Afegeix les ordres de configuració i execució manualment a .dockyard.json.";
+"A .dockyard.json already exists. Review the proposed replacement before writing." = "Ja existeix un .dockyard.json. Revisa la substitució proposada abans d'escriure-la.";
+"Proposed .dockyard.json for %@:" = ".dockyard.json proposat per a %@:";
+"Existing" = "Existent";
+"Proposed" = "Proposat";
+"Close" = "Tanca";
+"Overwrite" = "Sobreescriu";
+"Write File" = "Escriu el fitxer";
