@@ -57,7 +57,8 @@ struct WorkstreamInfoView: View {
                                 .resizable()
                                 .interpolation(.high)
                                 .frame(width: 48, height: 48)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous))
+                                .imageOutline(radius: DesignRadius.lg)
                         }
                         Text(projectName)
                             .font(.system(size: 13))
@@ -91,7 +92,7 @@ struct WorkstreamInfoView: View {
                                     .truncationMode(.middle)
                                 DirectoryActionButton(
                                     icon: copiedBranch ? "checkmark" : "doc.on.doc",
-                                    color: copiedBranch ? .green : nil,
+                                    color: copiedBranch ? DesignColor.statusSuccess : nil,
                                     tooltip: "Copy branch name"
                                 ) {
                                     NSPasteboard.general.clearContents()
@@ -110,6 +111,7 @@ struct WorkstreamInfoView: View {
                             LabeledContent {
                                 Text("↑ \(state.commitsAhead) commits")
                                     .font(.system(.body, design: .monospaced))
+                                    .tabularNumbers()
                                     .foregroundStyle(.secondary)
                             } label: {
                                 Text("Ahead")
@@ -120,7 +122,8 @@ struct WorkstreamInfoView: View {
                             if state.uncommittedCount > 0 {
                                 Text("\(state.uncommittedCount) files")
                                     .font(.system(.body, design: .monospaced))
-                                    .foregroundStyle(.yellow)
+                                    .tabularNumbers()
+                                    .foregroundStyle(DesignColor.statusWarning)
                             } else {
                                 Text("Clean")
                                     .font(.system(.body, design: .monospaced))
@@ -158,7 +161,7 @@ struct WorkstreamInfoView: View {
                                 .truncationMode(.middle)
                             DirectoryActionButton(
                                 icon: copiedPath ? "checkmark" : "doc.on.doc",
-                                color: copiedPath ? .green : nil,
+                                color: copiedPath ? DesignColor.statusSuccess : nil,
                                 tooltip: "Copy path"
                             ) {
                                 NSPasteboard.general.clearContents()
@@ -190,13 +193,14 @@ struct WorkstreamInfoView: View {
                    let pr = appEnv.githubPR(for: projectDirectory, branch: branch)
                 {
                     Section("Pull Request") {
-                        let prColor: Color = pr.state == "MERGED" ? .purple : pr.state == "OPEN" ? .green : .secondary
+                        let prColor: Color = pr.state == "MERGED" ? DesignColor.statusMerged : pr.state == "OPEN" ? DesignColor.statusSuccess : .secondary
                         LabeledContent {
                             HStack(spacing: 6) {
                                 Image(systemName: pr.state == "MERGED" ? "arrow.triangle.merge" : "arrow.triangle.pull")
                                     .foregroundStyle(prColor)
                                 Text(verbatim: "#\(pr.number)")
                                     .font(.system(.body, design: .monospaced))
+                                    .tabularNumbers()
                                 Text(pr.title)
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
@@ -214,7 +218,7 @@ struct WorkstreamInfoView: View {
                                 Button("Purge") {
                                     NotificationCenter.default.post(name: .purgeWorkstream, object: workstreamID)
                                 }
-                                .foregroundStyle(.purple)
+                                .foregroundStyle(DesignColor.statusMerged)
                             }
                         }
                     }
@@ -235,7 +239,7 @@ struct WorkstreamInfoView: View {
                     if !appEnv.toolStatus.status(for: selectedCodingCLI).isInstalled {
                         HStack(spacing: 8) {
                             Image(systemName: "exclamationmark.triangle")
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(DesignColor.statusWarning)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(selectedCodingCLI.missingTitle)
                                     .font(.caption)
@@ -250,7 +254,7 @@ struct WorkstreamInfoView: View {
 
                     Text("Opens the Coding Agent without permission prompts for this workstream. Applies the next time the agent starts.")
                         .font(.caption)
-                        .foregroundStyle(bypassPermissions ? .orange : .secondary)
+                        .foregroundStyle(bypassPermissions ? DesignColor.statusWarning : .secondary)
                 }
 
                 Section {
@@ -310,7 +314,7 @@ struct WorkstreamInfoView: View {
                             }
                             Button("Regenerate…", action: generateConfig)
                                 .font(.caption2)
-                                .buttonStyle(.borderless)
+                                .pressable()
                                 .disabled(isDetectingStack)
                         }
                     }
@@ -556,7 +560,7 @@ struct DirectoryRow: View {
 
             DirectoryActionButton(
                 icon: copied ? "checkmark" : "doc.on.doc",
-                color: copied ? .green : nil,
+                color: copied ? DesignColor.statusSuccess : nil,
                 tooltip: "Copy path"
             ) {
                 NSPasteboard.general.clearContents()
@@ -612,9 +616,10 @@ private struct DirectoryActionButton: View {
                 .foregroundStyle(color ?? (isHovering ? Color.primary : Color.secondary))
                 .frame(width: 22, height: 22)
                 .background(isHovering ? Color.primary.opacity(0.1) : .clear)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
+                .frame(minWidth: 40, minHeight: 40)
         }
-        .buttonStyle(.borderless)
+        .pressable()
         .onHover { isHovering = $0 }
         .help(tooltip)
         .accessibilityLabel(tooltip)
@@ -663,10 +668,11 @@ struct DocTabButton: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
                 .background(isActive ? Color.primary.opacity(0.08) : (isHovering ? Color.primary.opacity(0.04) : .clear))
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
                 .foregroundStyle(isActive ? .primary : .secondary)
+                .frame(minHeight: 40)
         }
-        .buttonStyle(.borderless)
+        .pressable()
         .onHover { isHovering = $0 }
     }
 }
@@ -684,7 +690,7 @@ private struct SetupStatusBanner: View {
             HStack(spacing: 6) {
                 switch state {
                 case .idle:
-                    Image(systemName: "info.circle.fill").foregroundStyle(.blue)
+                    Image(systemName: "info.circle.fill").foregroundStyle(DesignColor.statusInfo)
                     Text("Setup not run").font(.system(size: 11)).foregroundStyle(.secondary)
                     Spacer()
                     Button("Run setup") { onStart() }
@@ -698,8 +704,8 @@ private struct SetupStatusBanner: View {
                     Button("Cancel") { onCancel() }
                         .controlSize(.small)
                 case let .failed(code):
-                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
-                    Text("Setup failed (exit \(code))").font(.system(size: 11)).foregroundStyle(.secondary)
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(DesignColor.statusError)
+                    Text("Setup failed (exit \(code))").font(.system(size: 11)).tabularNumbers().foregroundStyle(.secondary)
                     Spacer()
                     Button("Run in terminal") { onRunInTerminal() }
                         .controlSize(.small)
@@ -798,7 +804,7 @@ private struct GenerateConfigSheet: View {
             if let writeError {
                 Label(writeError, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(DesignColor.statusError)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -845,6 +851,6 @@ private struct GenerateConfigSheet: View {
         .frame(maxHeight: 220)
         .padding(8)
         .background(Color.primary.opacity(0.05))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
     }
 }

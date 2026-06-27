@@ -528,21 +528,23 @@ struct TerminalContainerView: View {
             .fixedSize()
 
             if let pr = branchPR, let url = URL(string: pr.url) {
-                let prColor: Color = pr.state == "MERGED" ? .purple : .green
+                let prColor: Color = pr.state == "MERGED" ? DesignColor.statusMerged : DesignColor.statusSuccess
                 Button(action: { NSWorkspace.shared.open(url) }) {
                     HStack(spacing: 4) {
                         Image(systemName: pr.state == "MERGED" ? "arrow.triangle.merge" : "arrow.triangle.pull")
                             .font(.system(size: 11))
                         Text(verbatim: "#\(pr.number)")
                             .font(.system(size: 11, weight: .medium, design: .monospaced))
+                            .tabularNumbers()
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(prColor.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
                     .foregroundStyle(prColor)
+                    .frame(minHeight: 40)
                 }
-                .buttonStyle(.borderless)
+                .pressable()
                 .help(pr.title)
                 .accessibilityLabel(Text(verbatim: "Pull request #\(pr.number)"))
                 .accessibilityHint(pr.title)
@@ -1433,46 +1435,51 @@ private struct WorkspaceTabButton: View {
     @State private var isHovering = false
 
     var body: some View {
-        HStack(spacing: 4) {
-            if isDirty {
-                Circle()
-                    .fill(Color.primary.opacity(0.6))
-                    .frame(width: 6, height: 6)
-            } else if isUnread && !isActive {
-                Circle()
-                    .fill(Color.accentColor)
-                    .frame(width: 6, height: 6)
+        Button(action: onSelect) {
+            HStack(spacing: 4) {
+                if isDirty {
+                    Circle()
+                        .fill(Color.primary.opacity(0.6))
+                        .frame(width: 6, height: 6)
+                } else if isUnread && !isActive {
+                    Circle()
+                        .fill(Color.accentColor)
+                        .frame(width: 6, height: 6)
+                }
+                Image(systemName: icon)
+                    .font(.system(size: 11))
+                    .offset(y: 0.5)
+                if let label {
+                    Text(label)
+                        .font(.system(size: 12, weight: isActive ? .semibold : .regular))
+                        .lineLimit(1)
+                }
+                if let shortcut {
+                    (Text(Image(systemName: "command")) + Text(shortcut))
+                        .font(.system(size: 9))
+                        .tabularNumbers()
+                        .foregroundStyle(.tertiary)
+                }
+                if let onClose, isHovering || isActive {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 14, height: 14)
+                        .background(Color.primary.opacity(0.1))
+                        .clipShape(Circle())
+                        .onTapGesture(perform: onClose)
+                        .accessibilityLabel("Close tab")
+                }
             }
-            Image(systemName: icon)
-                .font(.system(size: 11))
-            if let label {
-                Text(label)
-                    .font(.system(size: 12, weight: isActive ? .semibold : .regular))
-                    .lineLimit(1)
-            }
-            if let shortcut {
-                (Text(Image(systemName: "command")) + Text(shortcut))
-                    .font(.system(size: 9))
-                    .foregroundStyle(.tertiary)
-            }
-            if let onClose, isHovering || isActive {
-                Image(systemName: "xmark")
-                    .font(.system(size: 8, weight: .bold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 14, height: 14)
-                    .background(Color.primary.opacity(0.1))
-                    .clipShape(Circle())
-                    .onTapGesture(perform: onClose)
-                    .accessibilityLabel("Close tab")
-            }
+            .padding(.horizontal, DesignSpacing.lg)
+            .padding(.vertical, DesignSpacing.sm)
+            .frame(minHeight: 40)
+            .background(isActive ? Color.accentColor.opacity(0.15) : (isHovering ? Color.primary.opacity(0.05) : .clear))
+            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous))
+            .foregroundStyle(isActive ? .primary : .secondary)
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(isActive ? Color.accentColor.opacity(0.15) : (isHovering ? Color.primary.opacity(0.05) : .clear))
-        .clipShape(RoundedRectangle(cornerRadius: 5))
-        .foregroundStyle(isActive ? .primary : .secondary)
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onSelect)
+        .pressable()
         .onHover { isHovering = $0 }
     }
 }
@@ -1490,16 +1497,18 @@ private struct TabBarActionButton: View {
             HStack(spacing: 3) {
                 Image(systemName: icon)
                     .font(.system(size: 11))
+                    .offset(y: 0.5)
                 Text(shortcut)
                     .font(.system(size: 9, weight: .medium, design: .monospaced))
+                    .tabularNumbers()
             }
             .foregroundStyle(isHovering ? .primary : .tertiary)
             .padding(.horizontal, 6)
-            .frame(minHeight: 24)
+            .frame(minWidth: 40, minHeight: 40)
             .background(isHovering ? Color.primary.opacity(0.08) : .clear)
-            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous))
         }
-        .buttonStyle(.borderless)
+        .pressable()
         .onHover { isHovering = $0 }
         .help(tooltip)
     }
@@ -1648,11 +1657,11 @@ private struct GitHubActionMenu: View {
             } else if case .succeeded = resultState(for: qa) {
                 Label(qa.label, systemImage: "checkmark.circle.fill")
                     .labelStyle(.titleAndIcon)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(DesignColor.statusSuccess)
             } else if case .failed = resultState(for: qa) {
                 Label(qa.label, systemImage: "xmark.circle.fill")
                     .labelStyle(.titleAndIcon)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(DesignColor.statusError)
             } else {
                 Label(qa.label, systemImage: qa.icon)
                     .labelStyle(.titleAndIcon)
@@ -1747,6 +1756,7 @@ private struct ScrollableTabStrip<TabContent: View>: View {
     @State private var scrollOffset: CGFloat = 0
     @State private var contentWidth: CGFloat = 0
     @State private var viewportWidth: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var canScrollLeft: Bool {
         scrollOffset > 0
@@ -1784,8 +1794,12 @@ private struct ScrollableTabStrip<TabContent: View>: View {
                         .onChange(of: geo.size.width) { _, new in viewportWidth = new; checkOverflow() }
                 })
                 .onChange(of: activeTab) {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    if reduceMotion {
                         proxy.scrollTo(activeTab, anchor: .center)
+                    } else {
+                        withAnimation(DesignMotion.interaction) {
+                            proxy.scrollTo(activeTab, anchor: .center)
+                        }
                     }
                 }
             }
@@ -1805,10 +1819,10 @@ private struct ScrollableTabStrip<TabContent: View>: View {
             Image(systemName: direction == .left ? "chevron.left" : "chevron.right")
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(.secondary)
-                .frame(width: 16, height: 20)
+                .frame(minWidth: 40, minHeight: 40)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.borderless)
+        .pressable()
     }
 
     private func checkOverflow() {
@@ -1840,15 +1854,17 @@ private struct AddTabButton: View {
                     .font(.system(size: 11))
                 (Text(Image(systemName: "command")) + Text(shortcut))
                     .font(.system(size: 9))
+                    .tabularNumbers()
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(isHovering ? Color.primary.opacity(0.05) : .clear)
-            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous))
             .foregroundStyle(.secondary)
+            .frame(minHeight: 40)
         }
-        .buttonStyle(.borderless)
+        .pressable()
         .onHover { isHovering = $0 }
     }
 }
@@ -1990,7 +2006,7 @@ private struct QuickActionDebugView: View {
                 if !runner.log.isEmpty {
                     Button("Clear") { runner.clearLog() }
                         .font(.system(size: 10))
-                        .buttonStyle(.borderless)
+                        .pressable()
                 }
             }
             .padding(.horizontal, 8)
