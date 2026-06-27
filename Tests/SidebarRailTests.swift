@@ -49,19 +49,60 @@ final class SidebarRailTests: XCTestCase {
         XCTAssertEqual(sorted.indices.map(sidebarRailWorkstreamLabel), ["a", "b", "c"])
     }
 
-    func testCollapsedProjectStatusBubblesWaitingAndDirtyWorkstreams() {
-        let clean = Workstream(name: "clean", id: UUID())
+    func testCollapsedProjectStatusPrefersWaitingThenWorkingThenIdle() {
+        let working = Workstream(name: "working", id: UUID())
         let waiting = Workstream(name: "waiting", id: UUID())
+        let idle = Workstream(name: "idle", id: UUID())
+        let project = Project(name: "app", directory: "/app", workstreams: [idle, waiting, working])
+
+        // Waiting wins over working so a project that needs input is never hidden.
+        XCTAssertEqual(
+            sidebarRailProjectStatus(
+                for: project,
+                agentStatesByWorkstreamID: [
+                    idle.id: .idle,
+                    waiting.id: .waiting,
+                    working.id: .working,
+                ],
+                dirtyCountsByWorkstreamID: [:]
+            ).agentState,
+            .waiting
+        )
+        XCTAssertEqual(
+            sidebarRailProjectStatus(
+                for: project,
+                agentStatesByWorkstreamID: [
+                    idle.id: .idle,
+                    working.id: .working,
+                ],
+                dirtyCountsByWorkstreamID: [:]
+            ).agentState,
+            .working
+        )
+        XCTAssertEqual(
+            sidebarRailProjectStatus(
+                for: project,
+                agentStatesByWorkstreamID: [
+                    idle.id: .idle,
+                ],
+                dirtyCountsByWorkstreamID: [:]
+            ).agentState,
+            .idle
+        )
+    }
+
+    func testCollapsedProjectStatusKeepsDirtyCount() {
+        let clean = Workstream(name: "clean", id: UUID())
         let dirty = Workstream(name: "dirty", id: UUID())
-        let project = Project(name: "app", directory: "/app", workstreams: [clean, waiting, dirty])
+        let project = Project(name: "app", directory: "/app", workstreams: [clean, dirty])
 
         let status = sidebarRailProjectStatus(
             for: project,
-            waitingWorkstreamIDs: [waiting.id],
+            agentStatesByWorkstreamID: [:],
             dirtyCountsByWorkstreamID: [dirty.id: 4]
         )
 
-        XCTAssertEqual(status, SidebarRailStatus(isWaiting: true, dirtyCount: 4))
+        XCTAssertEqual(status, SidebarRailStatus(agentState: nil, dirtyCount: 4))
     }
 
     func testExpandedProjectShowsStatusPerWorkstream() {
@@ -70,17 +111,17 @@ final class SidebarRailTests: XCTestCase {
 
         let waitingStatus = sidebarRailWorkstreamStatus(
             for: waiting,
-            waitingWorkstreamIDs: [waiting.id],
+            agentStatesByWorkstreamID: [waiting.id: .waiting],
             dirtyCountsByWorkstreamID: [dirty.id: 2]
         )
         let dirtyStatus = sidebarRailWorkstreamStatus(
             for: dirty,
-            waitingWorkstreamIDs: [waiting.id],
+            agentStatesByWorkstreamID: [waiting.id: .waiting],
             dirtyCountsByWorkstreamID: [dirty.id: 2]
         )
 
-        XCTAssertEqual(waitingStatus, SidebarRailStatus(isWaiting: true, dirtyCount: 0))
-        XCTAssertEqual(dirtyStatus, SidebarRailStatus(isWaiting: false, dirtyCount: 2))
+        XCTAssertEqual(waitingStatus, SidebarRailStatus(agentState: .waiting, dirtyCount: 0))
+        XCTAssertEqual(dirtyStatus, SidebarRailStatus(agentState: nil, dirtyCount: 2))
     }
 
     func testWorkstreamStageStyleReviewStageShowsFilledPillWithoutReceding() {
