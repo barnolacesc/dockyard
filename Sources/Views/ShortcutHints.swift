@@ -151,6 +151,7 @@ private struct ShortcutHintModifier: ViewModifier {
 
 private struct ShortcutHintOverlayModifier: ViewModifier {
     @EnvironmentObject private var controller: ShortcutHintController
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content.overlayPreferenceValue(ShortcutHintAnchorKey.self) { entries in
@@ -163,15 +164,15 @@ private struct ShortcutHintOverlayModifier: ViewModifier {
                                 HintBadge(badge: badge)
                                     .frame(width: rect.width, height: rect.height, alignment: .topTrailing)
                                     .offset(x: rect.minX + 4, y: rect.minY - 4)
-                                    .transition(.opacity)
+                                    .transition(reduceMotion ? .identity : .opacity)
                             }
                         }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .allowsHitTesting(false)
-                .animation(.easeOut(duration: 0.1), value: controller.isActive)
-                .animation(.easeOut(duration: 0.1), value: controller.activeModifiers.rawValue)
+                .animation(reduceMotion ? nil : DesignMotion.interaction, value: controller.isActive)
+                .animation(reduceMotion ? nil : DesignMotion.interaction, value: controller.activeModifiers.rawValue)
             }
         }
     }
@@ -194,11 +195,15 @@ private struct HintBadge: View {
             Text(badge.key)
         }
         .font(.system(size: 10, weight: .semibold, design: .monospaced))
+        .tabularNumbers()
         .foregroundStyle(.primary)
         .padding(.horizontal, 5)
         .padding(.vertical, 3)
-        .background(.regularMaterial, in: Capsule())
-        .overlay(Capsule().stroke(Color.primary.opacity(0.12), lineWidth: 0.5))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous)
+                .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
+        )
         .shadow(color: .black.opacity(0.18), radius: 3, y: 1)
         .fixedSize()
         .accessibilityHidden(true)

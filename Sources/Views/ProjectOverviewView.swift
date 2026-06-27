@@ -55,6 +55,7 @@ struct ProjectOverviewView: View {
                             if let count = info.commitCount {
                                 LabeledContent("Commits") {
                                     Text("\(count)")
+                                        .tabularNumbers()
                                         .foregroundStyle(.secondary)
                                 }
                             }
@@ -71,7 +72,7 @@ struct ProjectOverviewView: View {
 
                             LabeledContent("Status") {
                                 Text(info.isDirty ? "Uncommitted changes" : "Clean")
-                                    .foregroundStyle(info.isDirty ? .orange : .green)
+                                    .foregroundStyle(info.isDirty ? DesignColor.statusWarning : DesignColor.statusSuccess)
                             }
                         } else {
                             LabeledContent("Status") {
@@ -100,11 +101,13 @@ struct ProjectOverviewView: View {
 
                         LabeledContent("Stars") {
                             Text("\(ghInfo.stars)")
+                                .tabularNumbers()
                                 .foregroundStyle(.secondary)
                         }
 
                         LabeledContent("Open Issues") {
                             Text("\(ghInfo.openIssues)")
+                                .tabularNumbers()
                                 .foregroundStyle(.secondary)
                         }
 
@@ -112,6 +115,7 @@ struct ProjectOverviewView: View {
                         if !prs.isEmpty {
                             LabeledContent("Open PRs") {
                                 Text("\(prs.count)")
+                                    .tabularNumbers()
                                     .foregroundStyle(.secondary)
                             }
                             ForEach(prs, id: \.number) { pr in
@@ -121,6 +125,7 @@ struct ProjectOverviewView: View {
                                         .lineLimit(1)
                                 } label: {
                                     Text(verbatim: "#\(pr.number)")
+                                        .tabularNumbers()
                                 }
                             }
                         }
@@ -165,6 +170,7 @@ struct ProjectOverviewView: View {
                         if !project.workstreams.isEmpty {
                             Text("\(project.workstreams.count)")
                                 .font(.system(size: 11))
+                                .tabularNumbers()
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 1)
@@ -208,9 +214,9 @@ struct ProjectOverviewView: View {
                                         .font(.system(size: 12))
                                     Text(String(format: NSLocalizedString(prunableCount == 1 ? "Prune %d clean worktree" : "Prune %d clean worktrees", comment: ""), prunableCount))
                                 }
-                                .foregroundStyle(.red)
                             }
-                            .buttonStyle(.borderless)
+                            .foregroundStyle(DesignColor.statusError)
+                            .pressable()
                             .disabled(isPruning)
                         }
                     } header: {
@@ -219,6 +225,7 @@ struct ProjectOverviewView: View {
                             Spacer()
                             Text("\(worktrees.count)")
                                 .font(.caption)
+                                .tabularNumbers()
                                 .foregroundStyle(.secondary)
                         }
                     } footer: {
@@ -430,7 +437,7 @@ private struct WorktreeInfoRow: View {
                 .frame(width: 20, alignment: .top)
             } else {
                 Image(systemName: worktree.isMain ? "folder.fill" : "arrow.triangle.branch")
-                    .foregroundStyle(worktree.isMain ? .blue : .secondary)
+                    .foregroundStyle(worktree.isMain ? DesignColor.statusInfo : .secondary)
                     .frame(width: 20, alignment: .top)
                     .padding(.top, 4)
             }
@@ -443,13 +450,14 @@ private struct WorktreeInfoRow: View {
                 if !worktree.isMain {
                     HStack(spacing: 8) {
                         if let pr {
-                            let prColor: Color = pr.state == "MERGED" ? .purple : .green
+                            let prColor: Color = pr.state == "MERGED" ? DesignColor.statusMerged : DesignColor.statusSuccess
                             Link(destination: URL(string: pr.url)!) {
                                 HStack(spacing: 3) {
                                     Image(systemName: pr.state == "MERGED" ? "arrow.triangle.merge" : "arrow.triangle.pull")
                                         .font(.system(size: 10))
                                     Text(verbatim: "#\(pr.number)")
                                         .font(.caption)
+                                        .tabularNumbers()
                                 }
                                 .foregroundStyle(prColor)
                             }
@@ -457,11 +465,11 @@ private struct WorktreeInfoRow: View {
                         if worktree.isDirty {
                             HStack(spacing: 4) {
                                 Circle()
-                                    .fill(.orange)
+                                    .fill(DesignColor.statusWarning)
                                     .frame(width: 6, height: 6)
                                 Text("Uncommitted changes")
                                     .font(.caption)
-                                    .foregroundStyle(.orange)
+                                    .foregroundStyle(DesignColor.statusWarning)
                             }
                         } else if worktree.hasBranchCommits {
                             HStack(spacing: 4) {
@@ -470,11 +478,11 @@ private struct WorktreeInfoRow: View {
                                 Text("Commits ahead")
                                     .font(.caption)
                             }
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(DesignColor.statusInfo)
                         } else {
                             Text("Clean")
                                 .font(.caption)
-                                .foregroundStyle(.green)
+                                .foregroundStyle(DesignColor.statusSuccess)
                         }
                     }
                 }
@@ -497,11 +505,13 @@ private struct WorktreeInfoRow: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(Color.primary.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                    .frame(minHeight: 40)
                 }
-                .buttonStyle(.plain)
+                .pressable()
             }
         }
+        .hoverHighlight(radius: DesignRadius.md)
     }
 }
 
@@ -558,7 +568,7 @@ private struct WorkstreamRow: View {
                     HStack(spacing: 6) {
                         if !isPathValid {
                             Image(systemName: "exclamationmark.triangle")
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(DesignColor.statusWarning)
                                 .font(.system(size: 11))
                         }
                         Text(headline)
@@ -569,7 +579,7 @@ private struct WorkstreamRow: View {
                         if hasActivePort {
                             Image(systemName: "circle.fill")
                                 .font(.system(size: 6))
-                                .foregroundStyle(.green)
+                                .foregroundStyle(DesignColor.statusSuccess)
                         }
                         if let prNumber, let prState {
                             PRBadge(number: prNumber, state: prState, url: prURL)
@@ -586,20 +596,22 @@ private struct WorkstreamRow: View {
                 Spacer()
                 Text(Self.relativeFormatter.localizedString(for: workstream.lastAccessedAt, relativeTo: Date()))
                     .font(.system(size: 11))
+                    .tabularNumbers()
                     .foregroundStyle(.secondary)
                 Button(action: onRemove) {
                     Image(systemName: "xmark")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
-                        .frame(width: 24, height: 24)
+                        .frame(width: 40, height: 40)
                         .background(Color.primary.opacity(0.08))
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
                 }
-                .buttonStyle(.plain)
+                .pressable()
                 .opacity(isHovering ? 1 : 0)
             }
         }
-        .buttonStyle(.borderless)
+        .pressable()
+        .hoverHighlight(radius: DesignRadius.md)
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
         .contextMenu {
@@ -641,9 +653,9 @@ private struct PRBadge: View {
 
     private var color: Color {
         switch state {
-        case "MERGED": return .purple
-        case "CLOSED": return .red
-        default: return .green
+        case "MERGED": return DesignColor.statusMerged
+        case "CLOSED": return DesignColor.statusError
+        default: return DesignColor.statusSuccess
         }
     }
 
@@ -660,6 +672,7 @@ private struct PRBadge: View {
                 .font(.system(size: 9))
             Text(verbatim: "#\(number)")
                 .font(.system(size: 11))
+                .tabularNumbers()
         }
         .foregroundStyle(color)
 

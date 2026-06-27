@@ -20,6 +20,8 @@ struct HelpView: View {
                     Image(nsImage: NSApp.applicationIconImage)
                         .resizable()
                         .frame(width: 128, height: 128)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xl, style: .continuous))
+                        .imageOutline(radius: DesignRadius.xl)
                     Text(AppConstants.appName)
                         .font(.system(size: 28, weight: .bold))
                     Text("Version \(AppConstants.displayVersion)")
@@ -179,7 +181,12 @@ private struct ShortcutRow: View {
                 Text(keys)
             }
             .font(.system(size: 12, design: .monospaced))
+            .tabularNumbers()
             .foregroundStyle(.secondary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(Color.primary.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
         }
     }
 }
