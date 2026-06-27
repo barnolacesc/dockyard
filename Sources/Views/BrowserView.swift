@@ -105,14 +105,19 @@ struct BrowserView: View {
     @FocusState private var urlFieldFocused: Bool
 
     var body: some View {
+        let addressOuterRadius = DesignRadius.lg
+        let addressPadding = DesignSpacing.xs
+        let addressInnerRadius = DesignRadius.inner(of: addressOuterRadius, padding: addressPadding)
+
         VStack(spacing: 0) {
             // Navigation bar
             HStack(spacing: 6) {
                 Button(action: { webView.goBack() }) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 12, weight: .semibold))
+                        .frame(width: 40, height: 40)
                 }
-                .buttonStyle(.borderless)
+                .pressable()
                 .disabled(!canGoBack)
                 .foregroundStyle(canGoBack ? .primary : .quaternary)
                 .accessibilityLabel("Back")
@@ -120,8 +125,9 @@ struct BrowserView: View {
                 Button(action: { webView.goForward() }) {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .semibold))
+                        .frame(width: 40, height: 40)
                 }
-                .buttonStyle(.borderless)
+                .pressable()
                 .disabled(!canGoForward)
                 .foregroundStyle(canGoForward ? .primary : .quaternary)
                 .accessibilityLabel("Forward")
@@ -131,21 +137,32 @@ struct BrowserView: View {
                 }) {
                     Image(systemName: isLoading ? "xmark" : "arrow.clockwise")
                         .font(.system(size: 11))
+                        .frame(width: 40, height: 40)
                 }
-                .buttonStyle(.borderless)
+                .pressable()
                 .accessibilityLabel(isLoading ? "Stop loading" : "Reload")
                 .shortcutHint(ShortcutHint(command: "R", commandShift: "R"))
 
                 Button(action: { navigateTo(defaultURL) }) {
                     Image(systemName: "house")
                         .font(.system(size: 11))
+                        .frame(width: 40, height: 40)
                 }
-                .buttonStyle(.borderless)
+                .pressable()
                 .accessibilityLabel("Home")
 
                 TextField("URL", text: $urlText)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(.plain)
                     .font(.system(size: 12, design: .monospaced))
+                    .padding(.horizontal, DesignSpacing.sm)
+                    .padding(.vertical, DesignSpacing.xs)
+                    .background(.background, in: RoundedRectangle(cornerRadius: addressInnerRadius, style: .continuous))
+                    .padding(addressPadding)
+                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: addressOuterRadius, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: addressOuterRadius, style: .continuous)
+                            .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+                    }
                     .focused($urlFieldFocused)
                     .onSubmit { navigateTo(urlText) }
                     .shortcutHint(ShortcutHint(command: "L"))
@@ -190,7 +207,14 @@ struct BrowserView: View {
                             .font(.system(.body, design: .monospaced))
                             .foregroundStyle(.tertiary)
                         Button("Retry") { retry() }
-                            .buttonStyle(.bordered)
+                            .padding(.horizontal, DesignSpacing.lg)
+                            .padding(.vertical, DesignSpacing.sm)
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous)
+                                    .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+                            }
+                            .pressable()
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }

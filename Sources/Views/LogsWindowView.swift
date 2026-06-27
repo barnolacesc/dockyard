@@ -11,6 +11,7 @@ struct LogsWindowView: View {
     @State private var minimumLevel = LogLevel.debug
     @State private var isAtBottom = true
     @State private var exportError: String?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var filteredLines: [LogLine] {
         store.filtered(search: search, category: selectedCategory, minLevel: minimumLevel)
@@ -84,9 +85,27 @@ struct LogsWindowView: View {
             } label: {
                 Label(store.isFollowing ? "Pause" : "Live", systemImage: store.isFollowing ? "pause.fill" : "play.fill")
             }
+            .frame(minWidth: 40, minHeight: 40)
+            .pressable()
 
             TextField("Search logs", text: $search)
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(.plain)
+                .font(.system(.body, design: .monospaced))
+                .padding(.horizontal, DesignSpacing.sm)
+                .padding(.vertical, DesignSpacing.xs)
+                .background(
+                    .background,
+                    in: RoundedRectangle(
+                        cornerRadius: DesignRadius.inner(of: DesignRadius.lg, padding: DesignSpacing.xs),
+                        style: .continuous
+                    )
+                )
+                .padding(DesignSpacing.xs)
+                .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous)
+                        .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+                }
                 .frame(width: 180)
 
             Picker("Category", selection: $selectedCategory) {
@@ -99,7 +118,9 @@ struct LogsWindowView: View {
 
             Picker("Minimum Level", selection: $minimumLevel) {
                 ForEach(LogLevel.allCases, id: \.self) { level in
-                    Text(level.label).tag(level)
+                    Text(level.label)
+                        .font(.system(.caption, design: .monospaced))
+                        .tag(level)
                 }
             }
             .frame(width: 125)
@@ -107,17 +128,25 @@ struct LogsWindowView: View {
 
         ToolbarItemGroup {
             Button("Clear") { store.clear() }
+                .frame(minWidth: 40, minHeight: 40)
+                .pressable()
                 .disabled(store.lines.isEmpty)
 
             Button("Copy") { copyVisibleLines() }
+                .frame(minWidth: 40, minHeight: 40)
+                .pressable()
                 .disabled(filteredLines.isEmpty)
 
             Button("Export") {
                 Task { await exportVisibleLines() }
             }
+            .frame(minWidth: 40, minHeight: 40)
+            .pressable()
             .disabled(filteredLines.isEmpty)
 
             Button("Open Logs Directory") { openLogsDirectory() }
+                .frame(minWidth: 40, minHeight: 40)
+                .pressable()
         }
     }
 
@@ -135,13 +164,18 @@ struct LogsWindowView: View {
             Button("Open Console.app") {
                 NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Console.app"))
             }
+            .pressable()
         }
     }
 
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
         DispatchQueue.main.async {
-            withAnimation(.easeOut(duration: 0.15)) {
+            if reduceMotion {
                 proxy.scrollTo("logs-bottom", anchor: .bottom)
+            } else {
+                withAnimation(DesignMotion.interaction) {
+                    proxy.scrollTo("logs-bottom", anchor: .bottom)
+                }
             }
         }
     }
@@ -188,9 +222,12 @@ private struct LogLineRow: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             Text(line.date.formatted(date: .omitted, time: .standard))
+                .font(.system(.caption, design: .monospaced))
+                .tabularNumbers()
                 .foregroundStyle(.secondary)
                 .frame(width: 90, alignment: .leading)
             Text(line.level.label.uppercased())
+                .font(.system(.caption, design: .monospaced))
                 .foregroundStyle(line.level.color)
                 .frame(width: 58, alignment: .leading)
             Text(line.category)
