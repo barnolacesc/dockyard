@@ -15,7 +15,7 @@ final class WorkstreamStatusStyleTests: XCTestCase {
         XCTAssertNil(style.rowTintColor)
     }
 
-    func testWaitingUsesStaticBlueOrbLabelSubtitleAndTint() {
+    func testWaitingUsesStaticBlueOrbLabelSubtitleAndNoTint() {
         let style = WorkstreamStatusStyle(agentState: .waiting, isPathValid: true)
 
         XCTAssertEqual(style.indicatorShape, .circle)
@@ -24,8 +24,8 @@ final class WorkstreamStatusStyleTests: XCTestCase {
         XCTAssertEqual(style.labelColor, .blue)
         XCTAssertEqual(style.subtitleColor, .blue)
         XCTAssertEqual(style.subtitleOpacity, 0.8)
-        XCTAssertEqual(style.rowTintColor, .blue)
-        XCTAssertEqual(style.rowTintOpacity, 0.10)
+        XCTAssertNil(style.rowTintColor)
+        XCTAssertEqual(style.rowTintOpacity, 0)
     }
 
     func testIdleUsesSmallStaticTertiaryOrbAndNeutralText() {

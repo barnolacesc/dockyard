@@ -1225,8 +1225,8 @@ struct WorkstreamStatusStyle: Equatable {
             labelColor = .blue
             subtitleColor = .blue
             subtitleOpacity = 0.8
-            rowTintColor = .blue
-            rowTintOpacity = 0.10
+            rowTintColor = nil
+            rowTintOpacity = 0
         case .idle:
             indicatorShape = .circle
             indicatorColor = .tertiary
