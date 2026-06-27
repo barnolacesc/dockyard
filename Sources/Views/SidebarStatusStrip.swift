@@ -40,7 +40,7 @@ struct SidebarStatusStrip: View {
             }
             if waitingCount > 0 {
                 countItem(systemImage: "bell.fill", count: waitingCount)
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(DesignColor.statusWarning)
                     .help(NSLocalizedString("Agents waiting on you", comment: ""))
             }
         }
@@ -52,6 +52,7 @@ struct SidebarStatusStrip: View {
         HStack(spacing: 3) {
             Image(systemName: systemImage)
             Text("\(count)")
+                .tabularNumbers()
         }
     }
 
@@ -197,9 +198,9 @@ struct SidebarUsageMeter: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 9, weight: .bold))
-                .frame(width: 16, height: 16)
+                .frame(minWidth: 40, minHeight: 40)
         }
-        .buttonStyle(.plain)
+        .pressable()
         .foregroundStyle(.secondary)
         .help(label)
         .accessibilityLabel(label)
@@ -230,7 +231,7 @@ struct SidebarUsageMeter: View {
             return UsageMeterRow(
                 headline: "\(session.percentUsed)%",
                 label: label,
-                tint: .orange,
+                tint: DesignColor.statusWarning,
                 fraction: Double(session.percentUsed) / 100,
                 subtitle: session.resetText.map(Self.resetsString),
                 style: style
@@ -240,7 +241,7 @@ struct SidebarUsageMeter: View {
         return UsageMeterRow(
             headline: estimateHeadline(tokens: window.tokens, budget: planTier.fiveHourTokenBudget),
             label: label,
-            tint: .orange,
+            tint: DesignColor.statusWarning,
             fraction: fraction(tokens: window.tokens, budget: planTier.fiveHourTokenBudget),
             subtitle: estimateResetSubtitle(window.resetAt, now: now),
             style: style
@@ -284,7 +285,7 @@ struct SidebarUsageMeter: View {
         codexRow(
             window: codexUsageStore.report?.fiveHour,
             label: NSLocalizedString("Current", comment: "Codex 5-hour usage window"),
-            tint: .orange,
+            tint: DesignColor.statusWarning,
             now: now
         )
     }
@@ -374,7 +375,7 @@ private struct UsageMeterRow: View {
 
     /// Shift toward red as the window approaches its limit.
     private var barTint: Color {
-        fraction >= 0.9 ? .red : tint
+        fraction >= 0.9 ? DesignColor.statusError : tint
     }
 
     var body: some View {
@@ -384,6 +385,7 @@ private struct UsageMeterRow: View {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(headline)
                         .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .tabularNumbers()
                     Spacer()
                     Text(label)
                         .font(.system(size: 9, weight: .semibold))
@@ -396,6 +398,7 @@ private struct UsageMeterRow: View {
                 if let subtitle {
                     Text(subtitle)
                         .font(.system(size: 11))
+                        .tabularNumbers()
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -403,6 +406,7 @@ private struct UsageMeterRow: View {
             VStack(alignment: .center, spacing: 3) {
                 Text(headline)
                     .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .tabularNumbers()
                     .foregroundStyle(barTint)
                     .lineLimit(1)
                 UsageBar(fraction: fraction, tint: barTint)

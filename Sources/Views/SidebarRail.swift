@@ -93,9 +93,9 @@ struct SidebarRail: View {
             Button(action: onExpand) {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 15, weight: .medium))
-                    .frame(width: 36, height: 32)
+                    .frame(minWidth: 40, minHeight: 40)
             }
-            .buttonStyle(.plain)
+            .pressable()
             .help(NSLocalizedString("Expand sidebar", comment: "Collapsed sidebar expand button tooltip"))
             .accessibilityLabel("Expand sidebar")
             .padding(.top, 8)
@@ -152,7 +152,7 @@ struct SidebarRail: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 16, weight: .medium))
-                        .frame(width: 36, height: 30)
+                        .frame(minWidth: 40, minHeight: 40)
                 }
                 .menuStyle(.borderlessButton)
                 .menuIndicator(.hidden)
@@ -165,9 +165,9 @@ struct SidebarRail: View {
                 } label: {
                     Image(systemName: "gear")
                         .font(.system(size: 15, weight: .medium))
-                        .frame(width: 36, height: 30)
+                        .frame(minWidth: 40, minHeight: 40)
                 }
-                .buttonStyle(.plain)
+                .pressable()
                 .help(NSLocalizedString("Settings", comment: "Collapsed sidebar settings button tooltip"))
                 .accessibilityLabel("Settings")
             }
@@ -190,24 +190,25 @@ struct SidebarRail: View {
         if appUpdater.isChecking {
             ProgressView()
                 .controlSize(.small)
-                .frame(width: 36, height: 30)
+                .frame(minWidth: 40, minHeight: 40)
         } else if appUpdater.commitsAhead > 0 {
             Button(action: { appUpdater.applyUpdate() }) {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.system(size: 17, weight: .medium))
                         .foregroundStyle(Color.accentColor)
-                        .frame(width: 36, height: 30)
+                        .frame(minWidth: 40, minHeight: 40)
                     Text("\(appUpdater.commitsAhead)")
                         .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .tabularNumbers()
                         .foregroundStyle(.white)
                         .padding(.horizontal, 4)
                         .padding(.vertical, 1)
-                        .background(Color.orange, in: Capsule())
+                        .background(DesignColor.statusWarning, in: Capsule())
                         .offset(x: 4, y: -2)
                 }
             }
-            .buttonStyle(.plain)
+            .pressable()
             .help(NSLocalizedString("Pull latest changes from main and rebuild", comment: "Collapsed sidebar update button tooltip"))
             .accessibilityLabel("Update")
             .accessibilityValue("\(appUpdater.commitsAhead)")
@@ -215,9 +216,9 @@ struct SidebarRail: View {
             Button(action: { appUpdater.checkForUpdates() }) {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 14, weight: .medium))
-                    .frame(width: 36, height: 30)
+                    .frame(minWidth: 40, minHeight: 40)
             }
-            .buttonStyle(.plain)
+            .pressable()
             .foregroundStyle(.secondary)
             .help(NSLocalizedString("Check for updates", comment: "Collapsed sidebar update check button tooltip"))
             .accessibilityLabel("Update")
@@ -313,16 +314,16 @@ private struct RailTile: View {
     let onSelect: () -> Void
 
     private var tileShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: 8, style: .continuous)
+        RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous)
     }
 
     private var foreground: Color {
-        if isWorkstream, isSelected { return .orange }
+        if isWorkstream, isSelected { return DesignColor.brandAccent }
         return isSelected ? .primary : .secondary
     }
 
     private var background: Color {
-        if isWorkstream, isSelected { return Color.orange.opacity(0.18) }
+        if isWorkstream, isSelected { return DesignColor.brandAccent.opacity(0.18) }
         return isSelected ? Color.primary.opacity(0.08) : Color.clear
     }
 
@@ -331,6 +332,7 @@ private struct RailTile: View {
             ZStack(alignment: .topTrailing) {
                 Text(label)
                     .font(.system(size: isWorkstream ? 13 : 14, weight: .semibold, design: .rounded))
+                    .tabularNumbers()
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                     .foregroundStyle(foreground)
@@ -338,13 +340,13 @@ private struct RailTile: View {
                     .background(background, in: tileShape)
                     .overlay {
                         if isSelected {
-                            tileShape.stroke(isWorkstream ? Color.orange : Color.accentColor, lineWidth: 1.5)
+                            tileShape.stroke(isWorkstream ? DesignColor.brandAccent : Color.accentColor, lineWidth: 1.5)
                         }
                     }
 
                 if status.isWaiting {
                     Circle()
-                        .fill(Color.orange)
+                        .fill(DesignColor.statusWarning)
                         .frame(width: 7, height: 7)
                         .offset(x: 2, y: -2)
                 }
@@ -352,19 +354,20 @@ private struct RailTile: View {
                 if status.dirtyCount > 0 {
                     Text("\(status.dirtyCount)")
                         .font(.system(size: 8, weight: .bold, design: .rounded))
+                        .tabularNumbers()
                         .foregroundStyle(.white)
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                         .padding(.horizontal, 3)
                         .frame(minWidth: 13, minHeight: 13)
-                        .background(Color.orange, in: Capsule())
+                        .background(DesignColor.statusWarning, in: Capsule())
                         .offset(x: 4, y: 21)
                 }
             }
-            .frame(width: 40, height: 36)
+            .frame(minWidth: 40, minHeight: 40)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .pressable()
         .help(tooltip)
         .accessibilityLabel(tooltip)
     }
