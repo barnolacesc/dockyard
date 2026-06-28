@@ -437,7 +437,7 @@
 "Generate .dockyard.json" = "Generera .dockyard.json";
 "Regenerate…" = "Generera om…";
 "No setup or run scripts are configured for this project." = "Inga setup- eller körskript är konfigurerade för det här projektet.";
-"Detects your stack and writes setup and run commands to the project root." = "Identifierar din stack och skriver setup- och körkommandon till projektets rot.";
+"Detect your stack automatically, or fill in the commands yourself." = "Identifiera din stack automatiskt eller fyll i kommandona själv.";
 "Couldn't detect a stack" = "Kunde inte identifiera någon stack";
 "Dockyard couldn't recognize a known stack in this project. Add setup and run commands manually to .dockyard.json." = "Dockyard kunde inte känna igen någon känd stack i det här projektet. Lägg till setup- och körkommandon manuellt i .dockyard.json.";
 "A .dockyard.json already exists. Review the proposed replacement before writing." = "En .dockyard.json finns redan. Granska den föreslagna ersättningen innan du skriver.";
@@ -447,3 +447,7 @@
 "Close" = "Stäng";
 "Overwrite" = "Skriv över";
 "Write File" = "Skriv fil";
+"Edit" = "Redigera";
+"Create manually" = "Skapa manuellt";
+"Expected Port" = "Förväntad port";
+"Port must be between 1 and 65535" = "Porten måste vara mellan 1 och 65535";

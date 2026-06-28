@@ -10,8 +10,63 @@ struct DockyardConfigDraft: Equatable {
     var teardown: String?
     var expectedPort: Int?
 
+    enum FieldValidationError: Equatable {
+        case invalidPort
+    }
+
+    struct FieldParseResult: Equatable {
+        var draft: DockyardConfigDraft
+        var validationError: FieldValidationError?
+    }
+
     var isEmpty: Bool {
         setup == nil && run == nil && teardown == nil && expectedPort == nil
+    }
+
+    static func parseFields(
+        setup: String,
+        run: String,
+        teardown: String,
+        portText: String
+    ) -> FieldParseResult {
+        let trimmedSetup = nonEmpty(setup)
+        let trimmedRun = nonEmpty(run)
+        let trimmedTeardown = nonEmpty(teardown)
+        let trimmedPort = portText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedPort.isEmpty else {
+            return FieldParseResult(
+                draft: DockyardConfigDraft(
+                    setup: trimmedSetup,
+                    run: trimmedRun,
+                    teardown: trimmedTeardown,
+                    expectedPort: nil
+                ),
+                validationError: nil
+            )
+        }
+
+        guard let port = Int(trimmedPort), (1...65535).contains(port) else {
+            return FieldParseResult(
+                draft: DockyardConfigDraft(
+                    setup: trimmedSetup,
+                    run: trimmedRun,
+                    teardown: trimmedTeardown,
+                    expectedPort: nil
+                ),
+                validationError: .invalidPort
+            )
+        }
+
+        return FieldParseResult(
+            draft: DockyardConfigDraft(
+                setup: trimmedSetup,
+                run: trimmedRun,
+                teardown: trimmedTeardown,
+                expectedPort: port
+            ),
+            validationError: nil
+        )
     }
 
     /// Serialize to pretty JSON, 2-space indent, in logical key order
@@ -33,6 +88,11 @@ struct DockyardConfigDraft: Equatable {
               let str = String(data: data, encoding: .utf8)
         else { return "\"\"" }
         return str
+    }
+
+    private static func nonEmpty(_ value: String) -> String? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 
