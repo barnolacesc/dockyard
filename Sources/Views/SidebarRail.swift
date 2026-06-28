@@ -4,7 +4,7 @@
 import SwiftUI
 
 struct SidebarRailStatus: Equatable {
-    var isWaiting: Bool = false
+    var agentState: AgentState? = nil
     var dirtyCount: Int = 0
 }
 
@@ -33,24 +33,35 @@ func sidebarRailSortedWorkstreams(_ workstreams: [Workstream]) -> [Workstream] {
 
 func sidebarRailProjectStatus(
     for project: Project,
-    waitingWorkstreamIDs: Set<UUID>,
+    agentStatesByWorkstreamID: [UUID: AgentState],
     dirtyCountsByWorkstreamID: [UUID: Int]
 ) -> SidebarRailStatus {
     SidebarRailStatus(
-        isWaiting: project.workstreams.contains { waitingWorkstreamIDs.contains($0.id) },
+        agentState: sidebarRailAggregateAgentState(
+            project.workstreams.compactMap { agentStatesByWorkstreamID[$0.id] }
+        ),
         dirtyCount: project.workstreams.reduce(0) { $0 + max(0, dirtyCountsByWorkstreamID[$1.id] ?? 0) }
     )
 }
 
 func sidebarRailWorkstreamStatus(
     for workstream: Workstream,
-    waitingWorkstreamIDs: Set<UUID>,
+    agentStatesByWorkstreamID: [UUID: AgentState],
     dirtyCountsByWorkstreamID: [UUID: Int]
 ) -> SidebarRailStatus {
     SidebarRailStatus(
-        isWaiting: waitingWorkstreamIDs.contains(workstream.id),
+        agentState: agentStatesByWorkstreamID[workstream.id],
         dirtyCount: max(0, dirtyCountsByWorkstreamID[workstream.id] ?? 0)
     )
+}
+
+private func sidebarRailAggregateAgentState(_ states: [AgentState]) -> AgentState? {
+    // Waiting wins: a collapsed project tile must surface "needs your input"
+    // even when another workstream in the same project is still working.
+    if states.contains(.waiting) { return .waiting }
+    if states.contains(.working) { return .working }
+    if states.contains(.idle) { return .idle }
+    return nil
 }
 
 struct SidebarRail: View {
@@ -228,7 +239,7 @@ struct SidebarRail: View {
     private func status(for project: Project) -> SidebarRailStatus {
         sidebarRailProjectStatus(
             for: project,
-            waitingWorkstreamIDs: waitingWorkstreamIDs(in: project.workstreams),
+            agentStatesByWorkstreamID: agentStatesByWorkstreamID(in: project.workstreams),
             dirtyCountsByWorkstreamID: dirtyCountsByWorkstreamID(in: project.workstreams)
         )
     }
@@ -236,13 +247,16 @@ struct SidebarRail: View {
     private func status(for workstream: Workstream) -> SidebarRailStatus {
         sidebarRailWorkstreamStatus(
             for: workstream,
-            waitingWorkstreamIDs: agentStateStore.agentState(for: workstream.id) == .waiting ? [workstream.id] : [],
+            agentStatesByWorkstreamID: agentStatesByWorkstreamID(in: [workstream]),
             dirtyCountsByWorkstreamID: [workstream.id: dirtyCount(for: workstream)]
         )
     }
 
-    private func waitingWorkstreamIDs(in workstreams: [Workstream]) -> Set<UUID> {
-        Set(workstreams.filter { agentStateStore.agentState(for: $0.id) == .waiting }.map(\.id))
+    private func agentStatesByWorkstreamID(in workstreams: [Workstream]) -> [UUID: AgentState] {
+        Dictionary(uniqueKeysWithValues: workstreams.compactMap { workstream in
+            guard let state = agentStateStore.agentState(for: workstream.id) else { return nil }
+            return (workstream.id, state)
+        })
     }
 
     private func dirtyCountsByWorkstreamID(in workstreams: [Workstream]) -> [UUID: Int] {
@@ -318,12 +332,12 @@ private struct RailTile: View {
     }
 
     private var foreground: Color {
-        if isWorkstream, isSelected { return DesignColor.brandAccent }
+        if isWorkstream, isSelected { return .accentColor }
         return isSelected ? .primary : .secondary
     }
 
     private var background: Color {
-        if isWorkstream, isSelected { return DesignColor.brandAccent.opacity(0.18) }
+        if isWorkstream, isSelected { return Color.accentColor.opacity(0.18) }
         return isSelected ? Color.primary.opacity(0.08) : Color.clear
     }
 
@@ -340,16 +354,12 @@ private struct RailTile: View {
                     .background(background, in: tileShape)
                     .overlay {
                         if isSelected {
-                            tileShape.stroke(isWorkstream ? DesignColor.brandAccent : Color.accentColor, lineWidth: 1.5)
+                            tileShape.stroke(Color.accentColor, lineWidth: 1.5)
                         }
                     }
 
-                if status.isWaiting {
-                    Circle()
-                        .fill(DesignColor.statusWarning)
-                        .frame(width: 7, height: 7)
-                        .offset(x: 2, y: -2)
-                }
+                ActivityIndicator(state: status.agentState, isPathValid: true)
+                    .offset(x: 5, y: -4)
 
                 if status.dirtyCount > 0 {
                     Text("\(status.dirtyCount)")
@@ -360,7 +370,7 @@ private struct RailTile: View {
                         .minimumScaleFactor(0.6)
                         .padding(.horizontal, 3)
                         .frame(minWidth: 13, minHeight: 13)
-                        .background(DesignColor.statusWarning, in: Capsule())
+                        .background(Color.secondary.opacity(0.85), in: Capsule())
                         .offset(x: 4, y: 21)
                 }
             }
