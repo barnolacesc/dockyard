@@ -35,6 +35,12 @@ struct WorkstreamInfoView: View {
     @State private var configDraft: DockyardConfigDraft?
     @State private var existingConfigText: String?
     @State private var writeError: String?
+    @State private var isEditingConfig = false
+    @State private var editSetup = ""
+    @State private var editRun = ""
+    @State private var editTeardown = ""
+    @State private var editPortText = ""
+    @State private var editWriteError: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -254,55 +260,26 @@ struct WorkstreamInfoView: View {
                 }
 
                 Section {
-                    if scriptConfig.hasAnyScript {
-                        if let setup = scriptConfig.setup {
-                            LabeledContent("Setup") {
-                                Text(setup)
-                                    .font(.system(.body, design: .monospaced))
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        if let run = scriptConfig.run {
-                            LabeledContent("Run") {
-                                Text(run)
-                                    .font(.system(.body, design: .monospaced))
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        if let teardown = scriptConfig.teardown {
-                            LabeledContent("Teardown") {
-                                Text(teardown)
-                                    .font(.system(.body, design: .monospaced))
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    } else {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("No setup or run scripts are configured for this project.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Button(action: generateConfig) {
-                                HStack(spacing: 6) {
-                                    if isDetectingStack {
-                                        ProgressView().controlSize(.small)
-                                    } else {
-                                        Image(systemName: "wand.and.stars")
-                                    }
-                                    Text("Generate .dockyard.json")
-                                }
-                            }
-                            .disabled(isDetectingStack)
-                            Text("Detects your stack and writes setup and run commands to the project root.")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .padding(.vertical, 2)
-                    }
+                    scriptsSectionContent
                 } header: {
                     HStack {
                         Text("Scripts")
                         Spacer()
-                        if scriptConfig.hasAnyScript {
+                        if isEditingConfig {
+                            Button("Cancel", action: cancelConfigEditing)
+                                .font(.caption2)
+                                .buttonStyle(.borderless)
+                                .onHover { hovering in
+                                    updatePointingHand(hovering, enabled: true)
+                                }
+                            Button("Save", action: saveEditedConfig)
+                                .font(.caption2)
+                                .buttonStyle(.borderless)
+                                .disabled(!canSaveEditedConfig)
+                                .onHover { hovering in
+                                    updatePointingHand(hovering, enabled: canSaveEditedConfig)
+                                }
+                        } else if hasEditableScriptConfig {
                             if let source = scriptConfig.source {
                                 Text(source)
                                     .font(.caption2)
@@ -312,6 +289,15 @@ struct WorkstreamInfoView: View {
                                 .font(.caption2)
                                 .buttonStyle(.borderless)
                                 .disabled(isDetectingStack)
+                                .onHover { hovering in
+                                    updatePointingHand(hovering, enabled: !isDetectingStack)
+                                }
+                            Button("Edit", action: beginConfigEditing)
+                                .font(.caption2)
+                                .buttonStyle(.borderless)
+                                .onHover { hovering in
+                                    updatePointingHand(hovering, enabled: true)
+                                }
                         }
                     }
                 }
@@ -386,6 +372,131 @@ struct WorkstreamInfoView: View {
         }
     } // body
 
+    @ViewBuilder
+    private var scriptsSectionContent: some View {
+        if isEditingConfig {
+            configEditorRows
+        } else if hasEditableScriptConfig {
+            configReadRows
+        } else {
+            configEmptyState
+        }
+    }
+
+    @ViewBuilder
+    private var configReadRows: some View {
+        if let setup = scriptConfig.setup {
+            LabeledContent("Setup") {
+                Text(setup)
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        if let run = scriptConfig.run {
+            LabeledContent("Run") {
+                Text(run)
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        if let teardown = scriptConfig.teardown {
+            LabeledContent("Teardown") {
+                Text(teardown)
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        if let expectedPort = scriptConfig.expectedPort {
+            LabeledContent("Expected Port") {
+                Text("\(expectedPort)")
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var configEditorRows: some View {
+        LabeledContent("Setup") {
+            TextField("", text: $editSetup)
+                .font(.system(.body, design: .monospaced))
+        }
+        LabeledContent("Run") {
+            TextField("", text: $editRun)
+                .font(.system(.body, design: .monospaced))
+        }
+        LabeledContent("Teardown") {
+            TextField("", text: $editTeardown)
+                .font(.system(.body, design: .monospaced))
+        }
+        LabeledContent("Expected Port") {
+            TextField("", text: $editPortText)
+                .font(.system(.body, design: .monospaced))
+        }
+        if editParseResult.validationError == .invalidPort {
+            Label("Port must be between 1 and 65535", systemImage: "exclamationmark.triangle.fill")
+                .font(.caption)
+                .foregroundStyle(.red)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        if let editWriteError {
+            Label(editWriteError, systemImage: "exclamationmark.triangle.fill")
+                .font(.caption)
+                .foregroundStyle(.red)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var configEmptyState: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("No setup or run scripts are configured for this project.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 10) {
+                Button(action: generateConfig) {
+                    HStack(spacing: 6) {
+                        if isDetectingStack {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Image(systemName: "wand.and.stars")
+                        }
+                        Text("Generate .dockyard.json")
+                    }
+                }
+                .disabled(isDetectingStack)
+
+                Button("Create manually", action: beginBlankConfigEditing)
+                    .font(.caption)
+                    .buttonStyle(.borderless)
+                    .disabled(isDetectingStack)
+                    .onHover { hovering in
+                        updatePointingHand(hovering, enabled: !isDetectingStack)
+                    }
+            }
+            Text("Detect your stack automatically, or fill in the commands yourself.")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 2)
+    }
+
+    private var hasEditableScriptConfig: Bool {
+        scriptConfig.hasAnyScript || scriptConfig.expectedPort != nil
+    }
+
+    private var editParseResult: DockyardConfigDraft.FieldParseResult {
+        DockyardConfigDraft.parseFields(
+            setup: editSetup,
+            run: editRun,
+            teardown: editTeardown,
+            portText: editPortText
+        )
+    }
+
+    private var canSaveEditedConfig: Bool {
+        editParseResult.validationError == nil && !editParseResult.draft.isEmpty
+    }
+
     private func generateConfig() {
         guard !isDetectingStack else { return }
         isDetectingStack = true
@@ -401,6 +512,56 @@ struct WorkstreamInfoView: View {
                 isDetectingStack = false
                 showGenerateSheet = true
             }
+        }
+    }
+
+    private func beginConfigEditing() {
+        seedConfigEditingFieldsFromScriptConfig()
+        editWriteError = nil
+        isEditingConfig = true
+    }
+
+    private func beginBlankConfigEditing() {
+        editSetup = ""
+        editRun = ""
+        editTeardown = ""
+        editPortText = ""
+        editWriteError = nil
+        isEditingConfig = true
+    }
+
+    private func cancelConfigEditing() {
+        seedConfigEditingFieldsFromScriptConfig()
+        editWriteError = nil
+        isEditingConfig = false
+    }
+
+    private func saveEditedConfig() {
+        let result = editParseResult
+        guard result.validationError == nil, !result.draft.isEmpty else { return }
+
+        do {
+            try DockyardConfigWriter.write(result.draft, to: projectDirectory)
+            editWriteError = nil
+            isEditingConfig = false
+            onConfigGenerated()
+        } catch {
+            editWriteError = error.localizedDescription
+        }
+    }
+
+    private func seedConfigEditingFieldsFromScriptConfig() {
+        editSetup = scriptConfig.setup ?? ""
+        editRun = scriptConfig.run ?? ""
+        editTeardown = scriptConfig.teardown ?? ""
+        editPortText = scriptConfig.expectedPort.map(String.init) ?? ""
+    }
+
+    private func updatePointingHand(_ hovering: Bool, enabled: Bool) {
+        if hovering, enabled {
+            NSCursor.pointingHand.push()
+        } else {
+            NSCursor.pop()
         }
     }
 

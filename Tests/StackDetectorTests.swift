@@ -228,6 +228,86 @@ final class StackDetectorTests: XCTestCase {
         XCTAssertEqual(draft.jsonString(), expected)
     }
 
+    // MARK: - Field parsing
+
+    func testFieldParserTrimsCommandsAndPort() {
+        let result = DockyardConfigDraft.parseFields(
+            setup: "  npm install  ",
+            run: "\tnpm run dev\n",
+            teardown: "  docker compose down  ",
+            portText: " 5173 "
+        )
+
+        XCTAssertNil(result.validationError)
+        XCTAssertEqual(result.draft.setup, "npm install")
+        XCTAssertEqual(result.draft.run, "npm run dev")
+        XCTAssertEqual(result.draft.teardown, "docker compose down")
+        XCTAssertEqual(result.draft.expectedPort, 5173)
+    }
+
+    func testFieldParserConvertsEmptyStringsToNil() {
+        let result = DockyardConfigDraft.parseFields(
+            setup: "   ",
+            run: "npm run dev",
+            teardown: "\n\t",
+            portText: ""
+        )
+
+        XCTAssertNil(result.validationError)
+        XCTAssertNil(result.draft.setup)
+        XCTAssertEqual(result.draft.run, "npm run dev")
+        XCTAssertNil(result.draft.teardown)
+        XCTAssertNil(result.draft.expectedPort)
+    }
+
+    func testFieldParserAcceptsEmptyPort() {
+        let result = DockyardConfigDraft.parseFields(
+            setup: "",
+            run: "make dev",
+            teardown: "",
+            portText: "   "
+        )
+
+        XCTAssertNil(result.validationError)
+        XCTAssertEqual(result.draft.run, "make dev")
+        XCTAssertNil(result.draft.expectedPort)
+    }
+
+    func testFieldParserRejectsNonIntegerPort() {
+        let result = DockyardConfigDraft.parseFields(
+            setup: "",
+            run: "make dev",
+            teardown: "",
+            portText: "localhost"
+        )
+
+        XCTAssertEqual(result.validationError, .invalidPort)
+        XCTAssertEqual(result.draft.run, "make dev")
+        XCTAssertNil(result.draft.expectedPort)
+    }
+
+    func testFieldParserRejectsOutOfRangePort() {
+        let low = DockyardConfigDraft.parseFields(setup: "", run: "make dev", teardown: "", portText: "0")
+        let high = DockyardConfigDraft.parseFields(setup: "", run: "make dev", teardown: "", portText: "65536")
+
+        XCTAssertEqual(low.validationError, .invalidPort)
+        XCTAssertEqual(high.validationError, .invalidPort)
+        XCTAssertNil(low.draft.expectedPort)
+        XCTAssertNil(high.draft.expectedPort)
+    }
+
+    func testFieldParserAllEmptyProducesEmptyDraft() {
+        let result = DockyardConfigDraft.parseFields(
+            setup: " ",
+            run: "",
+            teardown: "\t",
+            portText: "\n"
+        )
+
+        XCTAssertNil(result.validationError)
+        XCTAssertTrue(result.draft.isEmpty)
+    }
+
     // MARK: - Writer round-trips through ScriptConfig
 
     func testWriterProducesLoadableConfig() throws {

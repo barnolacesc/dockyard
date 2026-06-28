@@ -408,7 +408,7 @@
 "Generate .dockyard.json" = ".dockyard.json generieren";
 "Regenerate…" = "Neu generieren…";
 "No setup or run scripts are configured for this project." = "Für dieses Projekt sind keine Setup- oder Run-Skripte konfiguriert.";
-"Detects your stack and writes setup and run commands to the project root." = "Erkennt deinen Stack und schreibt Setup- und Run-Befehle in das Projektstammverzeichnis.";
+"Detect your stack automatically, or fill in the commands yourself." = "Erkenne deinen Stack automatisch oder gib die Befehle selbst ein.";
 "Couldn't detect a stack" = "Kein Stack erkannt";
 "Dockyard couldn't recognize a known stack in this project. Add setup and run commands manually to .dockyard.json." = "Dockyard konnte keinen bekannten Stack in diesem Projekt erkennen. Füge Setup- und Run-Befehle manuell zu .dockyard.json hinzu.";
 "A .dockyard.json already exists. Review the proposed replacement before writing." = "Es existiert bereits eine .dockyard.json. Prüfe den vorgeschlagenen Ersatz vor dem Schreiben.";
@@ -418,3 +418,7 @@
 "Close" = "Schließen";
 "Overwrite" = "Überschreiben";
 "Write File" = "Datei schreiben";
+"Edit" = "Bearbeiten";
+"Create manually" = "Manuell erstellen";
+"Expected Port" = "Erwarteter Port";
+"Port must be between 1 and 65535" = "Der Port muss zwischen 1 und 65535 liegen";

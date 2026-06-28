@@ -437,7 +437,7 @@
 "Generate .dockyard.json" = "Genera .dockyard.json";
 "Regenerate…" = "Torna a generar…";
 "No setup or run scripts are configured for this project." = "No hi ha scripts de configuració ni d'execució per a aquest projecte.";
-"Detects your stack and writes setup and run commands to the project root." = "Detecta la teva pila i escriu les ordres de configuració i execució a l'arrel del projecte.";
+"Detect your stack automatically, or fill in the commands yourself." = "Detecta la teva pila automàticament o emplena les ordres tu mateix.";
 "Couldn't detect a stack" = "No s'ha pogut detectar cap pila";
 "Dockyard couldn't recognize a known stack in this project. Add setup and run commands manually to .dockyard.json." = "Dockyard no ha reconegut cap pila coneguda en aquest projecte. Afegeix les ordres de configuració i execució manualment a .dockyard.json.";
 "A .dockyard.json already exists. Review the proposed replacement before writing." = "Ja existeix un .dockyard.json. Revisa la substitució proposada abans d'escriure-la.";
@@ -447,3 +447,7 @@
 "Close" = "Tanca";
 "Overwrite" = "Sobreescriu";
 "Write File" = "Escriu el fitxer";
+"Edit" = "Edita";
+"Create manually" = "Crea manualment";
+"Expected Port" = "Port esperat";
+"Port must be between 1 and 65535" = "El port ha d'estar entre 1 i 65535";
