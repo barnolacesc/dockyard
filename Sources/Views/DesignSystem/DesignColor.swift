@@ -10,7 +10,6 @@ extension Color {
 }
 
 enum DesignColor {
-    static let brandAccent = Color(light: .systemOrange, dark: .systemOrange)
     static let statusSuccess = Color(light: .systemGreen, dark: .systemGreen)
     static let statusWarning = Color(light: .systemYellow, dark: .systemYellow)
     static let statusError = Color(light: .systemRed, dark: .systemRed)
