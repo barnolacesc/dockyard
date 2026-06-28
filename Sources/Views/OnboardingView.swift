@@ -15,6 +15,8 @@ struct OnboardingView: View {
                     Image(nsImage: NSApp.applicationIconImage)
                         .resizable()
                         .frame(width: 96, height: 96)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xl, style: .continuous))
+                        .imageOutline(radius: DesignRadius.xl)
                     Text(AppConstants.appName)
                         .font(.system(size: 28, weight: .bold))
                     Text("AI-powered workspaces for your codebase.")
@@ -34,7 +36,7 @@ struct OnboardingView: View {
                         Spacer()
                         if isDetecting {
                             ProgressView()
-                                .scaleEffect(0.5)
+                                .controlSize(.small)
                                 .frame(width: 12, height: 12)
                             }
                     }
@@ -162,6 +164,7 @@ struct OnboardingView: View {
             Text(text)
         }
         .font(.system(.caption, design: .monospaced))
+        .tabularNumbers()
         .foregroundStyle(.tertiary)
     }
 }
@@ -186,6 +189,7 @@ private struct PrerequisiteRow: View {
             if let version {
                 Text(version)
                     .font(.caption)
+                    .tabularNumbers()
                     .foregroundStyle(.secondary)
             }
 
@@ -202,7 +206,7 @@ private struct PrerequisiteRow: View {
                     let isAuth = detail != "Not authenticated"
                     HStack(spacing: 4) {
                         Circle()
-                            .fill(isAuth ? .green : .orange)
+                            .fill(isAuth ? DesignColor.statusSuccess : DesignColor.statusWarning)
                             .frame(width: 6, height: 6)
                         Text(detail)
                             .font(.caption)
@@ -232,8 +236,8 @@ private struct PrerequisiteRow: View {
     }
 
     private var statusColor: Color {
-        if status.isInstalled { return .green }
+        if status.isInstalled { return DesignColor.statusSuccess }
         if optional { return .secondary }
-        return .orange
+        return DesignColor.statusWarning
     }
 }

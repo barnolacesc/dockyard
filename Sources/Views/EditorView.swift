@@ -26,6 +26,7 @@ struct EditorView: View {
     // Save confirmation for file switching
     @State private var pendingFilePath: String?
     @State private var showSaveAlert = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var isDirty: Bool {
         isDirtyState
@@ -97,14 +98,19 @@ struct EditorView: View {
     private var editorToolbar: some View {
         HStack {
             Button {
-                withAnimation(.easeInOut(duration: 0.15)) {
+                if reduceMotion {
                     showFileTree.toggle()
+                } else {
+                    withAnimation(DesignMotion.interaction) {
+                        showFileTree.toggle()
+                    }
                 }
             } label: {
                 Image(systemName: "sidebar.left")
                     .foregroundStyle(showFileTree ? .primary : .secondary)
+                    .frame(width: 40, height: 40)
             }
-            .buttonStyle(.plain)
+            .pressable()
             .help("Toggle file tree")
 
             if let currentFilePath {

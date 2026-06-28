@@ -84,7 +84,7 @@ struct EnvironmentTabView: View {
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.borderless)
+                    .pressable()
                     .help(NSLocalizedString("Start", comment: ""))
                     .shortcutHint(ShortcutHint(commandShift: "↩"))
                 } else {
@@ -106,7 +106,7 @@ struct EnvironmentTabView: View {
                 if scriptConfig.run != nil, RunLauncher.executableURL() == nil {
                     Text("No port detection")
                         .font(.system(size: 9))
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(DesignColor.statusWarning)
                         .help("dy-run helper not found. Run scripts will work but port detection is unavailable.")
                 }
 
@@ -157,9 +157,10 @@ struct EnvironmentTabView: View {
                             .padding(.vertical, 8)
                             .background(Color.accentColor)
                             .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                            .frame(minHeight: 40)
                         }
-                        .buttonStyle(.borderless)
+                        .pressable()
                         .shortcutHint(ShortcutHint(commandShift: "↩"))
                         Text(script)
                             .font(.system(size: 12, design: .monospaced))
@@ -182,7 +183,7 @@ struct EnvironmentTabView: View {
     private func configErrorBanner(error: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.yellow)
+                .foregroundStyle(DesignColor.statusWarning)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Failed to load .dockyard.json")
                     .font(.system(size: 12, weight: .semibold))
@@ -193,20 +194,20 @@ struct EnvironmentTabView: View {
             Spacer()
         }
         .padding(10)
-        .background(Color.yellow.opacity(0.08))
+        .background(DesignColor.statusWarning.opacity(0.08))
     }
 
     private func configSourceBanner(source: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "info.circle")
-                .foregroundStyle(.blue)
+                .foregroundStyle(DesignColor.statusInfo)
             Text(String(format: NSLocalizedString("Using scripts from %@", comment: ""), source))
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
             Spacer()
         }
         .padding(10)
-        .background(Color.blue.opacity(0.05))
+        .background(DesignColor.statusInfo.opacity(0.05))
     }
 
     private func scriptInstructions(title: String) -> some View {
@@ -225,7 +226,7 @@ struct EnvironmentTabView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .background(Color.primary.opacity(0.05))
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -343,14 +344,16 @@ private struct EnvActionButton: View {
                     .font(.system(size: 11))
                 Text(shortcut)
                     .font(.system(size: 9, design: .monospaced))
+                    .tabularNumbers()
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(isHovering ? Color.primary.opacity(0.08) : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
+            .frame(minHeight: 40)
         }
-        .buttonStyle(.borderless)
+        .pressable()
         .onHover { isHovering = $0 }
         .accessibilityLabel(label)
         .shortcutHint(ShortcutHint(commandShift: shortcut.isEmpty ? nil : "↩"))

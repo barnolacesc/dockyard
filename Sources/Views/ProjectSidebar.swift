@@ -123,6 +123,7 @@ struct ProjectSidebar: View {
     @AppStorage("dockyard.showRecent") private var showRecent: Bool = true
     @AppStorage(SidebarMode.storageKey) private var sidebarModeRaw = SidebarMode.expanded.rawValue
     @AppStorage(SidebarMode.lastVisibleStorageKey) private var lastVisibleSidebarModeRaw = SidebarMode.expanded.rawValue
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var currentVersionLooksLikeRelease: Bool {
         AppConstants.version.range(of: "^[0-9]+\\.[0-9]+\\.[0-9]+$", options: .regularExpression) != nil
@@ -191,9 +192,45 @@ struct ProjectSidebar: View {
                 current: expandedProjects,
                 projectIDByWorkstreamID: projectIDByWorkstreamID
             )
-            withAnimation {
+            if reduceMotion {
                 scrollProxy.scrollTo(selected, anchor: .center)
+            } else {
+                withAnimation(DesignMotion.interaction) {
+                    scrollProxy.scrollTo(selected, anchor: .center)
+                }
             }
+        }
+    }
+
+    private func animateNavigationChange(_ update: () -> Void) {
+        if reduceMotion {
+            update()
+        } else {
+            withAnimation(DesignMotion.interaction) {
+                update()
+            }
+        }
+    }
+
+    private func toggleProjectExpansion(_ projectID: UUID) {
+        animateNavigationChange {
+            if expandedProjects.contains(projectID) {
+                expandedProjects.remove(projectID)
+            } else {
+                expandedProjects.insert(projectID)
+            }
+        }
+    }
+
+    private func toggleOpenPRs() {
+        animateNavigationChange {
+            showOpenPRs.toggle()
+        }
+    }
+
+    private func toggleRecent() {
+        animateNavigationChange {
+            showRecent.toggle()
         }
     }
 
@@ -217,15 +254,7 @@ struct ProjectSidebar: View {
                 isSelected: selection == .project(project.id)
                     || selection?.workstreamID.map { projectIDByWorkstreamID[$0] == project.id } == true,
                 isExpanded: expandedProjects.contains(project.id),
-                onToggle: hasChildren ? {
-                    withAnimation(.easeInOut(duration: 0.15)) {
-                        if expandedProjects.contains(project.id) {
-                            expandedProjects.remove(project.id)
-                        } else {
-                            expandedProjects.insert(project.id)
-                        }
-                    }
-                } : nil,
+                onToggle: hasChildren ? { toggleProjectExpansion(project.id) } : nil,
                 isGitRepo: appEnv.isGitRepo(project.directory),
                 githubURL: appEnv.githubURL(for: project.directory),
                 onAdd: { logger.warning("[Dockyard] onAdd button tapped for project \(project.name, privacy: .public)"); addWorkstream(for: project.id) },
@@ -337,7 +366,7 @@ struct ProjectSidebar: View {
                 systemImage: "arrow.triangle.pull",
                 count: prs.count,
                 isExpanded: showOpenPRs,
-                onToggle: { withAnimation(.easeInOut(duration: 0.15)) { showOpenPRs.toggle() } }
+                onToggle: toggleOpenPRs
             )
             if showOpenPRs {
                 ForEach(prs) { item in
@@ -370,7 +399,7 @@ struct ProjectSidebar: View {
                     systemImage: "clock",
                     count: nil,
                     isExpanded: showRecent,
-                    onToggle: { withAnimation(.easeInOut(duration: 0.15)) { showRecent.toggle() } }
+                    onToggle: toggleRecent
                 )
                 .padding(.horizontal, 8)
                 .padding(.top, 4)
@@ -435,15 +464,17 @@ struct ProjectSidebar: View {
                         HStack(spacing: 2) {
                             Image(systemName: "arrow.up.circle.fill")
                             Text("Update (\(appUpdater.commitsAhead))")
+                                .tabularNumbers()
                         }
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(Color.accentColor)
-                        .cornerRadius(8)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous))
+                        .frame(minHeight: 40)
                     }
-                    .buttonStyle(.plain)
+                    .pressable()
                     .help("Pull latest changes from main and rebuild")
                 } else {
                     Button(action: {
@@ -451,8 +482,9 @@ struct ProjectSidebar: View {
                     }) {
                         Image(systemName: "arrow.clockwise")
                             .font(.system(size: 10))
+                            .frame(minWidth: 40, minHeight: 40)
                     }
-                    .buttonStyle(.plain)
+                    .pressable()
                     .foregroundStyle(.tertiary)
                     .help("Check for updates")
                 }
@@ -686,9 +718,9 @@ struct ProjectSidebar: View {
                     } label: {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 12, weight: .semibold))
-                            .frame(width: 28, height: 26)
+                            .frame(minWidth: 40, minHeight: 40)
                     }
-                    .buttonStyle(.plain)
+                    .pressable()
                     .help(NSLocalizedString("Collapse sidebar", comment: "Expanded sidebar collapse button tooltip"))
                     .accessibilityLabel("Collapse sidebar")
                     Spacer()
@@ -735,10 +767,10 @@ struct ProjectSidebar: View {
         }
         .overlay {
             if isDropTargeted {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous)
                     .strokeBorder(Color.accentColor, lineWidth: 2)
                     .background(Color.accentColor.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous))
             }
         }
         .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
@@ -1048,9 +1080,10 @@ private struct ProjectHeaderRow: View {
                             .foregroundStyle(isChevronHovering ? .primary : .secondary)
                             .frame(width: 22, height: 22)
                             .background(isChevronHovering ? Color.primary.opacity(0.1) : .clear)
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
+                            .frame(minWidth: 40, minHeight: 40)
                     }
-                    .buttonStyle(.borderless)
+                    .pressable()
                     .onHover { isChevronHovering = $0 }
                     .accessibilityLabel(isExpanded ? "Collapse" : "Expand")
                     .accessibilityValue(isExpanded ? "expanded" : "collapsed")
@@ -1068,6 +1101,7 @@ private struct ProjectHeaderRow: View {
                     if !project.workstreams.isEmpty {
                         Text("\(project.workstreams.count)")
                             .font(.system(size: 9, weight: .medium))
+                            .tabularNumbers()
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 4)
                             .padding(.vertical, 1)
@@ -1104,9 +1138,11 @@ private struct ProjectHeaderRow: View {
             .opacity(isHovering ? 1 : 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minHeight: 40)
         .padding(.vertical, 1)
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
+        .hoverHighlight(radius: DesignRadius.md)
         .shortcutHint(ShortcutHint(command: isSelected ? "↑ ↓" : nil))
         .contextMenu {
             Button {
@@ -1153,11 +1189,11 @@ enum WorkstreamStatusColor: Equatable {
         case .tertiary:
             return opacity == 1 ? AnyShapeStyle(.tertiary) : AnyShapeStyle(Color.secondary.opacity(0.5 * opacity))
         case .green:
-            return AnyShapeStyle(Color.green.opacity(opacity))
+            return AnyShapeStyle(DesignColor.statusSuccess.opacity(opacity))
         case .blue:
-            return AnyShapeStyle(Color.blue.opacity(opacity))
+            return AnyShapeStyle(DesignColor.statusInfo.opacity(opacity))
         case .orange:
-            return AnyShapeStyle(Color.orange.opacity(opacity))
+            return AnyShapeStyle(DesignColor.statusWarning.opacity(opacity))
         }
     }
 
@@ -1166,11 +1202,11 @@ enum WorkstreamStatusColor: Equatable {
         case .primary, .secondary, .tertiary:
             return nil
         case .green:
-            return Color.green.opacity(opacity)
+            return DesignColor.statusSuccess.opacity(opacity)
         case .blue:
-            return Color.blue.opacity(opacity)
+            return DesignColor.statusInfo.opacity(opacity)
         case .orange:
-            return Color.orange.opacity(opacity)
+            return DesignColor.statusWarning.opacity(opacity)
         }
     }
 }
@@ -1268,7 +1304,7 @@ private struct WorkstreamRowBackground: View {
                let tintColor = rowTintColor.tintColor(opacity: statusStyle.rowTintOpacity)
             {
                 tintColor
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
                     .padding(.horizontal, 4)
             }
         }
@@ -1356,7 +1392,7 @@ private struct WorkstreamRow: View {
                         .frame(width: 3)
                     Color.accentColor.opacity(0.10)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
             }
 
             rowContent
@@ -1366,6 +1402,7 @@ private struct WorkstreamRow: View {
         .contentShape(Rectangle())
         .help(taskDescription ?? "")
         .onHover { isHovering = $0 }
+        .hoverHighlight(radius: DesignRadius.md)
         .contextMenu {
             if let worktreePath {
                 Button {
@@ -1468,7 +1505,7 @@ private struct WorkstreamRow: View {
                     if hasActivePort {
                         Image(systemName: "circle.fill")
                             .font(.system(size: 5))
-                            .foregroundStyle(.green)
+                            .foregroundStyle(DesignColor.statusSuccess)
                     }
                 }
                 if subtitle != nil || dirtyCount > 0 {
@@ -1479,6 +1516,7 @@ private struct WorkstreamRow: View {
                         }
                         if dirtyCount > 0 {
                             Text("±\(dirtyCount)")
+                                .tabularNumbers()
                                 .foregroundStyle(.secondary)
                                 .help(NSLocalizedString("Uncommitted changes", comment: ""))
                         }
@@ -1511,12 +1549,12 @@ private struct StagePill: View {
         case .filled:
             return .white
         case .outline, .bare:
-            return Color.purple.opacity(0.75)
+            return DesignColor.statusMerged.opacity(0.75)
         }
     }
 
     private var fillColor: Color {
-        style.appearance == .filled ? Color.purple : Color.clear
+        style.appearance == .filled ? DesignColor.statusMerged : Color.clear
     }
 
     private var strokeColor: Color {
@@ -1524,9 +1562,9 @@ private struct StagePill: View {
         case .filled:
             return Color.clear
         case .outline:
-            return Color.purple.opacity(0.5)
+            return DesignColor.statusMerged.opacity(0.5)
         case .bare:
-            return Color.purple.opacity(0.35)
+            return DesignColor.statusMerged.opacity(0.35)
         }
     }
 
@@ -1543,6 +1581,7 @@ private struct StagePill: View {
             Text(LocalizedStringKey(style.titleKey))
             if let prNumber = style.prNumber {
                 Text("#\(prNumber)")
+                    .tabularNumbers()
             }
         }
         .font(.system(size: 9, weight: .semibold))
@@ -1567,6 +1606,7 @@ struct ActivityIndicator: View {
     let isPathValid: Bool
 
     @State private var isPulsing = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var statusStyle: WorkstreamStatusStyle {
         WorkstreamStatusStyle(agentState: state, isPathValid: isPathValid)
@@ -1583,7 +1623,10 @@ struct ActivityIndicator: View {
                     .foregroundStyle(indicatorColor.shapeStyle())
                     .frame(width: statusStyle.indicatorSize, height: statusStyle.indicatorSize)
                     .opacity(statusStyle.pulses && isPulsing ? 0.4 : 1.0)
-                    .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isPulsing)
+                    .animation(
+                        reduceMotion || !statusStyle.pulses ? nil : .easeInOut(duration: 0.8).repeatForever(autoreverses: true),
+                        value: isPulsing
+                    )
                     .onAppear { isPulsing = statusStyle.pulses }
                     .onChange(of: statusStyle.pulses) { _, pulses in
                         isPulsing = pulses
@@ -1610,6 +1653,7 @@ private struct SidebarSectionHeader: View {
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(.tertiary)
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .offset(y: 0.5)
                 Image(systemName: systemImage)
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
@@ -1619,14 +1663,17 @@ private struct SidebarSectionHeader: View {
                 if let count {
                     Text("\(count)")
                         .font(.system(size: 10, design: .monospaced))
+                        .tabularNumbers()
                         .foregroundStyle(.tertiary)
                 }
                 Spacer()
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .frame(minHeight: 40)
+        .pressable()
         .listRowSeparator(.hidden)
+        .hoverHighlight(radius: DesignRadius.md)
     }
 }
 
@@ -1642,6 +1689,7 @@ private struct GlobalPRRow: View {
         HStack(spacing: 6) {
             Text("#\(item.pr.number)")
                 .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .tabularNumbers()
                 .foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 0) {
                 Text(item.pr.title)
@@ -1657,9 +1705,11 @@ private struct GlobalPRRow: View {
                 .opacity(isHovering ? 1 : 0)
         }
         .padding(.leading, 16)
+        .frame(minHeight: 40)
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
         .onTapGesture(perform: onSelect)
+        .hoverHighlight(radius: DesignRadius.md)
         .help(item.pr.title)
     }
 }
@@ -1685,8 +1735,10 @@ private struct RecentRow: View {
             Spacer()
         }
         .padding(.leading, 16)
+        .frame(minHeight: 40)
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
+        .hoverHighlight(radius: DesignRadius.md)
     }
 }
 
@@ -1703,9 +1755,10 @@ private struct SidebarIconButton: View {
                 .foregroundStyle(isHovering ? .primary : .secondary)
                 .frame(width: 22, height: 22)
                 .background(isHovering ? Color.primary.opacity(0.1) : .clear)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
+                .frame(minWidth: 40, minHeight: 40)
         }
-        .buttonStyle(.borderless)
+        .pressable()
         .onHover { isHovering = $0 }
     }
 }
@@ -1723,9 +1776,10 @@ private struct SidebarBottomButton: View {
                 .foregroundStyle(isHovering ? .primary : .secondary)
                 .frame(width: 32, height: 32)
                 .background(isHovering ? Color.primary.opacity(0.08) : .clear)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                .frame(minWidth: 40, minHeight: 40)
         }
-        .buttonStyle(.borderless)
+        .pressable()
         .onHover { hovering in
             isHovering = hovering
             if hovering {

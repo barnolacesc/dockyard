@@ -77,6 +77,7 @@ private struct FileTreeNodeView: View {
     @Binding var expandedFolders: Set<String>
     var onSelect: (String) -> Void
     var onExpandFolder: (String) -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var isExpanded: Bool {
         expandedFolders.contains(node.id)
@@ -111,14 +112,11 @@ private struct FileTreeNodeView: View {
         let dirStatus = gitStatus.status(for: node.id, isDirectory: true)
 
         return Button {
-            withAnimation(.easeInOut(duration: 0.15)) {
-                if isExpanded {
-                    expandedFolders.remove(node.id)
-                } else {
-                    if !node.isLoaded {
-                        onExpandFolder(node.id)
-                    }
-                    expandedFolders.insert(node.id)
+            if reduceMotion {
+                toggleDirectory()
+            } else {
+                withAnimation(DesignMotion.interaction) {
+                    toggleDirectory()
                 }
             }
         } label: {
@@ -126,8 +124,9 @@ private struct FileTreeNodeView: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.tertiary)
-                    .frame(width: 10)
+                    .frame(width: 40, height: 40)
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .offset(y: 0.5)
                 Image(systemName: "folder.fill")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
@@ -137,14 +136,26 @@ private struct FileTreeNodeView: View {
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
             }
-            .padding(.leading, CGFloat(depth) * 16 + 8)
-            .padding(.vertical, 3)
+            .padding(.leading, CGFloat(depth) * 16)
             .padding(.trailing, 8)
+            .frame(minHeight: 40)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
             .opacity(isIgnored ? 0.5 : 1.0)
         }
-        .buttonStyle(.plain)
+        .pressable()
+        .hoverHighlight(radius: DesignRadius.sm)
+    }
+
+    private func toggleDirectory() {
+        if isExpanded {
+            expandedFolders.remove(node.id)
+        } else {
+            if !node.isLoaded {
+                onExpandFolder(node.id)
+            }
+            expandedFolders.insert(node.id)
+        }
     }
 
     private var fileRow: some View {
@@ -157,7 +168,7 @@ private struct FileTreeNodeView: View {
         } label: {
             HStack(spacing: 4) {
                 Color.clear
-                    .frame(width: 10, height: 1)
+                    .frame(width: 40, height: 40)
                 Image(systemName: icon.symbolName)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
@@ -167,14 +178,18 @@ private struct FileTreeNodeView: View {
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
             }
-            .padding(.leading, CGFloat(depth) * 16 + 8)
-            .padding(.vertical, 3)
+            .padding(.leading, CGFloat(depth) * 16)
             .padding(.trailing, 8)
+            .frame(minHeight: 40)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(isSelected ? Color.accentColor.opacity(0.15) : .clear)
-            .cornerRadius(4)
+            .background(
+                RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous)
+                    .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
+            )
+            .contentShape(Rectangle())
             .opacity(isIgnored ? 0.5 : 1.0)
         }
-        .buttonStyle(.plain)
+        .pressable()
+        .hoverHighlight(radius: DesignRadius.sm)
     }
 }

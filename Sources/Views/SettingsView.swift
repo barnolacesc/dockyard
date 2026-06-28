@@ -32,6 +32,7 @@ struct SettingsView: View {
     @EnvironmentObject private var appEnv: AppEnvironment
     @EnvironmentObject private var updater: Updater
     @EnvironmentObject private var shortcutHints: ShortcutHintController
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showingClearConfirm = false
     #if DEBUG
         private static let cliName = "ff-debug"
@@ -99,9 +100,10 @@ struct SettingsView: View {
                         Image(systemName: "arrow.clockwise")
                             .font(.caption)
                             .rotationEffect(.degrees(appEnv.isDetecting ? 360 : 0))
-                            .animation(appEnv.isDetecting ? .linear(duration: 0.8).repeatForever(autoreverses: false) : .default, value: appEnv.isDetecting)
+                            .frame(width: 40, height: 40)
+                            .animation(appEnv.isDetecting && !reduceMotion ? .linear(duration: 0.8).repeatForever(autoreverses: false) : nil, value: appEnv.isDetecting)
                     }
-                    .buttonStyle(.plain)
+                    .pressable()
                     .disabled(appEnv.isDetecting)
                 }
 
@@ -304,7 +306,7 @@ struct SettingsView: View {
                 if !selectedCodingCLI.supportsAgentTeams {
                     Text("Agent Teams is only available with Claude Code.")
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(DesignColor.statusWarning)
                 }
 
                 SettingToggle(
@@ -317,7 +319,7 @@ struct SettingsView: View {
                 if !selectedCodingCLI.supportsAutoRenameBranch {
                     Text("Auto-rename branch is only available with Claude Code.")
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(DesignColor.statusWarning)
                 }
 
                 Picker("Claude usage plan", selection: $claudePlanTier) {
@@ -347,7 +349,7 @@ struct SettingsView: View {
                 if !appEnv.toolStatus.tmux.isInstalled {
                     Text("Requires tmux to be installed.")
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(DesignColor.statusWarning)
                 }
 
                 Picker("External Terminal", selection: $defaultTerminal) {
@@ -359,6 +361,8 @@ struct SettingsView: View {
                                 Image(nsImage: icon)
                                     .resizable()
                                     .frame(width: 16, height: 16)
+                                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
+                                    .imageOutline(radius: DesignRadius.xs)
                             }
                         }
                         .tag(app.bundleID)
@@ -380,6 +384,8 @@ struct SettingsView: View {
                                 Image(nsImage: icon)
                                     .resizable()
                                     .frame(width: 16, height: 16)
+                                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
+                                    .imageOutline(radius: DesignRadius.xs)
                             }
                         }
                         .tag(app.bundleID)
@@ -408,7 +414,7 @@ struct SettingsView: View {
                                     try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
                                     NSWorkspace.shared.open(url)
                                 }
-                                .buttonStyle(.plain)
+                                .pressable()
                                 .foregroundStyle(Color.accentColor)
                             }
                             .font(.caption)
@@ -435,8 +441,8 @@ struct SettingsView: View {
 
                 LabeledContent("Clear project list") {
                     Button("Clear All...", role: .destructive, action: { showingClearConfirm = true })
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.red)
+                        .pressable()
+                        .foregroundStyle(DesignColor.statusError)
                 }
                 Text("Removes all projects and workstreams from the sidebar. No files or directories on disk will be deleted.")
                     .font(.caption)
@@ -554,9 +560,10 @@ private struct SettingToggle: View {
                 Text(title)
                 Text(description)
                     .font(.caption)
-                    .foregroundStyle(descriptionStyle == .warning ? .orange : .secondary)
+                    .foregroundStyle(descriptionStyle == .warning ? DesignColor.statusWarning : .secondary)
             }
         }
+        .frame(minHeight: 40)
     }
 }
 
@@ -700,7 +707,7 @@ private struct ToolRow: View {
     var body: some View {
         HStack {
             Image(systemName: status.isInstalled ? "checkmark.circle.fill" : "xmark.circle")
-                .foregroundStyle(status.isInstalled ? .green : .secondary)
+                .foregroundStyle(status.isInstalled ? DesignColor.statusSuccess : .secondary)
                 .accessibilityLabel(status.isInstalled ? "Installed" : "Not found")
 
             Text(name)
@@ -709,6 +716,7 @@ private struct ToolRow: View {
             if let version {
                 Text(version)
                     .font(.caption)
+                    .tabularNumbers()
                     .foregroundStyle(.secondary)
             }
 
@@ -719,7 +727,7 @@ private struct ToolRow: View {
                     let isAuth = detail != "Not authenticated"
                     HStack(spacing: 4) {
                         Circle()
-                            .fill(isAuth ? .green : .orange)
+                            .fill(isAuth ? DesignColor.statusSuccess : DesignColor.statusWarning)
                             .frame(width: 6, height: 6)
                             .accessibilityLabel(isAuth ? "Authenticated" : "Not authenticated")
                         Text(detail)
