@@ -82,9 +82,13 @@
 "GitHub" = "GitHub";
 "Coding Agent" = "Kodningsagent";
 "Bypass permission prompts" = "Hoppa över behörighetsförfrågningar";
+"Dangerously skip permissions" = "Hoppa över behörigheter farligt";
 "When enabled, the coding agent will not ask for confirmation before making changes. Use with caution: the agent will be able to edit files, run commands, and make git commits without asking." = "När aktiverad kommer kodningsagenten inte att be om bekräftelse innan ändringar görs. Använd med försiktighet: agenten kan redigera filer, köra kommandon och göra commits utan att fråga.";
+"Starts Coding Agents in their full dangerous mode. Claude Code uses bypassPermissions. Codex bypasses approvals and sandboxing. Use only for trusted workstreams." = "Startar kodningsagenter i deras fulla farliga läge. Claude Code använder bypassPermissions. Codex kringgår godkännanden och sandboxing. Använd bara för betrodda arbetsflöden.";
 "Allow writes outside worktree" = "Tillåt skrivningar utanför worktree";
 "When enabled, the coding agent can modify files anywhere on disk. When disabled, writes are restricted to the worktree directory." = "När aktiverad kan kodningsagenten ändra filer var som helst på disken. När inaktiverad begränsas skrivningar till worktree-katalogen.";
+"Ignored while dangerous permission mode is on." = "Ignoreras medan farligt behörighetsläge är på.";
+"Dangerous permission mode is only wired for Claude Code and Codex." = "Farligt behörighetsläge är bara kopplat för Claude Code och Codex.";
 "External Terminal" = "Extern terminal";
 "Requires tmux to be installed." = "Kräver att tmux är installerat.";
 "URL" = "URL";
@@ -151,6 +155,10 @@
 "Use Default follows the Coding Agent selected in Settings." = "Använd standard följer kodningsagenten som valts i Inställningar.";
 "Used as the default for workstreams that have not chosen their own Coding Agent." = "Används som standard för arbetsflöden som inte har valt en egen kodningsagent.";
 "Opens the Coding Agent without permission prompts for this workstream. Applies the next time the agent starts." = "Öppnar kodningsagenten utan behörighetsförfrågningar för detta arbetsflöde. Tillämpas nästa gång agenten startar.";
+"Saved for the next Coding Agent start." = "Sparat för nästa start av kodningsagenten.";
+"Change live permissions..." = "Ändra livebehörigheter...";
+"Press Shift+Tab in the Agent tab to switch permission modes." = "Tryck på Shift+Tab i Agent-fliken för att byta behörighetsläge.";
+"Live permission controls are not available for this Coding Agent yet." = "Livekontroller för behörigheter är inte tillgängliga för den här kodningsagenten ännu.";
 "Agent Teams" = "Agentteam";
 "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams." = "Aktiverar experimentell multi-agentkoordinering. Agenter kan skapa teammedlemmar, delegera uppgifter och samarbeta mellan arbetsflöden.";
 "Agent Teams is only available with Claude Code." = "Agentteam är bara tillgängligt med Claude Code.";
@@ -260,6 +268,7 @@
 
 /* ProjectSidebar - context menu */
 "New workstream (full permissions)" = "Nytt arbetsflöde (fulla behörigheter)";
+"New workstream (dangerous permissions)" = "Nytt arbetsflöde (farliga behörigheter)";
 "New workstream (with prompts)" = "Nytt arbetsflöde (med bekräftelse)";
 
 /* AddProjectChoiceSheet */

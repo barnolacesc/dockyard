@@ -18,8 +18,11 @@ struct WorkstreamInfoView: View {
     @Binding var runStarted: Bool
     var sessionMode: TerminalSessionMode = .standard
     @ObservedObject var setupRunner: SetupRunner
+    var livePermissionControlAvailable: Bool = false
+    var livePermissionHint: String?
     var onRunSetupInTerminal: () -> Void = {}
     var onConfigGenerated: () -> Void = {}
+    var onChangeLivePermissions: () -> Void = {}
 
     @EnvironmentObject var appEnv: AppEnvironment
     @AppStorage("dockyard.defaultTerminal") private var defaultTerminal: String = ""
@@ -256,11 +259,22 @@ struct WorkstreamInfoView: View {
                         }
                     }
 
-                    Toggle("Bypass permission prompts", isOn: $bypassPermissions)
+                    Toggle("Dangerously skip permissions", isOn: $bypassPermissions)
 
-                    Text("Opens the Coding Agent without permission prompts for this workstream. Applies the next time the agent starts.")
+                    Text("Saved for the next Coding Agent start.")
                         .font(.caption)
                         .foregroundStyle(bypassPermissions ? DesignColor.statusWarning : .secondary)
+
+                    if livePermissionControlAvailable {
+                        Button("Change live permissions...", action: onChangeLivePermissions)
+                            .buttonStyle(.borderless)
+                    }
+
+                    if let livePermissionHint {
+                        Text(livePermissionHint)
+                            .font(.caption)
+                            .foregroundStyle(DesignColor.statusWarning)
+                    }
                 }
 
                 Section {

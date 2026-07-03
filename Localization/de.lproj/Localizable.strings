@@ -82,9 +82,13 @@
 "GitHub" = "GitHub";
 "Coding Agent" = "Coding-Agent";
 "Bypass permission prompts" = "Berechtigungsabfragen überspringen";
+"Dangerously skip permissions" = "Berechtigungen gefährlich überspringen";
 "When enabled, the coding agent will not ask for confirmation before making changes. Use with caution: the agent will be able to edit files, run commands, and make git commits without asking." = "Wenn aktiviert, fragt der Coding-Agent nicht mehr nach Bestätigung, bevor er Änderungen vornimmt. Mit Vorsicht verwenden: Der Agent kann Dateien bearbeiten, Befehle ausführen und Git-Commits erstellen, ohne zu fragen.";
+"Starts Coding Agents in their full dangerous mode. Claude Code uses bypassPermissions. Codex bypasses approvals and sandboxing. Use only for trusted workstreams." = "Startet Coding-Agents in ihrem vollständigen gefährlichen Modus. Claude Code verwendet bypassPermissions. Codex umgeht Genehmigungen und Sandboxing. Nur für vertrauenswürdige Workstreams verwenden.";
 "Allow writes outside worktree" = "Schreibzugriff außerhalb des Worktree erlauben";
 "When enabled, the coding agent can modify files anywhere on disk. When disabled, writes are restricted to the worktree directory." = "Wenn aktiviert, kann der Coding-Agent Dateien überall auf der Festplatte ändern. Wenn deaktiviert, sind Schreibzugriffe auf das Worktree-Verzeichnis beschränkt.";
+"Ignored while dangerous permission mode is on." = "Wird ignoriert, solange der gefährliche Berechtigungsmodus aktiv ist.";
+"Dangerous permission mode is only wired for Claude Code and Codex." = "Der gefährliche Berechtigungsmodus ist nur für Claude Code und Codex verdrahtet.";
 "External Terminal" = "Externes Terminal";
 "Requires tmux to be installed." = "Erfordert eine tmux-Installation.";
 "URL" = "URL";
@@ -151,6 +155,10 @@
 "Use Default follows the Coding Agent selected in Settings." = "Standard verwenden folgt dem in den Einstellungen ausgewählten Coding-Agent.";
 "Used as the default for workstreams that have not chosen their own Coding Agent." = "Wird als Standard für Workstreams verwendet, die keinen eigenen Coding-Agent gewählt haben.";
 "Opens the Coding Agent without permission prompts for this workstream. Applies the next time the agent starts." = "Öffnet den Coding-Agent ohne Berechtigungsabfragen für diesen Workstream. Wird beim nächsten Start des Agents angewendet.";
+"Saved for the next Coding Agent start." = "Für den nächsten Start des Coding-Agents gespeichert.";
+"Change live permissions..." = "Live-Berechtigungen ändern...";
+"Press Shift+Tab in the Agent tab to switch permission modes." = "Drücke Shift+Tab im Agent-Tab, um den Berechtigungsmodus zu wechseln.";
+"Live permission controls are not available for this Coding Agent yet." = "Live-Berechtigungssteuerungen sind für diesen Coding-Agent noch nicht verfügbar.";
 "Agent Teams" = "Agent-Teams";
 "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams." = "Aktiviert experimentelle Multi-Agent-Koordination. Agenten können Teammitglieder erstellen, Aufgaben delegieren und workstream-übergreifend zusammenarbeiten.";
 "Auto-rename branch" = "Branch automatisch umbenennen";
@@ -255,6 +263,7 @@
 
 /* ProjectSidebar - context menu */
 "New workstream (full permissions)" = "Neuer Workstream (volle Berechtigungen)";
+"New workstream (dangerous permissions)" = "Neuer Workstream (gefährliche Berechtigungen)";
 "New workstream (with prompts)" = "Neuer Workstream (mit Abfragen)";
 
 /* AddProjectChoiceSheet */

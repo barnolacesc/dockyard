@@ -96,15 +96,15 @@ A SwiftUI `Menu` whose primary action label changes based on repo state, with se
 | **Close PR** | `gh pr close <branch> --comment 'Closed from Dockyard'`. No LLM. |
 | **Open #N** | Pure browser link: `NSWorkspace.shared.open(pr.url)`. |
 
-Per-CLI quick-action flags (`CodingCLICommandBuilder.buildQuickActionCommand`, `CommandBuilder.swift:336-381`):
+LLM quick actions are sent to the live Agent tab, so they run under whatever permission mode the current Coding Agent session is using:
 
-- **Claude:** `claude -p "<prompt>" --output-format json --continue --fork-session --no-session-persistence --dangerously-skip-permissions`. Success is parsed from JSON's `is_error` field.
-- **Codex:** `codex exec --json --dangerously-bypass-approvals-and-sandbox -C <dir> "<prompt>"`. Success is the exit code.
-- **opencode / gemini:** `<cli> "<prompt>"`. Success is the exit code.
+- **Commit:** inserts the commit prompt into the Agent tab.
+- **Create PR:** inserts the pull-request prompt into the Agent tab.
+- **Close PR:** still runs `gh pr close`; it does not use the Coding Agent.
 
 #### Disabled states (`disabledReason`, line 1505-1518)
 
-- LLM actions (Commit, Create PR) require the Coding CLI to be installed **and** the "Bypass permission prompts" setting to be on. If either is missing the action is disabled and the tooltip explains why.
+- LLM actions (Commit, Create PR) require the Coding CLI to be installed.
 - Close PR requires `gh` to be installed.
 
 #### Visual states during execution
