@@ -1125,7 +1125,7 @@ private struct ProjectHeaderRow: View {
                         .accessibilityLabel("Add workstream to \(project.name)")
                         .contextMenu {
                             Button(action: onAddWithPermissions) {
-                                Label("New workstream (full permissions)", systemImage: "lock.open")
+                                Label("New workstream (dangerous permissions)", systemImage: "lock.open")
                             }
                             Button(action: onAddWithoutPermissions) {
                                 Label("New workstream (with prompts)", systemImage: "lock.shield")

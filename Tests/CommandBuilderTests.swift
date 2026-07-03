@@ -334,7 +334,7 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertEqual(status.resolvedCodingCLI(storedValue: ""), .gemini)
     }
 
-    func testBuildCodexAgentCommandUsesResumeLastAndSandbox() {
+    func testBuildCodexAgentCommandBypassUsesDangerousFullAccessFlag() {
         let workstreamID = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
         let command = CodingCLICommandBuilder.buildAgentCommand(
             cli: .codex,
@@ -354,14 +354,116 @@ final class CommandBuilderTests: XCTestCase {
 
         XCTAssertEqual(
             command.intermediateCommands[0],
-            "/usr/local/bin/codex resume --last -C /tmp/worktree --sandbox workspace-write --ask-for-approval never"
+            "/usr/local/bin/codex resume --last -C /tmp/worktree --dangerously-bypass-approvals-and-sandbox"
         )
         XCTAssertEqual(
             command.intermediateCommands[1],
-            "/usr/local/bin/codex -C /tmp/worktree --sandbox workspace-write --ask-for-approval never"
+            "/usr/local/bin/codex -C /tmp/worktree --dangerously-bypass-approvals-and-sandbox"
         )
+        XCTAssertFalse(command.intermediateCommands[0].contains("--sandbox"))
+        XCTAssertFalse(command.intermediateCommands[0].contains("--ask-for-approval"))
         XCTAssertTrue(command.finalCommand.contains("codex resume --last"))
         XCTAssertTrue(command.finalCommand.contains("Starting new session..."))
+    }
+
+    func testBuildCodexAgentCommandWithoutBypassUsesPromptedWorkspaceSandbox() {
+        let workstreamID = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .codex,
+            cliPath: "/usr/local/bin/codex",
+            workingDirectory: "/tmp/worktree",
+            projectName: "dockyard",
+            workstreamName: "switch-cli",
+            workstreamID: workstreamID,
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: false,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: false
+        )
+
+        XCTAssertEqual(
+            command.intermediateCommands[0],
+            "/usr/local/bin/codex resume --last -C /tmp/worktree --sandbox workspace-write --ask-for-approval on-request"
+        )
+        XCTAssertEqual(
+            command.intermediateCommands[1],
+            "/usr/local/bin/codex -C /tmp/worktree --sandbox workspace-write --ask-for-approval on-request"
+        )
+    }
+
+    func testBuildCodexAgentCommandWithoutBypassCanAllowOutsideWorktreeWithPrompts() {
+        let workstreamID = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .codex,
+            cliPath: "/usr/local/bin/codex",
+            workingDirectory: "/tmp/worktree",
+            projectName: "dockyard",
+            workstreamName: "switch-cli",
+            workstreamID: workstreamID,
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: true,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: false
+        )
+
+        XCTAssertTrue(command.intermediateCommands[0].contains("--sandbox danger-full-access"))
+        XCTAssertTrue(command.intermediateCommands[0].contains("--ask-for-approval on-request"))
+        XCTAssertFalse(command.intermediateCommands[0].contains("--dangerously-bypass-approvals-and-sandbox"))
+    }
+
+    func testBuildClaudeAgentCommandWithoutBypassAllowsLiveDangerousModeSwitch() {
+        let id = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .claude,
+            cliPath: "/usr/local/bin/claude",
+            workingDirectory: "/tmp/worktree",
+            projectName: "demo",
+            workstreamName: "ws",
+            workstreamID: id,
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: true,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: true,
+            hookInvocation: nil
+        )
+
+        XCTAssertTrue(command.intermediateCommands[0].contains("--allow-dangerously-skip-permissions"))
+        XCTAssertTrue(command.intermediateCommands[1].contains("--allow-dangerously-skip-permissions"))
+        XCTAssertFalse(command.intermediateCommands[0].contains("--permission-mode bypassPermissions"))
+    }
+
+    func testBuildClaudeAgentCommandBypassStartsInBypassPermissionMode() {
+        let id = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .claude,
+            cliPath: "/usr/local/bin/claude",
+            workingDirectory: "/tmp/worktree",
+            projectName: "demo",
+            workstreamName: "ws",
+            workstreamID: id,
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: true,
+            allowOutsideWorktree: true,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: true,
+            hookInvocation: nil
+        )
+
+        XCTAssertTrue(command.intermediateCommands[0].contains("--permission-mode bypassPermissions"))
+        XCTAssertTrue(command.intermediateCommands[1].contains("--permission-mode bypassPermissions"))
+        XCTAssertFalse(command.intermediateCommands[0].contains("--allow-dangerously-skip-permissions"))
+        XCTAssertFalse(command.intermediateCommands[0].contains("--dangerously-skip-permissions"))
     }
 
     func testBuildClaudeAgentCommandIncludesSettingsFlag() {
@@ -448,8 +550,9 @@ final class CommandBuilderTests: XCTestCase {
             XCTAssertTrue(builtCommand.contains("--config 'hooks.PermissionRequest="), "got: \(builtCommand)")
             XCTAssertTrue(builtCommand.contains("--config 'hooks.Stop="), "got: \(builtCommand)")
             XCTAssertTrue(builtCommand.contains("--dangerously-bypass-hook-trust"), "got: \(builtCommand)")
-            XCTAssertTrue(builtCommand.contains("--sandbox workspace-write"), "got: \(builtCommand)")
-            XCTAssertTrue(builtCommand.contains("--ask-for-approval never"), "got: \(builtCommand)")
+            XCTAssertTrue(builtCommand.contains("--dangerously-bypass-approvals-and-sandbox"), "got: \(builtCommand)")
+            XCTAssertFalse(builtCommand.contains("--sandbox"), "got: \(builtCommand)")
+            XCTAssertFalse(builtCommand.contains("--ask-for-approval"), "got: \(builtCommand)")
         }
     }
 

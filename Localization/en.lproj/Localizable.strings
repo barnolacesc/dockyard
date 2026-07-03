@@ -82,9 +82,13 @@
 "GitHub" = "GitHub";
 "Coding Agent" = "Coding Agent";
 "Bypass permission prompts" = "Bypass permission prompts";
+"Dangerously skip permissions" = "Dangerously skip permissions";
 "When enabled, the coding agent will not ask for confirmation before making changes. Use with caution: the agent will be able to edit files, run commands, and make git commits without asking." = "When enabled, the coding agent will not ask for confirmation before making changes. Use with caution: the agent will be able to edit files, run commands, and make git commits without asking.";
+"Starts Coding Agents in their full dangerous mode. Claude Code uses bypassPermissions. Codex bypasses approvals and sandboxing. Use only for trusted workstreams." = "Starts Coding Agents in their full dangerous mode. Claude Code uses bypassPermissions. Codex bypasses approvals and sandboxing. Use only for trusted workstreams.";
 "Allow writes outside worktree" = "Allow writes outside worktree";
 "When enabled, the coding agent can modify files anywhere on disk. When disabled, writes are restricted to the worktree directory." = "When enabled, the coding agent can modify files anywhere on disk. When disabled, writes are restricted to the worktree directory.";
+"Ignored while dangerous permission mode is on." = "Ignored while dangerous permission mode is on.";
+"Dangerous permission mode is only wired for Claude Code and Codex." = "Dangerous permission mode is only wired for Claude Code and Codex.";
 "External Terminal" = "External Terminal";
 "Requires tmux to be installed." = "Requires tmux to be installed.";
 "URL" = "URL";
@@ -150,6 +154,10 @@
 "Use Default (%@)" = "Use Default (%@)";
 "Use Default follows the Coding Agent selected in Settings." = "Use Default follows the Coding Agent selected in Settings.";
 "Opens the Coding Agent without permission prompts for this workstream. Applies the next time the agent starts." = "Opens the Coding Agent without permission prompts for this workstream. Applies the next time the agent starts.";
+"Saved for the next Coding Agent start." = "Saved for the next Coding Agent start.";
+"Change live permissions..." = "Change live permissions...";
+"Press Shift+Tab in the Agent tab to switch permission modes." = "Press Shift+Tab in the Agent tab to switch permission modes.";
+"Live permission controls are not available for this Coding Agent yet." = "Live permission controls are not available for this Coding Agent yet.";
 "Used as the default for workstreams that have not chosen their own Coding Agent." = "Used as the default for workstreams that have not chosen their own Coding Agent.";
 "Agent Teams" = "Agent Teams";
 "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams." = "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams.";
@@ -260,6 +268,7 @@
 
 /* ProjectSidebar - context menu */
 "New workstream (full permissions)" = "New workstream (full permissions)";
+"New workstream (dangerous permissions)" = "New workstream (dangerous permissions)";
 "New workstream (with prompts)" = "New workstream (with prompts)";
 
 /* AddProjectChoiceSheet */

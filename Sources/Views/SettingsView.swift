@@ -283,18 +283,25 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
 
                 SettingToggle(
-                    "Bypass permission prompts",
+                    "Dangerously skip permissions",
                     isOn: $bypassPermissions,
-                    description: "When enabled, the coding agent will not ask for confirmation before making changes. Use with caution: the agent will be able to edit files, run commands, and make git commits without asking.",
+                    description: "Starts Coding Agents in their full dangerous mode. Claude Code uses bypassPermissions. Codex bypasses approvals and sandboxing. Use only for trusted workstreams.",
                     descriptionStyle: bypassPermissions ? .warning : .secondary
                 )
 
                 SettingToggle(
                     "Allow writes outside worktree",
                     isOn: $allowOutsideWorktree,
-                    description: "When enabled, the coding agent can modify files anywhere on disk. When disabled, writes are restricted to the worktree directory.",
+                    description: bypassPermissions ? "Ignored while dangerous permission mode is on." : "When enabled, the coding agent can modify files anywhere on disk. When disabled, writes are restricted to the worktree directory.",
                     descriptionStyle: allowOutsideWorktree ? .warning : .secondary
                 )
+                .disabled(bypassPermissions)
+
+                if bypassPermissions, selectedCodingCLI == .opencode || selectedCodingCLI == .gemini {
+                    Text("Dangerous permission mode is only wired for Claude Code and Codex.")
+                        .font(.caption)
+                        .foregroundStyle(DesignColor.statusWarning)
+                }
 
                 SettingToggle(
                     "Agent Teams",
@@ -557,8 +564,8 @@ private struct SettingToggle: View {
     var body: some View {
         Toggle(isOn: $isOn) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                Text(description)
+                Text(LocalizedStringKey(title))
+                Text(LocalizedStringKey(description))
                     .font(.caption)
                     .foregroundStyle(descriptionStyle == .warning ? DesignColor.statusWarning : .secondary)
             }

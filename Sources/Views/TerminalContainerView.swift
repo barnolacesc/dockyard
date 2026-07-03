@@ -306,6 +306,7 @@ struct TerminalContainerView: View {
     @State private var runStarted = false
     @State private var workspaceStarted = false
     @State private var defaultBranch = "main"
+    @State private var livePermissionHint: String?
     init(
         workstreamID: UUID,
         workingDirectory: String,
@@ -352,6 +353,10 @@ struct TerminalContainerView: View {
 
     private var selectedCodingCLIPath: String? {
         appEnv.toolStatus.path(for: selectedCodingCLI)
+    }
+
+    private var supportsLivePermissionControl: Bool {
+        selectedCodingCLI == .claude || selectedCodingCLI == .codex
     }
 
     private var agentID: UUID {
@@ -609,12 +614,17 @@ struct TerminalContainerView: View {
                 runStarted: $runStarted,
                 sessionMode: sessionMode,
                 setupRunner: setupRunner,
+                livePermissionControlAvailable: supportsLivePermissionControl,
+                livePermissionHint: livePermissionHint,
                 onRunSetupInTerminal: { runSetupInNewTerminal() },
                 onConfigGenerated: {
                     scriptConfig = ScriptConfig.load(from: workingDirectory, fallbackDirectory: projectDirectory)
                     if scriptConfig.hasAnyScript, !tabs.contains(.info) {
                         tabs.insert(.info, at: 0)
                     }
+                },
+                onChangeLivePermissions: {
+                    openLivePermissionControl()
                 }
             )
         case .agent:
@@ -699,6 +709,7 @@ struct TerminalContainerView: View {
             .onChange(of: allowOutsideWorktree) { rebuildAgentCommand() }
             .onChange(of: workstreamName) { rebuildAgentCommand() }
             .onChange(of: effectiveCodingCLIStoredValue) {
+                livePermissionHint = nil
                 surfaceCache.removeSurface(for: agentID)
                 rebuildAgentCommand()
                 preloadSurfaces()
@@ -1387,6 +1398,19 @@ struct TerminalContainerView: View {
             defaultBranch: defaultBranch,
             scriptSource: scriptConfig.source
         )
+    }
+
+    private func openLivePermissionControl() {
+        activeTab = .agent
+        switch selectedCodingCLI {
+        case .codex:
+            surfaceCache.sendText(to: agentID, text: "/permissions\r")
+            livePermissionHint = nil
+        case .claude:
+            livePermissionHint = NSLocalizedString("Press Shift+Tab in the Agent tab to switch permission modes.", comment: "")
+        case .opencode, .gemini:
+            livePermissionHint = NSLocalizedString("Live permission controls are not available for this Coding Agent yet.", comment: "")
+        }
     }
 
     private func terminalLoadingView(message: String) -> some View {

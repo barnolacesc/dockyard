@@ -353,9 +353,7 @@ enum CodingCLICommandBuilder {
             resume.flag("--teammate-mode")
             resume.arg("tmux")
         }
-        if bypassPermissions {
-            resume.flag("--dangerously-skip-permissions")
-        }
+        applyClaudePermissionOptions(to: &resume, bypassPermissions: bypassPermissions)
         if let combinedSystemPrompt {
             resume.option("--append-system-prompt", combinedSystemPrompt)
         }
@@ -372,9 +370,7 @@ enum CodingCLICommandBuilder {
             fresh.flag("--teammate-mode")
             fresh.arg("tmux")
         }
-        if bypassPermissions {
-            fresh.flag("--dangerously-skip-permissions")
-        }
+        applyClaudePermissionOptions(to: &fresh, bypassPermissions: bypassPermissions)
         if let combinedSystemPrompt {
             fresh.option("--append-system-prompt", combinedSystemPrompt)
         }
@@ -450,8 +446,35 @@ enum CodingCLICommandBuilder {
         allowOutsideWorktree: Bool
     ) {
         command.option("-C", workingDirectory)
-        command.option("--sandbox", allowOutsideWorktree ? "danger-full-access" : "workspace-write")
-        command.option("--ask-for-approval", bypassPermissions ? "never" : "on-request")
+        applyCodexPermissionOptions(
+            to: &command,
+            bypassPermissions: bypassPermissions,
+            allowOutsideWorktree: allowOutsideWorktree
+        )
+    }
+
+    private static func applyClaudePermissionOptions(
+        to command: inout CommandBuilder,
+        bypassPermissions: Bool
+    ) {
+        if bypassPermissions {
+            command.option("--permission-mode", "bypassPermissions")
+        } else {
+            command.flag("--allow-dangerously-skip-permissions")
+        }
+    }
+
+    private static func applyCodexPermissionOptions(
+        to command: inout CommandBuilder,
+        bypassPermissions: Bool,
+        allowOutsideWorktree: Bool
+    ) {
+        if bypassPermissions {
+            command.flag("--dangerously-bypass-approvals-and-sandbox")
+        } else {
+            command.option("--sandbox", allowOutsideWorktree ? "danger-full-access" : "workspace-write")
+            command.option("--ask-for-approval", "on-request")
+        }
     }
 
     private static func applyCodexHookOptions(

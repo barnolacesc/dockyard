@@ -38,11 +38,15 @@ prevent session inheritance from a parent tmux.
 
 ### 1. Coding Agent (`.agent` tab)
 
-`buildClaudeCommand()` in TerminalContainerView constructs the command:
+`CodingCLICommandBuilder.buildAgentCommand()` constructs the command:
 
-- `claude --resume <sessionID>` (or `--session-id` for a fresh session)
-- `--teammate-mode tmux` if tmux mode is enabled
-- `--dangerously-skip-permissions` if bypass flag is set
+- Claude: `claude --resume <sessionID>` (or `--session-id` for a fresh session)
+- Claude: `--teammate-mode tmux` if tmux mode is enabled
+- Claude: `--permission-mode bypassPermissions` when dangerous permissions are enabled
+- Claude: `--allow-dangerously-skip-permissions` otherwise, so users can switch modes in the live session
+- Codex: `codex resume --last` (or fresh `codex`) with `-C <dir>`
+- Codex: `--dangerously-bypass-approvals-and-sandbox` when dangerous permissions are enabled
+- Codex: explicit `--sandbox <mode> --ask-for-approval on-request` otherwise
 - `CommandBuilder.withFallback()` provides graceful fallback from resume to fresh
 
 ### 2. Setup Script

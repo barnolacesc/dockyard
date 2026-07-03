@@ -82,9 +82,13 @@
 "GitHub" = "GitHub";
 "Coding Agent" = "Agent de codi";
 "Bypass permission prompts" = "Ometre les sol·licituds de permisos";
+"Dangerously skip permissions" = "Ometre permisos perillosament";
 "When enabled, the coding agent will not ask for confirmation before making changes. Use with caution: the agent will be able to edit files, run commands, and make git commits without asking." = "Quan està activat, l'agent de codi no demanarà confirmació abans de fer canvis. Utilitza amb precaució: l'agent podrà editar fitxers, executar ordres i fer commits sense preguntar.";
+"Starts Coding Agents in their full dangerous mode. Claude Code uses bypassPermissions. Codex bypasses approvals and sandboxing. Use only for trusted workstreams." = "Inicia els agents de codi en el seu mode perillós complet. Claude Code fa servir bypassPermissions. Codex omet aprovacions i sandboxing. Fes-ho servir només en workstreams de confiança.";
 "Allow writes outside worktree" = "Permetre escriptures fora del worktree";
 "When enabled, the coding agent can modify files anywhere on disk. When disabled, writes are restricted to the worktree directory." = "Quan està activat, l'agent de codi pot modificar fitxers a qualsevol lloc del disc. Quan està desactivat, les escriptures es restringeixen al directori del worktree.";
+"Ignored while dangerous permission mode is on." = "S'ignora mentre el mode de permisos perillós està activat.";
+"Dangerous permission mode is only wired for Claude Code and Codex." = "El mode de permisos perillós només està connectat per a Claude Code i Codex.";
 "External Terminal" = "Terminal extern";
 "Requires tmux to be installed." = "Requereix tmux instal·lat.";
 "URL" = "URL";
@@ -151,6 +155,10 @@
 "Use Default follows the Coding Agent selected in Settings." = "Utilitza el valor per defecte segueix l'agent de codi seleccionat a Configuració.";
 "Used as the default for workstreams that have not chosen their own Coding Agent." = "S'utilitza com a valor per defecte per als fluxos de treball que no han triat el seu propi agent de codi.";
 "Opens the Coding Agent without permission prompts for this workstream. Applies the next time the agent starts." = "Obre l'agent de codi sense sol·licituds de permisos per a aquest flux de treball. S'aplica la pròxima vegada que s'iniciï l'agent.";
+"Saved for the next Coding Agent start." = "Desat per al pròxim inici de l'agent de codi.";
+"Change live permissions..." = "Canvia els permisos en directe...";
+"Press Shift+Tab in the Agent tab to switch permission modes." = "Prem Shift+Tab a la pestanya Agent per canviar de mode de permisos.";
+"Live permission controls are not available for this Coding Agent yet." = "Els controls de permisos en directe encara no estan disponibles per a aquest agent de codi.";
 "Agent Teams" = "Equips d'agents";
 "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams." = "Activa la coordinació experimental multi-agent. Els agents poden crear companys d'equip, delegar tasques i col·laborar entre fluxos de treball.";
 "Agent Teams is only available with Claude Code." = "Els equips d'agents només estan disponibles amb Claude Code.";
@@ -260,6 +268,7 @@
 
 /* ProjectSidebar - context menu */
 "New workstream (full permissions)" = "Nou flux de treball (permisos complets)";
+"New workstream (dangerous permissions)" = "Nou flux de treball (permisos perillosos)";
 "New workstream (with prompts)" = "Nou flux de treball (amb confirmació)";
 
 /* AddProjectChoiceSheet */
