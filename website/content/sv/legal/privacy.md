@@ -6,7 +6,7 @@ translationKey: privacy
 
 ## Kortversionen
 
-Dockyard samlar inte in personlig data. Din kod stannar på din dator. Vi samlar in anonyma kraschrapporter för att förbättra stabiliteten.
+Dockyard samlar inte in personlig data. Din kod stannar på din dator. Ingen analys, ingen telemetri, inga kraschrapporter.
 
 ## Applikationen
 
@@ -32,10 +32,10 @@ Dockyard agerar inte som mellanhand för dessa tjänster. Dina API-nycklar och i
 
 ## Denna webbplats
 
-Dockyards webbplats (francesc.barnola.net) använder [Umami](https://umami.is/) för integritetsvänlig analys. Umami använder inga cookies, samlar inte in personuppgifter och uppfyller GDPR, CCPA och PECR. All data är aggregerad och anonym.
+Dockyards webbplats (francesc.barnola.net) använder inga analysverktyg, cookies, spårningsskript eller annonsnätverk av något slag.
 
 Inga andra spårningsskript, annonsnätverk eller tredjepartsanalys används på denna webbplats.
 
 ## Kontakt
 
-För integritetsfrågor, kontakta [David Poblador i Garcia](https://davidpoblador.com).
+För integritetsfrågor, kontakta [barnolacesc](https://github.com/barnolacesc).

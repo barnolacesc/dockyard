@@ -40,8 +40,6 @@ defaultContentLanguage = "en"
   ogImage = "/img/og-image.png"
   githubURL = "https://github.com/barnolacesc/dockyard"
   downloadURL = "https://github.com/barnolacesc/dockyard/releases/latest/download/Dockyard.dmg"
-  analyticsID = "81a482e5-52a9-467e-87f8-28c38f2d7e9e"
-  analyticsSrc = "https://meta.francesc.barnola.net/meta.js"
 
 [module]
   [[module.mounts]]

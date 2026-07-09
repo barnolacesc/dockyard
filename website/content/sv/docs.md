@@ -7,7 +7,7 @@ layout: docs
 
 ## Komma igång {#getting-started}
 
-Vi skriver 2026. Vi bygger på tmux (2007), git worktrees (2015), terminals (1978, VT100-eran, när till och med [David](https://davidpoblador.com) bara var ett framtida projekt), och GPU-rendering (tack [Mitchell](https://mitchellh.com) för [Ghostty](https://ghostty.org)). Gamla verktyg, nya trick.
+Vi skriver 2026. Vi bygger på tmux (2007), git worktrees (2015), terminals (1978, VT100-eran, när till och med [Francesc](https://github.com/barnolacesc) bara var ett framtida projekt), och GPU-rendering (tack [Mitchell](https://mitchellh.com) för [Ghostty](https://ghostty.org)). Gamla verktyg, nya trick.
 
 Du behöver två saker: en Mac och en vag känsla av att ditt nuvarande arbetsflöde kunde vara bättre.
 
@@ -102,7 +102,7 @@ Quick actions kör engångs-Claude-uppgifter från sidebar:
 - **Create PR** — skapar en pull request med AI-genererad titel och beskrivning
 - **Close PR** — stänger PRn
 
-Dessa körs som bakgrunds-`claude -p`-anrop. Aktivera **Quick action debug mode** i inställningarna om du vill veta hur korven görs. Lita på oss, [David](https://davidpoblador.com) lade ner mer tid än han vill erkänna på att debugga konstiga beteenden där inne.
+Dessa körs som bakgrunds-`claude -p`-anrop. Aktivera **Quick action debug mode** i inställningarna om du vill veta hur korven görs. Lita på oss, [Francesc](https://github.com/barnolacesc) lade ner mer tid än han vill erkänna på att debugga konstiga beteenden där inne.
 
 ---
 
@@ -236,7 +236,7 @@ Varje workstream får en deterministisk port baserad på en hash av worktree-sö
 
 #### .env symlink {#env-symlink}
 
-När aktiverat (Settings > General) skapar Dockyard symlinks för `.env` och `.env.local` från ditt huvudrepo till varje worktree. Så dina hemligheter följer med utan kopiera-klistra. På tal om hemligheter, har vi berättat om [Vaultuner](https://vaultuner.barnolacesc.com)?
+När aktiverat (Settings > General) skapar Dockyard symlinks för `.env` och `.env.local` från ditt huvudrepo till varje worktree. Så dina hemligheter följer med utan kopiera-klistra.
 
 ### Inställningar {#settings}
 
@@ -266,7 +266,6 @@ När aktiverat (Settings > General) skapar Dockyard symlinks för `.env` och `.e
 
 #### Avancerat {#advanced}
 
-- **Usage analytics** — integritetsvänlig telemetry (bara appversion, OS, locale)
 - **Detailed logging** — loggar script-utdata för felsökning
 - **Quick action debug mode** — visar rå utdata från quick actions
 - **Bleeding edge updates** — välj att ta emot förhandsversioner

@@ -7,7 +7,7 @@ layout: docs
 
 ## Primeros pasos {#getting-started}
 
-Estamos en 2026. Construimos sobre tmux (2007), git worktrees (2015), terminals (1978, la era del VT100, cuando incluso [David](https://davidpoblador.com) era solo un proyecto de futuro), y renderizado por GPU (gracias [Mitchell](https://mitchellh.com) por [Ghostty](https://ghostty.org)). Herramientas viejas, trucos nuevos.
+Estamos en 2026. Construimos sobre tmux (2007), git worktrees (2015), terminals (1978, la era del VT100, cuando incluso [Francesc](https://github.com/barnolacesc) era solo un proyecto de futuro), y renderizado por GPU (gracias [Mitchell](https://mitchellh.com) por [Ghostty](https://ghostty.org)). Herramientas viejas, trucos nuevos.
 
 Necesitas dos cosas: un Mac y la vaga sensación de que tu flujo de trabajo podría ser mejor.
 
@@ -102,7 +102,7 @@ Las quick actions ejecutan tareas puntuales de Claude desde el sidebar:
 - **Create PR** — crea un pull request con título y descripción generados por IA
 - **Close PR** — cierra el PR
 
-Se ejecutan como llamadas `claude -p` en segundo plano. Activa **Quick action debug mode** en ajustes si quieres saber cómo se hace la salchicha. Confía en nosotros, [David](https://davidpoblador.com) pasó más tiempo del que puede admitir depurando comportamientos extraños ahí dentro.
+Se ejecutan como llamadas `claude -p` en segundo plano. Activa **Quick action debug mode** en ajustes si quieres saber cómo se hace la salchicha. Confía en nosotros, [Francesc](https://github.com/barnolacesc) pasó más tiempo del que puede admitir depurando comportamientos extraños ahí dentro.
 
 ---
 
@@ -236,7 +236,7 @@ Cada workstream recibe un port determinista basado en un hash de la ruta del wor
 
 #### .env symlink {#env-symlink}
 
-Cuando está habilitado (Settings > General), Dockyard hace symlink de `.env` y `.env.local` de tu repositorio principal a cada worktree. Así tus secretos te siguen sin copiar y pegar. Hablando de secretos, ¿te hemos hablado de [Vaultuner](https://vaultuner.barnolacesc.com)?
+Cuando está habilitado (Settings > General), Dockyard hace symlink de `.env` y `.env.local` de tu repositorio principal a cada worktree. Así tus secretos te siguen sin copiar y pegar.
 
 ### Ajustes {#settings}
 
@@ -266,7 +266,6 @@ Abre con **⌘,** o haz clic en el icono del engranaje.
 
 #### Advanced {#advanced}
 
-- **Usage analytics** — telemetry respetuosa con la privacidad (solo versión de la app, OS y locale)
 - **Detailed logging** — registra la salida de scripts para depuración
 - **Quick action debug mode** — muestra la salida cruda de las quick actions
 - **Bleeding edge updates** — recibir builds pre-release

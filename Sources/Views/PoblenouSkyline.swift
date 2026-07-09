@@ -1,5 +1,5 @@
 // ABOUTME: The Poblenou skyline as a SwiftUI shape.
-// ABOUTME: Rendered from the barnolacesc.com SVG path data.
+// ABOUTME: Rendered from the SVG path data in Resources/poblenou-skyline.svg.
 
 import SwiftUI
 

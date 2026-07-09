@@ -196,18 +196,8 @@ other = "Byggd med ❤️ i Poblenou, Barcelona 🇪🇺"
 other = "Dockyard är gratis och open source."
 [sponsor_intro_2]
 other = "Ditt stöd hjälper till att finansiera fortsatt utveckling och nya funktioner."
-[sponsor_financial]
-other = "Ekonomiskt stöd"
 [sponsor_other]
 other = "Andra sätt att stödja"
-[sponsor_github]
-other = "GitHub Sponsors"
-[sponsor_github_desc]
-other = "Återkommande eller engångssponsring via GitHub."
-[sponsor_coffee]
-other = "Buy Me a Coffee"
-[sponsor_coffee_desc]
-other = "Snabb engångsbidrag."
 [sponsor_star]
 other = "Ge en stjärna på GitHub"
 [sponsor_star_desc]

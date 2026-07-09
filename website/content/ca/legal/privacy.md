@@ -6,7 +6,7 @@ translationKey: privacy
 
 ## La versió curta
 
-Dockyard no recull dades personals. El teu codi es queda al teu ordinador. Recollim informes d'error anònims per millorar l'estabilitat.
+Dockyard no recull dades personals. El teu codi es queda al teu ordinador. Sense analítiques, sense telemetria, sense informes d'error.
 
 ## L'aplicació
 
@@ -32,10 +32,10 @@ Dockyard no actua com a intermediari per a aquests serveis. Les teves claus d'AP
 
 ## Aquest lloc web
 
-El lloc web de Dockyard (francesc.barnola.net) utilitza [Umami](https://umami.is/) per a analítiques respectuoses amb la privacitat. Umami no utilitza galetes, no recull dades personals i compleix el RGPD, CCPA i PECR. Totes les dades són agregades i anònimes.
+El lloc web de Dockyard (francesc.barnola.net) no utilitza analítiques, galetes, scripts de seguiment ni xarxes publicitàries de cap tipus.
 
 No s'utilitzen altres scripts de seguiment, xarxes publicitàries ni analítiques de tercers en aquest lloc web.
 
 ## Contacte
 
-Per a preguntes relacionades amb la privacitat, contacta amb [David Poblador i Garcia](https://davidpoblador.com).
+Per a preguntes relacionades amb la privacitat, contacta amb [barnolacesc](https://github.com/barnolacesc).

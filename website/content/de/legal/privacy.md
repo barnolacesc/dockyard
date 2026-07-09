@@ -6,7 +6,7 @@ translationKey: privacy
 
 ## Kurzfassung
 
-Dockyard sammelt keine personenbezogenen Daten. Dein Code bleibt auf deinem Rechner. Wir sammeln anonyme Absturzberichte zur Verbesserung der Stabilität.
+Dockyard sammelt keine personenbezogenen Daten. Dein Code bleibt auf deinem Rechner. Keine Analysen, keine Telemetrie, keine Absturzberichte.
 
 ## Die Anwendung
 
@@ -31,10 +31,10 @@ Dockyard agiert nicht als Vermittler für diese Dienste. Deine API-Schlüssel un
 
 ## Diese Website
 
-Die Dockyard-Website (francesc.barnola.net) verwendet [Umami](https://umami.is/) für datenschutzfreundliche Analyse. Umami verwendet keine Cookies, sammelt keine personenbezogenen Daten und entspricht DSGVO, CCPA und PECR. Alle Daten sind aggregiert und anonym.
+Die Dockyard-Website (francesc.barnola.net) verwendet keinerlei Analyse-Tools, Cookies, Tracking-Skripte oder Werbenetzwerke.
 
 Keine weiteren Tracking-Skripte, Werbenetzwerke oder Drittanbieter-Analysen werden auf dieser Website verwendet.
 
 ## Kontakt
 
-Für datenschutzbezogene Fragen kontaktiere [David Poblador i Garcia](https://davidpoblador.com).
+Für datenschutzbezogene Fragen kontaktiere [barnolacesc](https://github.com/barnolacesc).

@@ -7,7 +7,7 @@ layout: docs
 
 ## Getting Started
 
-The year is 2026. We build on tmux (2007), git worktrees (2015), terminals (1978, the VT100 era, when even [David](https://davidpoblador.com) was only a future project), and GPU rendering (thanks [Mitchell](https://mitchellh.com) for [Ghostty](https://ghostty.org)). Old tools, new tricks.
+The year is 2026. We build on tmux (2007), git worktrees (2015), terminals (1978, the VT100 era, when even [Francesc](https://github.com/barnolacesc) was only a future project), and GPU rendering (thanks [Mitchell](https://mitchellh.com) for [Ghostty](https://ghostty.org)). Old tools, new tricks.
 
 You need two things: a Mac and a vague sense that your current workflow could be better.
 
@@ -104,7 +104,7 @@ Quick actions run one-shot coding CLI tasks from the sidebar:
 - **Create PR** — creates a pull request with AI-generated title and description
 - **Close PR** — closes the PR
 
-These run as background Claude Code or Codex commands, depending on the selected CLI. Enable **Quick action debug mode** in settings if you want to know how the sausage is made. Trust us, [David](https://davidpoblador.com) spent more time than he can admit debugging weird behaviors in there.
+These run as background Claude Code or Codex commands, depending on the selected CLI. Enable **Quick action debug mode** in settings if you want to know how the sausage is made. Trust us, [Francesc](https://github.com/barnolacesc) spent more time than he can admit debugging weird behaviors in there.
 
 ---
 
@@ -251,7 +251,7 @@ Each workstream gets a deterministic port based on a hash of the worktree path. 
 
 #### .env symlink
 
-When enabled (Settings > General), Dockyard symlinks `.env` and `.env.local` from your main repo into each worktree. So your secrets follow you without copy-pasting. Speaking of secrets, have we told you about [Vaultuner](https://vaultuner.barnolacesc.com)?
+When enabled (Settings > General), Dockyard symlinks `.env` and `.env.local` from your main repo into each worktree. So your secrets follow you without copy-pasting.
 
 ### Settings
 
@@ -281,7 +281,6 @@ Open with **⌘,** or click the gear icon.
 
 #### Advanced
 
-- **Usage analytics** — privacy-friendly telemetry (app version, OS, locale only)
 - **Detailed logging** — logs script output for debugging
 - **Quick action debug mode** — shows raw output from quick actions
 - **Bleeding edge updates** — opt into pre-release builds

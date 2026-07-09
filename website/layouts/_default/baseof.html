@@ -38,18 +38,9 @@
 {{ if $css }}
 <link href="{{ $css.RelPermalink }}?v={{ $css.Content | md5 }}" rel="stylesheet">
 {{ end }}
-{{- with .Site.Params.analyticsSrc }}
-<link rel="dns-prefetch" href="{{ . }}">
-{{- end }}
-{{- with .Site.Params.analyticsID }}
-<script
-  defer
-  src="{{ $.Site.Params.analyticsSrc }}"
-  data-website-id="{{ . }}"></script>
-{{- end }}
 <script>
 (function(){
-  var t = localStorage.getItem('ff-theme');
+  var t = localStorage.getItem('dockyard-theme');
   if (t === 'light') { document.documentElement.classList.remove('dark'); document.documentElement.classList.add('light'); }
   else if (t === 'system' || !t) {
     if (!window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -83,12 +74,12 @@
     else toggle.querySelector('.icon-system').classList.remove('hidden');
   }
 
-  applyTheme(localStorage.getItem('ff-theme') || 'dark');
+  applyTheme(localStorage.getItem('dockyard-theme') || 'dark');
 
   toggle.addEventListener('click', function() {
     var current = html.getAttribute('data-pref') || 'dark';
     var next = themes[(themes.indexOf(current) + 1) % themes.length];
-    localStorage.setItem('ff-theme', next);
+    localStorage.setItem('dockyard-theme', next);
     applyTheme(next);
   });
 

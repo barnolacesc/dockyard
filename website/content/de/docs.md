@@ -7,7 +7,7 @@ layout: docs
 
 ## Erste Schritte {#getting-started}
 
-Wir schreiben 2026. Wir bauen auf tmux (2007), Git-Worktrees (2015), Terminals (1978, die VT100-Ära, als selbst [David](https://davidpoblador.com) nur ein Zukunftsprojekt war) und GPU-Rendering (danke [Mitchell](https://mitchellh.com) für [Ghostty](https://ghostty.org)). Alte Werkzeuge, neue Tricks.
+Wir schreiben 2026. Wir bauen auf tmux (2007), Git-Worktrees (2015), Terminals (1978, die VT100-Ära, als selbst [Francesc](https://github.com/barnolacesc) nur ein Zukunftsprojekt war) und GPU-Rendering (danke [Mitchell](https://mitchellh.com) für [Ghostty](https://ghostty.org)). Alte Werkzeuge, neue Tricks.
 
 Du brauchst zwei Dinge: einen Mac und das vage Gefühl, dass dein aktueller Workflow besser sein könnte.
 
@@ -102,7 +102,7 @@ Schnellaktionen führen einmalige Claude-Aufgaben aus der Seitenleiste aus:
 - **Create PR** — erstellt einen Pull Request mit KI-generiertem Titel und Beschreibung
 - **Close PR** — schließt den PR
 
-Diese laufen als Hintergrund-`claude -p`-Aufrufe. Aktiviere **Quick action debug mode** in den Einstellungen, wenn du wissen willst, wie die Wurst gemacht wird. Vertrau uns, [David](https://davidpoblador.com) hat mehr Zeit als er zugeben will damit verbracht, seltsame Verhaltensweisen dort drin zu debuggen.
+Diese laufen als Hintergrund-`claude -p`-Aufrufe. Aktiviere **Quick action debug mode** in den Einstellungen, wenn du wissen willst, wie die Wurst gemacht wird. Vertrau uns, [Francesc](https://github.com/barnolacesc) hat mehr Zeit als er zugeben will damit verbracht, seltsame Verhaltensweisen dort drin zu debuggen.
 
 ---
 
@@ -236,7 +236,7 @@ Jeder Workstream bekommt einen deterministischen Port basierend auf einem Hash d
 
 #### .env-Symlink {#env-symlink}
 
-Wenn aktiviert (Settings > General), erstellt Dockyard Symlinks für `.env` und `.env.local` aus deinem Hauptrepo in jeden Worktree. So folgen dir deine Geheimnisse ohne Kopieren und Einfügen. Apropos Geheimnisse, haben wir dir schon von [Vaultuner](https://vaultuner.barnolacesc.com) erzählt?
+Wenn aktiviert (Settings > General), erstellt Dockyard Symlinks für `.env` und `.env.local` aus deinem Hauptrepo in jeden Worktree. So folgen dir deine Geheimnisse ohne Kopieren und Einfügen.
 
 ### Einstellungen {#settings}
 
@@ -266,7 +266,6 @@ Wenn aktiviert (Settings > General), erstellt Dockyard Symlinks für `.env` und 
 
 #### Erweitert {#advanced}
 
-- **Usage analytics** — datenschutzfreundliche Telemetrie (nur App-Version, OS, Sprache)
 - **Detailed logging** — protokolliert Skript-Ausgaben zur Fehlersuche
 - **Quick action debug mode** — zeigt Rohausgaben der Schnellaktionen
 - **Bleeding edge updates** — Vorabversionen erhalten

@@ -5,25 +5,25 @@
 set -e
 
 usage() {
-  echo "Usage: ff [directory]"
+  echo "Usage: dy [directory]"
   echo ""
   echo "Open a directory in Dockyard."
   echo "If no directory is specified, opens the current directory."
   echo ""
   echo "Options:"
-  echo "  --install    Install this script to /usr/local/bin/ff"
+  echo "  --install    Install this script to /usr/local/bin/dy"
   echo "  --help       Show this help message"
 }
 
 install() {
   local SCRIPT_PATH
   SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
-  local TARGET="/usr/local/bin/ff"
+  local TARGET="/usr/local/bin/dy"
 
   if [ -L "$TARGET" ] || [ -f "$TARGET" ]; then
     echo "Updating $TARGET..."
   else
-    echo "Installing ff to $TARGET..."
+    echo "Installing dy to $TARGET..."
   fi
 
   if [ -w "$(dirname "$TARGET")" ]; then
@@ -32,7 +32,7 @@ install() {
     sudo ln -sf "$SCRIPT_PATH" "$TARGET"
   fi
 
-  echo "Done. You can now use 'ff' from any terminal."
+  echo "Done. You can now use 'dy' from any terminal."
 }
 
 case "${1:-}" in
@@ -55,11 +55,3 @@ if [ -z "$RESOLVED" ]; then
 fi
 
 open "dockyard://$RESOLVED"
-
-# Show sponsor message occasionally (~1 in 5 runs)
-if [ $(( RANDOM % 2 )) -eq 0 ]; then
-  echo ""
-  echo "  ☕ Enjoying Dockyard? Support development:"
-  echo "     https://buymeacoffee.com/barnolacesc"
-  echo ""
-fi
