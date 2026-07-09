@@ -99,6 +99,10 @@ xcrun notarytool submit "$BUILD_DIR/$DMG_NAME" \
 echo "==> Stapling..."
 xcrun stapler staple "$BUILD_DIR/$DMG_NAME"
 
+echo "==> Generating checksum..."
+(cd "$BUILD_DIR" && shasum -a 256 "$DMG_NAME" > "${DMG_NAME}.sha256")
+cat "$BUILD_DIR/${DMG_NAME}.sha256"
+
 echo ""
 echo "Done! DMG ready at: $BUILD_DIR/$DMG_NAME"
-echo "Upload to GitHub release: gh release upload v${VERSION} $BUILD_DIR/$DMG_NAME"
+echo "Upload to GitHub release: gh release upload v${VERSION} $BUILD_DIR/$DMG_NAME $BUILD_DIR/${DMG_NAME}.sha256"
