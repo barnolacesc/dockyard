@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   analyze:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
@@ -36,7 +36,7 @@ jobs:
 
       - name: Compute Ghostty cache key
         id: ghostty-key
-        run: echo "key=ghostty-v3-$(git -C ghostty rev-parse HEAD)-zig-0.15.2-macos15" >> "$GITHUB_OUTPUT"
+        run: echo "key=ghostty-v3-$(git -C ghostty rev-parse HEAD)-zig-0.15.2-macos26" >> "$GITHUB_OUTPUT"
 
       - name: Cache Ghostty xcframework
         id: ghostty-cache
