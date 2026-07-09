@@ -44,6 +44,10 @@ struct WorkstreamInfoView: View {
     @State private var editTeardown = ""
     @State private var editPortText = ""
     @State private var editWriteError: String?
+    @State private var showScriptApproval = false
+    @State private var pendingSetupAction: PendingSetupAction?
+
+    private enum PendingSetupAction { case inline, terminal }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -52,9 +56,9 @@ struct WorkstreamInfoView: View {
                     script: scriptConfig.setup!,
                     state: setupRunner.state,
                     logTail: setupRunner.logTail,
-                    onStart: { setupRunner.start(script: scriptConfig.setup!, workingDirectory: workingDirectory, environmentVars: environmentVars) },
+                    onStart: { requestSetupStart(.inline) },
                     onCancel: { setupRunner.cancel() },
-                    onRunInTerminal: { onRunSetupInTerminal() }
+                    onRunInTerminal: { requestSetupStart(.terminal) }
                 )
             }
             Form {
@@ -388,7 +392,44 @@ struct WorkstreamInfoView: View {
                 onCancel: { showGenerateSheet = false }
             )
         }
+        .sheet(isPresented: $showScriptApproval) {
+            ScriptApprovalSheet(
+                source: scriptConfig.source,
+                setup: scriptConfig.setup,
+                run: scriptConfig.run,
+                teardown: scriptConfig.teardown,
+                onApprove: {
+                    ScriptTrustStore.trust(projectDirectory: projectDirectory, config: scriptConfig)
+                    showScriptApproval = false
+                    if let action = pendingSetupAction { performSetupAction(action) }
+                    pendingSetupAction = nil
+                },
+                onDecline: {
+                    showScriptApproval = false
+                    pendingSetupAction = nil
+                }
+            )
+        }
     } // body
+
+    private func requestSetupStart(_ action: PendingSetupAction) {
+        guard ScriptTrustStore.isTrusted(projectDirectory: projectDirectory, config: scriptConfig) else {
+            pendingSetupAction = action
+            showScriptApproval = true
+            return
+        }
+        performSetupAction(action)
+    }
+
+    private func performSetupAction(_ action: PendingSetupAction) {
+        switch action {
+        case .inline:
+            guard let setup = scriptConfig.setup else { return }
+            setupRunner.start(script: setup, workingDirectory: workingDirectory, environmentVars: environmentVars)
+        case .terminal:
+            onRunSetupInTerminal()
+        }
+    }
 
     @ViewBuilder
     private var scriptsSectionContent: some View {
@@ -560,6 +601,8 @@ struct WorkstreamInfoView: View {
 
         do {
             try DockyardConfigWriter.write(result.draft, to: projectDirectory)
+            // The user typed these scripts themselves; no approval prompt needed.
+            ScriptTrustStore.trust(projectDirectory: projectDirectory, setup: result.draft.setup, run: result.draft.run, teardown: result.draft.teardown)
             editWriteError = nil
             isEditingConfig = false
             onConfigGenerated()
@@ -590,6 +633,8 @@ struct WorkstreamInfoView: View {
         }
         do {
             try DockyardConfigWriter.write(draft, to: projectDirectory)
+            // The user reviewed this draft in the generate sheet before confirming.
+            ScriptTrustStore.trust(projectDirectory: projectDirectory, setup: draft.setup, run: draft.run, teardown: draft.teardown)
             writeError = nil
             showGenerateSheet = false
             onConfigGenerated()
