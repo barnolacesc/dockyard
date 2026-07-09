@@ -11,11 +11,15 @@ concurrency:
 
 jobs:
   build-and-test:
-    runs-on: macos-26
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           submodules: true
+
+      # Match the Xcode the codebase is developed against (see docs/install-from-source.md).
+      - name: Select Xcode 26.2
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app
 
       - uses: xavierLowmiller/xcodegen-action@e5af38841cc8e1b8ace551066402a97f146a9bbd # 1.2.4
         with:
@@ -30,7 +34,7 @@ jobs:
 
       - name: Compute Ghostty cache key
         id: ghostty-key
-        run: echo "key=ghostty-v3-$(git -C ghostty rev-parse HEAD)-zig-0.15.2-macos26" >> "$GITHUB_OUTPUT"
+        run: echo "key=ghostty-v3-$(git -C ghostty rev-parse HEAD)-zig-0.15.2-macos15" >> "$GITHUB_OUTPUT"
 
       - name: Cache Ghostty xcframework
         id: ghostty-cache
