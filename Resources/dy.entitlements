@@ -2,21 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <!-- Sandbox stays off: the app's core function is spawning the user's shell,
+         git, and tmux against arbitrary project directories. -->
     <key>com.apple.security.app-sandbox</key>
     <false/>
+    <!-- Self-update opens Terminal via AppleScript. -->
     <key>com.apple.security.automation.apple-events</key>
     <true/>
+    <!-- Lets CLI tools inside embedded terminals request microphone access (dictation etc.). -->
     <key>com.apple.security.device.audio-input</key>
-    <true/>
-    <key>com.apple.security.device.camera</key>
-    <true/>
-    <key>com.apple.security.personal-information.addressbook</key>
-    <true/>
-    <key>com.apple.security.personal-information.calendars</key>
-    <true/>
-    <key>com.apple.security.personal-information.location</key>
-    <true/>
-    <key>com.apple.security.personal-information.photos-library</key>
     <true/>
 </dict>
 </plist>
