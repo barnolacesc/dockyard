@@ -186,6 +186,13 @@ brew upgrade --cask dockyard
 
 Homebrew automatically installs the `ff` command. If you installed via DMG, install the CLI from Settings > Environment.
 
+### Corporate / locked-down machines
+
+Dockyard can be built and updated entirely from source — no DMG required. See
+[docs/install-from-source.md](docs/install-from-source.md). Security review
+material: [SECURITY.md](SECURITY.md), [PRIVACY.md](PRIVACY.md),
+[THREAT_MODEL.md](THREAT_MODEL.md), [docs/vendor-risk.md](docs/vendor-risk.md).
+
 ---
 
 ## Development
