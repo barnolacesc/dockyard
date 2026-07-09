@@ -1075,7 +1075,6 @@ struct TerminalContainerView: View {
         tabs.append(tab)
         activeTab = tab
         saveTabSnapshot()
-        Telemetry.shared.track("tab_opened", url: "/tab/terminal", title: "Terminal Tab", data: ["kind": "terminal"])
     }
 
     private func addBrowser() {
@@ -1085,7 +1084,6 @@ struct TerminalContainerView: View {
         tabs.append(tab)
         activeTab = tab
         saveTabSnapshot()
-        Telemetry.shared.track("tab_opened", url: "/tab/browser", title: "Browser Tab", data: ["kind": "browser"])
     }
 
     private func openEditor() {
@@ -1104,7 +1102,6 @@ struct TerminalContainerView: View {
         tabs.append(tab)
         activeTab = tab
         saveTabSnapshot()
-        Telemetry.shared.track("tab_opened", url: "/tab/editor", title: "Editor Tab", data: ["kind": "terminal-editor"])
     }
 
     private func addEditor(filePath: String? = nil) {
@@ -1120,7 +1117,6 @@ struct TerminalContainerView: View {
         activeTab = tab
         startFileTreeWatcherIfNeeded()
         saveTabSnapshot()
-        Telemetry.shared.track("tab_opened", url: "/tab/editor", title: "Editor Tab", data: ["kind": "editor"])
     }
 
     private func startFileTreeWatcherIfNeeded() {

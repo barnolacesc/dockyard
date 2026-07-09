@@ -221,7 +221,9 @@ struct DockyardApp: App {
                     .environmentObject(updater)
                     .environmentObject(shortcutHints)
                     .onAppear {
-                        Telemetry.shared.trackLaunch()
+                        // Telemetry was removed; clear identifiers persisted by older versions.
+                        UserDefaults.standard.removeObject(forKey: "dockyard.telemetryEnabled")
+                        UserDefaults.standard.removeObject(forKey: "dockyard.installationID")
                         if let dir = Self.launchDirectory {
                             DispatchQueue.main.async {
                                 NotificationCenter.default.post(name: .openDirectory, object: dir)

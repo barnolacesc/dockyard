@@ -593,7 +593,6 @@ struct ContentView: View {
                         appEnvironment.refreshPathValidity(projects: projects)
                         headWatcher.sync(paths: currentWorktreePaths())
                         logger.warning("[Dockyard] workstreamWorktreeReady: updated \(workstreamID, privacy: .public) with path \(worktreePath, privacy: .public)")
-                        Telemetry.shared.track("workstream_created", url: "/workstream/create", title: "Workstream Created")
                         return
                     }
                 }
