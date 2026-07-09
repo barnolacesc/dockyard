@@ -458,3 +458,10 @@
 "Create manually" = "Create manually";
 "Expected Port" = "Expected Port";
 "Port must be between 1 and 65535" = "Port must be between 1 and 65535";
+
+/* Script approval sheet (first-run trust prompt) */
+"Review Project Scripts" = "Review Project Scripts";
+"These commands come from %@ and will run in your shell. Review them before allowing Dockyard to run them." = "These commands come from %@ and will run in your shell. Review them before allowing Dockyard to run them.";
+"Run Scripts" = "Run Scripts";
+"Not Now" = "Not Now";
+"Teardown" = "Teardown";

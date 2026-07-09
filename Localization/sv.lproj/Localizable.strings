@@ -458,3 +458,10 @@
 "Create manually" = "Skapa manuellt";
 "Expected Port" = "Förväntad port";
 "Port must be between 1 and 65535" = "Porten måste vara mellan 1 och 65535";
+
+/* Script approval sheet (first-run trust prompt) */
+"Review Project Scripts" = "Granska projektets skript";
+"These commands come from %@ and will run in your shell. Review them before allowing Dockyard to run them." = "Dessa kommandon kommer från %@ och körs i ditt skal. Granska dem innan du låter Dockyard köra dem.";
+"Run Scripts" = "Kör skript";
+"Not Now" = "Inte nu";
+"Teardown" = "Nedmontering";
