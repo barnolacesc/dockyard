@@ -66,7 +66,6 @@ enum WorkstreamArchiver {
             let projName = project.name
             // Capture the branch name before the worktree is removed
             let branchName = GitOperations.currentBranch(at: worktreePath)
-            Telemetry.shared.track("workstream_archived", url: "/workstream/archive", title: "Workstream Archived")
             Task.detached {
                 ScriptConfig.runTeardown(in: worktreePath, projectDirectory: projectDir)
                 GitOperations.removeWorktree(projectPath: projectDir, worktreePath: worktreePath)

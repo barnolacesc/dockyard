@@ -167,8 +167,6 @@
 
 /* Settings - Advanced */
 "Advanced" = "Erweitert";
-"Usage analytics" = "Nutzungsanalyse";
-"Send anonymous usage data to help improve Dockyard. We collect: app version, build type, macOS version, locale, and screen resolution. No project names, file contents, or personal data." = "Sende anonyme Nutzungsdaten, um Dockyard zu verbessern. Wir erfassen: App-Version, Build-Typ, macOS-Version, Sprache und Bildschirmauflösung. Keine Projektnamen, Dateiinhalte oder persönliche Daten.";
 "Bleeding edge" = "Vorabversionen";
 "Receive pre-release builds with the latest features. These may be less stable." = "Vorabversionen mit den neuesten Funktionen erhalten. Diese können weniger stabil sein.";
 "Clear project list" = "Projektliste leeren";
@@ -431,3 +429,10 @@
 "Create manually" = "Manuell erstellen";
 "Expected Port" = "Erwarteter Port";
 "Port must be between 1 and 65535" = "Der Port muss zwischen 1 und 65535 liegen";
+
+/* Script approval sheet (first-run trust prompt) */
+"Review Project Scripts" = "Projektskripte überprüfen";
+"These commands come from %@ and will run in your shell. Review them before allowing Dockyard to run them." = "Diese Befehle stammen aus %@ und werden in deiner Shell ausgeführt. Überprüfe sie, bevor Dockyard sie ausführen darf.";
+"Run Scripts" = "Skripte ausführen";
+"Not Now" = "Jetzt nicht";
+"Teardown" = "Abbau";

@@ -169,8 +169,6 @@
 
 /* Settings - Advanced */
 "Advanced" = "Avancerat";
-"Usage analytics" = "Användningsanalys";
-"Send anonymous usage data to help improve Dockyard. We collect: app version, build type, macOS version, locale, and screen resolution. No project names, file contents, or personal data." = "Skicka anonym användningsdata för att hjälpa förbättra Dockyard. Vi samlar in: appversion, byggtyp, macOS-version, språk och skärmupplösning. Inga projektnamn, filinnehåll eller personuppgifter.";
 "Bleeding edge" = "Senaste versionen";
 "Receive pre-release builds with the latest features. These may be less stable." = "Ta emot förhandsversioner med de senaste funktionerna. Dessa kan vara mindre stabila.";
 "Clear project list" = "Rensa projektlistan";
@@ -460,3 +458,10 @@
 "Create manually" = "Skapa manuellt";
 "Expected Port" = "Förväntad port";
 "Port must be between 1 and 65535" = "Porten måste vara mellan 1 och 65535";
+
+/* Script approval sheet (first-run trust prompt) */
+"Review Project Scripts" = "Granska projektets skript";
+"These commands come from %@ and will run in your shell. Review them before allowing Dockyard to run them." = "Dessa kommandon kommer från %@ och körs i ditt skal. Granska dem innan du låter Dockyard köra dem.";
+"Run Scripts" = "Kör skript";
+"Not Now" = "Inte nu";
+"Teardown" = "Nedmontering";

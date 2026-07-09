@@ -33,6 +33,7 @@ struct EnvironmentTabView: View {
     @EnvironmentObject var appEnv: AppEnvironment
     @State private var runGeneration = 0
     @State private var runRestarting = false
+    @State private var showScriptApproval = false
 
     private var runID: UUID {
         derivedUUID(from: workstreamID, salt: "env-run-\(runGeneration)")
@@ -59,13 +60,27 @@ struct EnvironmentTabView: View {
                     if runStarted {
                         restartRun()
                     } else {
-                        runStoppedManually = false
-                        runStarted = true
+                        requestRunStart()
                     }
                 }
             }
             .onAppear {
                 restoreRunState()
+            }
+            .sheet(isPresented: $showScriptApproval) {
+                ScriptApprovalSheet(
+                    source: scriptConfig.source,
+                    setup: scriptConfig.setup,
+                    run: scriptConfig.run,
+                    teardown: scriptConfig.teardown,
+                    onApprove: {
+                        ScriptTrustStore.trust(projectDirectory: projectDirectory, config: scriptConfig)
+                        showScriptApproval = false
+                        runStoppedManually = false
+                        runStarted = true
+                    },
+                    onDecline: { showScriptApproval = false }
+                )
             }
     }
 
@@ -77,8 +92,7 @@ struct EnvironmentTabView: View {
             HStack {
                 if scriptConfig.run != nil, !runStarted {
                     Button(action: {
-                        runStoppedManually = false
-                        runStarted = true
+                        requestRunStart()
                     }) {
                         Image(systemName: "play.fill")
                             .font(.system(size: 11))
@@ -118,8 +132,7 @@ struct EnvironmentTabView: View {
                         EnvActionButton(label: NSLocalizedString("Rerun", comment: ""), icon: "arrow.counterclockwise", shortcut: shortcut, action: restartRun)
                     } else {
                         EnvActionButton(label: NSLocalizedString("Start", comment: ""), icon: "play.fill", shortcut: shortcut) {
-                            runStoppedManually = false
-                            runStarted = true
+                            requestRunStart()
                         }
                     }
                 }
@@ -144,8 +157,7 @@ struct EnvironmentTabView: View {
                 } else if !runStarted {
                     VStack(spacing: 12) {
                         Button(action: {
-                            runStoppedManually = false
-                            runStarted = true
+                            requestRunStart()
                         }) {
                             HStack(spacing: 6) {
                                 Image(systemName: "play.fill")
@@ -288,6 +300,15 @@ struct EnvironmentTabView: View {
         guard useTmux, let tmuxPath = appEnv.toolStatus.tmux.path else { return }
         let session = TmuxSession.sessionName(project: projectName, workstream: workstreamName, role: role)
         TmuxSession.killSession(tmuxPath: tmuxPath, sessionName: session)
+    }
+
+    private func requestRunStart() {
+        guard ScriptTrustStore.isTrusted(projectDirectory: projectDirectory, config: scriptConfig) else {
+            showScriptApproval = true
+            return
+        }
+        runStoppedManually = false
+        runStarted = true
     }
 
     private func stopRun() {

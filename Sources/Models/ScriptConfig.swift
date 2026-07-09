@@ -49,9 +49,14 @@ struct ScriptConfig {
     }
 
     /// Run the teardown script synchronously in the given directory.
-    static func runTeardown(in directory: String, projectDirectory: String) {
+    /// Scripts the user never approved (see ScriptTrustStore) are skipped.
+    static func runTeardown(in directory: String, projectDirectory: String, defaults: UserDefaults = .standard) {
         let config = load(from: directory, fallbackDirectory: projectDirectory)
         guard let teardown = config.teardown else { return }
+        guard ScriptTrustStore.isTrusted(projectDirectory: projectDirectory, config: config, defaults: defaults) else {
+            logger.notice("Skipping teardown for \(directory, privacy: .public): scripts not approved")
+            return
+        }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: CommandBuilder.userShell)
         process.arguments = ["-lic", teardown]

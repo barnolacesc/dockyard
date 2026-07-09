@@ -169,8 +169,6 @@
 
 /* Settings - Advanced */
 "Advanced" = "Advanced";
-"Usage analytics" = "Usage analytics";
-"Send anonymous usage data to help improve Dockyard. We collect: app version, build type, macOS version, locale, and screen resolution. No project names, file contents, or personal data." = "Send anonymous usage data to help improve Dockyard. We collect: app version, build type, macOS version, locale, and screen resolution. No project names, file contents, or personal data.";
 "Bleeding edge" = "Bleeding edge";
 "Receive pre-release builds with the latest features. These may be less stable." = "Receive pre-release builds with the latest features. These may be less stable.";
 "Clear project list" = "Clear project list";
@@ -460,3 +458,10 @@
 "Create manually" = "Create manually";
 "Expected Port" = "Expected Port";
 "Port must be between 1 and 65535" = "Port must be between 1 and 65535";
+
+/* Script approval sheet (first-run trust prompt) */
+"Review Project Scripts" = "Review Project Scripts";
+"These commands come from %@ and will run in your shell. Review them before allowing Dockyard to run them." = "These commands come from %@ and will run in your shell. Review them before allowing Dockyard to run them.";
+"Run Scripts" = "Run Scripts";
+"Not Now" = "Not Now";
+"Teardown" = "Teardown";

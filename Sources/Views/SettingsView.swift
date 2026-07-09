@@ -21,7 +21,6 @@ struct SettingsView: View {
     @AppStorage("dockyard.symlinkEnv") private var symlinkEnv: Bool = true
     @AppStorage("dockyard.confirmQuit") private var confirmQuit: Bool = true
     @AppStorage("dockyard.showShortcutHints") private var showShortcutHints: Bool = true
-    @AppStorage("dockyard.telemetryEnabled") private var telemetryEnabled: Bool = true
     @AppStorage("dockyard.detailedLogging") private var detailedLogging: Bool = false
     @AppStorage("dockyard.quickActionDebug") private var quickActionDebug: Bool = false
     @AppStorage("dockyard.bleedingEdge") private var bleedingEdge: Bool = false
@@ -344,14 +343,6 @@ struct SettingsView: View {
                     description: "Coding Agent sessions persist across app restarts. The Terminal tab is not affected. Sessions are lost on system restart."
                 )
                 .disabled(!appEnv.toolStatus.tmux.isInstalled)
-                .onChange(of: tmuxMode) { _, newValue in
-                    Telemetry.shared.track(
-                        "setting_changed",
-                        url: "/settings/tmux-mode",
-                        title: "Tmux Mode Toggled",
-                        data: ["setting": "tmux_mode", "value": newValue ? "on" : "off"]
-                    )
-                }
 
                 if !appEnv.toolStatus.tmux.isInstalled {
                     Text("Requires tmux to be installed.")
@@ -403,12 +394,6 @@ struct SettingsView: View {
             // MARK: - Advanced
 
             Section("Advanced") {
-                SettingToggle(
-                    "Usage analytics",
-                    isOn: $telemetryEnabled,
-                    description: "Send anonymous usage data to help improve Dockyard. We collect: app version, build type, macOS version, locale, and screen resolution. No project names, file contents, or personal data."
-                )
-
                 Toggle(isOn: $detailedLogging) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Detailed logging")

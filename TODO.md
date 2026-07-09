@@ -85,7 +85,7 @@
 - [x] Website: Hugo + Tailwind, i18n (4 langs), sponsor page, privacy, SEO, OG image, /get page
 - [x] Distribution: docs/distribution.md with automated versions.json in release workflow
 - [x] Onboarding view with prerequisites, getting started, key concepts
-- [x] Sentry crash reporting (EU, no PII, environment/version tags)
+- [x] Sentry crash reporting (added upstream, removed in 1c446df — app has no crash reporting)
 - [x] Swift 6 strict concurrency migration
 - [x] Security: WKWebView JS disabled, shell-escape tmux, surface destroy, git flag injection, .env symlink validation
 - [x] Accessibility: labels, focus rings, keyboard-reachable hover actions
@@ -93,3 +93,6 @@
 - [x] Error feedback: worktree creation, non-git dir, ghostty init, project removal, Claude not found
 - [x] Fix: terminal mouse selection coordinates, env script lifecycle, proc_listchildpids count
 - [x] Restore full app state on launch, right-click sidebar menus, drag-and-drop tab reorder
+- [x] VRA hardening phase 1 (issue #48): telemetry removed, entitlements minimized, script approval prompts
+- [ ] VRA phase 2 (issue #48): SECURITY.md, PRIVACY.md, THREAT_MODEL.md, vendor-risk Q&A, install-from-source guide
+- [ ] VRA phase 3 (issue #48): PR build/test CI, CodeQL, Dependabot, SHA-pinned actions, release checksums

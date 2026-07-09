@@ -307,6 +307,7 @@ struct TerminalContainerView: View {
     @State private var workspaceStarted = false
     @State private var defaultBranch = "main"
     @State private var livePermissionHint: String?
+    @State private var showScriptApproval = false
     init(
         workstreamID: UUID,
         workingDirectory: String,
@@ -723,6 +724,20 @@ struct TerminalContainerView: View {
                 guard isActive else { return }
                 activeTab = .info
             }
+            .sheet(isPresented: $showScriptApproval) {
+                ScriptApprovalSheet(
+                    source: scriptConfig.source,
+                    setup: scriptConfig.setup,
+                    run: scriptConfig.run,
+                    teardown: scriptConfig.teardown,
+                    onApprove: {
+                        ScriptTrustStore.trust(projectDirectory: projectDirectory, config: scriptConfig)
+                        showScriptApproval = false
+                        startSetupIfNeeded()
+                    },
+                    onDecline: { showScriptApproval = false }
+                )
+            }
             .onReceive(NotificationCenter.default.publisher(for: .focusAgent)) { _ in
                 guard isActive else { return }
                 activeTab = .agent
@@ -1075,7 +1090,6 @@ struct TerminalContainerView: View {
         tabs.append(tab)
         activeTab = tab
         saveTabSnapshot()
-        Telemetry.shared.track("tab_opened", url: "/tab/terminal", title: "Terminal Tab", data: ["kind": "terminal"])
     }
 
     private func addBrowser() {
@@ -1085,7 +1099,6 @@ struct TerminalContainerView: View {
         tabs.append(tab)
         activeTab = tab
         saveTabSnapshot()
-        Telemetry.shared.track("tab_opened", url: "/tab/browser", title: "Browser Tab", data: ["kind": "browser"])
     }
 
     private func openEditor() {
@@ -1104,7 +1117,6 @@ struct TerminalContainerView: View {
         tabs.append(tab)
         activeTab = tab
         saveTabSnapshot()
-        Telemetry.shared.track("tab_opened", url: "/tab/editor", title: "Editor Tab", data: ["kind": "terminal-editor"])
     }
 
     private func addEditor(filePath: String? = nil) {
@@ -1120,7 +1132,6 @@ struct TerminalContainerView: View {
         activeTab = tab
         startFileTreeWatcherIfNeeded()
         saveTabSnapshot()
-        Telemetry.shared.track("tab_opened", url: "/tab/editor", title: "Editor Tab", data: ["kind": "editor"])
     }
 
     private func startFileTreeWatcherIfNeeded() {
@@ -1324,6 +1335,10 @@ struct TerminalContainerView: View {
         guard let setupScript = scriptConfig.setup else { return }
         guard !SetupStateStore.isCompleted(for: workstreamID) else { return }
         guard setupRunner.state == .idle else { return }
+        guard ScriptTrustStore.isTrusted(projectDirectory: projectDirectory, config: scriptConfig) else {
+            showScriptApproval = true
+            return
+        }
 
         setupRunner.start(
             script: setupScript,
@@ -1425,6 +1440,10 @@ struct TerminalContainerView: View {
     }
     private func runSetupInNewTerminal() {
         guard let setupScript = scriptConfig.setup, !setupScript.isEmpty else { return }
+        guard ScriptTrustStore.isTrusted(projectDirectory: projectDirectory, config: scriptConfig) else {
+            showScriptApproval = true
+            return
+        }
         guard let app = TerminalApp.shared.app else { return }
         terminalCount += 1
         let id = derivedUUID(from: workstreamID, salt: "setup-terminal-\(terminalCount)")
