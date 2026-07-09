@@ -93,3 +93,6 @@
 - [x] Error feedback: worktree creation, non-git dir, ghostty init, project removal, Claude not found
 - [x] Fix: terminal mouse selection coordinates, env script lifecycle, proc_listchildpids count
 - [x] Restore full app state on launch, right-click sidebar menus, drag-and-drop tab reorder
+- [x] VRA hardening phase 1 (issue #48): telemetry removed, entitlements minimized, script approval prompts
+- [ ] VRA phase 2 (issue #48): SECURITY.md, PRIVACY.md, THREAT_MODEL.md, vendor-risk Q&A, install-from-source guide
+- [ ] VRA phase 3 (issue #48): PR build/test CI, CodeQL, Dependabot, SHA-pinned actions, release checksums
