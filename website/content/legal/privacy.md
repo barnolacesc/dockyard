@@ -6,7 +6,7 @@ translationKey: privacy
 
 ## The short version
 
-Dockyard does not collect personal data. Your code stays on your machine. We collect anonymous crash reports to improve stability.
+Dockyard does not collect personal data. Your code stays on your machine. No analytics, no telemetry, no crash reports.
 
 ## The application
 
@@ -32,10 +32,8 @@ Dockyard does not act as an intermediary for these services. Your API keys and c
 
 ## This website
 
-The Dockyard website (francesc.barnola.net) uses [Umami](https://umami.is/) for privacy-friendly analytics. Umami does not use cookies, does not collect personal data, and complies with GDPR, CCPA, and PECR. All data is aggregated and anonymous.
-
-No other tracking scripts, advertising networks, or third-party analytics are used on this website.
+The Dockyard website (francesc.barnola.net) does not use analytics, cookies, tracking scripts, or advertising networks of any kind.
 
 ## Contact
 
-For privacy-related questions, contact [David Poblador i Garcia](https://davidpoblador.com).
+For privacy-related questions, contact [barnolacesc](https://github.com/barnolacesc).

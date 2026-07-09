@@ -184,7 +184,7 @@ brew upgrade --cask dockyard
 
 ### CLI
 
-Homebrew automatically installs the `ff` command. If you installed via DMG, install the CLI from Settings > Environment.
+Homebrew automatically installs the `dy` command. If you installed via DMG, install the CLI from Settings > Environment.
 
 ### Corporate / locked-down machines
 
@@ -254,21 +254,16 @@ Dockyard is built on the shoulders of these projects:
 - **[XcodeGen](https://github.com/yonaskolb/XcodeGen)** — Xcode project generation from `project.yml`
 - **[cmark-gfm](https://github.com/github/cmark-gfm)** — GitHub Flavored Markdown rendering (via [swift-cmark](https://github.com/swiftlang/swift-cmark))
 - **[Hugo](https://gohugo.io)** + **[Tailwind CSS](https://tailwindcss.com)** — Website
-- **[Umami](https://umami.is)** — Privacy-friendly website analytics
+
+Dockyard began as a fork of [FactoryFloor](https://github.com/alltuner/factoryfloor) by David Poblador i Garcia and has since diverged into an independent project.
 
 ## Support the project
 
-Dockyard is an open source project built by [David Poblador i Garcia](https://davidpoblador.com/) through [David Poblador i Garcia](https://www.barnolacesc.com/).
+If Dockyard helped you ship faster, automate your workflow, or experiment with coding agents:
 
-If this project helped you ship faster, automate your workflow, or experiment with coding agents, consider supporting its development.
+⭐ **Star the repo** — it helps others find the project.
 
-❤️ **Sponsor development**
-https://github.com/sponsors/barnolacesc
-
-☕ **One-time support**
-https://buymeacoffee.com/barnolacesc
-
-Your support helps fund the continued development of Dockyard and other open source developer tools such as [VibeTuner](https://github.com/barnolacesc/vibetuner).
+🐛 **Report issues and contribute** — bug reports, translations, and PRs are all welcome.
 
 ## License
 
@@ -277,6 +272,6 @@ Your support helps fund the continued development of Dockyard and other open sou
 ---
 
 <p align="center">
-  Built by <a href="https://davidpoblador.com">David Poblador i Garcia</a> with the support of <a href="https://barnolacesc.com">David Poblador i Garcia</a>.<br>
-  Made with ❤️ in Poblenou, Barcelona.
+  Built by <a href="https://github.com/barnolacesc">barnolacesc</a>.<br>
+  Made with ❤️ in Barcelona.
 </p>

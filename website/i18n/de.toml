@@ -204,18 +204,8 @@ other = "Gemacht mit ❤️ in Poblenou, Barcelona 🇪🇺"
 other = "Dockyard ist frei und quelloffen."
 [sponsor_intro_2]
 other = "Deine Unterstützung hilft bei der Weiterentwicklung und neuen Funktionen."
-[sponsor_financial]
-other = "Finanzielle Unterstützung"
 [sponsor_other]
 other = "Andere Möglichkeiten zu helfen"
-[sponsor_github]
-other = "GitHub Sponsors"
-[sponsor_github_desc]
-other = "Wiederkehrendes oder einmaliges Sponsoring über GitHub."
-[sponsor_coffee]
-other = "Buy Me a Coffee"
-[sponsor_coffee_desc]
-other = "Schneller Einmalbeitrag."
 [sponsor_star]
 other = "Projekt auf GitHub mit Stern markieren"
 [sponsor_star_desc]
