@@ -85,7 +85,7 @@
 - [x] Website: Hugo + Tailwind, i18n (4 langs), sponsor page, privacy, SEO, OG image, /get page
 - [x] Distribution: docs/distribution.md with automated versions.json in release workflow
 - [x] Onboarding view with prerequisites, getting started, key concepts
-- [x] Sentry crash reporting (EU, no PII, environment/version tags)
+- [x] Sentry crash reporting (added upstream, removed in 1c446df — app has no crash reporting)
 - [x] Swift 6 strict concurrency migration
 - [x] Security: WKWebView JS disabled, shell-escape tmux, surface destroy, git flag injection, .env symlink validation
 - [x] Accessibility: labels, focus rings, keyboard-reachable hover actions
