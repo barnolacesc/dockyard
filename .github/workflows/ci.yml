@@ -54,10 +54,7 @@ jobs:
           test -d ghostty/zig-out/share/ghostty
 
       - name: Build
-        run: |
-          xcodegen generate
-          xcodebuild -project Dockyard.xcodeproj -scheme Dockyard -configuration Debug -destination 'generic/platform=macOS' build
+        run: ./scripts/dev.sh build
 
       - name: Test
-        run: |
-          xcodebuild -project Dockyard.xcodeproj -scheme DockyardTests -configuration Debug -destination 'generic/platform=macOS' test
+        run: ./scripts/dev.sh test
