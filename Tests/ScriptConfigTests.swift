@@ -183,6 +183,23 @@ final class ScriptConfigTests: XCTestCase {
 
     // MARK: - Helpers
 
+    func testRunTeardownSkipsUntrustedScripts() {
+        let marker = tmpDir.appendingPathComponent("teardown-ran")
+        writeJSON(".dockyard.json", ["teardown": "touch '\(marker.path)'"])
+
+        let defaults = UserDefaults(suiteName: "ScriptConfigTeardownTests")!
+        defaults.removePersistentDomain(forName: "ScriptConfigTeardownTests")
+        defer { defaults.removePersistentDomain(forName: "ScriptConfigTeardownTests") }
+
+        ScriptConfig.runTeardown(in: tmpDir.path, projectDirectory: tmpDir.path, defaults: defaults)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: marker.path), "untrusted teardown must not run")
+
+        let config = ScriptConfig.load(from: tmpDir.path)
+        ScriptTrustStore.trust(projectDirectory: tmpDir.path, config: config, defaults: defaults)
+        ScriptConfig.runTeardown(in: tmpDir.path, projectDirectory: tmpDir.path, defaults: defaults)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: marker.path), "trusted teardown must run")
+    }
+
     private func writeJSON(_ name: String, _ dict: [String: Any]) {
         let path = tmpDir.appendingPathComponent(name).path
         let data = try! JSONSerialization.data(withJSONObject: dict)
