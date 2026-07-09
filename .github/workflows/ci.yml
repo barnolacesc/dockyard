@@ -30,7 +30,7 @@ jobs:
 
       - name: Compute Ghostty cache key
         id: ghostty-key
-        run: echo "key=ghostty-v2-$(git -C ghostty rev-parse HEAD)-zig-0.15.2-macos15" >> "$GITHUB_OUTPUT"
+        run: echo "key=ghostty-v3-$(git -C ghostty rev-parse HEAD)-zig-0.15.2-macos15" >> "$GITHUB_OUTPUT"
 
       - name: Cache Ghostty xcframework
         id: ghostty-cache
@@ -45,7 +45,7 @@ jobs:
         if: steps.ghostty-cache.outputs.cache-hit != 'true'
         run: |
           cd ghostty
-          zig build -Demit-xcframework=true -Doptimize=ReleaseFast
+          zig build -Demit-xcframework=true -Demit-macos-app=false -Doptimize=ReleaseFast
 
       - name: Verify Ghostty artifacts
         run: |
