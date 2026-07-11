@@ -32,7 +32,7 @@ Dockyard agerar inte som mellanhand för dessa tjänster. Dina API-nycklar och i
 
 ## Denna webbplats
 
-Dockyards webbplats (francesc.barnola.net) använder inga analysverktyg, cookies, spårningsskript eller annonsnätverk av något slag.
+Dockyards webbplats (dockyard.barnola.net) använder inga analysverktyg, cookies, spårningsskript eller annonsnätverk av något slag.
 
 Inga andra spårningsskript, annonsnätverk eller tredjepartsanalys används på denna webbplats.
 

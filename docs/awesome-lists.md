@@ -30,7 +30,7 @@ Aizen. Dockyard is built on libghostty, so this is a natural home.
 - **How to submit:** Open a PR. See [CONTRIBUTING.md](https://github.com/Uzaaft/awesome-libghostty/blob/master/CONTRIBUTING.md).
 - **Ready-to-submit copy:**
   ```
-  * [Dockyard](https://francesc.barnola.net) - A native macOS workspace for parallel development with git worktrees, Claude Code agents, and embedded dev servers with automatic port detection.
+  * [Dockyard](https://dockyard.barnola.net) - A native macOS workspace for parallel development with git worktrees, Claude Code agents, and embedded dev servers with automatic port detection.
   ```
 
 #### 3. jaywcjlove/awesome-mac (101k stars)
@@ -41,7 +41,7 @@ Massive reach. Dockyard fits in **Developer Tools > Terminal Apps**.
 - **How to submit:** Open a PR. Read their [contributing guidelines](https://github.com/jaywcjlove/awesome-mac/blob/master/CONTRIBUTING.md). Uses icon badges for open source, freeware, etc.
 - **Ready-to-submit copy:**
   ```
-  * [Dockyard](https://francesc.barnola.net) - Developer workspace that manages parallel tasks in git worktrees, each with its own terminal, AI agent, and embedded browser. [![Open Source Software][oss-icon]](https://github.com/barnolacesc/dockyard) ![Freeware][freeware-icon]
+  * [Dockyard](https://dockyard.barnola.net) - Developer workspace that manages parallel tasks in git worktrees, each with its own terminal, AI agent, and embedded browser. [![Open Source Software][oss-icon]](https://github.com/barnolacesc/dockyard) ![Freeware][freeware-icon]
   ```
 - **Notes:** Highly curated. Quality bar is high; the app needs to be polished with a good README and website screenshots.
 
@@ -53,7 +53,7 @@ Previously fearlessgeekmedia/Awesome-Ghostty (now archived, redirects to this fo
 - **How to submit:** Open a PR.
 - **Ready-to-submit copy:**
   ```
-  * [Dockyard](https://francesc.barnola.net) - Developer workspace built on Ghostty's GPU-rendered terminal for managing parallel git worktrees with integrated Claude Code agents and dev servers.
+  * [Dockyard](https://dockyard.barnola.net) - Developer workspace built on Ghostty's GPU-rendered terminal for managing parallel git worktrees with integrated Claude Code agents and dev servers.
   ```
 - **Notes:** Some overlap with awesome-libghostty, but different audience. This list is about the Ghostty ecosystem broadly; awesome-libghostty is about projects using the library.
 
@@ -69,7 +69,7 @@ The most popular developer resource on GitHub. Has a Claude Code roadmap with a
 - **Ready-to-submit copy:**
   ```
   - [@opensource@Dockyard](https://github.com/barnolacesc/dockyard)
-  - [@article@Dockyard: Parallel Development with Git Worktrees and Claude Code](https://francesc.barnola.net)
+  - [@article@Dockyard: Parallel Development with Git Worktrees and Claude Code](https://dockyard.barnola.net)
   ```
 - **Notes:** Extremely high visibility but strict review process. The community tools section is tiny, so there's room.
 
@@ -80,7 +80,7 @@ Open source alternatives directory with good SEO. superset.sh is listed here.
 - **How to submit:** Submit at [openalternative.co/submit](https://openalternative.co/submit). Approved tools automatically appear in the GitHub repo.
 - **Ready-to-submit copy:**
   - **Name:** Dockyard
-  - **URL:** https://francesc.barnola.net
+  - **URL:** https://dockyard.barnola.net
   - **Repository:** https://github.com/barnolacesc/dockyard
   - **Description:** Open source macOS workspace for parallel development. Manages git worktrees, Claude Code agents, and dev servers in a single native app. Built on Ghostty's GPU-rendered terminal. No Electron, no subscription.
 
@@ -140,7 +140,7 @@ Curated list of AI-powered coding tools.
 - **How to submit:** Check their CONTRIBUTING.md or open a PR.
 - **Ready-to-submit copy:**
   ```
-  - [Dockyard](https://francesc.barnola.net) - Native macOS workspace for parallel AI-assisted development. Manages git worktrees with integrated Claude Code agents, GPU-rendered terminals, and embedded dev servers.
+  - [Dockyard](https://dockyard.barnola.net) - Native macOS workspace for parallel AI-assisted development. Manages git worktrees with integrated Claude Code agents, GPU-rendered terminals, and embedded dev servers.
   ```
 
 #### 12. rothgar/awesome-tuis (18k stars)
@@ -165,7 +165,7 @@ Curated web directory of Claude resources. Has an Applications section and Claud
 - **How to submit:** Unknown (no visible submission form). Likely contact the maintainer directly or check if there's a GitHub repo backing it.
 - **Ready-to-submit copy:**
   - **Name:** Dockyard
-  - **URL:** https://francesc.barnola.net
+  - **URL:** https://dockyard.barnola.net
   - **Repository:** https://github.com/barnolacesc/dockyard
   - **Description:** Native macOS workspace for running multiple Claude Code agents in parallel, each in its own git worktree with GPU-rendered terminals and automatic dev server detection.
 
@@ -185,7 +185,7 @@ The meta-list. Not for individual tools. Worth knowing about if we ever create a
 ### Before submitting anywhere
 
 1. **Polish the README** with clear description, screenshots/GIFs, and install instructions
-2. **Website** (francesc.barnola.net) should have demo content and the /get/ page working
+2. **Website** (dockyard.barnola.net) should have demo content and the /get/ page working
 3. **GitHub repo hygiene**: topics set, social preview image, releases published
 4. **Star count**: some lists have implicit minimum thresholds
 
@@ -203,7 +203,7 @@ The meta-list. Not for individual tools. Worth knowing about if we ever create a
 ### Link strategy
 
 - **GitHub-focused lists** (awesome-claude-code, awesome-git, awesome-tuis, awesome-AI-driven-development, awesome-vibe-coding-tools, jqueryscript/awesome-claude-code): link to `https://github.com/barnolacesc/dockyard`
-- **User-facing lists** (awesome-mac, awesome-libghostty, Awesome-Ghostty, awesome-ai-coding-tools): link to `https://francesc.barnola.net`
+- **User-facing lists** (awesome-mac, awesome-libghostty, Awesome-Ghostty, awesome-ai-coding-tools): link to `https://dockyard.barnola.net`
 - **Directories** (openalternative.co, awesomeclaude.ai): provide both the website and repo URL
 - **developer-roadmap**: link to repo (follows their `@opensource@` tag convention)
 

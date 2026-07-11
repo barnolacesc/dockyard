@@ -10,9 +10,9 @@
 </p>
 
 <p align="center">
-  <a href="https://francesc.barnola.net">Website</a> &middot;
-  <a href="https://francesc.barnola.net/get/">Download</a> &middot;
-  <a href="https://francesc.barnola.net/sponsor">Sponsor</a>
+  <a href="https://dockyard.barnola.net">Website</a> &middot;
+  <a href="https://github.com/barnolacesc/dockyard/releases/latest">Download</a> &middot;
+  <a href="https://dockyard.barnola.net/sponsor">Sponsor</a>
 </p>
 
 <p align="center">
@@ -30,7 +30,7 @@ Install via Homebrew:
 brew install --cask barnolacesc/tap/dockyard
 ```
 
-Or [download the latest release](https://francesc.barnola.net/get/).
+Or [download the latest release](https://github.com/barnolacesc/dockyard/releases/latest).
 
 Then:
 
@@ -174,7 +174,7 @@ English, Catalan, German, Spanish, Swedish.
 brew install --cask barnolacesc/tap/dockyard
 ```
 
-Or [download the latest release](https://francesc.barnola.net/get/).
+Or [download the latest release](https://github.com/barnolacesc/dockyard/releases/latest).
 
 ### Upgrade
 

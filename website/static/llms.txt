@@ -91,12 +91,12 @@ Navigation:
 
 ## Links
 
-- [Website](https://francesc.barnola.net): Homepage with features, screenshots, and documentation
+- [Website](https://dockyard.barnola.net): Homepage with features, screenshots, and documentation
 - [GitHub](https://github.com/barnolacesc/dockyard): Source code, README, and issue tracker
-- [Download](https://francesc.barnola.net/get): Installation instructions and download links
+- [Download](https://dockyard.barnola.net/get): Installation instructions and download links
 - [Releases](https://github.com/barnolacesc/dockyard/releases): Release history and changelog
 
 ## Optional
 
-- [Sponsor](https://francesc.barnola.net/sponsor): Support the project's development
-- [Privacy Policy](https://francesc.barnola.net/legal/privacy): Privacy and data handling
+- [Sponsor](https://dockyard.barnola.net/sponsor): Support the project's development
+- [Privacy Policy](https://dockyard.barnola.net/legal/privacy): Privacy and data handling

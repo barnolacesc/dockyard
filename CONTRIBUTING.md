@@ -29,7 +29,7 @@ Do **not** edit `Dockyard.xcodeproj` directly. It is generated from `project.yml
 - `Sources/Views/` - SwiftUI views (sidebar, settings, workspace, browser)
 - `Localization/` - Localized strings (en, ca, es, sv)
 - `Resources/` - Entitlements, assets, bridging header
-- `website/` - Hugo + Tailwind CSS site for francesc.barnola.net
+- `website/` - Hugo + Tailwind CSS site for dockyard.barnola.net
 
 ## How to contribute
 

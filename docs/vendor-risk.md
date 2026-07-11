@@ -14,7 +14,7 @@ checks: the Sparkle appcast request (DMG installs) or `git fetch` on the
 app's own checkout (source installs). No telemetry, no analytics, no crash
 reporting, no accounts. See PRIVACY.md for the full table.
 
-**What network endpoints are contacted?** `francesc.barnola.net` (appcast,
+**What network endpoints are contacted?** `dockyard.barnola.net` (appcast,
 DMG installs only) and the git remote of the app's own source checkout
 (source installs only). All other traffic (git, `gh`, coding-agent CLIs,
 browser tabs) is user-initiated toward the user's own services.

@@ -31,7 +31,7 @@ Dockyard agiert nicht als Vermittler für diese Dienste. Deine API-Schlüssel un
 
 ## Diese Website
 
-Die Dockyard-Website (francesc.barnola.net) verwendet keinerlei Analyse-Tools, Cookies, Tracking-Skripte oder Werbenetzwerke.
+Die Dockyard-Website (dockyard.barnola.net) verwendet keinerlei Analyse-Tools, Cookies, Tracking-Skripte oder Werbenetzwerke.
 
 Keine weiteren Tracking-Skripte, Werbenetzwerke oder Drittanbieter-Analysen werden auf dieser Website verwendet.
 

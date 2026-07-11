@@ -96,7 +96,7 @@ Breaking changes: add `!` after the type or include `BREAKING CHANGE:` in the fo
 - `Resources/MonacoEditor/` - Built Monaco editor bundle (gitignored, built by `scripts/build-editor.sh`)
 - `editor/` - Monaco editor Vite project (source for `Resources/MonacoEditor/`). Built with bun.
 - `ghostty/` - Git submodule (do not modify, pinned to stable release tag)
-- `website/` - Hugo + Tailwind CSS site for francesc.barnola.net. **Do not use `.AllTranslations`** in Hugo templates; it returns duplicates because localized contentDirs are nested inside the English `content/` dir. Use a hardcoded language code list instead (see `footer.html` or `docs.html` for the pattern).
+- `website/` - Hugo + Tailwind CSS site for dockyard.barnola.net. **Do not use `.AllTranslations`** in Hugo templates; it returns duplicates because localized contentDirs are nested inside the English `content/` dir. Use a hardcoded language code list instead (see `footer.html` or `docs.html` for the pattern).
 - `scripts/` - Release and build automation
 - `docs/` - Distribution guide and reference docs
 
@@ -198,7 +198,7 @@ Current shortcuts:
 
 ## Naming
 - The app is "Dockyard". Internal ID is `dockyard` (no hyphen).
-- Domain is `francesc.barnola.net` (hyphen only in the domain name).
+- Domain is `dockyard.barnola.net` (hyphen only in the domain name).
 - Use `AppConstants.appID` and `AppConstants.appName`, not hardcoded strings.
 - Use "directory" not "folder" in all user-facing text.
 - Use "Coding Agent" for the claude terminal tab.

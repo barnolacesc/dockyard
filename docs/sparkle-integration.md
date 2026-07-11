@@ -5,7 +5,7 @@ GitHub issue: #39
 ## Background
 
 Dockyard notifies Homebrew users about new versions by parsing the
-appcast feed at `francesc.barnola.net/appcast.xml` and showing a badge in
+appcast feed at `dockyard.barnola.net/appcast.xml` and showing a badge in
 the sidebar (see `UpdateChecker.swift`). DMG users get automatic
 updates via Sparkle, which reads the same appcast feed.
 
@@ -72,7 +72,7 @@ pattern ghostty and cmux use).
 | Key | Value | Notes |
 |-----|-------|-------|
 | `SUPublicEDKey` | (empty or placeholder) | Overwritten by CI with real public key |
-| `SUFeedURL` | `https://francesc.barnola.net/appcast.xml` | Points to the appcast hosted on the website |
+| `SUFeedURL` | `https://dockyard.barnola.net/appcast.xml` | Points to the appcast hosted on the website |
 | `SUEnableAutomaticChecks` | `false` | Let users opt in via Settings |
 
 The appcast is hosted on the website and updated by the deploy workflow
@@ -224,7 +224,7 @@ simplified: we only need one channel and one item (the latest release).
 
 ### 7. Appcast Hosting
 
-The appcast is hosted on the website at `francesc.barnola.net/appcast.xml`.
+The appcast is hosted on the website at `dockyard.barnola.net/appcast.xml`.
 The deploy-website workflow downloads the appcast from the latest GitHub
 release and includes it in the static site. This ensures the feed URL
 only updates after assets are fully uploaded, avoiding a race condition

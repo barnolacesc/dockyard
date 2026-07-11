@@ -8,7 +8,7 @@ needs to be containerized these days.
 
 **Name**: Corner Office
 - Docker image: `dockyard/corner-office`
-- Hosted URL: `corner-office.francesc.barnola.net`
+- Hosted URL: `corner-office.dockyard.barnola.net`
 - In-app setting: "Connect to Corner Office"
 
 ## Architecture
@@ -50,7 +50,7 @@ No passwords, no API keys, no config files. Uses the device authorization patter
 (same UX as Netflix on a TV, GitHub CLI, Apple TV):
 
 1. User enters the Corner Office URL in Dockyard settings
-   (e.g., `localhost:8080` or `corner-office.francesc.barnola.net`)
+   (e.g., `localhost:8080` or `corner-office.dockyard.barnola.net`)
 2. Dockyard connects and receives a 6-character pairing code + QR code
 3. Dockyard displays both prominently in a pairing screen
 4. User opens the Corner Office web UI (or scans the QR code), enters the code
@@ -125,13 +125,13 @@ Remote access is the user's responsibility. Documented recipes for:
 - **ngrok**: easiest setup (one token), but free tier has 20 conn/min rate limit and
   one static domain per account.
 
-### Hosted coordinator (francesc.barnola.net)
+### Hosted coordinator (dockyard.barnola.net)
 
 Managed service for users who want zero infrastructure. Dockyard instances connect
-outbound to `coordinator.francesc.barnola.net` (HTTPS, works through any firewall).
+outbound to `coordinator.dockyard.barnola.net` (HTTPS, works through any firewall).
 
 Onboarding flow:
-1. Sign in with GitHub/Google at coordinator.francesc.barnola.net
+1. Sign in with GitHub/Google at coordinator.dockyard.barnola.net
 2. Get a pairing code
 3. Paste code into Dockyard settings
 4. Dockyard connects outbound. Done.

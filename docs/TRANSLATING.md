@@ -2,7 +2,7 @@
 
 Dockyard is localized in four languages: English (en), Catalan (ca), Spanish (es), and Swedish (sv). Contributions to improve existing translations or add new languages are welcome.
 
-There are two independent translation surfaces: the **app** (native macOS UI) and the **website** (francesc.barnola.net). You can contribute to either or both.
+There are two independent translation surfaces: the **app** (native macOS UI) and the **website** (dockyard.barnola.net). You can contribute to either or both.
 
 ## Translation philosophy
 

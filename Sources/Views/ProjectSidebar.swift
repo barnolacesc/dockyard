@@ -928,7 +928,7 @@ struct ProjectSidebar: View {
     private var sponsorURL: URL {
         let lang = Locale.current.language.languageCode?.identifier ?? "en"
         let path = lang == "en" ? "/sponsor" : "/\(lang)/sponsor"
-        return URL(string: "https://francesc.barnola.net\(path)")!
+        return URL(string: "https://dockyard.barnola.net\(path)")!
     }
 
     @AppStorage("dockyard.baseDirectory") private var baseDirectory: String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? ""

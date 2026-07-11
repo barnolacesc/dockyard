@@ -32,7 +32,7 @@ Dockyard does not act as an intermediary for these services. Your API keys and c
 
 ## This website
 
-The Dockyard website (francesc.barnola.net) does not use analytics, cookies, tracking scripts, or advertising networks of any kind.
+The Dockyard website (dockyard.barnola.net) does not use analytics, cookies, tracking scripts, or advertising networks of any kind.
 
 ## Contact
 

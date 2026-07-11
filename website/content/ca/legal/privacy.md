@@ -32,7 +32,7 @@ Dockyard no actua com a intermediari per a aquests serveis. Les teves claus d'AP
 
 ## Aquest lloc web
 
-El lloc web de Dockyard (francesc.barnola.net) no utilitza analítiques, galetes, scripts de seguiment ni xarxes publicitàries de cap tipus.
+El lloc web de Dockyard (dockyard.barnola.net) no utilitza analítiques, galetes, scripts de seguiment ni xarxes publicitàries de cap tipus.
 
 No s'utilitzen altres scripts de seguiment, xarxes publicitàries ni analítiques de tercers en aquest lloc web.
 
