@@ -1,0 +1,339 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
+        id: release
+        with:
+          config-file: .release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  build:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: macos-15
+    permissions:
+      contents: write
+    env:
+      APP_NAME: Dockyard
+      SCHEME: Dockyard
+      PROJECT: Dockyard.xcodeproj
+      APP_PATH: build/release/Dockyard.app
+      TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          submodules: true
+
+      # Match the Xcode the codebase is developed against (see docs/install-from-source.md).
+      - name: Select Xcode 26.2
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app
+
+      - name: Log build environment
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - uses: xavierLowmiller/xcodegen-action@e5af38841cc8e1b8ace551066402a97f146a9bbd # 1.2.4
+        with:
+          install: true
+          run: false
+
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: 0.15.2
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
+      - name: Compute Ghostty cache key
+        id: ghostty-key
+        run: echo "key=ghostty-v3-$(git -C ghostty rev-parse HEAD)-zig-0.15.2-macos15" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Ghostty xcframework
+        id: ghostty-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ghostty/macos/GhosttyKit.xcframework
+            ghostty/zig-out
+          key: ${{ steps.ghostty-key.outputs.key }}
+
+      - name: Build Ghostty xcframework
+        if: steps.ghostty-cache.outputs.cache-hit != 'true'
+        run: |
+          cd ghostty
+          zig build -Demit-xcframework=true -Demit-macos-app=false -Doptimize=ReleaseFast
+
+      - name: Verify Ghostty artifacts
+        run: |
+          test -d ghostty/macos/GhosttyKit.xcframework/macos-arm64_x86_64
+          test -d ghostty/zig-out/share/terminfo
+          test -d ghostty/zig-out/share/ghostty
+
+      # AppCommit.swift and the Monaco editor bundle are gitignored, generated
+      # inputs that xcodegen validates the existence of at `generate` time.
+      - name: Generate AppCommit
+        run: bash scripts/gen-appcommit.sh
+
+      - name: Build Monaco editor
+        run: bash scripts/build-editor.sh
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Determine signing mode
+        id: signing
+        env:
+          CERTIFICATE_P12_BASE64: ${{ secrets.CERTIFICATE_P12_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          if [ -n "$CERTIFICATE_P12_BASE64" ] && \
+             [ -n "$CERTIFICATE_PASSWORD" ] && \
+             [ -n "$APPLE_ID" ] && \
+             [ -n "$APPLE_TEAM_ID" ] && \
+             [ -n "$APPLE_APP_PASSWORD" ]; then
+            echo "Signing secrets found - building a Developer ID signed, notarized release."
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No signing secrets configured - building an ad-hoc signed (unsigned) release."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Import signing certificate
+        id: import-cert
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          CERTIFICATE_P12_BASE64: ${{ secrets.CERTIFICATE_P12_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+        run: |
+          CERT_PATH="$RUNNER_TEMP/certificate.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(uuidgen)
+
+          echo -n "$CERTIFICATE_P12_BASE64" | base64 --decode -o "$CERT_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
+          rm -f "$CERT_PATH"
+
+          # Derive the signing identity from the imported certificate rather than
+          # hardcoding an org name - the fork's certificate belongs to whoever owns
+          # the secrets, not the upstream author.
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep '"Developer ID Application' | head -1 | sed -E 's/^[[:space:]]*[0-9]+\) [A-F0-9]+ "(.*)"$/\1/')
+          if [ -z "$IDENTITY" ]; then
+            echo "::error::No 'Developer ID Application' identity found in the imported certificate."
+            exit 1
+          fi
+          echo "Resolved signing identity: $IDENTITY"
+          echo "identity=$IDENTITY" >> "$GITHUB_OUTPUT"
+          echo "keychain=$KEYCHAIN_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Build release
+        env:
+          SIGNED: ${{ steps.signing.outputs.enabled }}
+          SIGN_IDENTITY: ${{ steps.import-cert.outputs.identity }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          rm -rf build/release/derived
+          if [ "$SIGNED" = "true" ]; then
+            echo "==> Building signed Release (Developer ID: $SIGN_IDENTITY)"
+            xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Release \
+              -destination 'generic/platform=macOS' \
+              -derivedDataPath build/release/derived \
+              DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+              CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
+              CODE_SIGN_STYLE=Manual \
+              ENABLE_HARDENED_RUNTIME=YES \
+              CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
+              OTHER_CODE_SIGN_FLAGS="--timestamp --options=runtime" \
+              build
+          else
+            echo "==> Building ad-hoc signed (unsigned) Release"
+            xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Release \
+              -destination 'generic/platform=macOS' \
+              -derivedDataPath build/release/derived \
+              CODE_SIGN_IDENTITY="-" \
+              CODE_SIGN_STYLE=Manual \
+              ENABLE_HARDENED_RUNTIME=YES \
+              CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
+              CODE_SIGN_ENTITLEMENTS=Resources/dy-local.entitlements \
+              OTHER_CODE_SIGN_FLAGS="--options=runtime" \
+              build
+          fi
+
+      - name: Package app bundle
+        env:
+          SIGNED: ${{ steps.signing.outputs.enabled }}
+          SIGN_IDENTITY: ${{ steps.import-cert.outputs.identity }}
+        run: |
+          APP_BUILT=$(find build/release/derived -name "${APP_NAME}.app" -type d | head -1)
+          if [ -z "$APP_BUILT" ]; then
+            echo "::error::Built app not found"
+            exit 1
+          fi
+
+          rm -rf "$APP_PATH"
+          mkdir -p "$(dirname "$APP_PATH")"
+          cp -R "$APP_BUILT" "$APP_PATH"
+
+          if [ "$SIGNED" != "true" ]; then
+            echo "Ad-hoc build - skipping nested re-signing and Gatekeeper assessment."
+            exit 0
+          fi
+
+          echo "==> Re-signing embedded frameworks and helpers with $SIGN_IDENTITY..."
+          # Sparkle framework components (XPC services, helpers, then framework itself)
+          codesign --force --sign "$SIGN_IDENTITY" --timestamp --options=runtime \
+            "$APP_PATH/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc"
+          codesign --force --sign "$SIGN_IDENTITY" --timestamp --options=runtime \
+            "$APP_PATH/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc"
+          codesign --force --sign "$SIGN_IDENTITY" --timestamp --options=runtime \
+            "$APP_PATH/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate"
+          codesign --force --sign "$SIGN_IDENTITY" --timestamp --options=runtime \
+            "$APP_PATH/Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app"
+          codesign --force --sign "$SIGN_IDENTITY" --timestamp --options=runtime \
+            "$APP_PATH/Contents/Frameworks/Sparkle.framework"
+
+          # Re-sign all embedded frameworks with secure timestamp and hardened runtime
+          find "$APP_PATH/Contents/Frameworks" -type f -perm +111 -o -name "*.dylib" | while read -r bin; do
+            codesign --force --sign "$SIGN_IDENTITY" --timestamp --options=runtime "$bin"
+          done
+
+          # Re-sign helpers with hardened runtime and secure timestamp
+          find "$APP_PATH/Contents/Helpers" -type f -perm +111 | while read -r bin; do
+            codesign --force --sign "$SIGN_IDENTITY" --timestamp --options=runtime "$bin"
+          done
+
+          # Sign the main app binary (not --deep, nested code is already signed above)
+          codesign --force --sign "$SIGN_IDENTITY" --timestamp --options=runtime \
+            --entitlements Resources/dy.entitlements "$APP_PATH"
+
+          echo "==> Verifying signature..."
+          codesign --verify --verbose=2 --deep --strict "$APP_PATH"
+          spctl --assess --type execute --verbose=2 "$APP_PATH" 2>&1 || true
+
+      - name: Create DMG
+        env:
+          SIGNED: ${{ steps.signing.outputs.enabled }}
+        run: |
+          brew install create-dmg
+
+          if [ "$SIGNED" = "true" ]; then
+            DMG_NAME="${SCHEME}.dmg"
+          else
+            DMG_NAME="${SCHEME}-unsigned.dmg"
+          fi
+          DMG_PATH="build/release/$DMG_NAME"
+
+          rm -f "$DMG_PATH"
+          DMG_STAGING="build/release/dmg-staging"
+          rm -rf "$DMG_STAGING"
+          mkdir -p "$DMG_STAGING"
+          cp -R "$APP_PATH" "$DMG_STAGING/"
+
+          # create-dmg exits non-zero when skipping deprecated internet-enable
+          create-dmg \
+            --volname "$APP_NAME" \
+            --background "Resources/dmg-background@2x.png" \
+            --window-size 660 500 \
+            --icon-size 128 \
+            --icon "${APP_NAME}.app" 170 190 \
+            --app-drop-link 490 190 \
+            --no-internet-enable \
+            "$DMG_PATH" \
+            "$DMG_STAGING" || true
+
+          if [ ! -f "$DMG_PATH" ]; then
+            echo "::error::DMG was not created"
+            exit 1
+          fi
+
+          echo "DMG_NAME=$DMG_NAME" >> "$GITHUB_ENV"
+          echo "DMG_PATH=$DMG_PATH" >> "$GITHUB_ENV"
+
+      - name: Sign DMG
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          SIGN_IDENTITY: ${{ steps.import-cert.outputs.identity }}
+        run: codesign --sign "$SIGN_IDENTITY" --timestamp "$DMG_PATH"
+
+      - name: Notarize DMG
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          KEYCHAIN_PATH: ${{ steps.import-cert.outputs.keychain }}
+        run: |
+          xcrun notarytool store-credentials "notarize-profile" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --keychain "$KEYCHAIN_PATH"
+
+          SUBMIT_OUT=$(xcrun notarytool submit "$DMG_PATH" \
+            --keychain-profile "notarize-profile" \
+            --keychain "$KEYCHAIN_PATH" \
+            --wait 2>&1) || true
+          echo "$SUBMIT_OUT"
+
+          SUBMISSION_ID=$(echo "$SUBMIT_OUT" | grep 'id:' | head -1 | awk '{print $2}')
+
+          if echo "$SUBMIT_OUT" | grep -q "status: Invalid"; then
+            echo "::error::Notarization failed. Fetching detailed log..."
+            xcrun notarytool log "$SUBMISSION_ID" \
+              --keychain-profile "notarize-profile" \
+              --keychain "$KEYCHAIN_PATH"
+            exit 1
+          fi
+
+          xcrun stapler staple "$DMG_PATH"
+
+      - name: Compute checksum
+        run: |
+          shasum -a 256 "$DMG_PATH" > "$DMG_PATH.sha256"
+          cat "$DMG_PATH.sha256"
+
+      - name: Note unsigned build in release notes
+        if: steps.signing.outputs.enabled != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTICE=$'\n\n---\n\n**This build is unsigned.** No Apple Developer ID signing secrets are configured for this repository, so this DMG is ad-hoc signed and **not notarized**. macOS Gatekeeper will refuse to open it until you clear the quarantine flag:\n\n```\nxattr -cr /Applications/Dockyard.app\n```\n\nAlternatively, build Dockyard from source - see docs/install-from-source.md.'
+          CURRENT_BODY=$(gh release view "$TAG_NAME" --json body -q .body)
+          printf '%s%s' "$CURRENT_BODY" "$NOTICE" > "$RUNNER_TEMP/release-notes.md"
+          gh release edit "$TAG_NAME" --notes-file "$RUNNER_TEMP/release-notes.md"
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG_NAME" "$DMG_PATH" "$DMG_PATH.sha256" --clobber
+
+      - name: Clean up keychain
+        if: always() && steps.signing.outputs.enabled == 'true'
+        env:
+          KEYCHAIN_PATH: ${{ steps.import-cert.outputs.keychain }}
+        run: security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true

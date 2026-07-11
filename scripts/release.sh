@@ -4,7 +4,16 @@
 
 set -euo pipefail
 
-SIGNING_IDENTITY="Developer ID Application: ALL TUNER LABS S.L. (J5TAY75Q3F)"
+# Signing identity and team come from the environment - there is no default.
+# Set these to your own Developer ID Application certificate before releasing:
+#   export DY_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID1234)"
+#   export DY_TEAM_ID="TEAMID1234"
+if [ -z "${DY_SIGN_IDENTITY:-}" ] || [ -z "${DY_TEAM_ID:-}" ]; then
+  echo "Error: DY_SIGN_IDENTITY and DY_TEAM_ID must be set to your Developer ID Application" >&2
+  echo "       certificate identity and team ID. There is no default signing identity." >&2
+  exit 1
+fi
+SIGNING_IDENTITY="$DY_SIGN_IDENTITY"
 NOTARIZE_PROFILE="dockyard"
 APP_NAME="Dockyard"
 SCHEME="Dockyard"
@@ -19,7 +28,7 @@ xcodegen generate
 rm -rf "$BUILD_DIR/derived"
 xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Release \
   -derivedDataPath "$BUILD_DIR/derived" \
-  DEVELOPMENT_TEAM=J5TAY75Q3F \
+  DEVELOPMENT_TEAM="$DY_TEAM_ID" \
   CODE_SIGN_IDENTITY="$SIGNING_IDENTITY" \
   CODE_SIGN_STYLE=Manual \
   build
