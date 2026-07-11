@@ -3,7 +3,7 @@
 ## Fork separation (upstream cleanup follow-ups)
 
 - [ ] Detach the repo from the fork network via GitHub Support (https://support.github.com/request) so the "forked from alltuner/factoryfloor" banner disappears and the repo gets indexed in search
-- [ ] Create `barnolacesc/homebrew-tap` with the Dockyard cask — `brew install --cask barnolacesc/tap/dockyard` in README/website currently fails because the tap repo doesn't exist
+- [x] Create `barnolacesc/homebrew-tap` with the Dockyard cask — `brew install --cask barnolacesc/tap/dockyard` works (v0.2.0, unsigned DMG with Gatekeeper caveats)
 - [ ] Publish `appcast.xml` at dockyard.barnola.net (Sparkle `SUFeedURL` in project.yml currently 404s, so DMG auto-updates can't work)
 - [ ] Deploy the website to dockyard.barnola.net — not live yet, pending DNS (CNAME to barnolacesc.github.io in Cloudflare), GitHub Pages enablement, and a deploy workflow
 - [ ] Decide on Poblenou branding (app icon skyline, `PoblenouSkyline.swift`, "Made with ❤️ in Poblenou" website footer) — keep as homage or rebrand
