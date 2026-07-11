@@ -13,7 +13,7 @@ Dockyard ships via two channels:
 ## Update notification
 
 DMG users get automatic updates via Sparkle, which reads the appcast
-feed at `https://francesc.barnola.net/appcast.xml`.
+feed at `https://dockyard.barnola.net/appcast.xml`.
 
 Homebrew users see a sidebar badge when a newer version is available.
 The app parses the version from the same appcast feed.
@@ -67,6 +67,6 @@ After a release, verify:
 
 1. GitHub release exists with notarized DMG attached
 2. Homebrew cask points to the new DMG
-3. `francesc.barnola.net/appcast.xml` reports the new version
+3. `dockyard.barnola.net/appcast.xml` reports the new version
 4. `/get` page shows correct install/upgrade commands
 5. App shows update badge when running an older version

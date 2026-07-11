@@ -10,7 +10,7 @@ anonymous installation ID from its preferences.)
 
 | Connection | When | What is sent |
 | --- | --- | --- |
-| `https://francesc.barnola.net/appcast.xml` (Sparkle) | DMG installs only, when checking for updates | Standard HTTP request; Sparkle sends the app version in the user agent |
+| `https://dockyard.barnola.net/appcast.xml` (Sparkle) | DMG installs only, when checking for updates | Standard HTTP request; Sparkle sends the app version in the user agent |
 | `git fetch` on Dockyard's own source checkout | Source installs only, periodic update check | Normal git traffic to whatever remote *you* cloned from |
 
 That is the complete list. Everything else that touches the network is
@@ -41,5 +41,5 @@ Dockyard never reads its contents.
 
 ## Website
 
-The project website (francesc.barnola.net) is a static site and is unrelated
+The project website (dockyard.barnola.net) is a static site and is unrelated
 to what the app does at runtime.

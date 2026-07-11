@@ -77,7 +77,7 @@ def build_appcast(
 
     channel = ET.SubElement(rss, "channel")
     ET.SubElement(channel, "title").text = "Dockyard"
-    ET.SubElement(channel, "link").text = "https://francesc.barnola.net"
+    ET.SubElement(channel, "link").text = "https://dockyard.barnola.net"
     ET.SubElement(channel, "description").text = "Dockyard updates"
     ET.SubElement(channel, "language").text = "en"
 

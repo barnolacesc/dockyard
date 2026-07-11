@@ -8,7 +8,7 @@ struct HelpView: View {
         { page in
             let lang = Locale.current.language.languageCode?.identifier ?? "en"
             let path = lang == "en" ? "/\(page)" : "/\(lang)/\(page)"
-            return URL(string: "https://francesc.barnola.net\(path)")!
+            return URL(string: "https://dockyard.barnola.net\(path)")!
         }
     }
 

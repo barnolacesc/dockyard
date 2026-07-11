@@ -32,7 +32,7 @@ Dockyard no actúa como intermediario para estos servicios. Tus claves de API y 
 
 ## Este sitio web
 
-El sitio web de Dockyard (francesc.barnola.net) no utiliza analíticas, cookies, scripts de seguimiento ni redes publicitarias de ningún tipo.
+El sitio web de Dockyard (dockyard.barnola.net) no utiliza analíticas, cookies, scripts de seguimiento ni redes publicitarias de ningún tipo.
 
 No se utilizan otros scripts de seguimiento, redes publicitarias ni analíticas de terceros en este sitio web.
 

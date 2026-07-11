@@ -1,7 +1,7 @@
 # ABOUTME: Hugo configuration for the Dockyard website.
-# ABOUTME: Multi-language site deployed to francesc.barnola.net via GitHub Pages.
+# ABOUTME: Multi-language site deployed to dockyard.barnola.net via GitHub Pages.
 
-baseURL = "https://francesc.barnola.net"
+baseURL = "https://dockyard.barnola.net"
 title = "Dockyard"
 defaultContentLanguage = "en"
 

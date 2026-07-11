@@ -47,7 +47,7 @@ targets:
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
         SUPublicEDKey: "grC1rloxT0gFZ2mQVIuDTZlkNFXwXLZhn9+xs4YGuXo="
-        SUFeedURL: https://francesc.barnola.net/appcast.xml
+        SUFeedURL: https://dockyard.barnola.net/appcast.xml
         SUEnableAutomaticChecks: false
         CFBundleURLTypes:
           - CFBundleURLName: com.barnolacesc.dockyard.open
