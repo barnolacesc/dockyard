@@ -3,6 +3,8 @@ name: CodeQL
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   schedule:
     - cron: "17 6 * * 1" # weekly, Monday morning
   workflow_dispatch:
@@ -16,7 +18,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  analyze:
+  # Cheap, interpreted-language scans: workflow files and editor/website JS.
+  # These run on every push, PR, and the weekly schedule.
+  analyze-quick:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [actions, javascript]
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # Swift requires build-mode: manual, which means the full Ghostty
+  # xcframework toolchain (same as ci.yml): ~10-15 min cold, ~5 min warm on
+  # a macOS runner. Keep it off the per-PR path so PRs aren't gated behind a
+  # second macOS build on top of ci.yml's own build+test job; it still runs
+  # on every push to main and the weekly schedule, giving full coverage
+  # without doubling macOS runner minutes per PR.
+  analyze-swift:
+    name: Analyze (swift)
+    if: github.event_name != 'pull_request'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6

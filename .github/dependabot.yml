@@ -4,18 +4,32 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: ci
 
   - package-ecosystem: swift
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(deps)"
 
-  - package-ecosystem: npm
+  # editor/ has only a bun.lock (no package-lock.json); the bun ecosystem
+  # reads that lockfile natively.
+  - package-ecosystem: bun
     directory: /editor
     schedule:
       interval: weekly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(deps)"
 
   - package-ecosystem: gitsubmodule
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(deps)"
