@@ -68,13 +68,11 @@ website/
     ├── _index.md              # Homepage (English)
     ├── docs.md                # Docs (English)
     ├── get.md
-    ├── sponsor.md
     ├── legal/privacy.md
     ├── ca/                    # Catalan content
     │   ├── _index.md
     │   ├── docs.md
     │   ├── get.md
-    │   ├── sponsor.md
     │   └── legal/privacy.md
     ├── es/                    # Spanish content
     │   └── ...

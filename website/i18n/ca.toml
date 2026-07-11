@@ -179,8 +179,6 @@ other = "Fet per"
 other = "amb el suport de"
 [footer_contact]
 other = "Contacte"
-[footer_sponsor]
-other = "Patrocina"
 [footer_privacy]
 other = "Privacitat"
 
@@ -198,34 +196,6 @@ other = "Posa-hi una estrella"
 
 [footer_poblenou]
 other = "Fet amb ❤️ al Poblenou, Barcelona 🇪🇺"
-
-# Sponsor
-[sponsor_intro]
-other = "Dockyard és gratuït i open source."
-[sponsor_intro_2]
-other = "El teu suport ajuda a finançar el desenvolupament continuat i noves funcionalitats."
-[sponsor_other]
-other = "Altres maneres de col·laborar"
-[sponsor_star]
-other = "Posa-hi una estrella a GitHub"
-[sponsor_star_desc]
-other = "Les estrelles ajuden altres a descobrir Dockyard."
-[sponsor_issues]
-other = "Reporta problemes"
-[sponsor_issues_desc]
-other = "Els bug reports i feature requests ajuden a millorar l'app."
-[sponsor_contribute]
-other = "Contribueix codi"
-[sponsor_contribute_desc]
-other = "Els pull requests per correccions i funcionalitats són benvinguts."
-[sponsor_translate]
-other = "Tradueix l'app o el web"
-[sponsor_translate_desc]
-other = "Ajuda a fer Dockyard accessible en més idiomes."
-[sponsor_ghostty]
-other = "Dona suport a Ghostty"
-[sponsor_ghostty_desc]
-other = "Dockyard està construït sobre el terminal GPU de Ghostty."
 
 # Get
 [get_title]

@@ -290,12 +290,12 @@
 "Built by David Poblador i Garcia" = "Skapat av David Poblador i Garcia";
 "with the support of" = "med stöd av";
 "by " = "av ";
-"Help " = "Hjälp till att ";
-" the development." = "stödja utvecklingen.";
+"Help by " = "Hjälp till genom att ";
+"starring or contributing" = "stjärnmärka eller bidra";
+" on GitHub." = " på GitHub.";
 
 
 /* Help */
-"Sponsor" = "Sponsra";
 "Report a Bug" = "Rapportera en bugg";
 "Documentation" = "Dokumentation";
 "Request a Feature" = "Föreslå en funktion";

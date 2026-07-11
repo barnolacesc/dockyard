@@ -290,12 +290,12 @@
 "Built by David Poblador i Garcia" = "Creado por David Poblador i Garcia";
 "with the support of" = "con el apoyo de";
 "by " = "por ";
-"Help " = "Ayuda a ";
-" the development." = "el desarrollo.";
+"Help by " = "Ayuda ";
+"starring or contributing" = "dando una estrella o contribuyendo";
+" on GitHub." = " en GitHub.";
 
 
 /* Help */
-"Sponsor" = "Patrocinar";
 "Report a Bug" = "Reportar un error";
 "Documentation" = "Documentación";
 "Request a Feature" = "Sugerir una funcionalidad";

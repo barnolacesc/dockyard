@@ -179,8 +179,6 @@ other = "Entwickelt von"
 other = "mit der Unterstützung von"
 [footer_contact]
 other = "Kontakt"
-[footer_sponsor]
-other = "Unterstützen"
 [footer_privacy]
 other = "Datenschutz"
 
@@ -198,34 +196,6 @@ other = "Projekt mit Stern markieren"
 
 [footer_poblenou]
 other = "Gemacht mit ❤️ in Poblenou, Barcelona 🇪🇺"
-
-# Sponsor
-[sponsor_intro]
-other = "Dockyard ist frei und quelloffen."
-[sponsor_intro_2]
-other = "Deine Unterstützung hilft bei der Weiterentwicklung und neuen Funktionen."
-[sponsor_other]
-other = "Andere Möglichkeiten zu helfen"
-[sponsor_star]
-other = "Projekt auf GitHub mit Stern markieren"
-[sponsor_star_desc]
-other = "Sterne helfen anderen, Dockyard zu entdecken."
-[sponsor_issues]
-other = "Fehler melden"
-[sponsor_issues_desc]
-other = "Fehlerberichte und Funktionswünsche helfen, die App zu verbessern."
-[sponsor_contribute]
-other = "Code beitragen"
-[sponsor_contribute_desc]
-other = "Pull Requests für Fehlerbehebungen und Funktionen sind willkommen."
-[sponsor_translate]
-other = "App oder Website übersetzen"
-[sponsor_translate_desc]
-other = "Hilf dabei, Dockyard in mehr Sprachen verfügbar zu machen."
-[sponsor_ghostty]
-other = "Ghostty unterstützen"
-[sponsor_ghostty_desc]
-other = "Dockyard basiert auf Ghosttys GPU-gerendertem Terminal."
 
 # Get
 [get_title]

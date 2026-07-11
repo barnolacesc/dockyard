@@ -11,8 +11,7 @@
 
 <p align="center">
   <a href="https://dockyard.barnola.net">Website</a> &middot;
-  <a href="https://github.com/barnolacesc/dockyard/releases/latest">Download</a> &middot;
-  <a href="https://dockyard.barnola.net/sponsor">Sponsor</a>
+  <a href="https://github.com/barnolacesc/dockyard/releases/latest">Download</a>
 </p>
 
 <p align="center">
