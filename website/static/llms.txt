@@ -98,5 +98,4 @@ Navigation:
 
 ## Optional
 
-- [Sponsor](https://dockyard.barnola.net/sponsor): Support the project's development
 - [Privacy Policy](https://dockyard.barnola.net/legal/privacy): Privacy and data handling

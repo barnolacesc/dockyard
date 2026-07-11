@@ -39,11 +39,11 @@ struct HelpView: View {
                             .foregroundStyle(.secondary)
                     }
                     HStack(spacing: 0) {
-                        Text("Help ")
+                        Text("Help by ")
                             .foregroundStyle(.tertiary)
-                        Link("supporting", destination: localizedURL("sponsor"))
+                        Link("starring or contributing", destination: URL(string: "https://github.com/barnolacesc/dockyard")!)
                             .foregroundStyle(.secondary)
-                        Text(" the development.")
+                        Text(" on GitHub.")
                             .foregroundStyle(.tertiary)
                     }
                 }
@@ -56,9 +56,6 @@ struct HelpView: View {
                 HStack(spacing: 16) {
                     Link(destination: localizedURL("docs")) {
                         Label("Documentation", systemImage: "book")
-                    }
-                    Link(destination: localizedURL("sponsor")) {
-                        Label("Sponsor", systemImage: "heart")
                     }
                     Link(destination: URL(string: "https://github.com/barnolacesc/dockyard/issues/new?template=bug_report.yml")!) {
                         Label("Report a Bug", systemImage: "ladybug")

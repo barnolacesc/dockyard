@@ -7,7 +7,6 @@
 - [ ] Publish `appcast.xml` at dockyard.barnola.net (Sparkle `SUFeedURL` in project.yml currently 404s, so DMG auto-updates can't work)
 - [ ] Deploy the website to dockyard.barnola.net — not live yet, pending DNS (CNAME to barnolacesc.github.io in Cloudflare), GitHub Pages enablement, and a deploy workflow
 - [ ] Decide on Poblenou branding (app icon skyline, `PoblenouSkyline.swift`, "Made with ❤️ in Poblenou" website footer) — keep as homage or rebrand
-- [ ] If sponsorship is wanted later: set up GitHub Sponsors / Buy Me a Coffee and restore the links removed from README and the website sponsor page
 
 ## Pre-release
 

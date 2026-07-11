@@ -925,12 +925,6 @@ struct ProjectSidebar: View {
         return true
     }
 
-    private var sponsorURL: URL {
-        let lang = Locale.current.language.languageCode?.identifier ?? "en"
-        let path = lang == "en" ? "/sponsor" : "/\(lang)/sponsor"
-        return URL(string: "https://dockyard.barnola.net\(path)")!
-    }
-
     @AppStorage("dockyard.baseDirectory") private var baseDirectory: String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? ""
     @AppStorage("dockyard.branchPrefix") private var branchPrefix: String = "dy"
 
