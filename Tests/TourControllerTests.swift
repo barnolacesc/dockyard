@@ -99,4 +99,11 @@ final class TourControllerTests: XCTestCase {
         controller.start(makeFlow())
         XCTAssertEqual(controller.stepIndex, 0)
     }
+
+    func testStartWithEmptyFlowIsIgnored() {
+        let controller = makeController()
+        controller.start(TourFlow(id: "empty", steps: []))
+        XCTAssertNil(controller.activeFlow)
+        XCTAssertNil(controller.currentStep)
+    }
 }

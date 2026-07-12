@@ -31,6 +31,7 @@ final class TourController: ObservableObject {
     }
 
     func start(_ flow: TourFlow) {
+        guard !flow.steps.isEmpty else { return }
         teardownStepObserver()
         activeFlow = flow
         stepIndex = 0
@@ -76,7 +77,6 @@ final class TourController: ObservableObject {
 
     private func enterCurrentStep() {
         guard let step = currentStep else { return }
-        step.onEnter?()
         if case let .notification(name) = step.advance {
             stepObserver = notificationCenter.addObserver(
                 forName: name, object: nil, queue: .main
@@ -86,6 +86,7 @@ final class TourController: ObservableObject {
                 }
             }
         }
+        step.onEnter?()
     }
 
     private func teardownStepObserver() {

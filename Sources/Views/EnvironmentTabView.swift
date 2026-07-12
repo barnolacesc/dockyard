@@ -345,7 +345,6 @@ struct EnvironmentTabView: View {
         let hasExistingRunSession = TmuxSession.sessionExists(tmuxPath: tmuxPath, sessionName: session)
         if shouldRestoreRunSession(useTmux: useTmux, hasRunScript: scriptConfig.run != nil, hasExistingRunSession: hasExistingRunSession, wasStoppedManually: runStoppedManually) {
             runStarted = true
-            NotificationCenter.default.post(name: .runScriptStarted, object: nil)
         }
     }
 }
