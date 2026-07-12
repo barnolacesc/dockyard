@@ -35,6 +35,8 @@
 - [~] **Embedded Browser Claude Integration**: Foundation shipped — embedded WKWebView writes URL / title / recent console logs to `~/Library/Caches/dockyard/browser-state/<id>.json`, exposed via `DOCKYARD_BROWSER_STATE_FILE`. Full bidirectional CDP control deferred (WKWebView cannot run Chrome extensions, so this needs its own design).
 - [ ] External Chrome integration: launch with --remote-debugging-port for WebMCP/CDP — dropped, doesn't unlock "Claude in Chrome" extension since that lives inside Chrome and doesn't talk CDP.
 - [x] Horizontal terminal splits within a tab: split panes existed already (Cmd+Shift+T/B/Return). Added Cmd+Shift+D to toggle between horizontal (side-by-side) and vertical (stacked) layouts.
+- [ ] Tour: workspace-tabs showcase flow (passive: Cmd+T/B/O, tab cycling)
+- [ ] Tour: power-features showcase flow (shortcut hints, usage meters, tmux, archiving)
 
 ## Done
 - [x] PR management: create and manage PRs from workstreams via Quick Actions

@@ -468,3 +468,13 @@
 "Take the Tour" = "Tour starten";
 "Restart Tour…" = "Tour neu starten…";
 "Completed" = "Abgeschlossen";
+
+// What's New
+"What's New" = "Neuigkeiten";
+"What's New…" = "Neuigkeiten…";
+"Show Me" = "Zeig es mir";
+"Full changelog" = "Vollständiges Änderungsprotokoll";
+"Interactive Tour" = "Interaktive Tour";
+"A guided tour walks you through projects, workstreams, and the Coding Agent. Restart it anytime from the Help menu." = "Eine geführte Tour zeigt dir Projekte, Workstreams und den Coding Agent. Starte sie jederzeit über das Hilfe‑Menü neu.";
+"What's New Panel" = "Neuigkeiten‑Panel";
+"After each update, the highlights show up right here." = "Nach jedem Update erscheinen die Highlights genau hier.";

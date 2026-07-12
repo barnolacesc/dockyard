@@ -314,6 +314,10 @@ struct DockyardApp: App {
                 Button("Restart Tour…") {
                     NotificationCenter.default.post(name: .startTour, object: nil)
                 }
+
+                Button("What's New…") {
+                    NotificationCenter.default.post(name: .openWhatsNew, object: nil)
+                }
             }
             LogsCommands()
             // View menu

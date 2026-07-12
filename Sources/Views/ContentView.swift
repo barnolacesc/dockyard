@@ -177,6 +177,8 @@ struct ContentView: View {
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var selectedUsageProvider: UsageMeterProvider = .claude
     @State private var previousPreferredUsageProvider: UsageMeterProvider?
+    @State private var whatsNewReleases: [WhatsNewRelease] = []
+    @State private var showWhatsNew = false
     @AppStorage("dockyard.codingCLI") private var codingCLIRaw: String = ""
     @AppStorage(SidebarMode.storageKey) private var sidebarModeRaw = SidebarMode.expanded.rawValue
     @AppStorage(SidebarMode.lastVisibleStorageKey) private var lastVisibleSidebarModeRaw = SidebarMode.expanded.rawValue
@@ -349,6 +351,23 @@ struct ContentView: View {
         navigationView
             .shortcutHintOverlay()
             .tourOverlay()
+            .sheet(isPresented: $showWhatsNew) {
+                WhatsNewView(
+                    releases: whatsNewReleases,
+                    onShowTour: { flowID in
+                        showWhatsNew = false
+                        guard flowID == GettingStartedFlow.id else { return }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            TourController.shared.start(GettingStartedFlow.make())
+                        }
+                    },
+                    onClose: { showWhatsNew = false }
+                )
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .openWhatsNew)) { _ in
+                whatsNewReleases = WhatsNewCatalog.releases
+                showWhatsNew = true
+            }
             .onReceive(NotificationCenter.default.publisher(for: .startTour)) { _ in
                 TourController.shared.start(GettingStartedFlow.make())
             }
@@ -527,6 +546,7 @@ struct ContentView: View {
                 case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
                 default: NSApp.appearance = nil
                 }
+                checkWhatsNewGate()
             }
             .onChange(of: sidebarModeRaw) { _, _ in
                 syncColumnVisibilityWithSidebarMode()
@@ -868,6 +888,21 @@ struct ContentView: View {
         WorkstreamArchiver.purge(wsID, in: &projects[projectIndex], surfaceCache: surfaceCache, tmuxPath: appEnvironment.toolStatus.tmux.path)
         ProjectStore.save(projects)
         workstreamToPurge = nil
+    }
+
+    /// Once-per-version What's New: fresh installs just stamp the version.
+    private func checkWhatsNewGate() {
+        let current = AppConstants.version
+        let lastSeen = UserDefaults.standard.string(forKey: WhatsNewGate.lastSeenKey)
+        let releases = WhatsNewGate.releasesToPresent(
+            current: current, lastSeen: lastSeen, catalog: WhatsNewCatalog.releases
+        )
+        UserDefaults.standard.set(current, forKey: WhatsNewGate.lastSeenKey)
+        guard !releases.isEmpty else { return }
+        whatsNewReleases = releases
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            showWhatsNew = true
+        }
     }
 }
 

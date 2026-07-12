@@ -196,6 +196,17 @@ Current shortcuts:
 - **Cmd+Option+T**: External terminal
 - **Cmd+/**: Help
 
+## What's New & Tour Authoring
+
+When shipping a user-facing feature:
+1. Add a `WhatsNewEntry` to the release being cut in `Sources/Tour/WhatsNewCatalog.swift`
+   (create the `WhatsNewRelease` block if it's the first entry for that version;
+   the version string must match the release-please version).
+2. Localize the entry's title/body in all 5 locale files.
+3. If the feature is big enough to demonstrate (multi-step, new surface), add a
+   `TourFlow` in `Sources/Tour/` (usually all-`.manual` steps) and set the
+   entry's `tourFlowID`.
+
 ## Naming
 - The app is "Dockyard". Internal ID is `dockyard` (no hyphen).
 - Domain is `dockyard.barnola.net` (hyphen only in the domain name).

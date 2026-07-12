@@ -497,3 +497,13 @@
 "Take the Tour" = "Take the Tour";
 "Restart Tour…" = "Restart Tour…";
 "Completed" = "Completed";
+
+// What's New
+"What's New" = "What's New";
+"What's New…" = "What's New…";
+"Show Me" = "Show Me";
+"Full changelog" = "Full changelog";
+"Interactive Tour" = "Interactive Tour";
+"A guided tour walks you through projects, workstreams, and the Coding Agent. Restart it anytime from the Help menu." = "A guided tour walks you through projects, workstreams, and the Coding Agent. Restart it anytime from the Help menu.";
+"What's New Panel" = "What's New Panel";
+"After each update, the highlights show up right here." = "After each update, the highlights show up right here.";

@@ -497,3 +497,13 @@
 "Take the Tour" = "Ta rundturen";
 "Restart Tour…" = "Starta om rundturen…";
 "Completed" = "Slutförd";
+
+// What's New
+"What's New" = "Nyheter";
+"What's New…" = "Nyheter…";
+"Show Me" = "Visa mig";
+"Full changelog" = "Fullständig ändringslogg";
+"Interactive Tour" = "Interaktiv rundtur";
+"A guided tour walks you through projects, workstreams, and the Coding Agent. Restart it anytime from the Help menu." = "En guidad rundtur visar dig projekt, workstreams och kodagenten. Starta om den när som helst från Hjälp‑menyn.";
+"What's New Panel" = "Nyhetspanel";
+"After each update, the highlights show up right here." = "Efter varje uppdatering visas höjdpunkterna precis här.";
