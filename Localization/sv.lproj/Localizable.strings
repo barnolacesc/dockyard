@@ -485,3 +485,10 @@
 "Press Start (⌘⇧↩) to run your app. When a port is detected, the embedded browser opens it automatically." = "Tryck på Starta (⌘⇧↩) för att köra din app. När en port upptäcks öppnas den automatiskt i den inbyggda webbläsaren.";
 "You're all set" = "Allt är klart";
 "Press ⌘/ anytime for help and shortcuts. You can restart this tour from the Help menu." = "Tryck ⌘/ när som helst för hjälp och kortkommandon. Du kan starta om rundturen från Hjälp‑menyn.";
+
+// Tour — card chrome
+"Step %d of %d" = "Steg %d av %d";
+"Next" = "Nästa";
+"Skip" = "Hoppa över";
+"Quit Tour" = "Avsluta rundturen";
+"Complete the highlighted action to continue" = "Slutför den markerade åtgärden för att fortsätta";

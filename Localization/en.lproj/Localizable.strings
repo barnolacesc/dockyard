@@ -485,3 +485,10 @@
 "Press Start (⌘⇧↩) to run your app. When a port is detected, the embedded browser opens it automatically." = "Press Start (⌘⇧↩) to run your app. When a port is detected, the embedded browser opens it automatically.";
 "You're all set" = "You're all set";
 "Press ⌘/ anytime for help and shortcuts. You can restart this tour from the Help menu." = "Press ⌘/ anytime for help and shortcuts. You can restart this tour from the Help menu.";
+
+// Tour — card chrome
+"Step %d of %d" = "Step %d of %d";
+"Next" = "Next";
+"Skip" = "Skip";
+"Quit Tour" = "Quit Tour";
+"Complete the highlighted action to continue" = "Complete the highlighted action to continue";

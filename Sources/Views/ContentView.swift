@@ -348,6 +348,10 @@ struct ContentView: View {
     var body: some View {
         navigationView
             .shortcutHintOverlay()
+            .tourOverlay()
+            .onReceive(NotificationCenter.default.publisher(for: .startTour)) { _ in
+                TourController.shared.start(GettingStartedFlow.make())
+            }
             .onReceive(NotificationCenter.default.publisher(for: .toggleSidebar)) { _ in
                 toggleSidebarVisibility()
             }
