@@ -493,16 +493,18 @@ struct ProjectSidebar: View {
             }
             .padding(.bottom, 4)
 
-            // Credit
-            HStack(spacing: 0) {
-                Text("built by ")
-                    .foregroundStyle(.tertiary)
-                Link("barnolacesc", destination: URL(string: "https://github.com/barnolacesc")!)
-                    .foregroundStyle(.secondary)
+            if !DemoMode.isEnabled {
+                // Credit is omitted from deterministic public captures.
+                HStack(spacing: 0) {
+                    Text("built by ")
+                        .foregroundStyle(.tertiary)
+                    Link("barnolacesc", destination: URL(string: "https://github.com/barnolacesc")!)
+                        .foregroundStyle(.secondary)
+                }
+                .font(.system(size: 10))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             }
-            .font(.system(size: 10))
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
 
             HStack {
                 Menu {
@@ -1113,6 +1115,7 @@ private struct ProjectHeaderRow: View {
         .frame(minHeight: 40)
         .padding(.vertical, 1)
         .contentShape(Rectangle())
+        .accessibilityIdentifier("project-\(project.name)")
         .onHover { isHovering = $0 }
         .hoverHighlight(radius: DesignRadius.md)
         .shortcutHint(ShortcutHint(command: isSelected ? "↑ ↓" : nil))
@@ -1374,6 +1377,7 @@ private struct WorkstreamRow: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
         .help(taskDescription ?? "")
+        .accessibilityIdentifier("workstream-\(name)")
         .onHover { isHovering = $0 }
         .hoverHighlight(radius: DesignRadius.md)
         .contextMenu {

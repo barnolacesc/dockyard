@@ -467,3 +467,15 @@
 "Teardown" = "Desmontaje";
 "built by " = "creado por ";
 "Claude in Chrome is active" = "Claude en Chrome está activo";
+/* Deterministic website demo capture */
+"Ask the Coding Agent…" = "Ask the Coding Agent…";
+"Coding Agent ready in dy/check-short-inode" = "Coding Agent ready in dy/check-short-inode";
+"Creating pull request from dy/check-short-inode…" = "Creating pull request from dy/check-short-inode…";
+"✓ Pull request #185 created — Fix short inode detection" = "✓ Pull request #185 created — Fix short inode detection";
+"You: %@" = "You: %@";
+"Inspecting Sources/Models/InodeDetector.swift" = "Inspecting Sources/Models/InodeDetector.swift";
+"Edited Tests/InodeDetectorTests.swift (+2 assertions)" = "Edited Tests/InodeDetectorTests.swift (+2 assertions)";
+"Running targeted XCTest suite…" = "Running targeted XCTest suite…";
+"✓ 42 tests passed in 1.8s" = "✓ 42 tests passed in 1.8s";
+"Done — fixed the UInt32 boundary and added a regression test." = "Done — fixed the UInt32 boundary and added a regression test.";
+"Fix the short inode detection and add a regression test." = "Fix the short inode detection and add a regression test.";

@@ -136,31 +136,34 @@ enum WorkspaceTabSnapshotStore {
     private static let userDefaultsKey = "dockyard.workspaceTabSnapshots"
 
     static func load(for workstreamID: UUID) -> WorkspaceTabSnapshot? {
-        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+        let defaults = DemoMode.isEnabled ? DemoMode.defaults : UserDefaults.standard
+        guard let data = defaults.data(forKey: userDefaultsKey),
               let saved = try? JSONDecoder().decode([String: WorkspaceTabSnapshot].self, from: data)
         else { return nil }
         return saved[workstreamID.uuidString]
     }
 
     static func save(_ snapshot: WorkspaceTabSnapshot, for workstreamID: UUID) {
+        let defaults = DemoMode.isEnabled ? DemoMode.defaults : UserDefaults.standard
         var saved: [String: WorkspaceTabSnapshot] = [:]
-        if let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+        if let data = defaults.data(forKey: userDefaultsKey),
            let existing = try? JSONDecoder().decode([String: WorkspaceTabSnapshot].self, from: data)
         {
             saved = existing
         }
         saved[workstreamID.uuidString] = snapshot
         guard let data = try? JSONEncoder().encode(saved) else { return }
-        UserDefaults.standard.set(data, forKey: userDefaultsKey)
+        defaults.set(data, forKey: userDefaultsKey)
     }
 
     static func remove(for workstreamID: UUID) {
-        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+        let defaults = DemoMode.isEnabled ? DemoMode.defaults : UserDefaults.standard
+        guard let data = defaults.data(forKey: userDefaultsKey),
               var saved = try? JSONDecoder().decode([String: WorkspaceTabSnapshot].self, from: data)
         else { return }
         saved.removeValue(forKey: workstreamID.uuidString)
         guard let encoded = try? JSONEncoder().encode(saved) else { return }
-        UserDefaults.standard.set(encoded, forKey: userDefaultsKey)
+        defaults.set(encoded, forKey: userDefaultsKey)
     }
 }
 
@@ -631,7 +634,9 @@ struct TerminalContainerView: View {
                 }
             )
         case .agent:
-            if sessionMode == .waitingForTools || appEnv.isDetecting {
+            if DemoMode.isEnabled {
+                DemoCodingAgentView()
+            } else if sessionMode == .waitingForTools || appEnv.isDetecting {
                 terminalLoadingView(message: "Checking terminal tools...")
             } else if selectedCodingCLIPath == nil {
                 VStack(spacing: 16) {
@@ -923,7 +928,13 @@ struct TerminalContainerView: View {
                             onSendToAgent: { action in
                                 guard let prompt = action.prompt else { return }
                                 activeTab = .agent
-                                surfaceCache.sendText(to: agentID, text: prompt + "\r")
+                                if DemoMode.isEnabled, action == .createPR {
+                                    DemoMode.defaults.set(true, forKey: "dockyard.demo.prCreated")
+                                    NotificationCenter.default.post(name: .demoAgentCreatePR, object: prompt)
+                                    appEnv.objectWillChange.send()
+                                } else {
+                                    surfaceCache.sendText(to: agentID, text: prompt + "\r")
+                                }
                             }
                         )
                     }
@@ -1104,6 +1115,10 @@ struct TerminalContainerView: View {
     }
 
     private func openEditor() {
+        if DemoMode.isEnabled {
+            addEditor(filePath: "Tests/InodeDetectorTests.swift")
+            return
+        }
         if useTerminalEditor {
             addTerminalEditor()
         } else {
@@ -1533,6 +1548,84 @@ private struct WorkspaceTabButton: View {
         }
         .pressable()
         .onHover { isHovering = $0 }
+        .accessibilityIdentifier("workspace-tab-\(tabAccessibilityName)")
+    }
+
+    private var tabAccessibilityName: String {
+        switch tab {
+        case .info: return "info"
+        case .agent: return "coding-agent"
+        case .terminal: return "terminal"
+        case .browser: return "browser"
+        case .editor: return "editor"
+        }
+    }
+}
+
+private struct DemoCodingAgentView: View {
+    @State private var task = ""
+    @State private var lines = [NSLocalizedString("Coding Agent ready in dy/check-short-inode", comment: "Demo capture fixture")]
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
+                        HStack(alignment: .firstTextBaseline, spacing: 10) {
+                            Text(index == 0 ? "◇" : "›")
+                                .foregroundStyle(index == lines.count - 1 ? DesignColor.statusSuccess : .secondary)
+                            Text(line).textSelection(.enabled)
+                        }
+                    }
+                }
+                .font(.system(size: 14, design: .monospaced))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(24)
+            }
+            Divider()
+            HStack(spacing: 10) {
+                TextField("Ask the Coding Agent…", text: $task)
+                    .textFieldStyle(.plain)
+                    .onSubmit(runTask)
+                    .accessibilityIdentifier("demo-agent-task")
+                Button(action: runTask) { Image(systemName: "arrow.up.circle.fill") }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Send task")
+            }
+            .padding(14)
+            .background(.bar)
+        }
+        .background(Color(nsColor: .textBackgroundColor))
+        .accessibilityIdentifier("demo-coding-agent")
+        .onReceive(NotificationCenter.default.publisher(for: .demoAgentCreatePR)) { _ in
+            lines.append(NSLocalizedString("Creating pull request from dy/check-short-inode…", comment: "Demo capture fixture"))
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                lines.append(NSLocalizedString("✓ Pull request #185 created — Fix short inode detection", comment: "Demo capture fixture"))
+            }
+        }
+        .onAppear {
+            guard DemoMode.shouldAutoplay, lines.count == 1 else { return }
+            task = NSLocalizedString("Fix the short inode detection and add a regression test.", comment: "Demo capture fixture")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { runTask() }
+        }
+    }
+
+    private func runTask() {
+        guard !task.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        lines = [String(format: NSLocalizedString("You: %@", comment: "Demo capture fixture"), task)]
+        task = ""
+        let steps = [
+            NSLocalizedString("Inspecting Sources/Models/InodeDetector.swift", comment: "Demo capture fixture"),
+            NSLocalizedString("Edited Tests/InodeDetectorTests.swift (+2 assertions)", comment: "Demo capture fixture"),
+            NSLocalizedString("Running targeted XCTest suite…", comment: "Demo capture fixture"),
+            NSLocalizedString("✓ 42 tests passed in 1.8s", comment: "Demo capture fixture"),
+            NSLocalizedString("Done — fixed the UInt32 boundary and added a regression test.", comment: "Demo capture fixture"),
+        ]
+        for (index, step) in steps.enumerated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(index + 1) * 0.65) {
+                lines.append(step)
+            }
+        }
     }
 }
 

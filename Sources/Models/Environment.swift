@@ -171,11 +171,13 @@ final class AppEnvironment: ObservableObject {
     // MARK: - Path Validity
 
     func isPathValid(_ path: String?) -> Bool {
+        if DemoMode.isEnabled { return path.map { FileManager.default.fileExists(atPath: $0) } ?? true }
         guard let path else { return true }
         return pathValidityCache[path] ?? true
     }
 
     func branchName(for worktreePath: String?) -> String? {
+        if let branch = DemoMode.branch(for: worktreePath) { return branch }
         guard let path = worktreePath else { return nil }
         return branchNameCache[path]
     }
@@ -185,7 +187,8 @@ final class AppEnvironment: ObservableObject {
     }
 
     func hasGitHubRemote(_ directory: String) -> Bool {
-        githubRemoteCache[directory] ?? false
+        if DemoMode.isEnabled { return true }
+        return githubRemoteCache[directory] ?? false
     }
 
     /// Browser-openable GitHub URL for a project directory.
@@ -207,7 +210,8 @@ final class AppEnvironment: ObservableObject {
     }
 
     func worktreeState(for path: String) -> WorktreeState {
-        worktreeStateCache[path] ?? WorktreeState()
+        if let state = DemoMode.worktreeState(for: path) { return state }
+        return worktreeStateCache[path] ?? WorktreeState()
     }
 
     private var worktreeStateTimestamps: [String: Date] = [:]
@@ -253,10 +257,12 @@ final class AppEnvironment: ObservableObject {
     }
 
     func hasActivePort(_ workstreamID: UUID) -> Bool {
-        activePortCache.contains(workstreamID)
+        if DemoMode.isEnabled, workstreamID == DemoMode.checkInodeID { return true }
+        return activePortCache.contains(workstreamID)
     }
 
     func taskDescription(for worktreePath: String?) -> String? {
+        if let task = DemoMode.task(for: worktreePath) { return task }
         guard let path = worktreePath else { return nil }
         return taskDescriptionCache[path]
     }
@@ -414,7 +420,8 @@ final class AppEnvironment: ObservableObject {
     // MARK: - GitHub
 
     var ghAvailable: Bool {
-        toolStatus.gh.isInstalled 
+        if DemoMode.isEnabled { return true }
+        return toolStatus.gh.isInstalled
     }
 
     func githubRepo(for directory: String) -> GitHubRepoInfo? {
@@ -426,7 +433,8 @@ final class AppEnvironment: ObservableObject {
     }
 
     func githubPR(for directory: String, branch: String) -> GitHubPR? {
-        githubBranchPRCache["\(directory)|\(branch)"]
+        if let fixture = DemoMode.pullRequest(branch: branch) { return fixture }
+        return githubBranchPRCache["\(directory)|\(branch)"]
     }
 
     /// All open PRs across the given projects, derived from the per-workstream branch PR

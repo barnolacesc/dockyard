@@ -50,6 +50,7 @@ struct EditorView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .accessibilityIdentifier("built-in-editor")
         .onAppear {
             if let initialFilePath, currentFilePath == nil {
                 navigateToFile(initialFilePath)

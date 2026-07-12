@@ -154,7 +154,9 @@ func commandKeyNotification(event: NSEvent) -> Notification.Name? {
 
 struct ContentView: View {
     @StateObject private var projectList = ProjectList()
-    @State private var selection: SidebarSelection? = SidebarSelection.loadSaved() ?? ContentView.initialSelection()
+    @State private var selection: SidebarSelection? = DemoMode.isEnabled
+        ? .workstream(DemoMode.checkInodeID)
+        : (SidebarSelection.loadSaved() ?? ContentView.initialSelection())
     @State private var selectionBeforeSettings: SidebarSelection?
 
     private var projects: [Project] {
@@ -871,6 +873,7 @@ enum ProjectStore {
     private static let userDefaultsKey = "dockyard.projects"
 
     static func load(defaults: UserDefaults = .standard) -> [Project] {
+        let defaults = DemoMode.isEnabled ? DemoMode.defaults : defaults
         guard let data = defaults.data(forKey: userDefaultsKey),
               let projects = try? JSONDecoder().decode([Project].self, from: data)
         else { return [] }
@@ -878,6 +881,7 @@ enum ProjectStore {
     }
 
     static func save(_ projects: [Project], defaults: UserDefaults = .standard) {
+        let defaults = DemoMode.isEnabled ? DemoMode.defaults : defaults
         guard let data = try? JSONEncoder().encode(projects) else { return }
         defaults.set(data, forKey: userDefaultsKey)
     }

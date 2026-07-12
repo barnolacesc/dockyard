@@ -48,6 +48,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     func applicationDidFinishLaunching(_: Notification) {
         guard !isRunningXCTest() else { return }
 
+        if DemoMode.isEnabled {
+            DispatchQueue.main.async { DemoMode.prepareWindow() }
+        }
+
         ShortcutHintController.shared.start()
 
         // Debug settings should not persist across launches
@@ -129,6 +133,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
     func applicationWillTerminate(_: Notification) {
         guard !isRunningXCTest() else { return }
+        if DemoMode.isEnabled {
+            DemoMode.cleanup()
+            return
+        }
         let tmuxPath = ToolStatus.detect().tmux.path
         if let tmuxPath {
             // Run kill-server asynchronously so it doesn't block the main thread and sluggishly delay app closing.
@@ -183,6 +191,8 @@ struct DockyardApp: App {
 
     init() {
         guard !isRunningXCTest() else { return }
+
+        DemoMode.bootstrap()
 
         guard ghostty_init(UInt(CommandLine.argc), CommandLine.unsafeArgv) == GHOSTTY_SUCCESS else {
             let alert = NSAlert()

@@ -110,7 +110,7 @@ case "${1:-build}" in
     xcodegen generate
     xcodebuild -project "$PROJECT" -scheme "$TEST_SCHEME" -configuration Debug \
       -derivedDataPath "$BUILD_DIR" -clonedSourcePackagesDirPath "$SPM_CACHE" \
-      -skipPackagePluginValidation test
+      -skipPackagePluginValidation -only-testing:DockyardTests test
     ;;
   release)
     RELEASE_DIR="build/release-local/derived"

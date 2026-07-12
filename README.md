@@ -228,11 +228,7 @@ See [CLAUDE.md](CLAUDE.md) for development workflow, architecture, and conventio
 
 ### Website
 
-The website lives in `website/` and is built with [Hugo](https://gohugo.io) + [Tailwind CSS](https://tailwindcss.com).
-
-```bash
-cd website && bun install && bun run dev
-```
+The dependency-free website lives in `website/site/`. See the [website demo capture guide](docs/website-demo-capture.md) to regenerate its product media.
 
 ### Localization
 
@@ -252,9 +248,6 @@ Dockyard is built on the shoulders of these projects:
 - **[tmux](https://github.com/tmux/tmux/wiki)** — Terminal multiplexer for session persistence
 - **[XcodeGen](https://github.com/yonaskolb/XcodeGen)** — Xcode project generation from `project.yml`
 - **[cmark-gfm](https://github.com/github/cmark-gfm)** — GitHub Flavored Markdown rendering (via [swift-cmark](https://github.com/swiftlang/swift-cmark))
-- **[Hugo](https://gohugo.io)** + **[Tailwind CSS](https://tailwindcss.com)** — Website
-
-Dockyard began as a fork of [FactoryFloor](https://github.com/alltuner/factoryfloor) by David Poblador i Garcia and has since diverged into an independent project.
 
 ## Support the project
 
@@ -267,10 +260,3 @@ If Dockyard helped you ship faster, automate your workflow, or experiment with c
 ## License
 
 [MIT](LICENSE)
-
----
-
-<p align="center">
-  Built by <a href="https://github.com/barnolacesc">barnolacesc</a>.<br>
-  Made with ❤️ in Barcelona.
-</p>

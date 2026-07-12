@@ -220,6 +220,7 @@ struct BrowserView: View {
                 }
             }
         }
+        .accessibilityIdentifier("embedded-browser")
         .onAppear {
             if webView.url == nil {
                 urlText = defaultURL

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Dockyard keeps parallel coding workstreams visible, runnable, and ready to review.">
+  <title>Dockyard — Parallel work, one clear view</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/site.js" defer></script>
+</head>
+<body>
+  <header class="nav shell"><a class="brand" href="/">Dockyard</a><nav aria-label="Language"><a href="/ca/" lang="ca">Català</a><a class="button" href="https://github.com/barnolacesc/dockyard">View on GitHub</a></nav></header>
+  <main>
+    <section class="hero shell">
+      <p class="eyebrow">Native macOS workspace</p>
+      <h1>Parallel coding work,<br>without losing the thread.</h1>
+      <p class="lede">Dockyard gives every task its own git worktree, Coding Agent, terminal, live preview, and editor—then keeps branch and review status visible in one place.</p>
+      <a class="button primary" href="https://github.com/barnolacesc/dockyard/releases/latest">Get Dockyard</a>
+    </section>
+
+    <section class="tour shell" aria-labelledby="tour-title">
+      <div class="section-heading"><p class="eyebrow">Product tour</p><h2 id="tour-title">From task to pull request in under a minute.</h2><p>Watch Dockyard inspect a focused fix, run its tests, detect a preview port, open the result, review the changed test, and create a pull request.</p></div>
+      <figure class="media-frame media-main">
+        <video controls muted playsinline preload="metadata" poster="/media/dockyard-tour.jpg" aria-label="Dockyard product tour showing a complete workstream workflow">
+          <source src="/media/dockyard-tour.mp4" type="video/mp4">
+          Your browser cannot play this video. The workflow is described in the caption below.
+        </video>
+        <figcaption>A deterministic tour of the real Dockyard macOS interface. No external agent or GitHub account is used.</figcaption>
+      </figure>
+    </section>
+
+    <section class="features shell" aria-label="Dockyard workflow">
+      <article><div><p class="eyebrow">Workstreams</p><h2>See every task and its state.</h2><p>Three parallel workstreams stay readable in the sidebar, including branch, changed-file, active preview, and pull-request state.</p></div><figure class="media-frame"><video class="lazy-video" muted loop playsinline preload="none" poster="/media/workstreams.jpg" aria-label="Dockyard sidebar showing three parallel workstreams"><source data-src="/media/workstreams.mp4" type="video/mp4"></video><figcaption>Parallel workstreams remain visible while you focus.</figcaption></figure></article>
+      <article><div><p class="eyebrow">Coding Agent</p><h2>Keep the task beside the code.</h2><p>The Coding Agent inspects the inode detector, edits a regression test, runs the focused suite, and reports a clean result.</p></div><figure class="media-frame"><video class="lazy-video" muted loop playsinline preload="none" poster="/media/coding-agent.jpg" aria-label="Coding Agent completing a focused code task"><source data-src="/media/coding-agent.mp4" type="video/mp4"></video><figcaption>Deterministic agent activity, captured inside Dockyard.</figcaption></figure></article>
+      <article><div><p class="eyebrow">Live preview</p><h2>Run it, detect it, open it.</h2><p>Dockyard starts the workstream run command, detects port 4317, and opens the running result in its embedded browser.</p></div><figure class="media-frame"><video class="lazy-video" muted loop playsinline preload="none" poster="/media/live-preview.jpg" aria-label="Dockyard detecting a port and opening the embedded browser"><source data-src="/media/live-preview.mp4" type="video/mp4"></video><figcaption>Port detection connects the run command to the preview.</figcaption></figure></article>
+      <article><div><p class="eyebrow">Editor and review</p><h2>Review the change, then move it forward.</h2><p>Open the regression test in Monaco, return to the branch overview, and create a deterministic pull request without leaving the workstream.</p></div><figure class="media-frame"><video class="lazy-video" muted loop playsinline preload="none" poster="/media/editor-and-pr.jpg" aria-label="Dockyard editor and Create PR workflow"><source data-src="/media/editor-and-pr.mp4" type="video/mp4"></video><figcaption>The built-in editor and review state close the loop.</figcaption></figure></article>
+    </section>
+  </main>
+  <footer class="shell"><span>Dockyard</span><span>English · <a href="/ca/" lang="ca">Català</a></span></footer>
+</body>
+</html>

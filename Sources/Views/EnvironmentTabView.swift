@@ -134,6 +134,7 @@ struct EnvironmentTabView: View {
                         EnvActionButton(label: NSLocalizedString("Start", comment: ""), icon: "play.fill", shortcut: shortcut) {
                             requestRunStart()
                         }
+                        .accessibilityIdentifier("environment-start")
                     }
                 }
             }
@@ -174,6 +175,7 @@ struct EnvironmentTabView: View {
                         }
                         .pressable()
                         .shortcutHint(ShortcutHint(commandShift: "↩"))
+                        .accessibilityIdentifier("environment-start")
                         Text(script)
                             .font(.system(size: 12, design: .monospaced))
                             .foregroundStyle(.tertiary)
@@ -303,6 +305,11 @@ struct EnvironmentTabView: View {
     }
 
     private func requestRunStart() {
+        if DemoMode.isEnabled {
+            runStoppedManually = false
+            runStarted = true
+            return
+        }
         guard ScriptTrustStore.isTrusted(projectDirectory: projectDirectory, config: scriptConfig) else {
             showScriptApproval = true
             return

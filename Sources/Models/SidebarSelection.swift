@@ -27,7 +27,8 @@ enum SidebarSelection: Hashable, Codable {
     private static let userDefaultsKey = "dockyard.selection"
 
     static func loadSaved() -> SidebarSelection? {
-        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+        let defaults = DemoMode.isEnabled ? DemoMode.defaults : UserDefaults.standard
+        guard let data = defaults.data(forKey: userDefaultsKey),
               let selection = try? JSONDecoder().decode(SidebarSelection.self, from: data)
         else { return nil }
         return selection
@@ -35,7 +36,8 @@ enum SidebarSelection: Hashable, Codable {
 
     func save() {
         guard let data = try? JSONEncoder().encode(self) else { return }
-        UserDefaults.standard.set(data, forKey: Self.userDefaultsKey)
+        let defaults = DemoMode.isEnabled ? DemoMode.defaults : UserDefaults.standard
+        defaults.set(data, forKey: Self.userDefaultsKey)
     }
 }
 
@@ -43,6 +45,7 @@ enum SidebarState {
     private static let userDefaultsKey = "dockyard.expandedProjects"
 
     static func loadExpanded() -> Set<UUID> {
+        if DemoMode.isEnabled { return [DemoMode.projectID] }
         guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
               let ids = try? JSONDecoder().decode(Set<UUID>.self, from: data)
         else { return [] }
@@ -50,6 +53,7 @@ enum SidebarState {
     }
 
     static func saveExpanded(_ ids: Set<UUID>) {
+        if DemoMode.isEnabled { return }
         guard let data = try? JSONEncoder().encode(ids) else { return }
         UserDefaults.standard.set(data, forKey: userDefaultsKey)
     }
