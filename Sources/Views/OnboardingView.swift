@@ -96,6 +96,20 @@ struct OnboardingView: View {
 
                     Form {
                         HStack(spacing: 8) {
+                            Button {
+                                NotificationCenter.default.post(name: .startTour, object: nil)
+                            } label: {
+                                Label("Take the Tour", systemImage: "sparkles")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            Spacer()
+                            if TourController.isCompleted(GettingStartedFlow.id) {
+                                Text("Completed")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                        HStack(spacing: 8) {
                             Text("Add a project")
                             Spacer()
                             shortcutBadge(symbols: ["command", "shift"], text: "N")

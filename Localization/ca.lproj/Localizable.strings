@@ -492,3 +492,8 @@
 "Skip" = "Omet";
 "Quit Tour" = "Surt de la visita";
 "Complete the highlighted action to continue" = "Completa l'acció ressaltada per continuar";
+
+// Tour — entry points
+"Take the Tour" = "Fes la visita guiada";
+"Restart Tour…" = "Reinicia la visita…";
+"Completed" = "Completada";

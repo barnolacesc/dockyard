@@ -54,6 +54,20 @@ struct HelpView: View {
                     .padding(.vertical, -4)
 
                 HStack(spacing: 16) {
+                    Button {
+                        NotificationCenter.default.post(name: .startTour, object: nil)
+                    } label: {
+                        Label("Restart Tour…", systemImage: "sparkles")
+                    }
+                    .buttonStyle(.link)
+
+                    Button {
+                        NotificationCenter.default.post(name: .openWhatsNew, object: nil)
+                    } label: {
+                        Label("What's New…", systemImage: "megaphone")
+                    }
+                    .buttonStyle(.link)
+
                     Link(destination: localizedURL("docs")) {
                         Label("Documentation", systemImage: "book")
                     }

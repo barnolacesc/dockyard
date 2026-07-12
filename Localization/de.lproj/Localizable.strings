@@ -463,3 +463,8 @@
 "Skip" = "Überspringen";
 "Quit Tour" = "Tour beenden";
 "Complete the highlighted action to continue" = "Führe die hervorgehobene Aktion aus, um fortzufahren";
+
+// Tour — entry points
+"Take the Tour" = "Tour starten";
+"Restart Tour…" = "Tour neu starten…";
+"Completed" = "Abgeschlossen";

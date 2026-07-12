@@ -492,3 +492,8 @@
 "Skip" = "Omitir";
 "Quit Tour" = "Salir del recorrido";
 "Complete the highlighted action to continue" = "Completa la acción resaltada para continuar";
+
+// Tour — entry points
+"Take the Tour" = "Hacer el recorrido";
+"Restart Tour…" = "Reiniciar recorrido…";
+"Completed" = "Completado";

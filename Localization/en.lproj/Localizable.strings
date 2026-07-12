@@ -492,3 +492,8 @@
 "Skip" = "Skip";
 "Quit Tour" = "Quit Tour";
 "Complete the highlighted action to continue" = "Complete the highlighted action to continue";
+
+// Tour — entry points
+"Take the Tour" = "Take the Tour";
+"Restart Tour…" = "Restart Tour…";
+"Completed" = "Completed";

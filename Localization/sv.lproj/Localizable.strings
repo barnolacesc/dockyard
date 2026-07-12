@@ -492,3 +492,8 @@
 "Skip" = "Hoppa över";
 "Quit Tour" = "Avsluta rundturen";
 "Complete the highlighted action to continue" = "Slutför den markerade åtgärden för att fortsätta";
+
+// Tour — entry points
+"Take the Tour" = "Ta rundturen";
+"Restart Tour…" = "Starta om rundturen…";
+"Completed" = "Slutförd";

@@ -310,6 +310,10 @@ struct DockyardApp: App {
                     NotificationCenter.default.post(name: .openHelp, object: nil)
                 }
                 .keyboardShortcut("/", modifiers: .command)
+
+                Button("Restart Tour…") {
+                    NotificationCenter.default.post(name: .startTour, object: nil)
+                }
             }
             LogsCommands()
             // View menu
