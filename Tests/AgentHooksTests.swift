@@ -75,7 +75,7 @@ final class AgentHooksTests: XCTestCase {
         XCTAssertTrue(joined.contains("\\\\slash"))
     }
 
-    func testWriteSettingsProducesValidJSONWithThreeHooks() throws {
+    func testWriteSettingsProducesValidJSONWithChromeActivityHooks() throws {
         let id = UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC")!
         let helperPath = "/Applications/Dockyard.app/Contents/Helpers/dy-agent-state"
         let url = try AgentHooks.writeClaudeSettings(workstreamID: id, helperPath: helperPath)
@@ -86,6 +86,8 @@ final class AgentHooksTests: XCTestCase {
         XCTAssertNotNil(hooks?["UserPromptSubmit"])
         XCTAssertNotNil(hooks?["Notification"])
         XCTAssertNotNil(hooks?["Stop"])
+        XCTAssertNotNil(hooks?["PreToolUse"])
+        XCTAssertNotNil(hooks?["PostToolUse"])
 
         // Verify the helper path and UUID are embedded in the UserPromptSubmit command.
         let userPrompt = (hooks?["UserPromptSubmit"] as? [[String: Any]])?.first
@@ -95,6 +97,16 @@ final class AgentHooksTests: XCTestCase {
         XCTAssertTrue(command!.contains(helperPath))
         XCTAssertTrue(command!.contains("aabbccdd-1122-3344-5566-778899aabbcc"))
         XCTAssertTrue(command!.contains("--state working"))
+
+        let preToolUse = (hooks?["PreToolUse"] as? [[String: Any]])?.first
+        XCTAssertEqual(preToolUse?["matcher"] as? String, "mcp__claude-in-chrome__.*")
+        let preToolHook = (preToolUse?["hooks"] as? [[String: Any]])?.first
+        XCTAssertTrue((preToolHook?["command"] as? String)?.contains("--chrome-active true") == true)
+
+        let postToolUse = (hooks?["PostToolUse"] as? [[String: Any]])?.first
+        XCTAssertEqual(postToolUse?["matcher"] as? String, "mcp__claude-in-chrome__.*")
+        let postToolHook = (postToolUse?["hooks"] as? [[String: Any]])?.first
+        XCTAssertTrue((postToolHook?["command"] as? String)?.contains("--chrome-active false") == true)
     }
 
     func testHelperPathWithSpacesIsShellQuoted() throws {

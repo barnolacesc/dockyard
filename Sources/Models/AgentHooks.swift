@@ -62,7 +62,21 @@ enum AgentHooks {
                 "Stop": [[
                     "hooks": [[
                         "type": "command",
-                        "command": "\(quotedHelper) --workstream-id \(id) --state idle",
+                        "command": "\(quotedHelper) --workstream-id \(id) --state idle --chrome-active false",
+                    ]],
+                ]],
+                "PreToolUse": [[
+                    "matcher": "mcp__claude-in-chrome__.*",
+                    "hooks": [[
+                        "type": "command",
+                        "command": "\(quotedHelper) --workstream-id \(id) --chrome-active true",
+                    ]],
+                ]],
+                "PostToolUse": [[
+                    "matcher": "mcp__claude-in-chrome__.*",
+                    "hooks": [[
+                        "type": "command",
+                        "command": "\(quotedHelper) --workstream-id \(id) --chrome-active false",
                     ]],
                 ]],
             ],
