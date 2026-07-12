@@ -437,3 +437,22 @@
 "Not Now" = "Jetzt nicht";
 "Teardown" = "Abbau";
 "built by " = "entwickelt von ";
+
+// Tour — Getting Started steps
+"Welcome to Dockyard" = "Willkommen bei Dockyard";
+"This short tour sets up a real project: you'll add a repository, create a workstream, and put the Coding Agent to work. You can quit anytime." = "Diese kurze Tour richtet ein echtes Projekt ein: Du fügst ein Repository hinzu, erstellst einen Workstream und lässt den Coding Agent arbeiten. Du kannst jederzeit abbrechen.";
+"Click the highlighted + button and choose a git repository. Dockyard organizes everything around your projects." = "Klicke auf die hervorgehobene +‑Taste und wähle ein Git‑Repository. Dockyard organisiert alles rund um deine Projekte.";
+"Create a workstream" = "Workstream erstellen";
+"Hover over your project and click its + button. A workstream is an isolated git worktree with its own branch, terminal, and Coding Agent." = "Fahre mit der Maus über dein Projekt und klicke auf dessen +‑Taste. Ein Workstream ist ein isolierter Git‑Worktree mit eigenem Branch, Terminal und Coding Agent.";
+"Your workspace" = "Dein Arbeitsbereich";
+"Every workstream has an Info tab and a Coding Agent tab. Add terminals, browsers, and editors on demand — they all live here." = "Jeder Workstream hat einen Info‑Tab und einen Coding‑Agent‑Tab. Füge bei Bedarf Terminals, Browser und Editoren hinzu — sie alle erscheinen hier.";
+"Choose your Coding Agent" = "Wähle deinen Coding Agent";
+"Pick Claude Code or Codex for this workstream, or keep the default from Settings." = "Wähle Claude Code oder Codex für diesen Workstream oder behalte den Standard aus den Einstellungen.";
+"Prompt the agent" = "Gib dem Agenten eine Aufgabe";
+"Type what you want built. The agent works on this workstream's branch and never touches your main checkout." = "Beschreibe, was gebaut werden soll. Der Agent arbeitet auf dem Branch dieses Workstreams und rührt dein Haupt‑Checkout nie an.";
+"Configure run scripts" = "Run‑Skripte konfigurieren";
+"Generate a .dockyard.json so Dockyard knows how to set up and run your app. It detects your stack automatically." = "Erzeuge eine .dockyard.json, damit Dockyard weiß, wie deine App eingerichtet und gestartet wird. Dein Stack wird automatisch erkannt.";
+"Start your app" = "Starte deine App";
+"Press Start (⌘⇧↩) to run your app. When a port is detected, the embedded browser opens it automatically." = "Drücke Start (⌘⇧↩), um deine App auszuführen. Sobald ein Port erkannt wird, öffnet der eingebettete Browser sie automatisch.";
+"You're all set" = "Alles bereit";
+"Press ⌘/ anytime for help and shortcuts. You can restart this tour from the Help menu." = "Drücke jederzeit ⌘/ für Hilfe und Kurzbefehle. Du kannst diese Tour über das Hilfe‑Menü neu starten.";

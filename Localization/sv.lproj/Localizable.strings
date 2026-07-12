@@ -466,3 +466,22 @@
 "Not Now" = "Inte nu";
 "Teardown" = "Nedmontering";
 "built by " = "byggd av ";
+
+// Tour — Getting Started steps
+"Welcome to Dockyard" = "Välkommen till Dockyard";
+"This short tour sets up a real project: you'll add a repository, create a workstream, and put the Coding Agent to work. You can quit anytime." = "Den här korta rundturen sätter upp ett riktigt projekt: du lägger till ett repository, skapar en workstream och sätter kodagenten i arbete. Du kan avsluta när som helst.";
+"Click the highlighted + button and choose a git repository. Dockyard organizes everything around your projects." = "Klicka på den markerade +‑knappen och välj ett git‑repository. Dockyard organiserar allt kring dina projekt.";
+"Create a workstream" = "Skapa en workstream";
+"Hover over your project and click its + button. A workstream is an isolated git worktree with its own branch, terminal, and Coding Agent." = "Håll muspekaren över ditt projekt och klicka på dess +‑knapp. En workstream är ett isolerat git‑worktree med egen gren, terminal och kodagent.";
+"Your workspace" = "Din arbetsyta";
+"Every workstream has an Info tab and a Coding Agent tab. Add terminals, browsers, and editors on demand — they all live here." = "Varje workstream har en Info‑flik och en kodagent‑flik. Lägg till terminaler, webbläsare och redigerare vid behov — allt finns här.";
+"Choose your Coding Agent" = "Välj din kodagent";
+"Pick Claude Code or Codex for this workstream, or keep the default from Settings." = "Välj Claude Code eller Codex för denna workstream, eller behåll standardvalet från Inställningar.";
+"Prompt the agent" = "Ge agenten en uppgift";
+"Type what you want built. The agent works on this workstream's branch and never touches your main checkout." = "Skriv vad du vill bygga. Agenten arbetar på denna workstreams gren och rör aldrig din huvudutcheckning.";
+"Configure run scripts" = "Konfigurera körskript";
+"Generate a .dockyard.json so Dockyard knows how to set up and run your app. It detects your stack automatically." = "Generera en .dockyard.json så att Dockyard vet hur din app ska sättas upp och köras. Din stack identifieras automatiskt.";
+"Start your app" = "Starta din app";
+"Press Start (⌘⇧↩) to run your app. When a port is detected, the embedded browser opens it automatically." = "Tryck på Starta (⌘⇧↩) för att köra din app. När en port upptäcks öppnas den automatiskt i den inbyggda webbläsaren.";
+"You're all set" = "Allt är klart";
+"Press ⌘/ anytime for help and shortcuts. You can restart this tour from the Help menu." = "Tryck ⌘/ när som helst för hjälp och kortkommandon. Du kan starta om rundturen från Hjälp‑menyn.";
