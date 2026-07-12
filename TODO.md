@@ -7,6 +7,7 @@
 - [ ] Publish `appcast.xml` at dockyard.barnola.net (Sparkle `SUFeedURL` in project.yml currently 404s, so DMG auto-updates can't work)
 - [ ] Deploy the website to dockyard.barnola.net — not live yet, pending DNS (CNAME to barnolacesc.github.io in Cloudflare), GitHub Pages enablement, and a deploy workflow
 - [ ] Decide on Poblenou branding (app icon skyline, `PoblenouSkyline.swift`, "Made with ❤️ in Poblenou" website footer) — keep as homage or rebrand
+- [ ] Release-please PRs are bot-authored, so their CI runs sit at "action_required" and never start — approve the run in the Actions tab or close/reopen the PR; permanent fix is giving release-please a PAT instead of the default GITHUB_TOKEN
 
 ## Pre-release
 
