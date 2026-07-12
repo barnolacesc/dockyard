@@ -267,6 +267,7 @@ struct TerminalContainerView: View {
 
     @EnvironmentObject var surfaceCache: TerminalSurfaceCache
     @EnvironmentObject var appEnv: AppEnvironment
+    @EnvironmentObject var agentStateStore: AgentStateStore
     @AppStorage("dockyard.codingCLI") private var codingCLIRaw: String = ""
     @AppStorage("dockyard.defaultBrowser") private var defaultBrowser: String = ""
     @AppStorage("dockyard.tmuxMode") private var tmuxMode: Bool = false
@@ -577,6 +578,7 @@ struct TerminalContainerView: View {
             isActive: activeTab == tab,
             isDirty: isEditorDirty(tab),
             isUnread: unreadTabs.contains(tab),
+            isChromeActive: tab == .agent && agentStateStore.isChromeActive(for: workstreamID),
             onSelect: { activeTab = tab },
             onClose: tab.isCloseable ? { closeTab(tab) } : nil
         )
@@ -1472,6 +1474,7 @@ private struct WorkspaceTabButton: View {
     let isActive: Bool
     var isDirty: Bool = false
     var isUnread: Bool = false
+    var isChromeActive: Bool = false
     let onSelect: () -> Void
     var onClose: (() -> Void)?
 
@@ -1492,6 +1495,12 @@ private struct WorkspaceTabButton: View {
                 Image(systemName: icon)
                     .font(.system(size: 11))
                     .offset(y: 0.5)
+                if isChromeActive {
+                    Image(systemName: "globe")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(DesignColor.statusInfo)
+                        .accessibilityLabel("Claude in Chrome is active")
+                }
                 if let label {
                     Text(label)
                         .font(.system(size: 12, weight: isActive ? .semibold : .regular))

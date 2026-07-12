@@ -26,6 +26,7 @@ final class AgentStateTests: XCTestCase {
 
         XCTAssertEqual(decoded.state, .working)
         XCTAssertEqual(decoded.pid, 48211)
+        XCTAssertFalse(decoded.chromeActive)
         XCTAssertEqual(decoded.updatedAt.timeIntervalSince1970, 1_715_961_131, accuracy: 0.001)
     }
 
@@ -33,6 +34,16 @@ final class AgentStateTests: XCTestCase {
         let id = UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC")!
         let url = AgentStateFiles.fileURL(for: id)
         XCTAssertTrue(url.path.hasSuffix("agent-state/aabbccdd-1122-3344-5566-778899aabbcc.json"))
+    }
+
+    func testSnapshotDecodesLegacyStateFileWithoutChromeActivity() throws {
+        let data = Data("{\"pid\":48211,\"state\":\"working\",\"updatedAt\":\"2024-05-17T12:05:31Z\"}".utf8)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let snapshot = try decoder.decode(AgentStateSnapshot.self, from: data)
+
+        XCTAssertFalse(snapshot.chromeActive)
     }
 }
 
@@ -90,6 +101,21 @@ final class AgentStateStoreTests: XCTestCase {
     func testReturnsNilForUnknownID() {
         let store = AgentStateStore(directoryURL: tempDir)
         XCTAssertNil(store.agentState(for: UUID()))
+    }
+
+    func testReportsChromeActivityForLiveSnapshot() throws {
+        let id = UUID()
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        let snapshot = AgentStateSnapshot(state: .working, updatedAt: Date(), pid: Int32(getpid()), chromeActive: true)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        try encoder.encode(snapshot).write(to: tempDir.appendingPathComponent("\(id.uuidString.lowercased()).json"))
+
+        let store = AgentStateStore(directoryURL: tempDir)
+        store.refresh()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertTrue(store.isChromeActive(for: id))
     }
 
     func testDecaysWorkingOlderThanThirtyMinutesToIdle() {
