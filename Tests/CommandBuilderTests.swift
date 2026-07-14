@@ -466,6 +466,58 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertFalse(command.intermediateCommands[0].contains("--dangerously-skip-permissions"))
     }
 
+    func testBuildClaudeAgentCommandUsesSessionNameForNameFlag() {
+        let id = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .claude,
+            cliPath: "/usr/local/bin/claude",
+            workingDirectory: "/tmp/worktree",
+            projectName: "demo",
+            workstreamName: "ws",
+            sessionName: "fix-login-timeout",
+            workstreamID: id,
+            tmuxPath: "/opt/homebrew/bin/tmux",
+            useTmux: true,
+            bypassPermissions: false,
+            allowOutsideWorktree: true,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: true,
+            hookInvocation: nil
+        )
+
+        XCTAssertTrue(command.intermediateCommands[0].contains("--name fix-login-timeout"))
+        XCTAssertTrue(command.intermediateCommands[1].contains("--name fix-login-timeout"))
+        XCTAssertFalse(command.intermediateCommands[0].contains("--name ws"))
+        // The tmux session must keep the stable workstream name so respawns
+        // reattach instead of creating a new session after a branch rename.
+        let tmuxSession = TmuxSession.sessionName(project: "demo", workstream: "ws", role: "agent")
+        XCTAssertTrue(command.finalCommand.contains(tmuxSession))
+    }
+
+    func testBuildClaudeAgentCommandDefaultsSessionNameToWorkstreamName() {
+        let id = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .claude,
+            cliPath: "/usr/local/bin/claude",
+            workingDirectory: "/tmp/worktree",
+            projectName: "demo",
+            workstreamName: "ws",
+            workstreamID: id,
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: true,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: true,
+            hookInvocation: nil
+        )
+
+        XCTAssertTrue(command.intermediateCommands[0].contains("--name ws"))
+        XCTAssertTrue(command.intermediateCommands[1].contains("--name ws"))
+    }
+
     func testBuildClaudeAgentCommandIncludesSettingsFlag() {
         let id = UUID()
         let settingsURL = URL(fileURLWithPath: "/tmp/dockyard-test/settings.json")
