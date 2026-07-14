@@ -28,6 +28,9 @@ editor/node_modules/
 # Python
 __pycache__/
 
+# Claude Code local state (settings.local.json, agent worktrees)
+.claude/
+
 # macOS
 .DS_Store
 *.swp

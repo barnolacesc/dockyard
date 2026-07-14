@@ -46,7 +46,9 @@ elif [ "$remote_head" = "$base" ]; then
     echo "Local main is ahead of origin/main; nothing to pull."
 else
     # Diverged: replay local commits on top of origin/main, but never clobber real work.
-    if [ -n "$(git status --porcelain)" ]; then
+    # Untracked files are ignored: a rebase cannot touch them, and local tooling
+    # state (e.g. .claude/) would otherwise block every update.
+    if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
         echo "Cannot update automatically: you have uncommitted changes in $(pwd)."
         echo "Commit or stash them, then try again."
         exit 1
