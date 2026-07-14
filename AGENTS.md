@@ -113,7 +113,9 @@ Breaking changes: add `!` after the type or include `BREAKING CHANGE:` in the fo
 2. Workspace view: Info (Cmd+1) and Agent (Cmd+2) tabs always present; terminals/browsers added on demand
 3. Tmux mode: wraps Coding Agent only in `tmux new-session -A` on socket `-L dockyard`
 4. Terminal tabs: close on shell exit (Ctrl+D). Agent respawns.
-5. Archiving: runs teardown script, then `git worktree remove` + `tmux kill-session`
+5. Removing (X button): kills terminals/tmux and drops the workstream from the sidebar, but keeps the worktree and branch on disk
+6. Purging (context menu): runs teardown script, then `git worktree remove` + branch delete + `tmux kill-session`
+7. Orphaned worktrees appear in the project overview's Git Worktrees section; "Prune clean worktrees" removes clean ones and deletes their branches
 
 ### Script configuration
 Scripts are loaded from `.dockyard.json` in the project directory:

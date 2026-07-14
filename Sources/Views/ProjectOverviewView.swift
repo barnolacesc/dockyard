@@ -13,6 +13,7 @@ struct ProjectOverviewView: View {
     @EnvironmentObject var appEnv: AppEnvironment
     @AppStorage("dockyard.workstreamSortOrder") private var workstreamSortOrder: ProjectSortOrder = .recent
     @State private var worktrees: [WorktreeInfo] = []
+    @State private var isLoadingWorktrees = false
     @State private var showingPruneConfirm = false
     @State private var isPruning = false
 
@@ -192,9 +193,18 @@ struct ProjectOverviewView: View {
 
                 // MARK: - Worktrees
 
-                if !worktrees.isEmpty {
+                if !worktrees.isEmpty || isLoadingWorktrees {
                     Section {
-                        ForEach(worktrees) { wt in
+                        if worktrees.isEmpty {
+                            HStack {
+                                Spacer()
+                                ProgressView()
+                                    .controlSize(.small)
+                                Spacer()
+                            }
+                            .padding(.vertical, 8)
+                        }
+                        ForEach(ProjectOverviewState.triageSorted(worktrees)) { wt in
                             let matchingWorkstream = project.workstreams.first { ws in
                                 guard let path = ws.worktreePath else { return false }
                                 return Self.standardizedPath(path) == Self.standardizedPath(wt.path)
@@ -220,9 +230,34 @@ struct ProjectOverviewView: View {
                             .disabled(isPruning)
                         }
                     } header: {
-                        HStack {
+                        HStack(spacing: 10) {
                             Text("Git Worktrees")
+                            if isLoadingWorktrees, !worktrees.isEmpty {
+                                ProgressView()
+                                    .controlSize(.mini)
+                            }
                             Spacer()
+                            if dirtyCount > 0 {
+                                WorktreeStatusCount(
+                                    count: dirtyCount,
+                                    color: DesignColor.statusWarning,
+                                    helpText: NSLocalizedString("Uncommitted changes", comment: "")
+                                )
+                            }
+                            if aheadCount > 0 {
+                                WorktreeStatusCount(
+                                    count: aheadCount,
+                                    color: DesignColor.statusInfo,
+                                    helpText: NSLocalizedString("Commits ahead", comment: "")
+                                )
+                            }
+                            if cleanCount > 0 {
+                                WorktreeStatusCount(
+                                    count: cleanCount,
+                                    color: DesignColor.statusSuccess,
+                                    helpText: NSLocalizedString("Clean", comment: "")
+                                )
+                            }
                             Text("\(worktrees.count)")
                                 .font(.caption)
                                 .tabularNumbers()
@@ -283,6 +318,18 @@ struct ProjectOverviewView: View {
         Set(project.workstreams.compactMap(\.worktreePath).map(Self.standardizedPath))
     }
 
+    private var dirtyCount: Int {
+        worktrees.filter { !$0.isMain && $0.isDirty }.count
+    }
+
+    private var aheadCount: Int {
+        worktrees.filter { !$0.isMain && !$0.isDirty && $0.hasBranchCommits }.count
+    }
+
+    private var cleanCount: Int {
+        worktrees.filter { !$0.isMain && !$0.isDirty && !$0.hasBranchCommits }.count
+    }
+
     private var prunableWorktrees: [WorktreeInfo] {
         return worktrees.filter { worktree in
             guard !worktree.isMain, !worktree.isDirty, !worktree.hasBranchCommits else { return false }
@@ -317,6 +364,7 @@ struct ProjectOverviewView: View {
 
     private func refreshWorktrees() {
         let dir = project.directory
+        isLoadingWorktrees = true
         Task.detached {
             let wts = GitOperations.listWorktreesWithInfo(at: dir)
             await updateWorktrees(wts, loadedFor: dir)
@@ -363,6 +411,7 @@ struct ProjectOverviewView: View {
             currentDirectory: project.directory
         ) else { return }
         self.worktrees = worktrees
+        isLoadingWorktrees = false
     }
 
     @MainActor
@@ -407,8 +456,44 @@ enum ProjectOverviewState {
         standardizedPath(directory) == standardizedPath(currentDirectory)
     }
 
+    /// Order worktrees for review: main first, then ones with uncommitted changes,
+    /// then ones with commits ahead, then clean ones; alphabetical within each group.
+    static func triageSorted(_ worktrees: [WorktreeInfo]) -> [WorktreeInfo] {
+        func rank(_ wt: WorktreeInfo) -> Int {
+            if wt.isMain { return 0 }
+            if wt.isDirty { return 1 }
+            if wt.hasBranchCommits { return 2 }
+            return 3
+        }
+        return worktrees.sorted { a, b in
+            let ra = rank(a)
+            let rb = rank(b)
+            if ra != rb { return ra < rb }
+            return (a.branch ?? a.path).localizedCaseInsensitiveCompare(b.branch ?? b.path) == .orderedAscending
+        }
+    }
+
     private static func standardizedPath(_ path: String) -> String {
         URL(fileURLWithPath: path).standardizedFileURL.path
+    }
+}
+
+private struct WorktreeStatusCount: View {
+    let count: Int
+    let color: Color
+    let helpText: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+            Text("\(count)")
+                .font(.caption)
+                .tabularNumbers()
+                .foregroundStyle(.secondary)
+        }
+        .help(helpText)
     }
 }
 
