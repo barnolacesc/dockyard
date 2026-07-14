@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.2.1](https://github.com/barnolacesc/dockyard/compare/v0.2.0...v0.2.1) (2026-07-11)
+
+
+### Miscellaneous
+
+* remove all sponsor links and pages ([1caa0e8](https://github.com/barnolacesc/dockyard/commit/1caa0e8f918b3f1e751f0a2c852db354e3d5f51f))
+* remove all sponsor links and pages ([3e37f8c](https://github.com/barnolacesc/dockyard/commit/3e37f8c66b330250ee06c5b525f1031408bd63ff))
+
+
+### Documentation
+
+* check off homebrew tap in fork-separation TODO ([dbbc25a](https://github.com/barnolacesc/dockyard/commit/dbbc25a6839f7c3233908fb398d3164e420956d6))
+* check off homebrew tap in fork-separation TODO ([917c2c4](https://github.com/barnolacesc/dockyard/commit/917c2c475048bb857cf4611077b6e117f3542f80))
+
+
+### CI/CD
+
+* add CodeQL, Dependabot, and SHA-pin remaining actions (VRA phase 3) ([508ae7a](https://github.com/barnolacesc/dockyard/commit/508ae7a37a37feff2984eb6f25a57a7bbf181e54))
+* extend CodeQL to actions/javascript, tune Dependabot (issue [#48](https://github.com/barnolacesc/dockyard/issues/48) phase 3) ([a05abc6](https://github.com/barnolacesc/dockyard/commit/a05abc6cba4dd731b5b1a726014188430e472975))
+
 ## [0.2.0](https://github.com/barnolacesc/dockyard/compare/v0.1.75...v0.2.0) (2026-07-11)
 
 

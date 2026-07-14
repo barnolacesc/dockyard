@@ -7,7 +7,7 @@ import Foundation
 let arguments = CommandLine.arguments
 
 func usage() -> Never {
-    FileHandle.standardError.write(Data("usage: dy-agent-state --workstream-id <uuid> --state <working|waiting|idle>\n".utf8))
+    FileHandle.standardError.write(Data("usage: dy-agent-state --workstream-id <uuid> [--state <working|waiting|idle>] [--chrome-active <true|false>]\n".utf8))
     exit(2)
 }
 
@@ -17,10 +17,28 @@ func value(for flag: String) -> String? {
 }
 
 guard let idString = value(for: "--workstream-id"),
-      let id = UUID(uuidString: idString),
-      let stateString = value(for: "--state"),
-      let state = AgentState(rawValue: stateString)
+      let id = UUID(uuidString: idString)
 else {
+    usage()
+}
+
+let requestedState: AgentState?
+if let stateString = value(for: "--state") {
+    guard let state = AgentState(rawValue: stateString) else { usage() }
+    requestedState = state
+} else {
+    requestedState = nil
+}
+
+let requestedChromeActive: Bool?
+if let chromeActiveString = value(for: "--chrome-active") {
+    guard let chromeActive = Bool(chromeActiveString) else { usage() }
+    requestedChromeActive = chromeActive
+} else {
+    requestedChromeActive = nil
+}
+
+guard requestedState != nil || requestedChromeActive != nil else {
     usage()
 }
 
@@ -28,7 +46,13 @@ else {
 // immediately, but the agent process stays alive. The store's loadValidated()
 // uses this for liveness checks.
 let agentPID = getppid()
-let snapshot = AgentStateSnapshot(state: state, updatedAt: Date(), pid: agentPID)
+let existingSnapshot = AgentStateFiles.load(for: id)
+let snapshot = AgentStateSnapshot(
+    state: requestedState ?? existingSnapshot?.state ?? .idle,
+    updatedAt: Date(),
+    pid: agentPID,
+    chromeActive: requestedChromeActive ?? existingSnapshot?.chromeActive ?? false
+)
 
 do {
     try FileManager.default.createDirectory(at: AgentStateFiles.directoryURL, withIntermediateDirectories: true)

@@ -7,6 +7,7 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
     static let shared = AgentStateStore()
 
     @Published private(set) var states: [UUID: AgentState] = [:]
+    @Published private(set) var chromeActiveWorkstreamIDs = Set<UUID>()
 
     private let queue = DispatchQueue(label: "dockyard.agent-state-store")
     private var directorySource: DispatchSourceFileSystemObject?
@@ -75,6 +76,10 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
         states[workstreamID]
     }
 
+    func isChromeActive(for workstreamID: UUID) -> Bool {
+        chromeActiveWorkstreamIDs.contains(workstreamID)
+    }
+
     /// Synchronous rescan of the directory. Tests call this directly so they
     /// do not depend on filesystem-event delivery timing.
     func refresh() {
@@ -85,21 +90,34 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
         let dirURL = directoryURL
         let next = Self.scanDirectory(at: dirURL, now: Date())
         DispatchQueue.main.async { [weak self] in
-            guard let self, self.states != next else { return }
-            self.states = next
+            guard let self else { return }
+            if self.states != next.states {
+                self.states = next.states
+            }
+            if self.chromeActiveWorkstreamIDs != next.chromeActiveWorkstreamIDs {
+                self.chromeActiveWorkstreamIDs = next.chromeActiveWorkstreamIDs
+            }
         }
     }
 
-    private static func scanDirectory(at dirURL: URL, now: Date) -> [UUID: AgentState] {
+    private struct ScannedState {
+        var states: [UUID: AgentState] = [:]
+        var chromeActiveWorkstreamIDs = Set<UUID>()
+    }
+
+    private static func scanDirectory(at dirURL: URL, now: Date) -> ScannedState {
         guard let entries = try? FileManager.default.contentsOfDirectory(at: dirURL, includingPropertiesForKeys: nil) else {
-            return [:]
+            return ScannedState()
         }
-        var result: [UUID: AgentState] = [:]
+        var result = ScannedState()
         for url in entries where url.pathExtension == "json" {
             let basename = url.deletingPathExtension().lastPathComponent
             guard let id = UUID(uuidString: basename) else { continue }
             guard let snapshot = Self.loadValidated(from: url) else { continue }
-            result[id] = Self.decayedState(snapshot, now: now)
+            result.states[id] = Self.decayedState(snapshot, now: now)
+            if snapshot.chromeActive {
+                result.chromeActiveWorkstreamIDs.insert(id)
+            }
         }
         return result
     }

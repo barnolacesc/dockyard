@@ -18,6 +18,31 @@ struct AgentStateSnapshot: Codable, Equatable {
     let state: AgentState
     let updatedAt: Date
     let pid: Int32
+    /// True only while the agent has a Claude in Chrome MCP tool call in flight.
+    let chromeActive: Bool
+
+    init(state: AgentState, updatedAt: Date, pid: Int32, chromeActive: Bool = false) {
+        self.state = state
+        self.updatedAt = updatedAt
+        self.pid = pid
+        self.chromeActive = chromeActive
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case state
+        case updatedAt
+        case pid
+        case chromeActive
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        state = try container.decode(AgentState.self, forKey: .state)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        pid = try container.decode(Int32.self, forKey: .pid)
+        // State files written before Chrome activity tracking did not contain this key.
+        chromeActive = try container.decodeIfPresent(Bool.self, forKey: .chromeActive) ?? false
+    }
 }
 
 /// Static helpers for the on-disk state files. The observable singleton that

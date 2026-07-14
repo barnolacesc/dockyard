@@ -273,6 +273,7 @@ struct ProjectSidebar: View {
                     {
                         let workstream = projects[pIdx].workstreams[wIdx]
                         let agentState = agentStateStore.agentState(for: workstream.id)
+                        let isChromeActive = agentStateStore.isChromeActive(for: workstream.id)
                         let isPathValid = appEnv.isPathValid(workstream.worktreePath)
                         let statusStyle = WorkstreamStatusStyle(agentState: agentState, isPathValid: isPathValid)
                         let branch = appEnv.branchName(for: workstream.worktreePath)
@@ -282,6 +283,7 @@ struct ProjectSidebar: View {
                             branchName: branch,
                             worktreePath: workstream.worktreePath,
                             agentState: agentState,
+                            isChromeActive: isChromeActive,
                             isPathValid: isPathValid,
                             isSelected: selection == .workstream(workstream.id),
                             hasActivePort: appEnv.hasActivePort(workstream.id),
@@ -1288,6 +1290,7 @@ private struct WorkstreamRow: View {
     var branchName: String?
     var worktreePath: String?
     var agentState: AgentState? = nil
+    var isChromeActive: Bool = false
     var isPathValid: Bool = false
     var isSelected: Bool = false
     var hasActivePort: Bool = false
@@ -1466,6 +1469,13 @@ private struct WorkstreamRow: View {
         HStack(spacing: 4) {
             ActivityIndicator(state: agentState, isPathValid: isPathValid)
                 .opacity(contentOpacity)
+
+            if isChromeActive {
+                Image(systemName: "globe")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(DesignColor.statusInfo)
+                    .accessibilityLabel("Claude in Chrome is active")
+            }
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 4) {
