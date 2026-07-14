@@ -349,6 +349,63 @@ final class GitOperationsTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: worktreeB.path))
     }
 
+    func testPruneCleanWorktreesDeletesLocalBranch() throws {
+        let repoDir = tempDir.appendingPathComponent("prune-branch")
+        try FileManager.default.createDirectory(at: repoDir, withIntermediateDirectories: true)
+        git(["init", "-b", "main"], in: repoDir)
+        git(["-c", "user.email=test@test.com", "-c", "user.name=Test",
+             "commit", "--allow-empty", "-m", "init"], in: repoDir)
+
+        let worktreeA = tempDir.appendingPathComponent("worktree-a")
+        XCTAssertTrue(git(["worktree", "add", "-b", "feature/a", worktreeA.path], in: repoDir))
+
+        let pruned = GitOperations.pruneCleanWorktrees(at: repoDir.path)
+
+        XCTAssertEqual(pruned, 1)
+        XCTAssertFalse(
+            git(["rev-parse", "--verify", "refs/heads/feature/a"], in: repoDir),
+            "Branch of pruned worktree should have been deleted"
+        )
+        XCTAssertTrue(
+            git(["rev-parse", "--verify", "refs/heads/main"], in: repoDir),
+            "Default branch must survive pruning"
+        )
+    }
+
+    // MARK: - listWorktreesWithInfo
+
+    func testListWorktreesWithInfoReportsStatusPerWorktree() throws {
+        let repoDir = tempDir.appendingPathComponent("list-info")
+        try FileManager.default.createDirectory(at: repoDir, withIntermediateDirectories: true)
+        git(["init", "-b", "main"], in: repoDir)
+        git(["-c", "user.email=test@test.com", "-c", "user.name=Test",
+             "commit", "--allow-empty", "-m", "init"], in: repoDir)
+
+        let cleanWT = tempDir.appendingPathComponent("wt-clean")
+        let dirtyWT = tempDir.appendingPathComponent("wt-dirty")
+        let aheadWT = tempDir.appendingPathComponent("wt-ahead")
+        XCTAssertTrue(git(["worktree", "add", "-b", "feature/clean", cleanWT.path], in: repoDir))
+        XCTAssertTrue(git(["worktree", "add", "-b", "feature/dirty", dirtyWT.path], in: repoDir))
+        XCTAssertTrue(git(["worktree", "add", "-b", "feature/ahead", aheadWT.path], in: repoDir))
+
+        try "wip".write(to: dirtyWT.appendingPathComponent("wip.txt"), atomically: true, encoding: .utf8)
+        git(["-c", "user.email=test@test.com", "-c", "user.name=Test",
+             "commit", "--allow-empty", "-m", "work"], in: aheadWT)
+
+        let infos = GitOperations.listWorktreesWithInfo(at: repoDir.path)
+        XCTAssertEqual(infos.count, 4)
+
+        let byBranch = Dictionary(uniqueKeysWithValues: infos.compactMap { info in
+            info.branch.map { ($0, info) }
+        })
+        XCTAssertEqual(byBranch["main"]?.isMain, true)
+        XCTAssertEqual(byBranch["feature/clean"]?.isDirty, false)
+        XCTAssertEqual(byBranch["feature/clean"]?.hasBranchCommits, false)
+        XCTAssertEqual(byBranch["feature/dirty"]?.isDirty, true)
+        XCTAssertEqual(byBranch["feature/ahead"]?.isDirty, false)
+        XCTAssertEqual(byBranch["feature/ahead"]?.hasBranchCommits, true)
+    }
+
     // MARK: - Helpers
 
     @discardableResult

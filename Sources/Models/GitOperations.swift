@@ -213,7 +213,11 @@ enum GitOperations {
 
     /// Check if the current branch has commits ahead of the default branch.
     static func hasBranchCommits(at path: String, projectPath: String) -> Bool {
-        let base = defaultBranch(at: projectPath)
+        hasBranchCommits(at: path, base: defaultBranch(at: projectPath))
+    }
+
+    /// Check if the current branch has commits ahead of the given base ref.
+    static func hasBranchCommits(at path: String, base: String) -> Bool {
         guard let output = run(args: ["log", "\(base)..HEAD", "--oneline"], in: path) else { return false }
         return !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -276,7 +280,7 @@ enum GitOperations {
 
         let mainPath = URL(fileURLWithPath: projectPath).standardizedFileURL.path
 
-        var results: [WorktreeInfo] = []
+        var entries: [(path: String, branch: String?)] = []
         var currentPath: String?
         var currentBranch: String?
 
@@ -284,11 +288,7 @@ enum GitOperations {
             if line.hasPrefix("worktree ") {
                 // Flush previous entry
                 if let path = currentPath {
-                    let isMain = URL(fileURLWithPath: path).standardizedFileURL.path == mainPath
-                    let dirty = !isMain && hasUncommittedChanges(at: path)
-                    let unpushed = !isMain && hasUnpushedCommits(at: path)
-                    let branchCommits = !isMain && hasBranchCommits(at: path, projectPath: projectPath)
-                    results.append(WorktreeInfo(path: path, branch: currentBranch, isDirty: dirty, isMain: isMain, hasUnpushedCommits: unpushed, hasBranchCommits: branchCommits))
+                    entries.append((path: path, branch: currentBranch))
                 }
                 currentPath = String(line.dropFirst("worktree ".count))
                 currentBranch = nil
@@ -298,17 +298,31 @@ enum GitOperations {
         }
         // Flush last entry
         if let path = currentPath {
-            let isMain = URL(fileURLWithPath: path).standardizedFileURL.path == mainPath
-            let dirty = !isMain && hasUncommittedChanges(at: path)
-            let unpushed = !isMain && hasUnpushedCommits(at: path)
-            let branchCommits = !isMain && hasBranchCommits(at: path, projectPath: projectPath)
-            results.append(WorktreeInfo(path: path, branch: currentBranch, isDirty: dirty, isMain: isMain, hasUnpushedCommits: unpushed, hasBranchCommits: branchCommits))
+            entries.append((path: path, branch: currentBranch))
         }
 
-        return results
+        // Resolve the base ref once; the per-worktree status checks spawn several
+        // git processes each, so run them concurrently to keep large repos fast.
+        let base = defaultBranch(at: projectPath)
+        var results = [WorktreeInfo?](repeating: nil, count: entries.count)
+        let lock = NSLock()
+        DispatchQueue.concurrentPerform(iterations: entries.count) { index in
+            let entry = entries[index]
+            let isMain = URL(fileURLWithPath: entry.path).standardizedFileURL.path == mainPath
+            let dirty = !isMain && hasUncommittedChanges(at: entry.path)
+            let unpushed = !isMain && hasUnpushedCommits(at: entry.path)
+            let branchCommits = !isMain && hasBranchCommits(at: entry.path, base: base)
+            let info = WorktreeInfo(path: entry.path, branch: entry.branch, isDirty: dirty, isMain: isMain, hasUnpushedCommits: unpushed, hasBranchCommits: branchCommits)
+            lock.lock()
+            results[index] = info
+            lock.unlock()
+        }
+
+        return results.compactMap { $0 }
     }
 
-    /// Remove clean worktrees (no uncommitted changes and no unmerged branch commits).
+    /// Remove clean worktrees (no uncommitted changes and no unmerged branch commits)
+    /// along with their now-orphaned local branches.
     /// When `onlyPaths` is provided, only those worktree paths are considered.
     @discardableResult
     static func pruneCleanWorktrees(at projectPath: String, onlyPaths: Set<String>? = nil) -> Int {
@@ -327,6 +341,10 @@ enum GitOperations {
             let result = run(args: ["worktree", "remove", wt.path], in: projectPath)
             if result != nil {
                 pruned += 1
+                // The branch has no commits beyond the base, so nothing is lost
+                if let branch = wt.branch {
+                    deleteLocalBranch(at: projectPath, branchName: branch)
+                }
             }
         }
         // Clean up stale entries

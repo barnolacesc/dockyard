@@ -71,6 +71,33 @@ final class ProjectTests: XCTestCase {
         )
     }
 
+    func testTriageSortPutsMainFirstThenDirtyThenAheadThenClean() {
+        func wt(_ branch: String, dirty: Bool = false, main: Bool = false, ahead: Bool = false) -> WorktreeInfo {
+            WorktreeInfo(
+                path: "/wt/\(branch)",
+                branch: branch,
+                isDirty: dirty,
+                isMain: main,
+                hasUnpushedCommits: false,
+                hasBranchCommits: ahead
+            )
+        }
+
+        let sorted = ProjectOverviewState.triageSorted([
+            wt("clean-b"),
+            wt("ahead-a", ahead: true),
+            wt("main", main: true),
+            wt("dirty-a", dirty: true),
+            wt("clean-a"),
+            wt("dirty-b", dirty: true, ahead: true),
+        ])
+
+        XCTAssertEqual(
+            sorted.map(\.branch),
+            ["main", "dirty-a", "dirty-b", "ahead-a", "clean-a", "clean-b"]
+        )
+    }
+
     func testCodableRoundTrip() throws {
         let projects = [
             Project(name: "alpha", directory: "/Users/test/alpha"),
