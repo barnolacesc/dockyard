@@ -263,6 +263,7 @@ enum CodingCLICommandBuilder {
         workingDirectory: String,
         projectName: String,
         workstreamName: String,
+        sessionName: String? = nil,
         workstreamID: UUID,
         tmuxPath: String?,
         useTmux: Bool,
@@ -279,7 +280,7 @@ enum CodingCLICommandBuilder {
             command = buildClaudeAgentCommand(
                 cliPath: cliPath,
                 workingDirectory: workingDirectory,
-                workstreamName: workstreamName,
+                sessionName: sessionName ?? workstreamName,
                 workstreamID: workstreamID,
                 useTmux: useTmux,
                 bypassPermissions: bypassPermissions,
@@ -324,7 +325,7 @@ enum CodingCLICommandBuilder {
     private static func buildClaudeAgentCommand(
         cliPath: String,
         workingDirectory: String,
-        workstreamName: String,
+        sessionName: String,
         workstreamID: UUID,
         useTmux: Bool,
         bypassPermissions: Bool,
@@ -347,7 +348,7 @@ enum CodingCLICommandBuilder {
         var resume = CommandBuilder(cliPath)
         resume.option("--resume", sessionID)
         if supportsSessionName {
-            resume.option("--name", workstreamName)
+            resume.option("--name", sessionName)
         }
         if useTmux {
             resume.flag("--teammate-mode")
@@ -364,7 +365,7 @@ enum CodingCLICommandBuilder {
         var fresh = CommandBuilder(cliPath)
         fresh.option("--session-id", sessionID)
         if supportsSessionName {
-            fresh.option("--name", workstreamName)
+            fresh.option("--name", sessionName)
         }
         if useTmux {
             fresh.flag("--teammate-mode")

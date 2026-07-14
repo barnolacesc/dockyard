@@ -431,6 +431,13 @@ struct TerminalContainerView: View {
         return appEnv.githubPR(for: projectDirectory, branch: branch)
     }
 
+    /// Branch-derived display name for the agent session (prefix stripped),
+    /// so renaming the branch renames the session in the CLI's resume picker.
+    private var agentSessionName: String? {
+        guard let branch = appEnv.branchName(for: workingDirectory) else { return nil }
+        return branch.split(separator: "/").last.map(String.init) ?? branch
+    }
+
     private func buildAgentCommand() -> String? {
         guard let cliPath = selectedCodingCLIPath else { return nil }
 
@@ -454,6 +461,7 @@ struct TerminalContainerView: View {
             workingDirectory: workingDirectory,
             projectName: projectName,
             workstreamName: workstreamName,
+            sessionName: agentSessionName,
             workstreamID: workstreamID,
             tmuxPath: appEnv.toolStatus.tmux.path,
             useTmux: tmuxMode,
@@ -714,6 +722,7 @@ struct TerminalContainerView: View {
             .onChange(of: autoRenameBranch) { rebuildAgentCommand() }
             .onChange(of: allowOutsideWorktree) { rebuildAgentCommand() }
             .onChange(of: workstreamName) { rebuildAgentCommand() }
+            .onChange(of: agentSessionName) { rebuildAgentCommand() }
             .onChange(of: effectiveCodingCLIStoredValue) {
                 livePermissionHint = nil
                 surfaceCache.removeSurface(for: agentID)
@@ -2144,7 +2153,7 @@ final class TerminalSurfaceCache: ObservableObject {
 
     struct SurfaceParams {
         let workingDirectory: String
-        let command: String?
+        var command: String?
         let initialInput: String?
         let environmentVars: [String: String]
         let waitAfterCommand: Bool
@@ -2176,6 +2185,12 @@ final class TerminalSurfaceCache: ObservableObject {
         if let existing = surfaces[id] {
             existing.surfaceID = id
             existing.workstreamID = workstreamID
+            // Refresh the stored command (e.g. session name follows a branch
+            // rename) so a future respawn uses the up-to-date invocation.
+            if let command, var params = surfaceParams[id], params.command != command {
+                params.command = command
+                surfaceParams[id] = params
+            }
             return existing
         }
         let view = TerminalView(app: app, workingDirectory: workingDirectory, command: command, initialInput: initialInput, environmentVars: environmentVars, waitAfterCommand: waitAfterCommand)
