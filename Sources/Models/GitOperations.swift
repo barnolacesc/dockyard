@@ -338,7 +338,9 @@ enum GitOperations {
             if let allowedPaths, !allowedPaths.contains(standardizedPath) {
                 continue
             }
-            let result = run(args: ["worktree", "remove", wt.path], in: projectPath)
+            // --force is needed because plain remove refuses worktrees with
+            // populated submodules; cleanliness was already verified above.
+            let result = run(args: ["worktree", "remove", "--force", wt.path], in: projectPath)
             if result != nil {
                 pruned += 1
                 // The branch has no commits beyond the base, so nothing is lost

@@ -372,6 +372,33 @@ final class GitOperationsTests: XCTestCase {
         )
     }
 
+    func testPruneCleanWorktreesRemovesWorktreeWithPopulatedSubmodule() throws {
+        // A clean worktree with an initialized submodule makes plain
+        // `git worktree remove` fail with "working trees containing submodules
+        // cannot be moved or removed", so pruning must force-remove.
+        let subDir = tempDir.appendingPathComponent("submodule-repo")
+        try FileManager.default.createDirectory(at: subDir, withIntermediateDirectories: true)
+        git(["init", "-b", "main"], in: subDir)
+        git(["-c", "user.email=test@test.com", "-c", "user.name=Test",
+             "commit", "--allow-empty", "-m", "init"], in: subDir)
+
+        let repoDir = tempDir.appendingPathComponent("prune-submodule")
+        try FileManager.default.createDirectory(at: repoDir, withIntermediateDirectories: true)
+        git(["init", "-b", "main"], in: repoDir)
+        git(["-c", "protocol.file.allow=always", "submodule", "add", subDir.path, "sub"], in: repoDir)
+        git(["-c", "user.email=test@test.com", "-c", "user.name=Test",
+             "commit", "-m", "add submodule"], in: repoDir)
+
+        let worktree = tempDir.appendingPathComponent("worktree-sub")
+        XCTAssertTrue(git(["worktree", "add", "-b", "feature/sub", worktree.path], in: repoDir))
+        XCTAssertTrue(git(["-c", "protocol.file.allow=always", "submodule", "update", "--init"], in: worktree))
+
+        let pruned = GitOperations.pruneCleanWorktrees(at: repoDir.path)
+
+        XCTAssertEqual(pruned, 1)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: worktree.path))
+    }
+
     // MARK: - listWorktreesWithInfo
 
     func testListWorktreesWithInfoReportsStatusPerWorktree() throws {
