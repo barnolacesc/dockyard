@@ -519,6 +519,7 @@ struct ProjectSidebar: View {
                 .fixedSize()
                 .accessibilityLabel("Add project")
                 .shortcutHint(ShortcutHint(command: "N", commandShift: "N"))
+                .tourAnchor(.newProjectButton)
                 Spacer()
                 SidebarBottomButton(icon: "questionmark.circle") {
                     NotificationCenter.default.post(name: .openHelp, object: nil)
@@ -1116,6 +1117,7 @@ private struct ProjectHeaderRow: View {
         .onHover { isHovering = $0 }
         .hoverHighlight(radius: DesignRadius.md)
         .shortcutHint(ShortcutHint(command: isSelected ? "↑ ↓" : nil))
+        .tourAnchor(.newWorkstreamButton, enabled: isSelected)
         .contextMenu {
             Button {
                 NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: project.directory)

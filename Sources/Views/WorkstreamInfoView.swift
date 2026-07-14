@@ -244,6 +244,7 @@ struct WorkstreamInfoView: View {
                             Text(cli.displayName).tag(String?.some(cli.rawValue))
                         }
                     }
+                    .tourAnchor(.agentPicker)
 
                     Text("Use Default follows the Coding Agent selected in Settings.")
                         .font(.caption)
@@ -523,6 +524,7 @@ struct WorkstreamInfoView: View {
                     }
                 }
                 .disabled(isDetectingStack)
+                .tourAnchor(.generateConfigButton)
 
                 Button("Create manually", action: beginBlankConfigEditing)
                     .font(.caption)

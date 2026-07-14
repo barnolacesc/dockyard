@@ -509,6 +509,7 @@ struct TerminalContainerView: View {
             // Fixed tabs (Info, Agent)
             ForEach(fixedTabs, id: \.self) { tab in
                 tabButton(for: tab)
+                    .tourAnchor(tab == .info ? .infoTab : .agentTab)
             }
 
             // Scrollable closeable tabs (terminals, browsers)
@@ -560,6 +561,7 @@ struct TerminalContainerView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(.bar)
+        .tourAnchor(.workspaceTabBar)
     }
 
     private func isEditorDirty(_ tab: WorkspaceTab) -> Bool {
@@ -625,6 +627,7 @@ struct TerminalContainerView: View {
                     if scriptConfig.hasAnyScript, !tabs.contains(.info) {
                         tabs.insert(.info, at: 0)
                     }
+                    NotificationCenter.default.post(name: .configGenerated, object: nil)
                 },
                 onChangeLivePermissions: {
                     openLivePermissionControl()

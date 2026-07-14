@@ -170,6 +170,7 @@ struct SidebarRail: View {
                 .fixedSize()
                 .help(NSLocalizedString("Add project", comment: "Collapsed sidebar add project button tooltip"))
                 .accessibilityLabel("Add project")
+                .tourAnchor(.newProjectButton)
 
                 Button {
                     NotificationCenter.default.post(name: .openSettings, object: nil)

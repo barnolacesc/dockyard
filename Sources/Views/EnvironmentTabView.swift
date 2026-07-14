@@ -78,6 +78,7 @@ struct EnvironmentTabView: View {
                         showScriptApproval = false
                         runStoppedManually = false
                         runStarted = true
+                        NotificationCenter.default.post(name: .runScriptStarted, object: nil)
                     },
                     onDecline: { showScriptApproval = false }
                 )
@@ -140,6 +141,7 @@ struct EnvironmentTabView: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(.bar)
+            .tourAnchor(.startRunButton)
 
             Divider()
 
@@ -309,6 +311,7 @@ struct EnvironmentTabView: View {
         }
         runStoppedManually = false
         runStarted = true
+        NotificationCenter.default.post(name: .runScriptStarted, object: nil)
     }
 
     private func stopRun() {
@@ -329,6 +332,7 @@ struct EnvironmentTabView: View {
             runGeneration += 1
             runRestarting = false
             runStarted = true
+            NotificationCenter.default.post(name: .runScriptStarted, object: nil)
         }
     }
 

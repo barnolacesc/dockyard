@@ -466,4 +466,45 @@
 "Not Now" = "Ara no";
 "Teardown" = "Desmuntatge";
 "built by " = "fet per ";
+
+// Tour — Getting Started steps
+"Welcome to Dockyard" = "Us donem la benvinguda a Dockyard";
+"This short tour sets up a real project: you'll add a repository, create a workstream, and put the Coding Agent to work. You can quit anytime." = "Aquesta visita curta configura un projecte real: afegiràs un repositori, crearàs un workstream i posaràs l'agent de programació a treballar. Pots sortir en qualsevol moment.";
+"Click the highlighted + button and choose a git repository. Dockyard organizes everything around your projects." = "Fes clic al botó + ressaltat i tria un repositori git. Dockyard ho organitza tot al voltant dels teus projectes.";
+"Create a workstream" = "Crea un workstream";
+"Hover over your project and click its + button. A workstream is an isolated git worktree with its own branch, terminal, and Coding Agent." = "Passa el cursor sobre el projecte i fes clic al seu botó +. Un workstream és un worktree de git aïllat amb la seva pròpia branca, terminal i agent de programació.";
+"Your workspace" = "El teu espai de treball";
+"Every workstream has an Info tab and a Coding Agent tab. Add terminals, browsers, and editors on demand — they all live here." = "Cada workstream té una pestanya Info i una pestanya de l'agent de programació. Afegeix terminals, navegadors i editors quan calgui — tots viuen aquí.";
+"Choose your Coding Agent" = "Tria el teu agent de programació";
+"Pick Claude Code or Codex for this workstream, or keep the default from Settings." = "Tria Claude Code o Codex per a aquest workstream, o mantén el valor per defecte de Configuració.";
+"Prompt the agent" = "Dona instruccions a l'agent";
+"Type what you want built. The agent works on this workstream's branch and never touches your main checkout." = "Escriu què vols construir. L'agent treballa a la branca d'aquest workstream i mai toca el teu checkout principal.";
+"Configure run scripts" = "Configura els scripts d'execució";
+"Generate a .dockyard.json so Dockyard knows how to set up and run your app. It detects your stack automatically." = "Genera un .dockyard.json perquè Dockyard sàpiga com configurar i executar la teva app. Detecta el teu stack automàticament.";
+"Start your app" = "Inicia la teva app";
+"Press Start (⌘⇧↩) to run your app. When a port is detected, the embedded browser opens it automatically." = "Prem Inicia (⌘⇧↩) per executar la teva app. Quan es detecta un port, el navegador integrat l'obre automàticament.";
+"You're all set" = "Tot a punt";
+"Press ⌘/ anytime for help and shortcuts. You can restart this tour from the Help menu." = "Prem ⌘/ en qualsevol moment per obtenir ajuda i dreceres. Pots reiniciar aquesta visita des del menú Ajuda.";
+
+// Tour — card chrome
+"Step %d of %d" = "Pas %d de %d";
+"Next" = "Següent";
+"Skip" = "Omet";
+"Quit Tour" = "Surt de la visita";
+"Complete the highlighted action to continue" = "Completa l'acció ressaltada per continuar";
+
+// Tour — entry points
+"Take the Tour" = "Fes la visita guiada";
+"Restart Tour…" = "Reinicia la visita…";
+"Completed" = "Completada";
+
+// What's New
+"What's New" = "Novetats";
+"What's New…" = "Novetats…";
+"Show Me" = "Mostra-m'ho";
+"Full changelog" = "Registre de canvis complet";
+"Interactive Tour" = "Visita interactiva";
+"A guided tour walks you through projects, workstreams, and the Coding Agent. Restart it anytime from the Help menu." = "Una visita guiada et mostra els projectes, els workstreams i l'agent de programació. Reinicia-la quan vulguis des del menú Ajuda.";
+"What's New Panel" = "Tauler de novetats";
+"After each update, the highlights show up right here." = "Després de cada actualització, les novetats destacades apareixen aquí mateix.";
 "Claude in Chrome is active" = "Claude a Chrome esta actiu";

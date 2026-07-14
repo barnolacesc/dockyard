@@ -466,4 +466,45 @@
 "Not Now" = "Not Now";
 "Teardown" = "Teardown";
 "built by " = "built by ";
+
+// Tour — Getting Started steps
+"Welcome to Dockyard" = "Welcome to Dockyard";
+"This short tour sets up a real project: you'll add a repository, create a workstream, and put the Coding Agent to work. You can quit anytime." = "This short tour sets up a real project: you'll add a repository, create a workstream, and put the Coding Agent to work. You can quit anytime.";
+"Click the highlighted + button and choose a git repository. Dockyard organizes everything around your projects." = "Click the highlighted + button and choose a git repository. Dockyard organizes everything around your projects.";
+"Create a workstream" = "Create a workstream";
+"Hover over your project and click its + button. A workstream is an isolated git worktree with its own branch, terminal, and Coding Agent." = "Hover over your project and click its + button. A workstream is an isolated git worktree with its own branch, terminal, and Coding Agent.";
+"Your workspace" = "Your workspace";
+"Every workstream has an Info tab and a Coding Agent tab. Add terminals, browsers, and editors on demand — they all live here." = "Every workstream has an Info tab and a Coding Agent tab. Add terminals, browsers, and editors on demand — they all live here.";
+"Choose your Coding Agent" = "Choose your Coding Agent";
+"Pick Claude Code or Codex for this workstream, or keep the default from Settings." = "Pick Claude Code or Codex for this workstream, or keep the default from Settings.";
+"Prompt the agent" = "Prompt the agent";
+"Type what you want built. The agent works on this workstream's branch and never touches your main checkout." = "Type what you want built. The agent works on this workstream's branch and never touches your main checkout.";
+"Configure run scripts" = "Configure run scripts";
+"Generate a .dockyard.json so Dockyard knows how to set up and run your app. It detects your stack automatically." = "Generate a .dockyard.json so Dockyard knows how to set up and run your app. It detects your stack automatically.";
+"Start your app" = "Start your app";
+"Press Start (⌘⇧↩) to run your app. When a port is detected, the embedded browser opens it automatically." = "Press Start (⌘⇧↩) to run your app. When a port is detected, the embedded browser opens it automatically.";
+"You're all set" = "You're all set";
+"Press ⌘/ anytime for help and shortcuts. You can restart this tour from the Help menu." = "Press ⌘/ anytime for help and shortcuts. You can restart this tour from the Help menu.";
+
+// Tour — card chrome
+"Step %d of %d" = "Step %d of %d";
+"Next" = "Next";
+"Skip" = "Skip";
+"Quit Tour" = "Quit Tour";
+"Complete the highlighted action to continue" = "Complete the highlighted action to continue";
+
+// Tour — entry points
+"Take the Tour" = "Take the Tour";
+"Restart Tour…" = "Restart Tour…";
+"Completed" = "Completed";
+
+// What's New
+"What's New" = "What's New";
+"What's New…" = "What's New…";
+"Show Me" = "Show Me";
+"Full changelog" = "Full changelog";
+"Interactive Tour" = "Interactive Tour";
+"A guided tour walks you through projects, workstreams, and the Coding Agent. Restart it anytime from the Help menu." = "A guided tour walks you through projects, workstreams, and the Coding Agent. Restart it anytime from the Help menu.";
+"What's New Panel" = "What's New Panel";
+"After each update, the highlights show up right here." = "After each update, the highlights show up right here.";
 "Claude in Chrome is active" = "Claude in Chrome is active";
