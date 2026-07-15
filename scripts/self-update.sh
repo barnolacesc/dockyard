@@ -24,6 +24,15 @@ cd "$SCRIPT_DIR/.."
 echo "Fetching latest main…"
 git fetch origin main
 
+# Re-exec the newest version of this script so fixes to the update flow itself apply
+# on this run, not the next one — the local copy may be the very thing that's broken.
+if [ -z "${DOCKYARD_SELF_UPDATE_REEXEC:-}" ] \
+    && [ "$(git rev-parse HEAD:scripts/self-update.sh)" != "$(git rev-parse origin/main:scripts/self-update.sh)" ]; then
+    echo "Update flow changed upstream; re-running with the latest script…"
+    latest="$(git show origin/main:scripts/self-update.sh)"
+    DOCKYARD_SELF_UPDATE_REEXEC=1 exec sh -c "$latest" "$SCRIPT_DIR/self-update.sh" "$BUILD_MODE"
+fi
+
 # Drop changes to the generated build artifact (regenerated every build) so it never
 # blocks a checkout/rebase. Harmless once the file is gitignored on newer revisions.
 git checkout -- Sources/Models/AppCommit.swift 2>/dev/null || true
@@ -43,7 +52,7 @@ elif [ "$local_head" = "$base" ]; then
     echo "Fast-forwarding to origin/main…"
     git merge --ff-only origin/main
 elif [ "$remote_head" = "$base" ]; then
-    echo "Local main is ahead of origin/main; nothing to pull."
+    echo "Local main is ahead of origin/main by $(git rev-list --count origin/main..@) commit(s); nothing to pull."
 else
     # Diverged: replay local commits on top of origin/main, but never clobber real work.
     # Untracked files are ignored: a rebase cannot touch them, and local tooling
@@ -59,6 +68,7 @@ else
         echo "Update needs a manual merge (rebase conflict). Resolve it in $(pwd) and rebuild."
         exit 1
     fi
+    echo "Note: local main still carries $(git rev-list --count origin/main..@) local commit(s) on top of origin/main."
 fi
 
 echo "Building Dockyard…"
