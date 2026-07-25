@@ -127,17 +127,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         completionHandler([.banner, .sound])
     }
 
-    func applicationWillTerminate(_: Notification) {
-        guard !isRunningXCTest() else { return }
-        let tmuxPath = ToolStatus.detect().tmux.path
-        if let tmuxPath {
-            // Run kill-server asynchronously so it doesn't block the main thread and sluggishly delay app closing.
-            DispatchQueue.global(qos: .userInitiated).async {
-                TmuxSession.killAllSessions(tmuxPath: tmuxPath)
-            }
-        }
-    }
-
     func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
         let confirmQuit = UserDefaults.standard.object(forKey: "dockyard.confirmQuit") as? Bool ?? true
         guard confirmQuit else { return .terminateNow }

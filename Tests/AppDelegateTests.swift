@@ -6,6 +6,15 @@ import UserNotifications
 import XCTest
 
 final class AppDelegateTests: XCTestCase {
+    func testAppDelegateDoesNotRegisterTerminationCleanupCallback() {
+        let selector = NSSelectorFromString("applicationWillTerminate:")
+
+        XCTAssertFalse(
+            AppDelegate().responds(to: selector),
+            "Normal app termination must preserve tmux sessions for restart recovery"
+        )
+    }
+
     func testNotificationAuthorizationResultIsHandledOnMainThread() {
         let handledOnMainThread = expectation(description: "notification authorization handled on main thread")
 
