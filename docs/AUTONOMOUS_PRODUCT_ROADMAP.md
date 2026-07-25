@@ -56,8 +56,7 @@ not an automatically trusted backlog.
 
 ### R1 — Preserve tmux sessions across Dockyard restarts
 
-- Status: **In progress (selected 2026-07-25)** on
-  `fix/preserve-tmux-restarts`; issue #69.
+- Status: **In review (PR #70)** on `fix/preserve-tmux-restarts`; issue #69.
 - User outcome: quitting and reopening Dockyard reconnects to existing Coding
   Agent tmux sessions instead of destroying them.
 - Success signal: `AppDelegate` has no normal-termination callback that runs
@@ -280,5 +279,6 @@ not an automatically trusted backlog.
 
 - **2026-07-25:** bootstrapped roadmap from code, `TODO.md`, docs, issues, PRs,
   releases and CI. Projects v2 unavailable due missing `read:project`.
-  Selected R1 / issue #69. Branch:
-  `fix/preserve-tmux-restarts`. Merge/release state pending.
+  Selected R1 / issue #69 and opened PR #70 from
+  `fix/preserve-tmux-restarts`. Native macOS CI and merge state pending; no
+  release action requested.
