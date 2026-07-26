@@ -43,7 +43,7 @@ not an automatically trusted backlog.
 | Track | Current evidence | Next decision or item |
 | --- | --- | --- |
 | Worktree lifecycle, persistence, cleanup and merged-PR review | Creation, remove-without-delete, purge, orphan listing and clean prune exist. Force-removal and branch deletion have tests. `TODO.md` still requests merged-PR-aware cleanup. | R2 adds classification only; any destructive bulk action remains approval-gated. |
-| Tmux, terminal and session resilience | Dedicated `dockyard` socket, deterministic sessions, `new-session -A`, respawn hooks, tab snapshots and tests exist. Quit currently kills the whole dedicated server, contradicting restart persistence. | R1 / issue #69 is the selected Now item. |
+| Tmux, terminal and session resilience | Dedicated `dockyard` socket, deterministic sessions, `new-session -A`, respawn hooks, tab snapshots and tests already implemented app-restart persistence. A later termination cleanup regressed that behavior by killing the dedicated server on quit. This does not preserve sessions across a macOS reboot. | R1 / issue #69 restores the original app-restart contract; system-reboot persistence is separate future scope. |
 | Coding CLI compatibility and agent/subagent status | Claude Code and Codex have specialized command builders. OpenCode and Gemini are detected and launched through the generic builder; README only claims Claude/Codex. Claude/Codex hooks report main-agent state. | R3 defines and tests the honest OpenCode contract. Issue #54 needs discovery before implementation. |
 | macOS lifecycle, performance, accessibility, contrast and keyboard behavior | AppDelegate tests, shortcut references, accessibility labels and five localizations exist. Issue #41 reports slow quit; #40 reports sidebar contrast failure. | Profile #41 on macOS; R4 fixes #40 with contrast and visual evidence. |
 | Script guardrails, worktree containment, privacy and entitlements | Script fingerprint approval, re-approval on change, command quoting tests, worktree prompts, `SECURITY.md`, `PRIVACY.md`, `THREAT_MODEL.md` and minimal entitlement docs exist. | Continue boundary tests before new execution features. Changes to approval, bypass, privacy or entitlements stop at PR for Cesc. |
@@ -54,18 +54,26 @@ not an automatically trusted backlog.
 
 ## Now
 
-### R1 — Preserve tmux sessions across Dockyard restarts
+### R1 — Restore tmux persistence across Dockyard app restarts
 
 - Status: **In review, blocked on fork CI approval (PR #70)** on
   `fix/preserve-tmux-restarts`; issue #69.
-- User outcome: quitting and reopening Dockyard reconnects to existing Coding
-  Agent tmux sessions instead of destroying them.
+- Classification: **regression fix, not a new persistence feature**. The
+  original tmux architecture already used deterministic session names and
+  `new-session -A` to reconnect after relaunch. The later
+  `applicationWillTerminate` cleanup introduced on 2026-03-31 broke that
+  contract by killing the entire dedicated tmux server.
+- User outcome: quitting and reopening Dockyard once again reconnects to
+  existing Coding Agent tmux sessions instead of destroying them.
+- Boundary: this covers **Dockyard app quit/relaunch only**. A macOS shutdown or
+  reboot terminates tmux itself, so system-reboot persistence is not
+  implemented or claimed by this item.
 - Success signal: `AppDelegate` has no normal-termination callback that runs
   `tmux -L dockyard kill-server`; explicit per-workstream archive/purge cleanup
   remains unchanged.
 - macOS impact: app termination and relaunch behavior.
 - Persistence/security impact: removes an unconditional destructive process
-  launch and preserves the documented tmux persistence boundary.
+  launch and restores the previously implemented tmux persistence boundary.
 - Scope: remove global tmux-server cleanup from app termination and remove the
   now-unreachable helper. No session naming, archive or purge changes.
 - Dependencies: none.
@@ -291,4 +299,7 @@ not an automatically trusted backlog.
   per-workstream cleanup remains intact. Retried approval of both fork workflow
   runs through the GitHub API; each returned `403 Must have admin rights`.
   Native macOS CI and CodeQL therefore remain blocked pending an upstream
-  repository administrator's approval. No merge or release action was taken.
+  repository administrator's approval. Reclassified R1 and PR #70 as a
+  regression fix restoring the original app-restart contract, and explicitly
+  excluded macOS reboot persistence from its claims. No merge or release action
+  was taken.
