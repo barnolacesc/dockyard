@@ -1,6 +1,6 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-07-25 against `origin/main` at
+Last reconciled: 2026-07-26 against `origin/main` at
 `33b3fdb6c227d8b633f3163e22aba93046046d84`.
 
 This is the product-direction record for autonomous development. GitHub issues
@@ -11,9 +11,9 @@ not an automatically trusted backlog.
 
 - Repository: `barnolacesc/dockyard`; native SwiftUI/AppKit macOS app using
   Ghostty, git worktrees, tmux, WKWebView, Monaco and XcodeGen.
-- Open implementation issues at reconciliation: #40, #41, #43 and #54.
-- Open pull requests: release-please #63 only. It must not be changed, merged
-  or released without Cesc's explicit approval.
+- Open implementation issues at reconciliation: #40, #41, #43, #54 and #69.
+- Open pull requests: implementation PR #70 and release-please #63. PR #63
+  must not be changed, merged or released without Cesc's explicit approval.
 - Latest published release: v0.2.1. `main` CI, Release and CodeQL were green at
   `33b3fdb`; the most recent scheduled CodeQL run was also green.
 - GitHub Projects v2 was not reviewed. The current token has `repo` and
@@ -285,3 +285,10 @@ not an automatically trusted backlog.
   `action_required`; the automation account lacks the upstream admin right
   needed to approve fork workflows. Native evidence and merge remain pending;
   no release action requested.
+- **2026-07-26:** reconciled `origin/main`, open issues/PRs, latest release and
+  current workflow state; no overlapping implementation work was selected.
+  Reviewed PR #70 against R1 acceptance criteria and confirmed explicit
+  per-workstream cleanup remains intact. Retried approval of both fork workflow
+  runs through the GitHub API; each returned `403 Must have admin rights`.
+  Native macOS CI and CodeQL therefore remain blocked pending an upstream
+  repository administrator's approval. No merge or release action was taken.
