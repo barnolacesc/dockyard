@@ -1,6 +1,6 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-07-26 against `origin/main` at
+Last reconciled: 2026-07-27 against `origin/main` at
 `33b3fdb6c227d8b633f3163e22aba93046046d84`.
 
 This is the product-direction record for autonomous development. GitHub issues
@@ -303,3 +303,14 @@ not an automatically trusted backlog.
   regression fix restoring the original app-restart contract, and explicitly
   excluded macOS reboot persistence from its claims. No merge or release action
   was taken.
+- **2026-07-27:** fetched unchanged `origin/main` at `33b3fdb`, reconciled the
+  same open implementation issues and PRs, and reviewed PR #70's complete diff.
+  `git diff --check` passed, the PR remains Git-mergeable, and the regression
+  test plus explicit per-workstream cleanup boundary remain intact. At PR head
+  `18227f7`, both GitHub workflows were still `action_required`; approving run
+  `30193549215` (macOS CI) and run `30193549211` (CodeQL) again returned
+  `403 Must have admin rights`. A dry-run upstream branch push also returned
+  `403`, confirming the automation account cannot move the same commits onto an
+  upstream branch to bypass fork approval. R1 remains the only selected item.
+  Cesc must approve the fork workflow runs before native CI can execute; no
+  merge or release action was taken.
