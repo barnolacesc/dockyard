@@ -2,9 +2,6 @@
 // ABOUTME: Sessions survive app restarts but not system restarts.
 
 import Foundation
-import os
-
-private let logger = Logger(subsystem: "dockyard", category: "tmux")
 
 enum TmuxSession {
     /// Path to the tmux stderr log file in the cache directory.
@@ -127,19 +124,6 @@ enum TmuxSession {
     static func killWorkstreamSessions(tmuxPath: String, project: String, workstream: String) {
         let agentSession = sessionName(project: project, workstream: workstream, role: "agent")
         killSession(tmuxPath: tmuxPath, sessionName: agentSession)
-    }
-
-    /// Kill the entire tmux server on the dockyard socket.
-    /// Call on app termination to prevent orphaned sessions.
-    static func killAllSessions(tmuxPath: String) {
-        logger.detailed("Killing tmux server on socket \(socketName)")
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: tmuxPath)
-        process.arguments = ["-L", socketName, "kill-server"]
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = FileHandle.nullDevice
-        try? process.run()
-        process.waitUntilExit()
     }
 
     private static func sanitize(_ name: String) -> String {
