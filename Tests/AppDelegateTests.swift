@@ -6,6 +6,7 @@ import UserNotifications
 import XCTest
 
 final class AppDelegateTests: XCTestCase {
+    @MainActor
     func testAppDelegateDoesNotRegisterTerminationCleanupCallback() {
         let selector = NSSelectorFromString("applicationWillTerminate:")
 
