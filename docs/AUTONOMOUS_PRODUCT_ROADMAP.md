@@ -132,8 +132,9 @@ not an automatically trusted backlog.
 ### R2 — Classify merged-PR worktrees without deleting them
 
 - Status: **In review (PR #73)** on
-  `feat/merged-pr-worktree-status`; issue #72. Awaiting required macOS CI and
-  Cesc's native project-overview verification; never auto-merge.
+  `feat/merged-pr-worktree-status`; issue #72. GitHub `macos-15` build and
+  XCTest passed at `a80a496`; awaiting Cesc's native project-overview
+  verification. Never auto-merge.
 - User outcome: users can see which retained worktrees belong to merged PRs
   before deciding what to remove.
 - Success signal: pure classification identifies clean, dirty, ahead,
