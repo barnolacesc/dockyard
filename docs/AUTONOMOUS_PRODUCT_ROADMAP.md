@@ -90,8 +90,9 @@ not an automatically trusted backlog.
 
 ### R4 — Guarantee readable sidebar workstream states
 
-- Status: **Implementation in progress** on
-  `fix/sidebar-selected-contrast`; source issue #40.
+- Status: **In review (PR #71)** on `fix/sidebar-selected-contrast`; source
+  issue #40. Awaiting green macOS CI and Cesc's light/dark/custom-accent
+  visual verification; never auto-merge.
 - User outcome: primary and secondary workstream text remains readable while
   default, hovered, selected, waiting, working or invalid.
 - Success signal: a deterministic state/token matrix has no selected-state
@@ -324,5 +325,6 @@ not an automatically trusted backlog.
   secondary and completed-state text through macOS's selected-control
   foreground token, with a deterministic unit-tested state matrix. No strings,
   execution boundaries, persistence or entitlements changed. Native CI and
-  light/dark/custom-accent visual evidence remain required before merge. R2 is
-  the next independent Ready item.
+  light/dark/custom-accent visual evidence remain required before merge. PR
+  #71 was opened for Cesc's review and left unmerged. R2 is the next
+  independent Ready item.
