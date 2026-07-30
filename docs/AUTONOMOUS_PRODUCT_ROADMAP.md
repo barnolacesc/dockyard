@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-07-27 against `origin/main` at
-`33b3fdb6c227d8b633f3163e22aba93046046d84`.
+Last reconciled: 2026-07-30 against `origin/main` at
+`99b68dfb91afbb80c2a48f0c20b3f0aa3cfd4f9e`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -11,11 +11,11 @@ not an automatically trusted backlog.
 
 - Repository: `barnolacesc/dockyard`; native SwiftUI/AppKit macOS app using
   Ghostty, git worktrees, tmux, WKWebView, Monaco and XcodeGen.
-- Open implementation issues at reconciliation: #40, #41, #43, #54 and #69.
-- Open pull requests: implementation PR #70 and release-please #63. PR #63
-  must not be changed, merged or released without Cesc's explicit approval.
+- Open implementation issues at reconciliation: #40, #41, #43 and #54.
+- Open pull requests: release-please #63 only. PR #63 must not be changed,
+  merged or released without Cesc's explicit approval.
 - Latest published release: v0.2.1. `main` CI, Release and CodeQL were green at
-  `33b3fdb`; the most recent scheduled CodeQL run was also green.
+  `99b68df`.
 - GitHub Projects v2 was not reviewed. The current token has `repo` and
   `workflow`, but lacks `read:project`; the API returned
   `INSUFFICIENT_SCOPES`. Project status must not be inferred.
@@ -43,7 +43,7 @@ not an automatically trusted backlog.
 | Track | Current evidence | Next decision or item |
 | --- | --- | --- |
 | Worktree lifecycle, persistence, cleanup and merged-PR review | Creation, remove-without-delete, purge, orphan listing and clean prune exist. Force-removal and branch deletion have tests. `TODO.md` still requests merged-PR-aware cleanup. | R2 adds classification only; any destructive bulk action remains approval-gated. |
-| Tmux, terminal and session resilience | Dedicated `dockyard` socket, deterministic sessions, `new-session -A`, respawn hooks, tab snapshots and tests already implemented app-restart persistence. A later termination cleanup regressed that behavior by killing the dedicated server on quit. This does not preserve sessions across a macOS reboot. | R1 / issue #69 restores the original app-restart contract; system-reboot persistence is separate future scope. |
+| Tmux, terminal and session resilience | Dedicated `dockyard` socket, deterministic sessions, `new-session -A`, respawn hooks, tab snapshots and tests preserve sessions across app restart. PR #70 removed the regressing global server kill. This does not preserve sessions across a macOS reboot. | System-reboot persistence is separate future scope and must not be inferred from app-restart behavior. |
 | Coding CLI compatibility and agent/subagent status | Claude Code and Codex have specialized command builders. OpenCode and Gemini are detected and launched through the generic builder; README only claims Claude/Codex. Claude/Codex hooks report main-agent state. | R3 defines and tests the honest OpenCode contract. Issue #54 needs discovery before implementation. |
 | macOS lifecycle, performance, accessibility, contrast and keyboard behavior | AppDelegate tests, shortcut references, accessibility labels and five localizations exist. Issue #41 reports slow quit; #40 reports sidebar contrast failure. | Profile #41 on macOS; R4 fixes #40 with contrast and visual evidence. |
 | Script guardrails, worktree containment, privacy and entitlements | Script fingerprint approval, re-approval on change, command quoting tests, worktree prompts, `SECURITY.md`, `PRIVACY.md`, `THREAT_MODEL.md` and minimal entitlement docs exist. | Continue boundary tests before new execution features. Changes to approval, bypass, privacy or entitlements stop at PR for Cesc. |
@@ -52,12 +52,11 @@ not an automatically trusted backlog.
 | Onboarding, tours, What's New, docs and localization | Onboarding, Getting Started, What's New and five app localizations exist. Two tour follow-ups remain in `TODO.md`. | R6 adds the smaller workspace-tabs tour with all locale coverage. |
 | CI, Ghostty, dependencies, release/update integrity and distribution | macOS build/test CI, CodeQL, Dependabot, pinned actions, Ghostty compatibility workflow, checksums, Sparkle and Homebrew paths exist. Release-please #63 is pending. | Release/update mutations remain approval-gated; verify feed and published artifacts separately from CI. |
 
-## Now
+## Recently delivered
 
 ### R1 — Restore tmux persistence across Dockyard app restarts
 
-- Status: **In review, blocked on fork CI approval (PR #70)** on
-  `fix/preserve-tmux-restarts`; issue #69.
+- Status: **Complete on `main`** via PR #70; issue #69 closed.
 - Classification: **regression fix, not a new persistence feature**. The
   original tmux architecture already used deterministic session names and
   `new-session -A` to reconnect after relaunch. The later
@@ -87,9 +86,12 @@ not an automatically trusted backlog.
 - Sources: README Tmux Mode, repository `AGENTS.md`, `TmuxSession.swift`,
   `DockyardApp.swift`, issue #69.
 
+## Now
+
 ### R4 — Guarantee readable sidebar workstream states
 
-- Status: **Ready**, after R1. Source issue #40.
+- Status: **Implementation in progress** on
+  `fix/sidebar-selected-contrast`; source issue #40.
 - User outcome: primary and secondary workstream text remains readable while
   default, hovered, selected, waiting, working or invalid.
 - Success signal: a deterministic state/token matrix has no selected-state
@@ -314,3 +316,13 @@ not an automatically trusted backlog.
   upstream branch to bypass fork approval. R1 remains the only selected item.
   Cesc must approve the fork workflow runs before native CI can execute; no
   merge or release action was taken.
+- **2026-07-30:** reconciled `origin/main` at `99b68df` after R1/PR #70 merged
+  with green macOS CI, Release and CodeQL. Open implementation work is now
+  issues #40, #41, #43 and #54; release-please #63 is the only open PR and
+  remains approval-gated. Selected R4/issue #40 as the highest-priority
+  independent Ready item. The implementation resolves selected-row primary,
+  secondary and completed-state text through macOS's selected-control
+  foreground token, with a deterministic unit-tested state matrix. No strings,
+  execution boundaries, persistence or entitlements changed. Native CI and
+  light/dark/custom-accent visual evidence remain required before merge. R2 is
+  the next independent Ready item.

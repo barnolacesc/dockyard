@@ -61,4 +61,56 @@ final class WorkstreamStatusStyleTests: XCTestCase {
         XCTAssertEqual(style.subtitleColor, .tertiary)
         XCTAssertNil(style.rowTintColor)
     }
+
+    func testSelectedRowsUseSystemSelectedTextForEveryAgentState() {
+        let states: [AgentState?] = [.working, .waiting, .idle, nil]
+
+        for state in states {
+            let style = WorkstreamRowForegroundStyle(
+                statusStyle: WorkstreamStatusStyle(agentState: state, isPathValid: true),
+                stageStyle: WorkstreamStageStyle(displayStage: .normal, isManuallySet: false, prNumber: nil),
+                isSelected: true
+            )
+
+            XCTAssertEqual(style.labelColor, .selected)
+            XCTAssertEqual(style.subtitleColor, .selected)
+            XCTAssertEqual(style.subtitleOpacity, 1)
+            XCTAssertEqual(style.contentOpacity, 1)
+        }
+    }
+
+    func testSelectedInvalidAndCompletedRowsDoNotReintroduceMutedText() {
+        let style = WorkstreamRowForegroundStyle(
+            statusStyle: WorkstreamStatusStyle(agentState: .waiting, isPathValid: false),
+            stageStyle: WorkstreamStageStyle(displayStage: .done, isManuallySet: false, prNumber: 40),
+            isSelected: true
+        )
+
+        XCTAssertEqual(style.labelColor, .selected)
+        XCTAssertEqual(style.subtitleColor, .selected)
+        XCTAssertEqual(style.subtitleOpacity, 1)
+        XCTAssertEqual(style.contentOpacity, 1)
+    }
+
+    func testUnselectedRowsPreserveStatusAndCompletedRowTreatment() {
+        let waiting = WorkstreamRowForegroundStyle(
+            statusStyle: WorkstreamStatusStyle(agentState: .waiting, isPathValid: true),
+            stageStyle: WorkstreamStageStyle(displayStage: .normal, isManuallySet: false, prNumber: nil),
+            isSelected: false
+        )
+        XCTAssertEqual(waiting.labelColor, .blue)
+        XCTAssertEqual(waiting.subtitleColor, .blue)
+        XCTAssertEqual(waiting.subtitleOpacity, 0.8)
+        XCTAssertEqual(waiting.contentOpacity, 1)
+
+        let completed = WorkstreamRowForegroundStyle(
+            statusStyle: WorkstreamStatusStyle(agentState: .working, isPathValid: true),
+            stageStyle: WorkstreamStageStyle(displayStage: .done, isManuallySet: false, prNumber: 40),
+            isSelected: false
+        )
+        XCTAssertEqual(completed.labelColor, .secondary)
+        XCTAssertEqual(completed.subtitleColor, .secondary)
+        XCTAssertEqual(completed.subtitleOpacity, 1)
+        XCTAssertEqual(completed.contentOpacity, 0.65)
+    }
 }
