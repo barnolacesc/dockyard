@@ -65,6 +65,7 @@ final class AppEnvironment: ObservableObject {
     private var githubRepoCache: [String: GitHubRepoInfo] = [:]
     private var githubPRCache: [String: [GitHubPR]] = [:]
     private var githubBranchPRCache: [String: GitHubPR] = [:] // key: "dir|branch"
+    private var githubBranchPRLookupCompleted: Set<String> = [] // key: "dir|branch"
 
     /// Send a single `objectWillChange` notification around a batch of mutations.
     /// Callers should batch every coherent refresh cycle into one call so subscribers
@@ -429,6 +430,10 @@ final class AppEnvironment: ObservableObject {
         githubBranchPRCache["\(directory)|\(branch)"]
     }
 
+    func githubPRLookupCompleted(for directory: String, branch: String) -> Bool {
+        githubBranchPRLookupCompleted.contains("\(directory)|\(branch)")
+    }
+
     /// All open PRs across the given projects, derived from the per-workstream branch PR
     /// cache. Used by the sidebar status strip (count) and the global Open PRs section.
     func openPullRequests(projects: [Project]) -> [OpenPRItem] {
@@ -456,7 +461,9 @@ final class AppEnvironment: ObservableObject {
 
     func clearBranchPR(for directory: String, branch: String) {
         commitChanges {
-            githubBranchPRCache.removeValue(forKey: "\(directory)|\(branch)")
+            let key = "\(directory)|\(branch)"
+            githubBranchPRCache.removeValue(forKey: key)
+            githubBranchPRLookupCompleted.remove(key)
         }
     }
 
@@ -498,14 +505,44 @@ final class AppEnvironment: ObservableObject {
         Task.detached {
             let prs = GitHubOperations.openPRs(ghPath: ghPath, at: directory, limit: 100)
             let prsByBranch = Dictionary(prs.map { ($0.branch, $0) }, uniquingKeysWith: { first, _ in first })
+            let branchesWithoutOpenPR = branches.filter { prsByBranch[$0] == nil }
+            let mergedLookups = await withTaskGroup(
+                of: (String, GitHubPRLookupResult).self
+            ) { group in
+                for branch in branchesWithoutOpenPR {
+                    group.addTask {
+                        let result = GitHubOperations.mergedPRLookupForBranch(
+                            ghPath: ghPath,
+                            at: directory,
+                            branch: branch
+                        )
+                        return (branch, result)
+                    }
+                }
+
+                var results: [String: GitHubPRLookupResult] = [:]
+                for await (branch, result) in group {
+                    results[branch] = result
+                }
+                return results
+            }
+
             await MainActor.run {
                 self.commitChanges {
                     for branch in branches {
                         let key = "\(directory)|\(branch)"
                         if let pr = prsByBranch[branch] {
                             self.githubBranchPRCache[key] = pr
+                            self.githubBranchPRLookupCompleted.insert(key)
+                        } else if case let .some(.found(pr)) = mergedLookups[branch] {
+                            self.githubBranchPRCache[key] = pr
+                            self.githubBranchPRLookupCompleted.insert(key)
+                        } else if case .some(.notFound) = mergedLookups[branch] {
+                            self.githubBranchPRCache.removeValue(forKey: key)
+                            self.githubBranchPRLookupCompleted.insert(key)
                         } else {
                             self.githubBranchPRCache.removeValue(forKey: key)
+                            self.githubBranchPRLookupCompleted.remove(key)
                         }
                     }
                 }

@@ -213,6 +213,12 @@ struct ProjectOverviewView: View {
                                 worktree: wt,
                                 projectDirectory: project.directory,
                                 workstreamID: matchingWorkstream?.id,
+                                isPullRequestLookupComplete: wt.branch.map {
+                                    appEnv.githubPRLookupCompleted(
+                                        for: project.directory,
+                                        branch: $0
+                                    )
+                                } ?? false,
                                 onAdopt: { adoptWorktree(wt) }
                             )
                         }
@@ -440,6 +446,14 @@ struct ProjectOverviewView: View {
     }
 }
 
+enum WorktreeReviewStatus: Equatable {
+    case clean
+    case dirty
+    case ahead
+    case mergedPullRequest
+    case unknown
+}
+
 enum ProjectOverviewState {
     static func worktreesToApply(
         _ worktrees: [WorktreeInfo],
@@ -454,6 +468,23 @@ enum ProjectOverviewState {
 
     static func matchesProject(loadedFor directory: String, currentDirectory: String) -> Bool {
         standardizedPath(directory) == standardizedPath(currentDirectory)
+    }
+
+    static func reviewStatus(
+        for worktree: WorktreeInfo,
+        pullRequestState: String?,
+        isPullRequestLookupComplete: Bool
+    ) -> WorktreeReviewStatus {
+        if worktree.isDirty {
+            return .dirty
+        }
+        if pullRequestState == "MERGED" {
+            return .mergedPullRequest
+        }
+        if !worktree.hasBranchCommits {
+            return .clean
+        }
+        return isPullRequestLookupComplete ? .ahead : .unknown
     }
 
     /// Order worktrees for review: main first, then ones with uncommitted changes,
@@ -501,6 +532,7 @@ private struct WorktreeInfoRow: View {
     let worktree: WorktreeInfo
     let projectDirectory: String
     let workstreamID: UUID?
+    let isPullRequestLookupComplete: Bool
     let onAdopt: () -> Void
 
     @EnvironmentObject var appEnv: AppEnvironment
@@ -509,6 +541,14 @@ private struct WorktreeInfoRow: View {
     private var pr: GitHubPR? {
         guard let branch = worktree.branch else { return nil }
         return appEnv.githubPR(for: projectDirectory, branch: branch)
+    }
+
+    private var reviewStatus: WorktreeReviewStatus {
+        ProjectOverviewState.reviewStatus(
+            for: worktree,
+            pullRequestState: pr?.state,
+            isPullRequestLookupComplete: isPullRequestLookupComplete
+        )
     }
 
     var body: some View {
@@ -547,7 +587,8 @@ private struct WorktreeInfoRow: View {
                                 .foregroundStyle(prColor)
                             }
                         }
-                        if worktree.isDirty {
+                        switch reviewStatus {
+                        case .dirty:
                             HStack(spacing: 4) {
                                 Circle()
                                     .fill(DesignColor.statusWarning)
@@ -556,7 +597,15 @@ private struct WorktreeInfoRow: View {
                                     .font(.caption)
                                     .foregroundStyle(DesignColor.statusWarning)
                             }
-                        } else if worktree.hasBranchCommits {
+                        case .mergedPullRequest:
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.triangle.merge")
+                                    .font(.system(size: 10))
+                                Text("Merged")
+                                    .font(.caption)
+                            }
+                            .foregroundStyle(DesignColor.statusMerged)
+                        case .ahead:
                             HStack(spacing: 4) {
                                 Image(systemName: "arrow.up.circle.fill")
                                     .font(.system(size: 10))
@@ -564,10 +613,18 @@ private struct WorktreeInfoRow: View {
                                     .font(.caption)
                             }
                             .foregroundStyle(DesignColor.statusInfo)
-                        } else {
+                        case .clean:
                             Text("Clean")
                                 .font(.caption)
                                 .foregroundStyle(DesignColor.statusSuccess)
+                        case .unknown:
+                            HStack(spacing: 4) {
+                                Image(systemName: "questionmark.circle")
+                                    .font(.system(size: 10))
+                                Text("PR status unavailable")
+                                    .font(.caption)
+                            }
+                            .foregroundStyle(.secondary)
                         }
                     }
                 }

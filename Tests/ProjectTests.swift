@@ -98,6 +98,63 @@ final class ProjectTests: XCTestCase {
         )
     }
 
+    func testWorktreeReviewStatusClassifiesSafetyAndPullRequestState() {
+        func wt(dirty: Bool = false, ahead: Bool = false) -> WorktreeInfo {
+            WorktreeInfo(
+                path: "/wt/feature",
+                branch: "feature",
+                isDirty: dirty,
+                isMain: false,
+                hasUnpushedCommits: false,
+                hasBranchCommits: ahead
+            )
+        }
+
+        XCTAssertEqual(
+            ProjectOverviewState.reviewStatus(
+                for: wt(dirty: true, ahead: true),
+                pullRequestState: "MERGED",
+                isPullRequestLookupComplete: true
+            ),
+            .dirty,
+            "Uncommitted changes must remain the highest-priority safety signal"
+        )
+        XCTAssertEqual(
+            ProjectOverviewState.reviewStatus(
+                for: wt(),
+                pullRequestState: nil,
+                isPullRequestLookupComplete: false
+            ),
+            .clean,
+            "Git can prove a branch clean without GitHub metadata"
+        )
+        XCTAssertEqual(
+            ProjectOverviewState.reviewStatus(
+                for: wt(ahead: true),
+                pullRequestState: "MERGED",
+                isPullRequestLookupComplete: true
+            ),
+            .mergedPullRequest
+        )
+        XCTAssertEqual(
+            ProjectOverviewState.reviewStatus(
+                for: wt(ahead: true),
+                pullRequestState: "OPEN",
+                isPullRequestLookupComplete: true
+            ),
+            .ahead
+        )
+        XCTAssertEqual(
+            ProjectOverviewState.reviewStatus(
+                for: wt(ahead: true),
+                pullRequestState: nil,
+                isPullRequestLookupComplete: false
+            ),
+            .unknown,
+            "An unavailable PR lookup must not imply the branch is unmerged"
+        )
+    }
+
     func testCodableRoundTrip() throws {
         let projects = [
             Project(name: "alpha", directory: "/Users/test/alpha"),
