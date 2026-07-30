@@ -91,8 +91,10 @@ not an automatically trusted backlog.
 ### R4 — Guarantee readable sidebar workstream states
 
 - Status: **In review (PR #71)** on `fix/sidebar-selected-contrast`; source
-  issue #40. Awaiting green macOS CI and Cesc's light/dark/custom-accent
-  visual verification; never auto-merge.
+  issue #40. GitHub reports the PR mergeable but blocked; as of 09:41 CEST it
+  has not created the required CI/CodeQL runs for this fork PR. Awaiting those
+  checks (and Cesc's workflow approval if GitHub prompts), plus Cesc's
+  light/dark/custom-accent visual verification; never auto-merge.
 - User outcome: primary and secondary workstream text remains readable while
   default, hovered, selected, waiting, working or invalid.
 - Success signal: a deterministic state/token matrix has no selected-state
@@ -326,5 +328,7 @@ not an automatically trusted backlog.
   foreground token, with a deterministic unit-tested state matrix. No strings,
   execution boundaries, persistence or entitlements changed. Native CI and
   light/dark/custom-accent visual evidence remain required before merge. PR
-  #71 was opened for Cesc's review and left unmerged. R2 is the next
-  independent Ready item.
+  #71 was opened for Cesc's review and left unmerged. GitHub reports the PR
+  mergeable but blocked and had not created CI/CodeQL runs by 09:41 CEST;
+  workflow approval may be required before native evidence can run. R2 is the
+  next independent Ready item.
