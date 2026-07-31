@@ -325,6 +325,65 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertEqual(status.resolvedCodingCLI(storedValue: effective), .opencode)
     }
 
+    func testOpenCodeCapabilitiesMatchGenericLaunchContract() {
+        let status = ToolStatus()
+
+        XCTAssertFalse(CodingCLI.opencode.supportsAgentTeams)
+        XCTAssertFalse(CodingCLI.opencode.supportsAutoRenameBranch)
+        XCTAssertFalse(status.supportsSessionName(for: .opencode))
+    }
+
+    func testBuildOpenCodeAgentCommandLaunchesWithoutUnverifiedFlags() {
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .opencode,
+            cliPath: "/opt/homebrew/bin/opencode",
+            workingDirectory: "/tmp/dockyard worktree",
+            projectName: "dockyard",
+            workstreamName: "opencode-contract",
+            workstreamID: UUID(),
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: true,
+            allowOutsideWorktree: false,
+            autoRenameBranch: true,
+            envVars: ["DY_WORKTREE_DIR": "/tmp/dockyard worktree"],
+            supportsSessionName: false,
+            hookInvocation: nil
+        )
+
+        XCTAssertEqual(command.finalCommand, "/opt/homebrew/bin/opencode")
+        XCTAssertEqual(command.intermediateCommands, ["/opt/homebrew/bin/opencode"])
+    }
+
+    func testBuildOpenCodeAgentCommandWrapsWithTmuxPersistence() {
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .opencode,
+            cliPath: "/opt/homebrew/bin/opencode",
+            workingDirectory: "/tmp/worktree",
+            projectName: "dockyard",
+            workstreamName: "opencode-contract",
+            workstreamID: UUID(),
+            tmuxPath: "/opt/homebrew/bin/tmux",
+            useTmux: true,
+            bypassPermissions: false,
+            allowOutsideWorktree: false,
+            autoRenameBranch: false,
+            envVars: ["DY_WORKSTREAM": "opencode-contract"],
+            supportsSessionName: false,
+            hookInvocation: nil
+        )
+
+        XCTAssertEqual(command.intermediateCommands.first, "/opt/homebrew/bin/opencode")
+        XCTAssertEqual(command.finalCommand, command.intermediateCommands.last)
+        XCTAssertEqual(command.intermediateCommands.count, 2)
+        XCTAssertTrue(command.finalCommand.contains("/opt/homebrew/bin/tmux -L"))
+        XCTAssertTrue(command.finalCommand.contains("new-session -A -s"))
+        XCTAssertTrue(command.finalCommand.contains("dockyard/dockyard/opencode-contract/agent"))
+        XCTAssertTrue(command.finalCommand.contains("-e \"DY_WORKSTREAM=opencode-contract\""))
+        XCTAssertTrue(command.finalCommand.contains("/opt/homebrew/bin/opencode"))
+        XCTAssertTrue(command.finalCommand.contains("set-hook pane-died"))
+    }
+
     func testUnknownEffectiveCodingCLIUsesAutoDetectChain() {
         var status = ToolStatus()
         status.gemini = .found("/usr/local/bin/gemini")

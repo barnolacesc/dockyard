@@ -182,7 +182,7 @@ enum CodingCLI: String, CaseIterable, Identifiable {
     }
 
     var supportsAutoRenameBranch: Bool {
-        self == .claude || self == .opencode
+        self == .claude
     }
 }
 
