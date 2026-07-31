@@ -150,9 +150,10 @@ not an automatically trusted backlog.
 
 ### R3 — Define and prove the OpenCode compatibility contract
 
-- Status: **Implementation ready for review** on
-  `feat/opencode-compatibility-contract`; issue #74. This is independent of
-  sidebar PR #71 and worktree-classification PR #73.
+- Status: **In review (PR #75)** on
+  `feat/opencode-compatibility-contract`; issue #74. Awaiting required macOS
+  CI and Cesc's review; never auto-merge. This is independent of sidebar PR
+  #71 and worktree-classification PR #73.
 - User outcome: an OpenCode user knows exactly what launch, tmux and status
   behavior Dockyard supports.
 - Success signal: command-builder tests cover OpenCode launch paths and docs
