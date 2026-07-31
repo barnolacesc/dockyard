@@ -378,7 +378,12 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertEqual(command.intermediateCommands.count, 2)
         XCTAssertTrue(command.finalCommand.contains("/opt/homebrew/bin/tmux -L"))
         XCTAssertTrue(command.finalCommand.contains("new-session -A -s"))
-        XCTAssertTrue(command.finalCommand.contains("dockyard/dockyard/opencode-contract/agent"))
+        let sessionName = TmuxSession.sessionName(
+            project: "dockyard",
+            workstream: "opencode-contract",
+            role: "agent"
+        )
+        XCTAssertTrue(command.finalCommand.contains(sessionName))
         XCTAssertTrue(command.finalCommand.contains("-e \"DY_WORKSTREAM=opencode-contract\""))
         XCTAssertTrue(command.finalCommand.contains("/opt/homebrew/bin/opencode"))
         XCTAssertTrue(command.finalCommand.contains("set-hook pane-died"))
