@@ -170,10 +170,10 @@ not an automatically trusted backlog.
 
 ### R5 — Reject stale run-state after a run process exits
 
-- Status: **Implementation prepared** on `fix/reject-stale-run-state`; issue
-  #76. The slice is independent of pending sidebar PR #71,
-  worktree-classification PR #73 and OpenCode PR #75. GitHub macOS CI is
-  required before review; never auto-merge.
+- Status: **In review (PR #77)** on `fix/reject-stale-run-state`; issue #76.
+  The slice is independent of sidebar PR #71, worktree-classification PR #73
+  and OpenCode PR #75. GitHub macOS CI is pending and required evidence;
+  awaiting Cesc's review and never auto-merge.
 - User outcome: an embedded browser does not keep targeting a dead dev server
   after an abnormal run-script exit or app restart.
 - Success signal: stale/mismatched run-state JSON is ignored and tested without
