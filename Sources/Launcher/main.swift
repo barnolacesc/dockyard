@@ -114,6 +114,7 @@ private func runMonitor(configuration: Configuration) -> Never {
 
 private func writeState(configuration: Configuration, pid: Int32, status: RunStateStatus, detectedPorts: [Int], selectedPort: Int?) {
     let state = RunStateSnapshot(
+        workstreamID: configuration.workstreamID,
         pid: pid,
         status: status,
         detectedPorts: detectedPorts.sorted(),
@@ -155,6 +156,7 @@ private final class PortScanner: @unchecked Sendable {
 
             let status: RunStateStatus = result.detectedPorts.isEmpty ? .starting : .running
             let state = RunStateSnapshot(
+                workstreamID: workstreamID,
                 pid: self.pid,
                 status: status,
                 detectedPorts: result.detectedPorts,

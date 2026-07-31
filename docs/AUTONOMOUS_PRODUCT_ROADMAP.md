@@ -170,7 +170,10 @@ not an automatically trusted backlog.
 
 ### R5 — Reject stale run-state after a run process exits
 
-- Status: **Ready**.
+- Status: **Implementation prepared** on `fix/reject-stale-run-state`; issue
+  #76. The slice is independent of pending sidebar PR #71,
+  worktree-classification PR #73 and OpenCode PR #75. GitHub macOS CI is
+  required before review; never auto-merge.
 - User outcome: an embedded browser does not keep targeting a dead dev server
   after an abnormal run-script exit or app restart.
 - Success signal: stale/mismatched run-state JSON is ignored and tested without
@@ -184,7 +187,11 @@ not an automatically trusted backlog.
 - Acceptance criteria: fixtures cover valid, stale, malformed and mismatched
   workstream state; current valid port detection remains green.
 - Required tests: `PortDetectionTests`, full macOS CI.
-- Sources: setup/run/teardown and port-detection required track.
+- Sources: issue #76 and the setup/run/teardown and port-detection required
+  track.
+- Next independent Ready item: R6, the passive workspace-tabs showcase tour.
+  It does not depend on this run-state validation slice or pending PRs #71,
+  #73 and #75.
 
 ### R6 — Add the workspace-tabs showcase tour
 
