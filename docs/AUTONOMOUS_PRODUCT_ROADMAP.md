@@ -464,6 +464,10 @@ not an automatically trusted backlog.
   routing, diff, conflict-marker and secret-pattern checks passed. GitHub
   macOS `build-and-test` passed at `3ee77a4`, including XcodeGen, native Build
   and XCTest. CodeQL Actions/JavaScript passed; its Swift job was skipped by
-  workflow configuration. The Linux container has no Swift, XcodeGen or
-  pre-commit tooling, and native visual/VoiceOver review remains pending. No
-  merge or release action was taken.
+  workflow configuration. A later documentation-only head rerun passed Build
+  and every R6 test but hit the unrelated flaky
+  `SetupRunnerTests.test_captures_output_to_log_tail`; GitHub rejected the
+  automation account's failed-job retry with `403`, so no test was weakened or
+  modified. The Linux container has no Swift, XcodeGen or pre-commit tooling,
+  and native visual/VoiceOver review remains pending. No merge or release
+  action was taken.
