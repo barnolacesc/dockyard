@@ -217,8 +217,8 @@ not an automatically trusted backlog.
 
 ### R6 — Add the workspace-tabs showcase tour
 
-- Status: **Selected for implementation**, issue #80, on
-  `feat/workspace-tabs-tour`.
+- Status: **In review (PR #81), awaiting Cesc review**; issue #80. GitHub
+  macOS CI and native visual/VoiceOver review are pending.
 - User outcome: new users discover terminal, browser and editor tabs plus tab
   cycling without reading the full shortcut list.
 - Success signal: a passive, dismissible tour covers Cmd+T/B/O and cycling,
@@ -444,3 +444,23 @@ not an automatically trusted backlog.
   upstream branch to bypass fork approval. R1 remains the only selected item.
   Cesc must approve the fork workflow runs before native CI can execute; no
   merge or release action was taken.
+- **2026-07-29:** PR #70 merged into `main` at `99b68df`; macOS CI, Release and
+  CodeQL completed successfully. R1 is complete for app quit/relaunch only.
+- **2026-07-30:** opened PR #71 for R4 sidebar contrast and PR #73 for R2
+  merged-PR worktree classification. Both are mergeable with green macOS CI
+  and await Cesc review.
+- **2026-07-31:** opened PR #75 for R3 OpenCode compatibility and PR #77 for R5
+  stale run-state rejection. Both are mergeable with green macOS CI and await
+  Cesc review.
+- **2026-08-01 09:30:** opened PR #79 for R7 private state-directory
+  permissions. It is mergeable with green macOS CI and awaits Cesc review.
+- **2026-08-01 16:30:** reconciled `origin/main` at `99b68df`, open issues,
+  release state, and the changed paths plus checks for PRs #71, #73, #75, #77
+  and #79. Projects v2 remains unavailable because the token lacks
+  `read:project`. Selected independent R6, opened issue #80 and PR #81, added a
+  four-step passive workspace-tabs tour, routed it from What's New and
+  localized ten new keys across all five locales. Static flow, localization,
+  routing, diff, conflict-marker and secret-pattern checks passed. The Linux
+  container has no Swift, XcodeGen or pre-commit tooling; GitHub macOS CI plus
+  native visual/VoiceOver review remain pending. No merge or release action was
+  taken.
