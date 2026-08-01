@@ -356,9 +356,9 @@ struct ContentView: View {
                     releases: whatsNewReleases,
                     onShowTour: { flowID in
                         showWhatsNew = false
-                        guard flowID == GettingStartedFlow.id else { return }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            TourController.shared.start(GettingStartedFlow.make())
+                            guard let flow = TourFlowCatalog.make(flowID: flowID) else { return }
+                            TourController.shared.start(flow)
                         }
                     },
                     onClose: { showWhatsNew = false }

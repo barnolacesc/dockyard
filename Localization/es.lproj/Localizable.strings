@@ -507,4 +507,16 @@
 "A guided tour walks you through projects, workstreams, and the Coding Agent. Restart it anytime from the Help menu." = "Un recorrido guiado te muestra los proyectos, los workstreams y el agente de programación. Reinícialo cuando quieras desde el menú Ayuda.";
 "What's New Panel" = "Panel de novedades";
 "After each update, the highlights show up right here." = "Después de cada actualización, lo más destacado aparece aquí mismo.";
+"Workspace Tabs Tour" = "Recorrido por las pestañas del espacio de trabajo";
+"Learn how to open and switch terminals, browsers, and editors without leaving the keyboard." = "Aprende a abrir y cambiar entre terminales, navegadores y editores sin soltar el teclado.";
+
+// Tour — Workspace Tabs steps
+"Workspace tabs at a glance" = "Las pestañas del espacio de trabajo de un vistazo";
+"Info and Coding Agent are always ready. Extra terminals, browsers, and editors stay grouped with this workstream." = "Info y el agente de programación siempre están listos. Los terminales, navegadores y editores adicionales permanecen agrupados con este workstream.";
+"Open the tool you need" = "Abre la herramienta que necesitas";
+"Press ⌘T for a terminal, ⌘B for a browser, or ⌘O for an editor. This tour never opens them for you." = "Pulsa ⌘T para un terminal, ⌘B para un navegador o ⌘O para un editor. Este recorrido nunca los abre por ti.";
+"Move between tabs" = "Muévete entre pestañas";
+"Press ⌘3–9 to jump directly, or ⌘⇧[ and ⌘⇧] to cycle through every open tab." = "Pulsa ⌘3–9 para saltar directamente, o ⌘⇧[ y ⌘⇧] para recorrer todas las pestañas abiertas.";
+"Keep working your way" = "Sigue trabajando a tu manera";
+"The tour is complete. Press ⌘/ whenever you want the full keyboard shortcut reference." = "El recorrido ha terminado. Pulsa ⌘/ cuando quieras consultar la referencia completa de atajos de teclado.";
 "Claude in Chrome is active" = "Claude en Chrome está activo";
