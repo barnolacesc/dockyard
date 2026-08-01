@@ -218,7 +218,8 @@ not an automatically trusted backlog.
 ### R6 — Add the workspace-tabs showcase tour
 
 - Status: **In review (PR #81), awaiting Cesc review**; issue #80. GitHub
-  macOS CI and native visual/VoiceOver review are pending.
+  macOS `build-and-test` passed at `3ee77a4`; native visual/VoiceOver review is
+  still pending.
 - User outcome: new users discover terminal, browser and editor tabs plus tab
   cycling without reading the full shortcut list.
 - Success signal: a passive, dismissible tour covers Cmd+T/B/O and cycling,
@@ -460,7 +461,9 @@ not an automatically trusted backlog.
   `read:project`. Selected independent R6, opened issue #80 and PR #81, added a
   four-step passive workspace-tabs tour, routed it from What's New and
   localized ten new keys across all five locales. Static flow, localization,
-  routing, diff, conflict-marker and secret-pattern checks passed. The Linux
-  container has no Swift, XcodeGen or pre-commit tooling; GitHub macOS CI plus
-  native visual/VoiceOver review remain pending. No merge or release action was
-  taken.
+  routing, diff, conflict-marker and secret-pattern checks passed. GitHub
+  macOS `build-and-test` passed at `3ee77a4`, including XcodeGen, native Build
+  and XCTest. CodeQL Actions/JavaScript passed; its Swift job was skipped by
+  workflow configuration. The Linux container has no Swift, XcodeGen or
+  pre-commit tooling, and native visual/VoiceOver review remains pending. No
+  merge or release action was taken.
