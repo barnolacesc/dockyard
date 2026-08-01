@@ -13,10 +13,11 @@ not an automatically trusted backlog.
   Ghostty, git worktrees, tmux, WKWebView, Monaco and XcodeGen.
 - Open implementation issues at reconciliation: #40, #41, #43, #54, #72,
   #74, #76 and #78.
-- Open implementation pull requests: #71, #73, #75 and #77. Each is
-  Git-mergeable, has green macOS `build-and-test`, and is awaiting Cesc's
-  review. Release-please #63 remains open and must not be changed, merged or
-  released without Cesc's explicit approval.
+- Open implementation pull requests: #71, #73, #75, #77 and #79. PRs #71,
+  #73, #75 and #77 are Git-mergeable, have green macOS `build-and-test`, and
+  await Cesc's review; #79 is the implementation selected by this run and also
+  requires native CI plus Cesc's review. Release-please #63 remains open and
+  must not be changed, merged or released without Cesc's explicit approval.
 - Latest published release: v0.2.1. `main` CI, Release and CodeQL were green at
   `99b68df`; the most recent scheduled CodeQL run was also green.
 - GitHub Projects v2 was not reviewed. The current token has `repo` and
@@ -112,7 +113,7 @@ not an automatically trusted backlog.
 
 ### R7 — Enforce private state-directory permissions
 
-- Status: **Selected for implementation**, issue #78.
+- Status: **In review (PR #79), awaiting native CI and Cesc review**; issue #78.
 - User outcome: agent and run-state metadata remains private to the current
   macOS account even when a watcher created the state directory first.
 - Success signal: every atomic state write repairs its parent directory to
@@ -408,3 +409,13 @@ not an automatically trusted backlog.
   upstream branch to bypass fork approval. R1 remains the only selected item.
   Cesc must approve the fork workflow runs before native CI can execute; no
   merge or release action was taken.
+- **2026-08-01:** reconciled `origin/main` at `99b68df`, where R1 / PR #70 is
+  merged and main CI is green. Confirmed PRs #71, #73, #75 and #77 are
+  non-draft, Git-mergeable, green on macOS `build-and-test`, and awaiting Cesc
+  review; none was modified or commented on. Projects v2 remains unavailable
+  because the token lacks `read:project`. Selected independent R7, opened issue
+  #78 and PR #79, and added focused first-write/replacement permission tests.
+  Static diff, conflict-marker, private-key and file-size checks passed; the
+  Linux container had neither Swift nor `prek`, so native XCTest/build and
+  SwiftFormat evidence are delegated to GitHub macOS CI. No merge or release
+  action was taken.
