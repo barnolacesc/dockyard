@@ -15,9 +15,10 @@ not an automatically trusted backlog.
   #74, #76 and #78.
 - Open implementation pull requests: #71, #73, #75, #77 and #79. PRs #71,
   #73, #75 and #77 are Git-mergeable, have green macOS `build-and-test`, and
-  await Cesc's review; #79 is the implementation selected by this run and also
-  requires native CI plus Cesc's review. Release-please #63 remains open and
-  must not be changed, merged or released without Cesc's explicit approval.
+  await Cesc's review; #79 is the implementation selected by this run, passed
+  macOS `build-and-test` at `f522f3a`, and also awaits Cesc's review.
+  Release-please #63 remains open and must not be changed, merged or released
+  without Cesc's explicit approval.
 - Latest published release: v0.2.1. `main` CI, Release and CodeQL were green at
   `99b68df`; the most recent scheduled CodeQL run was also green.
 - GitHub Projects v2 was not reviewed. The current token has `repo` and
@@ -113,7 +114,8 @@ not an automatically trusted backlog.
 
 ### R7 — Enforce private state-directory permissions
 
-- Status: **In review (PR #79), awaiting native CI and Cesc review**; issue #78.
+- Status: **In review (PR #79), awaiting Cesc review**; macOS
+  `build-and-test` passed at `f522f3a`; issue #78.
 - User outcome: agent and run-state metadata remains private to the current
   macOS account even when a watcher created the state directory first.
 - Success signal: every atomic state write repairs its parent directory to
@@ -416,6 +418,6 @@ not an automatically trusted backlog.
   because the token lacks `read:project`. Selected independent R7, opened issue
   #78 and PR #79, and added focused first-write/replacement permission tests.
   Static diff, conflict-marker, private-key and file-size checks passed; the
-  Linux container had neither Swift nor `prek`, so native XCTest/build and
-  SwiftFormat evidence are delegated to GitHub macOS CI. No merge or release
-  action was taken.
+  Linux container had neither Swift nor `prek`. GitHub macOS `build-and-test`
+  passed at `f522f3a`; CodeQL Actions/JavaScript checks passed and its Swift job
+  was skipped by workflow configuration. No merge or release action was taken.
