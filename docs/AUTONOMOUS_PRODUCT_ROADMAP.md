@@ -14,9 +14,9 @@ not an automatically trusted backlog.
 - Open implementation issues at reconciliation: #40, #41, #43, #54, #72,
   #74, #76, #78, #80, #82 and #84.
 - Open implementation pull requests: #71, #73, #75, #77, #79, #81, #83 and
-  #85. They are independent and await Cesc's review. Their implementation
-  changes have green macOS CI evidence except #71's still-missing native run;
-  PR #85 does not modify or stack on earlier pending work.
+  #85. They are independent, have green macOS CI evidence and await Cesc's
+  review. PR #71 still needs native visual contrast review; PR #85 does not
+  modify or stack on earlier pending work.
 - Release-please PR #63 remains open. It must not be changed, merged or
   released without Cesc's explicit approval.
 - Latest published release: v0.2.1. `main` is at `99b68df`; recent autonomous
@@ -93,8 +93,8 @@ not an automatically trusted backlog.
 
 ### R4 — Guarantee readable sidebar workstream states
 
-- Status: **Awaiting Cesc review** in PR #71. Source issue #40. Native CI and
-  visual review remain required before merge.
+- Status: **Awaiting Cesc review** in PR #71 with green macOS CI. Source issue
+  #40. Native visual contrast review remains required before merge.
 - User outcome: primary and secondary workstream text remains readable while
   default, hovered, selected, waiting, working or invalid.
 - Success signal: a deterministic state/token matrix has no selected-state
