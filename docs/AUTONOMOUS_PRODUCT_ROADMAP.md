@@ -13,10 +13,10 @@ not an automatically trusted backlog.
   Ghostty, git worktrees, tmux, WKWebView, Monaco and XcodeGen.
 - Open implementation issues at reconciliation: #40, #41, #43, #54, #72,
   #74, #76, #78, #80, #82 and #84.
-- Open implementation pull requests: #71, #73, #75, #77, #79, #81 and #83.
-  They are independent, have green macOS CI on their final heads except #71's
-  still-missing native run, and await Cesc's review. This run implements R9 in
-  a separate PR without modifying or stacking on them.
+- Open implementation pull requests: #71, #73, #75, #77, #79, #81, #83 and
+  #85. They are independent, have green macOS CI on their final heads except
+  #71's still-missing native run and this run's new #85 pending CI, and await
+  Cesc's review. PR #85 does not modify or stack on earlier pending work.
 - Release-please PR #63 remains open. It must not be changed, merged or
   released without Cesc's explicit approval.
 - Latest published release: v0.2.1. `main` is at `99b68df`; recent autonomous
@@ -248,7 +248,8 @@ not an automatically trusted backlog.
 
 ### R9 — Recover the agent-state watcher after directory replacement
 
-- Status: **In implementation** on `fix/recover-agent-state-watcher`; issue #84.
+- Status: **In review (PR #85), awaiting Cesc review**; issue #84. Native
+  macOS CI is mandatory on the final head.
 - User outcome: agent attention indicators resume updating if the cache/state
   directory is cleared or replaced while Dockyard is running.
 - Success signal: a delete/rename event recreates and reattaches the directory
@@ -427,3 +428,13 @@ not an automatically trusted backlog.
   upstream branch to bypass fork approval. R1 remains the only selected item.
   Cesc must approve the fork workflow runs before native CI can execute; no
   merge or release action was taken.
+- **2026-08-02 (16:30 CEST):** reconciled `origin/main` at `99b68df`, open
+  issues, release state, and the changed paths and checks for implementation
+  PRs #71, #73, #75, #77, #79, #81 and #83. All remain independent and await
+  Cesc's review; none was modified or commented on. Projects v2 remains
+  unavailable because the token lacks `read:project`. Selected R9, opened
+  issue #84 and PR #85, and added watcher recovery after the agent-state
+  directory is deleted or renamed. A focused test removes the directory and
+  proves a new valid snapshot is observed without manual refresh. Linux static
+  checks passed; native macOS CI is mandatory on the final head. No merge or
+  release action was taken. R10 is the next independent Ready item.
