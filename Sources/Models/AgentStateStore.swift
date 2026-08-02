@@ -38,6 +38,8 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
     }
 
     private func attachDirectoryWatcher() {
+        guard directorySource == nil else { return }
+
         let directoryPath = directoryURL.path
         let descriptor = open(directoryPath, O_EVTONLY)
         guard descriptor >= 0 else { return }
@@ -47,26 +49,49 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
             eventMask: [.attrib, .delete, .extend, .rename, .write],
             queue: queue
         )
-        
+
         let handler: @Sendable () -> Void = { [weak self] in
-            self?.refreshState()
+            self?.handleDirectoryEvent()
         }
         source.setEventHandler(handler: handler)
-        
+
         let cancelHandler: @Sendable () -> Void = {
             close(descriptor)
         }
         source.setCancelHandler(handler: cancelHandler)
-        
+
         directorySource = source
         source.resume()
+    }
+
+    private func handleDirectoryEvent() {
+        guard let directorySource else { return }
+        let event = directorySource.data
+        if event.contains(.delete) || event.contains(.rename) {
+            replaceDirectoryWatcher()
+            return
+        }
+        refreshState()
+    }
+
+    private func replaceDirectoryWatcher() {
+        directorySource?.cancel()
+        directorySource = nil
+        try? FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        attachDirectoryWatcher()
+        refreshState()
     }
 
     private func attachRefreshTimer() {
         let timer = DispatchSource.makeTimerSource(queue: queue)
         timer.schedule(deadline: .now() + 60, repeating: 60)
         timer.setEventHandler { [weak self] in
-            self?.refreshState()
+            guard let self else { return }
+            if self.directorySource == nil {
+                self.replaceDirectoryWatcher()
+            } else {
+                self.refreshState()
+            }
         }
         refreshTimer = timer
         timer.resume()
