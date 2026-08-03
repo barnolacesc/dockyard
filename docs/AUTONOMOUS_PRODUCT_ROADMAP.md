@@ -248,8 +248,8 @@ not an automatically trusted backlog.
 
 ### R10 — Prevent new localization-key drift in CI
 
-- Status: **Selected for implementation** on `ci/localization-key-parity`;
-  issue #86. PR and CI evidence are recorded after the first push.
+- Status: **In review (PR #87), awaiting Cesc review**; issue #86. Local
+  checker fixtures and current-tree validation pass; macOS CI is required.
 - User outcome: a feature cannot introduce another missing or extra supported
   locale key without CI reporting the exact drift.
 - Success signal: a deterministic parser compares English with Catalan,
@@ -428,3 +428,14 @@ not an automatically trusted backlog.
   upstream branch to bypass fork approval. R1 remains the only selected item.
   Cesc must approve the fork workflow runs before native CI can execute; no
   merge or release action was taken.
+- **2026-08-03 (09:30 CEST):** reconciled `origin/main` at `99b68df`, open
+  issues, the changed paths and checks for implementation PRs #71–#85, and the
+  missing Projects v2 scope. All older implementation PRs remain mergeable
+  with green macOS CI and await Cesc's review; none was modified or commented
+  on. Selected R10, opened issue #86 and PR #87, and added a dependency-free
+  localization parser, fixture tests, an exact baseline for 22 missing and one
+  obsolete German key, and an early CI gate. Seven checker tests, current-tree
+  validation across 408 English keys and `git diff --check` passed locally.
+  GitHub macOS CI and CodeQL remain required at the final PR head; no merge or
+  release action was taken. R11 is the next independent Ready item, with R12
+  and R14 also Ready.
