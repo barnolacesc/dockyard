@@ -5,6 +5,7 @@
 import Foundation
 import XCTest
 
+@MainActor
 final class MonacoResourceSchemeHandlerTests: XCTestCase {
     private let baseURL = URL(
         fileURLWithPath: "/Applications/Dockyard.app/Contents/Resources/MonacoEditor",
