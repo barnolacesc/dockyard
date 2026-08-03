@@ -16,10 +16,11 @@ Git-mergeable with green macOS CI and await Cesc's review. Release-please #63
 remains approval-gated. GitHub Projects v2 is still unavailable because the
 token lacks `read:project`; no Project status is inferred.
 
-- **R11 — Enforce Monaco resource containment by path component:** in
-  implementation on `fix/contain-monaco-resources`; issue #88. Valid nested
-  resources must load while traversal and same-prefix sibling paths are
-  rejected. Scope is `MonacoResourceSchemeHandler` and focused tests only.
+- **R11 — Enforce Monaco resource containment by path component:** **In review**
+  in PR #89; issue #88. Valid nested resources must load while traversal and
+  same-prefix sibling paths are rejected. Scope is
+  `MonacoResourceSchemeHandler` and focused tests only. Static diff and secret
+  checks pass; full macOS CI is required at the final PR head.
 - **R12 — Make browser-state cache files private:** **Ready**. Repair the
   browser-state directory to `0700` and JSON files to `0600`, with focused
   `BrowserViewTests`; no bridge, origin or entitlement expansion.
