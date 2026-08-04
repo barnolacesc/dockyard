@@ -21,8 +21,8 @@ token lacks `read:project`; no Project status is inferred.
   directory to `0700` and persists JSON as `0600`; the bridge schema,
   retention, origin policy, entitlements and cleanup behavior are unchanged.
   Focused `BrowserViewTests` cover first-write and permissive-mode repair.
-  Static diff and secret checks pass; full macOS CI is required at the final
-  PR head. Never auto-merge.
+  Static diff and secret checks pass; GitHub macOS `build-and-test` and the
+  configured CodeQL analyzers passed at `b4d1e11`. Never auto-merge.
 - **R14 — Make detailed launch logs private:** **Ready**. Repair the launch-log
   directory to `0700` and files to `0600` before append, with focused
   `LaunchLoggerTests`; no schema, retention or command changes.
