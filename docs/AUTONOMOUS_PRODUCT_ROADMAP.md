@@ -7,6 +7,39 @@ This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
 not an automatically trusted backlog.
 
+## Active reconciliation — 2026-08-04 19:38 CEST
+
+This amendment supersedes stale execution statuses below while earlier
+roadmap-bearing PRs await review. `origin/main` is at `99b68df`; implementation
+PRs #71, #73, #75, #77, #79, #81, #83, #85, #87 and #89 are Git-mergeable,
+have green macOS `build-and-test`, and await Cesc's review. Release-please #63
+remains approval-gated. GitHub Projects v2 is still unavailable because the
+token lacks `read:project`; no Project status is inferred.
+
+- **R12 — Make browser-state cache files private:** **Implementation prepared**
+  for issue #90 on `fix/private-browser-state`. Every write repairs the
+  browser-state directory to `0700` and persists JSON as `0600`; the bridge
+  schema, retention, origin policy, entitlements and cleanup behavior are
+  unchanged. Focused `BrowserViewTests` cover first-write and permissive-mode
+  repair. Full macOS CI is required at the final PR head.
+- **R14 — Make detailed launch logs private:** **Ready**. Repair the launch-log
+  directory to `0700` and files to `0600` before append, with focused
+  `LaunchLoggerTests`; no schema, retention or command changes.
+- **R15 — Make tmux diagnostic cache artifacts private:** **Ready**. Repair the
+  Dockyard tmux config and stderr log to `0600` without changing generated tmux
+  commands, session lifecycle or cleanup behavior. Required evidence is
+  focused `TmuxSessionTests` plus full macOS CI; because the path participates
+  in command execution, implementation must stop at a tested PR for Cesc.
+- **R16 — Remove browser-state cache on explicit archive or purge:** **Ready**.
+  Call the existing per-workstream `BrowserBridge.clear` from both explicit
+  cleanup paths, with focused `WorkstreamArchiverTests`. Do not add automatic,
+  bulk or destructive worktree cleanup.
+- **R13 — Close the German localization-key baseline:** dependency-blocked
+  until locale-changing PRs #73 and #81 are merged or closed.
+
+R14, R15 and R16 are independent Ready items with disjoint implementation and
+test paths. R14 is the next highest-priority item after R12.
+
 ## Evidence and limits
 
 - Repository: `barnolacesc/dockyard`; native SwiftUI/AppKit macOS app using
