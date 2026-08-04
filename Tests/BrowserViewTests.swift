@@ -7,6 +7,49 @@ import XCTest
 
 @MainActor
 final class BrowserViewTests: XCTestCase {
+    func testBrowserBridgePersistsStateWithPrivatePermissions() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("dockyard-browser-state-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("state.json")
+        let state = BrowserBridge.State(
+            url: "http://localhost:4321",
+            title: "Preview",
+            updatedAt: Date(timeIntervalSince1970: 1_700_000_000),
+            consoleLog: []
+        )
+
+        try BrowserBridge.persist(state, to: file)
+
+        XCTAssertEqual(try permissions(of: root), 0o700)
+        XCTAssertEqual(try permissions(of: file), 0o600)
+        XCTAssertEqual(try BrowserBridge.decodeState(at: file).url, state.url)
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: root.path), ["state.json"])
+    }
+
+    func testBrowserBridgeRepairsPermissiveStatePermissions() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("dockyard-browser-state-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("state.json")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: root.path)
+        try Data("legacy".utf8).write(to: file)
+        try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: file.path)
+        let state = BrowserBridge.State(
+            url: "https://example.test",
+            title: nil,
+            updatedAt: Date(timeIntervalSince1970: 1_700_000_001),
+            consoleLog: []
+        )
+
+        try BrowserBridge.persist(state, to: file)
+
+        XCTAssertEqual(try permissions(of: root), 0o700)
+        XCTAssertEqual(try permissions(of: file), 0o600)
+        XCTAssertEqual(try BrowserBridge.decodeState(at: file).url, state.url)
+    }
+
     func testWebViewCacheReturnsSameInstance() {
         let cache = TerminalSurfaceCache()
         let id = UUID()
@@ -52,5 +95,10 @@ final class BrowserViewTests: XCTestCase {
         )
         let coordinator = representable.makeCoordinator()
         XCTAssertTrue(coordinator is WKUIDelegate, "Coordinator should conform to WKUIDelegate")
+    }
+
+    private func permissions(of url: URL) throws -> Int {
+        let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+        return try XCTUnwrap(attributes[.posixPermissions] as? NSNumber).intValue
     }
 }

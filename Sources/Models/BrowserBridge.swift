@@ -13,7 +13,11 @@ enum BrowserBridge {
     static var stateDirectory: URL {
         let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         let dir = cache.appendingPathComponent(AppConstants.appID).appendingPathComponent("browser-state")
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        do {
+            try prepareStateDirectory(at: dir)
+        } catch {
+            logger.warning("[BrowserBridge] failed to secure state directory: \(error.localizedDescription, privacy: .public)")
+        }
         return dir
     }
 
@@ -50,22 +54,42 @@ enum BrowserBridge {
         }
 
         do {
-            let encoder = JSONEncoder()
-            encoder.dateEncodingStrategy = .iso8601
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            let data = try encoder.encode(state)
-            try data.write(to: file, options: .atomic)
+            try persist(state, to: file)
         } catch {
             logger.warning("[BrowserBridge] failed to write state: \(error.localizedDescription, privacy: .public)")
         }
     }
 
     static func read(workstreamID: UUID) -> State? {
-        let file = stateFile(for: workstreamID)
-        guard let data = try? Data(contentsOf: file) else { return nil }
+        try? decodeState(at: stateFile(for: workstreamID))
+    }
+
+    static func persist(_ state: State, to file: URL) throws {
+        try prepareStateDirectory(at: file.deletingLastPathComponent())
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try FilePersistence.writeAtomically(encoder.encode(state), to: file)
+    }
+
+    static func decodeState(at file: URL) throws -> State {
+        let data = try Data(contentsOf: file)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        return try? decoder.decode(State.self, from: data)
+        return try decoder.decode(State.self, from: data)
+    }
+
+    private static func prepareStateDirectory(at directory: URL) throws {
+        try FileManager.default.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
+        // Existing directories retain their previous mode after createDirectory.
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o700],
+            ofItemAtPath: directory.path
+        )
     }
 
     static func clear(workstreamID: UUID) {
