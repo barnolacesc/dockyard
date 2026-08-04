@@ -16,12 +16,13 @@ have green macOS `build-and-test`, and await Cesc's review. Release-please #63
 remains approval-gated. GitHub Projects v2 is still unavailable because the
 token lacks `read:project`; no Project status is inferred.
 
-- **R12 — Make browser-state cache files private:** **Implementation prepared**
-  for issue #90 on `fix/private-browser-state`. Every write repairs the
-  browser-state directory to `0700` and persists JSON as `0600`; the bridge
-  schema, retention, origin policy, entitlements and cleanup behavior are
-  unchanged. Focused `BrowserViewTests` cover first-write and permissive-mode
-  repair. Full macOS CI is required at the final PR head.
+- **R12 — Make browser-state cache files private:** **In review (PR #91),
+  awaiting Cesc review**; issue #90. Every write repairs the browser-state
+  directory to `0700` and persists JSON as `0600`; the bridge schema,
+  retention, origin policy, entitlements and cleanup behavior are unchanged.
+  Focused `BrowserViewTests` cover first-write and permissive-mode repair.
+  Static diff and secret checks pass; full macOS CI is required at the final
+  PR head. Never auto-merge.
 - **R14 — Make detailed launch logs private:** **Ready**. Repair the launch-log
   directory to `0700` and files to `0600` before append, with focused
   `LaunchLoggerTests`; no schema, retention or command changes.
