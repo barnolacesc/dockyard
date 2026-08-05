@@ -115,8 +115,8 @@ not an automatically trusted backlog.
 
 ### R7 — Keep detailed launch logs private to the current user
 
-- Status: **In implementation** for issue #92 on
-  `fix/private-launch-logs`.
+- Status: **Awaiting Cesc review in PR #93** for issue #92 on
+  `fix/private-launch-logs`; required macOS CI is pending.
 - User outcome: enabling Detailed logging does not leave commands or
   environment variables readable by other local accounts.
 - Success signal: the launch-log directory is `0700` and every new or
@@ -428,3 +428,15 @@ not an automatically trusted backlog.
   upstream branch to bypass fork approval. R1 remains the only selected item.
   Cesc must approve the fork workflow runs before native CI can execute; no
   merge or release action was taken.
+- **2026-08-05:** reconciled `origin/main` at `99b68df`, v0.2.1, open issues,
+  TODOs, release PR #63 and autonomous PRs #71–#91. All eleven older
+  implementation PRs are mergeable with green macOS `build-and-test` and are
+  awaiting Cesc review; configured PR CodeQL is neutral because Swift analysis
+  is skipped while actions/JavaScript analysis succeeds. Projects v2 remains
+  unavailable because the token lacks `read:project`. Selected R7 / issue #92,
+  added permission and append regressions, enforced `0700` on the launch-log
+  directory and `0600` on new/existing logs, and opened PR #93. Local diff and
+  secret checks passed; the Linux runner has no Swift/Xcode toolchain, so
+  native evidence must come from required GitHub `macos-15` CI. R8 is the next
+  highest-priority independent Ready item. No PR was merged and no release or
+  periodic PR comment was made.
