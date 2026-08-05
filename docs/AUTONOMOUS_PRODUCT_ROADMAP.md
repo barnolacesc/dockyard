@@ -292,8 +292,11 @@ order.
 
 ### R8 — Reattach branch-name watchers after git-directory replacement
 
-- Status: **Selected in this run** for issue #94 on
-  `fix/recover-worktree-head-watcher`; awaiting mandatory native CI evidence.
+- Status: **Awaiting Cesc review in PR #95** for issue #94 on
+  `fix/recover-worktree-head-watcher`. The implementation head `1a26277`
+  passed Xcode 26.2 Build and the full XCTest step in GitHub macOS CI run
+  `31016951239`; CodeQL run `31016952245` completed successfully at workflow
+  level (actions and JavaScript passed; Swift was skipped by configuration).
 - User outcome: branch renames continue to appear immediately after git
   replaces or renames a watched per-worktree metadata directory.
 - Success signal: rename/delete closes the obsolete descriptor, attaches to a
@@ -307,7 +310,8 @@ order.
 - Acceptance criteria: bounded recovery; debounced callbacks; `sync(paths:)`
   removal and `stop()` cannot revive a path; full macOS build/XCTest passes.
 - Required tests: replacement, sync-removal and stop race regressions in
-  `WorktreeHeadWatcherTests`, full GitHub macOS CI, diff and secret checks.
+  `WorktreeHeadWatcherTests`, full GitHub macOS CI, diff and secret checks; all
+  passed at the implementation head. The final PR head must remain green.
 
 ### Ready queue while R8 awaits review
 
