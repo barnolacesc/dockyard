@@ -14,8 +14,8 @@ not an automatically trusted backlog.
 - Open implementation issues at reconciliation: #40, #41, #43, #54, #72,
   #74, #76, #78, #80, #82, #84, #86, #88, #90 and #92.
 - Open autonomous implementation PRs awaiting Cesc review: #71, #73, #75,
-  #77, #79, #81, #83, #85, #87, #89 and #91. Each is isolated from the
-  implementation selected here; their only recurring changed path is this
+  #77, #79, #81, #83, #85, #87, #89, #91 and #93. Each is isolated from the
+  next Ready implementations; their only recurring changed path is this
   roadmap. Release-please #63 is also open and must not be changed, merged or
   released without Cesc's explicit approval.
 - Latest published release: v0.2.1. `origin/main` macOS `build-and-test` and
@@ -116,7 +116,8 @@ not an automatically trusted backlog.
 ### R7 — Keep detailed launch logs private to the current user
 
 - Status: **Awaiting Cesc review in PR #93** for issue #92 on
-  `fix/private-launch-logs`; required macOS CI is pending.
+  `fix/private-launch-logs`; Xcode 26.2 build and the full XCTest suite passed
+  on GitHub `macos-15` at `b7bfb29`.
 - User outcome: enabling Detailed logging does not leave commands or
   environment variables readable by other local accounts.
 - Success signal: the launch-log directory is `0700` and every new or
@@ -437,6 +438,8 @@ not an automatically trusted backlog.
   added permission and append regressions, enforced `0700` on the launch-log
   directory and `0600` on new/existing logs, and opened PR #93. Local diff and
   secret checks passed; the Linux runner has no Swift/Xcode toolchain, so
-  native evidence must come from required GitHub `macos-15` CI. R8 is the next
-  highest-priority independent Ready item. No PR was merged and no release or
-  periodic PR comment was made.
+  native evidence came from GitHub `macos-15`: Xcode 26.2 build and the full
+  XCTest suite passed at `b7bfb29`. Configured PR CodeQL completed neutral
+  because Swift analysis was skipped; actions and JavaScript analysis passed.
+  R8 is the next highest-priority independent Ready item. No PR was merged and
+  no release or periodic PR comment was made.
