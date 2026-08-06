@@ -258,8 +258,8 @@ roadmap-bearing PRs await review.
 
 ### R9 — Contain script configuration within its project directory
 
-- Status: **Selected for implementation** in issue #96 on
-  `fix/contain-script-config-symlinks`; PR pending.
+- Status: **Awaiting Cesc review in PR #97** for issue #96 on
+  `fix/contain-script-config-symlinks`; GitHub macOS CI is pending.
 - User outcome: Dockyard never parses, fingerprints, approves or executes
   setup/run/teardown commands from a config whose resolved path escapes the
   directory it configures.
