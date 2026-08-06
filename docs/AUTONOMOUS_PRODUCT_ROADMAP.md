@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-07-27 against `origin/main` at
-`33b3fdb6c227d8b633f3163e22aba93046046d84`.
+Last reconciled: 2026-08-06 against `origin/main` at
+`99b68dfb91afbb80c2a48f0c20b3f0aa3cfd4f9e`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -11,11 +11,13 @@ not an automatically trusted backlog.
 
 - Repository: `barnolacesc/dockyard`; native SwiftUI/AppKit macOS app using
   Ghostty, git worktrees, tmux, WKWebView, Monaco and XcodeGen.
-- Open implementation issues at reconciliation: #40, #41, #43, #54 and #69.
-- Open pull requests: implementation PR #70 and release-please #63. PR #63
+- Open implementation issues at reconciliation: #40, #41, #43, #54, #72,
+  #74, #76, #78, #80, #82, #84, #86, #88, #90, #92, #94, #96 and #98.
+- Open implementation PRs #71, #73, #75, #77, #79, #81, #83, #85, #87,
+  #89, #91, #93, #95 and #97 are awaiting Cesc review. Release-please PR #63
   must not be changed, merged or released without Cesc's explicit approval.
 - Latest published release: v0.2.1. `main` CI, Release and CodeQL were green at
-  `33b3fdb`; the most recent scheduled CodeQL run was also green.
+  `99b68df`; the most recent scheduled CodeQL run was also green.
 - GitHub Projects v2 was not reviewed. The current token has `repo` and
   `workflow`, but lacks `read:project`; the API returned
   `INSUFFICIENT_SCOPES`. Project status must not be inferred.
@@ -240,6 +242,74 @@ not an automatically trusted backlog.
 - Acceptance criteria: complete bridge inventory and negative tests for
   out-of-scope paths/origins.
 - Required tests: `BrowserViewTests`, editor bridge tests and CodeQL.
+
+## Live reconciliation — 2026-08-06 16:30 CEST
+
+This section is current execution truth and supersedes older item status text
+while roadmap-bearing implementation PRs await review.
+
+- Base: `origin/main` at `99b68df`; tmux restart regression PR #70 is merged.
+- Autonomous implementation PRs #71 through #97 (odd numbers) are green,
+  mergeable and awaiting Cesc review. Their changed paths and behavior were
+  checked before R10 selection; none changes `PathUtilities` or its tests.
+- Release-please PR #63 remains approval-gated and must not be merged or
+  published without Cesc's explicit instruction. The latest published release
+  remains v0.2.1.
+- GitHub Projects v2 remains unavailable: the API returned
+  `INSUFFICIENT_SCOPES` because the token lacks `read:project`. No Project data
+  is inferred.
+
+### R10 — Abbreviate only paths inside the home directory
+
+- Status: **In implementation** for issue #98 on
+  `fix/home-path-component-boundary`.
+- User outcome: paths display with `~` only when they are the current home
+  directory or a real descendant; prefix siblings remain visually accurate.
+- Success signal: component-boundary tests cover home, nested descendants,
+  prefix siblings, relative paths and unrelated absolute paths.
+- macOS/persistence/security impact: display-only native UI utility; no stored
+  path, filesystem, command, cleanup, entitlement or localization change.
+- Scope/dependencies: `PathUtilities.abbreviatedPath` plus a dedicated pure
+  XCTest file; independent of every open implementation PR.
+- Risk/tests: low and reversible; focused XCTest, full GitHub macOS build/test,
+  configured CodeQL, diff and secret checks.
+
+### Ready queue while R10 awaits review
+
+#### R11 — Recover port detection after run-state directory replacement
+
+- Status: **Ready**; independent reliability item.
+- User outcome/success signal: replacing the run-state cache directory does not
+  leave the embedded browser stuck; a later valid snapshot updates the selected
+  port without restart or manual refresh.
+- Impact/scope/dependencies: read-only `PortDetector` watcher recovery and a
+  dedicated test file; no command launch, schema or cleanup change; independent
+  of PR #77 snapshot validation and PR #79 persistence writes.
+- Risk/tests: low concurrency risk; replacement/stop races and full macOS CI.
+
+#### R12 — Contain standard-document reads within the project directory
+
+- Status: **Ready**; independent local privacy item.
+- User outcome/success signal: `README.md`, `CLAUDE.md` and `AGENTS.md` symlinks
+  cannot make info surfaces read outside a project, while regular documents,
+  in-root symlinks and symlinked project roots continue to work.
+- Impact/scope/dependencies: read-only `DocFile` containment plus focused tests;
+  no WebKit policy, command, entitlement or state change.
+- Risk/tests: low and reversible; direct/ancestor escape fixtures and full
+  macOS CI.
+
+#### R13 — Contain stack-detection metadata reads within the project directory
+
+- Status: **Ready**; independent environment-suggestion boundary item.
+- User outcome/success signal: stack detection does not follow manifest or
+  lockfile symlinks outside the selected project when proposing setup/run
+  commands, while ordinary files, in-root symlinks and symlinked project roots
+  keep working.
+- Impact/scope/dependencies: `StackDetector` filesystem lookup and existing
+  focused tests only; no script approval, automatic execution, entitlement or
+  persistence change; independent of PR #97's script-config loader.
+- Risk/tests: low to medium read-boundary compatibility risk; escape fixtures,
+  existing detector coverage and full macOS CI.
 
 ### D3 — Release and distribution integrity verification
 
