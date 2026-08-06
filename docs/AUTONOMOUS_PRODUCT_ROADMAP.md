@@ -241,6 +241,76 @@ not an automatically trusted backlog.
   out-of-scope paths/origins.
 - Required tests: `BrowserViewTests`, editor bridge tests and CodeQL.
 
+## Live reconciliation — 2026-08-06 09:30 CEST
+
+This section is current execution truth and supersedes older status text while
+roadmap-bearing PRs await review.
+
+- Base: `origin/main` at `99b68df`; tmux restart regression PR #70 is merged.
+- Autonomous PRs #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91,
+  #93 and #95 are awaiting Cesc review. Their behavior and implementation paths
+  were checked before R9 selection; none changes `ScriptConfig` or its tests.
+- Release-please PR #63 remains approval-gated and must not be merged or
+  published without Cesc's explicit instruction.
+- GitHub Projects v2 remains unavailable: the API returned
+  `INSUFFICIENT_SCOPES` because the token lacks `read:project`. No Project data
+  is inferred.
+
+### R9 — Contain script configuration within its project directory
+
+- Status: **Selected for implementation** in issue #96 on
+  `fix/contain-script-config-symlinks`; PR pending.
+- User outcome: Dockyard never parses, fingerprints, approves or executes
+  setup/run/teardown commands from a config whose resolved path escapes the
+  directory it configures.
+- Success signal: direct and ancestor symlink escapes yield no scripts, while
+  ordinary in-project configs, in-project config symlinks, fallback directories
+  and symlinked project roots continue to load.
+- macOS/persistence/security impact: command-execution boundary only; no trust
+  schema, bypass, runner, entitlement, migration or cleanup change.
+- Scope/dependencies: `ScriptConfig`, focused tests and one localized rejection
+  key; no behavioral dependency on any open PR. Localization changes are in an
+  isolated hunk and pairwise merge simulation is required before PR creation.
+- Risk: medium security/compatibility risk. Stop at a tested PR for Cesc.
+- Acceptance criteria/tests: resolve before JSON parsing; reject direct and
+  ancestor escapes; preserve precedence and supported in-root/root-symlink
+  cases; prove prior approval cannot execute an escaping teardown; validate all
+  five locales; full GitHub macOS build/XCTest and configured CodeQL.
+
+### Ready queue while R9 awaits review
+
+#### R10 — Abbreviate only paths inside the home directory
+
+- Status: **Ready**; independent display-correctness item.
+- User outcome/success signal: home and descendants abbreviate to `~`, while a
+  prefix sibling such as `/Users/cesc-old` remains unchanged in component-aware
+  tests.
+- Impact/scope/dependencies: display-only `PathUtilities.abbreviatedPath` plus
+  pure tests; stored paths and all open implementation paths are untouched.
+- Risk/tests: low and reversible; boundary fixtures and full macOS CI.
+
+#### R11 — Recover port detection after run-state directory replacement
+
+- Status: **Ready**; independent reliability item.
+- User outcome/success signal: replacing the run-state cache directory does not
+  leave the embedded browser stuck; a later valid snapshot updates the selected
+  port without restart or manual refresh.
+- Impact/scope/dependencies: read-only `PortDetector` watcher recovery and a
+  dedicated test file; no command launch, schema or cleanup change; independent
+  of PR #77 snapshot validation and PR #79 writes.
+- Risk/tests: low concurrency risk; replacement/stop races and full macOS CI.
+
+#### R12 — Contain standard-document reads within the project directory
+
+- Status: **Ready**; independent read-boundary item found during reconciliation.
+- User outcome/success signal: repository `README.md`, `CLAUDE.md` or
+  `AGENTS.md` symlinks cannot make info surfaces read outside the project;
+  regular documents, in-root symlinks and symlinked project roots still work.
+- Impact/scope/dependencies: read-only local privacy boundary in `DocFile` plus
+  a dedicated test file; no WebKit policy, command, entitlement or state change.
+- Risk/tests: low and reversible; direct/ancestor escape fixtures, existing
+  size/UTF-8 behavior and full macOS CI.
+
 ### D3 — Release and distribution integrity verification
 
 - Status: **Approval-gated**, not Ready for autonomous merge/release.

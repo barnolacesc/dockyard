@@ -181,6 +181,108 @@ final class ScriptConfigTests: XCTestCase {
         XCTAssertEqual(config.source, "conductor.json")
     }
 
+    // MARK: - Project containment
+
+    func testRejectsConfigSymlinkOutsideProjectDirectory() throws {
+        let outsideDirectory = makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: outsideDirectory) }
+        let outsideConfig = outsideDirectory.appendingPathComponent("outside.json")
+        writeJSON(at: outsideConfig, ["run": "outside-command"])
+        try FileManager.default.createSymbolicLink(
+            at: tmpDir.appendingPathComponent(".dockyard.json"),
+            withDestinationURL: outsideConfig
+        )
+
+        let config = ScriptConfig.load(from: tmpDir.path)
+
+        XCTAssertFalse(config.hasAnyScript)
+        XCTAssertEqual(config.source, ".dockyard.json")
+        XCTAssertNotNil(config.loadError)
+    }
+
+    func testRejectsConfigThroughEscapingAncestorSymlink() throws {
+        let outsideDirectory = makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: outsideDirectory) }
+        writeJSON(at: outsideDirectory.appendingPathComponent("config.json"), ["run": "outside-command"])
+        try FileManager.default.createSymbolicLink(
+            at: tmpDir.appendingPathComponent(".superset"),
+            withDestinationURL: outsideDirectory
+        )
+
+        let config = ScriptConfig.load(from: tmpDir.path)
+
+        XCTAssertFalse(config.hasAnyScript)
+        XCTAssertEqual(config.source, ".superset/config.json")
+        XCTAssertNotNil(config.loadError)
+    }
+
+    func testLoadsConfigSymlinkThatResolvesInsideProjectDirectory() throws {
+        let target = tmpDir.appendingPathComponent("scripts.json")
+        writeJSON(at: target, ["run": "inside-command"])
+        try FileManager.default.createSymbolicLink(
+            at: tmpDir.appendingPathComponent(".dockyard.json"),
+            withDestinationURL: target
+        )
+
+        let config = ScriptConfig.load(from: tmpDir.path)
+
+        XCTAssertEqual(config.run, "inside-command")
+        XCTAssertEqual(config.source, ".dockyard.json")
+        XCTAssertNil(config.loadError)
+    }
+
+    func testLoadsConfigThroughSymlinkedProjectDirectory() throws {
+        let realProject = tmpDir.appendingPathComponent("real-project")
+        try FileManager.default.createDirectory(at: realProject, withIntermediateDirectories: true)
+        writeJSON(at: realProject.appendingPathComponent(".dockyard.json"), ["run": "inside-command"])
+        let projectLink = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: projectLink) }
+        try FileManager.default.createSymbolicLink(at: projectLink, withDestinationURL: realProject)
+
+        let config = ScriptConfig.load(from: projectLink.path)
+
+        XCTAssertEqual(config.run, "inside-command")
+        XCTAssertEqual(config.source, ".dockyard.json")
+        XCTAssertNil(config.loadError)
+    }
+
+    func testLoadsContainedConfigFromFallbackDirectory() {
+        let fallbackDirectory = makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: fallbackDirectory) }
+        writeJSON(at: fallbackDirectory.appendingPathComponent(".dockyard.json"), ["run": "fallback-command"])
+
+        let config = ScriptConfig.load(from: tmpDir.path, fallbackDirectory: fallbackDirectory.path)
+
+        XCTAssertEqual(config.run, "fallback-command")
+        XCTAssertEqual(config.source, ".dockyard.json")
+        XCTAssertNil(config.loadError)
+    }
+
+    func testApprovedFingerprintCannotExecuteEscapingTeardownConfig() throws {
+        let defaults = UserDefaults(suiteName: "ScriptConfigContainmentTests")!
+        defaults.removePersistentDomain(forName: "ScriptConfigContainmentTests")
+        defer { defaults.removePersistentDomain(forName: "ScriptConfigContainmentTests") }
+
+        writeJSON(".dockyard.json", ["teardown": "true"])
+        let approvedConfig = ScriptConfig.load(from: tmpDir.path)
+        ScriptTrustStore.trust(projectDirectory: tmpDir.path, config: approvedConfig, defaults: defaults)
+        try FileManager.default.removeItem(at: tmpDir.appendingPathComponent(".dockyard.json"))
+
+        let outsideDirectory = makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: outsideDirectory) }
+        let marker = outsideDirectory.appendingPathComponent("teardown-ran")
+        let outsideConfig = outsideDirectory.appendingPathComponent("outside.json")
+        writeJSON(at: outsideConfig, ["teardown": "touch '\(marker.path)'"])
+        try FileManager.default.createSymbolicLink(
+            at: tmpDir.appendingPathComponent(".dockyard.json"),
+            withDestinationURL: outsideConfig
+        )
+
+        ScriptConfig.runTeardown(in: tmpDir.path, projectDirectory: tmpDir.path, defaults: defaults)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: marker.path))
+    }
+
     // MARK: - Helpers
 
     func testRunTeardownSkipsUntrustedScripts() {
@@ -201,8 +303,17 @@ final class ScriptConfigTests: XCTestCase {
     }
 
     private func writeJSON(_ name: String, _ dict: [String: Any]) {
-        let path = tmpDir.appendingPathComponent(name).path
+        writeJSON(at: tmpDir.appendingPathComponent(name), dict)
+    }
+
+    private func writeJSON(at url: URL, _ dict: [String: Any]) {
         let data = try! JSONSerialization.data(withJSONObject: dict)
-        FileManager.default.createFile(atPath: path, contents: data)
+        FileManager.default.createFile(atPath: url.path, contents: data)
+    }
+
+    private func makeTemporaryDirectory() -> URL {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try! FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
     }
 }

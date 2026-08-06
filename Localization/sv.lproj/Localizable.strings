@@ -57,6 +57,7 @@
 "Add" = "Lägg till";
 /* File Picker */
 "Choose a project directory" = "Välj en projektkatalog";
+"Script configuration must stay inside the project directory." = "Skriptkonfigurationen måste finnas kvar i projektkatalogen.";
 "Select" = "Välj";
 
 /* Settings */

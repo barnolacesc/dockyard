@@ -57,6 +57,7 @@
 "Add" = "Afegeix";
 /* File Picker */
 "Choose a project directory" = "Tria un directori de projecte";
+"Script configuration must stay inside the project directory." = "La configuració dels scripts ha de romandre dins del directori del projecte.";
 "Select" = "Selecciona";
 
 /* Settings */

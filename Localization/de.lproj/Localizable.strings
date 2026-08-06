@@ -57,6 +57,7 @@
 "Add" = "Hinzufügen";
 /* File Picker */
 "Choose a project directory" = "Projektverzeichnis auswählen";
+"Script configuration must stay inside the project directory." = "Die Skriptkonfiguration muss im Projektverzeichnis bleiben.";
 "Select" = "Auswählen";
 
 /* Settings */
