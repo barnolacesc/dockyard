@@ -261,8 +261,9 @@ while roadmap-bearing implementation PRs await review.
 
 ### R10 — Abbreviate only paths inside the home directory
 
-- Status: **In implementation** for issue #98 on
-  `fix/home-path-component-boundary`.
+- Status: **Awaiting Cesc review in PR #99** for issue #98 on
+  `fix/home-path-component-boundary`. The PR records current macOS CI and
+  CodeQL evidence and must not be auto-merged.
 - User outcome: paths display with `~` only when they are the current home
   directory or a real descendant; prefix siblings remain visually accurate.
 - Success signal: component-boundary tests cover home, nested descendants,
