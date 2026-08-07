@@ -269,8 +269,8 @@ the token lacks `read:project`, so no Project state is inferred.
 
 ### R11 — Recover port detection after run-state directory replacement
 
-- Status: **Selected for issue #100** on
-  `fix/recover-port-detector-watcher`; stop at a tested PR for Cesc review.
+- Status: **Awaiting Cesc review in PR #101** for issue #100 on
+  `fix/recover-port-detector-watcher`; never auto-merge.
 - User outcome and success signal: replacing the run-state cache directory no
   longer leaves an embedded browser stuck; tests prove ordinary atomic file
   updates, replacement recovery and cancellation of pending recovery on stop.
