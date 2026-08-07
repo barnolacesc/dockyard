@@ -6,14 +6,33 @@ import Foundation
 final class PortDetector: ObservableObject, @unchecked Sendable {
     @Published private(set) var selectedPort: Int?
 
-    private let workstreamID: UUID
+    private let directoryURL: URL
+    private let stateURL: URL
+    private let loadState: () -> RunStateSnapshot?
     private let queue: DispatchQueue
+    private let queueKey = DispatchSpecificKey<Void>()
+    private let recoveryDelay: DispatchTimeInterval
+    private let recoveryAttemptLimit: Int
     private var directorySource: DispatchSourceFileSystemObject?
     private var fileSource: DispatchSourceFileSystemObject?
+    private var recoveryWorkItem: DispatchWorkItem?
+    private var remainingRecoveryAttempts = 0
+    private var isStopped = false
 
-    init(workstreamID: UUID) {
-        self.workstreamID = workstreamID
+    init(
+        workstreamID: UUID,
+        directoryURL: URL = RunStateStore.directoryURL,
+        recoveryDelay: DispatchTimeInterval = .milliseconds(50),
+        recoveryAttemptLimit: Int = 40,
+        loadState: (() -> RunStateSnapshot?)? = nil
+    ) {
+        self.directoryURL = directoryURL
+        self.stateURL = directoryURL.appendingPathComponent("\(workstreamID.uuidString.lowercased()).json")
+        self.loadState = loadState ?? { RunStateStore.loadValidated(for: workstreamID) }
         self.queue = DispatchQueue(label: "dockyard.port-detector.\(workstreamID.uuidString.lowercased())")
+        self.recoveryDelay = recoveryDelay
+        self.recoveryAttemptLimit = recoveryAttemptLimit
+        queue.setSpecific(key: queueKey, value: ())
         start()
     }
 
@@ -22,12 +41,80 @@ final class PortDetector: ObservableObject, @unchecked Sendable {
     }
 
     private func start() {
-        try? FileManager.default.createDirectory(at: RunStateStore.directoryURL, withIntermediateDirectories: true)
-        attachDirectoryWatcher()
+        queue.sync {
+            try? FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+            attachDirectoryWatcher()
+            refreshState()
+        }
+    }
+
+    func stop() {
+        if DispatchQueue.getSpecific(key: queueKey) != nil {
+            stopOnQueue()
+        } else {
+            queue.sync { stopOnQueue() }
+        }
+    }
+
+    private func stopOnQueue() {
+        isStopped = true
+        recoveryWorkItem?.cancel()
+        recoveryWorkItem = nil
+        remainingRecoveryAttempts = 0
+        cancelWatchers()
+    }
+
+    private func handleDirectoryEvent() {
+        guard let directorySource else { return }
+        let event = directorySource.data
+        if event.contains(.delete) || event.contains(.rename) {
+            cancelWatchers()
+            refreshState()
+            remainingRecoveryAttempts = recoveryAttemptLimit
+            scheduleDirectoryRecovery()
+            return
+        }
+
+        attachFileWatcherIfNeeded()
         refreshState()
     }
 
-    private func stop() {
+    private func scheduleDirectoryRecovery() {
+        guard !isStopped,
+              recoveryWorkItem == nil,
+              remainingRecoveryAttempts > 0
+        else { return }
+
+        remainingRecoveryAttempts -= 1
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.recoveryWorkItem = nil
+            guard !self.isStopped else { return }
+
+            self.attachDirectoryWatcher()
+            if self.directorySource == nil {
+                self.scheduleDirectoryRecovery()
+            } else {
+                self.remainingRecoveryAttempts = 0
+                self.refreshState()
+            }
+        }
+        recoveryWorkItem = workItem
+        queue.asyncAfter(deadline: .now() + recoveryDelay, execute: workItem)
+    }
+
+    private func handleFileEvent() {
+        guard let fileSource else { return }
+        let event = fileSource.data
+        if event.contains(.delete) || event.contains(.rename) {
+            fileSource.cancel()
+            self.fileSource = nil
+        }
+        attachFileWatcherIfNeeded()
+        refreshState()
+    }
+
+    private func cancelWatchers() {
         fileSource?.cancel()
         fileSource = nil
         directorySource?.cancel()
@@ -35,8 +122,9 @@ final class PortDetector: ObservableObject, @unchecked Sendable {
     }
 
     private func attachDirectoryWatcher() {
-        let directoryPath = RunStateStore.directoryURL.path
-        let descriptor = open(directoryPath, O_EVTONLY)
+        guard !isStopped, directorySource == nil else { return }
+
+        let descriptor = open(directoryURL.path, O_EVTONLY)
         guard descriptor >= 0 else { return }
 
         let source = DispatchSource.makeFileSystemObjectSource(
@@ -45,8 +133,7 @@ final class PortDetector: ObservableObject, @unchecked Sendable {
             queue: queue
         )
         source.setEventHandler { [weak self] in
-            self?.attachFileWatcherIfNeeded()
-            self?.refreshState()
+            self?.handleDirectoryEvent()
         }
         source.setCancelHandler {
             close(descriptor)
@@ -58,15 +145,15 @@ final class PortDetector: ObservableObject, @unchecked Sendable {
     }
 
     private func attachFileWatcherIfNeeded() {
-        let statePath = RunStateStore.fileURL(for: workstreamID).path
-        guard FileManager.default.fileExists(atPath: statePath) else {
+        guard !isStopped else { return }
+        guard FileManager.default.fileExists(atPath: stateURL.path) else {
             fileSource?.cancel()
             fileSource = nil
             return
         }
         guard fileSource == nil else { return }
 
-        let descriptor = open(statePath, O_EVTONLY)
+        let descriptor = open(stateURL.path, O_EVTONLY)
         guard descriptor >= 0 else { return }
 
         let source = DispatchSource.makeFileSystemObjectSource(
@@ -75,7 +162,7 @@ final class PortDetector: ObservableObject, @unchecked Sendable {
             queue: queue
         )
         source.setEventHandler { [weak self] in
-            self?.refreshState()
+            self?.handleFileEvent()
         }
         source.setCancelHandler {
             close(descriptor)
@@ -85,10 +172,8 @@ final class PortDetector: ObservableObject, @unchecked Sendable {
     }
 
     private func refreshState() {
-        let state = RunStateStore.loadValidated(for: workstreamID)
-        if state == nil {
-            attachFileWatcherIfNeeded()
-        }
+        attachFileWatcherIfNeeded()
+        let state = loadState()
 
         let nextPort = state?.selectedPort
         DispatchQueue.main.async { [weak self] in

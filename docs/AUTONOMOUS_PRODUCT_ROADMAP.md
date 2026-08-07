@@ -257,6 +257,47 @@ not an automatically trusted backlog.
 - Required tests: release workflow, signature/notarization verification,
   Sparkle feed and Homebrew install checks.
 
+## Live reconciliation — 2026-08-07 09:30 CEST
+
+This section supersedes older statuses above while roadmap-bearing PRs await
+review. `origin/main` is `99b68df`; R1 / PR #70 is merged with green main CI.
+Implementation PRs #71–#99 (odd numbers) remain open for Cesc's batch review,
+and none changes `PortDetector` or this run's watcher-recovery behavior.
+Release-please PR #63 remains approval-gated; v0.2.1 is still the latest
+published release. GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because
+the token lacks `read:project`, so no Project state is inferred.
+
+### R11 — Recover port detection after run-state directory replacement
+
+- Status: **Selected for issue #100** on
+  `fix/recover-port-detector-watcher`; stop at a tested PR for Cesc review.
+- User outcome and success signal: replacing the run-state cache directory no
+  longer leaves an embedded browser stuck; tests prove ordinary atomic file
+  updates, replacement recovery and cancellation of pending recovery on stop.
+- Impact and scope: bounded read-only `PortDetector` watcher recovery plus a
+  dedicated XCTest file. Production loading remains delegated to
+  `RunStateStore.loadValidated`, so PR #77 composes in either merge order;
+  PR #79's write permissions are unchanged.
+- Risk and tests: low concurrency risk; retry is bounded to two seconds. No
+  schema, command, process, cleanup, entitlement, localization or persisted
+  project-data change. Require focused tests, full macOS CI, CodeQL, diff and
+  secret checks.
+
+### Ready queue while R11 awaits review
+
+- **R12 — Contain standard-document reads:** keep `README.md`, `CLAUDE.md` and
+  `AGENTS.md` symlink resolution inside the project while preserving regular,
+  in-root-symlink and symlinked-project-root reads. Read-only `DocFile` scope;
+  direct/ancestor escape tests and full macOS CI.
+- **R13 — Contain stack-detection metadata reads:** do not follow manifest or
+  lockfile symlinks outside the selected project when proposing commands.
+  `StackDetector` lookup and focused tests only; independent of PR #97 and no
+  approval or automatic-execution change.
+- **R14 — Keep editor navigation inside the worktree:** prevent tree-discovered
+  traversal or symlinked directories from escaping workspace-relative
+  open/save boundaries while preserving explicit Save As. Medium file-access
+  boundary; focused model/editor tests, full macOS CI and Cesc review required.
+
 ## Parked
 
 - **Issue #43, hide update terminal window:** parked behind the update-execution
