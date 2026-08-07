@@ -97,6 +97,7 @@ final class PortDetectorWatcherTests: XCTestCase {
         try data.write(to: stateURL, options: .atomic)
     }
 
+    @MainActor
     private func waitForPort(
         _ expectedPort: Int?,
         from detector: PortDetector,
