@@ -4,7 +4,6 @@
 @testable import Dockyard
 import XCTest
 
-@MainActor
 final class PortDetectorWatcherTests: XCTestCase {
     private var root: URL!
     private var displacedRoot: URL!
@@ -27,6 +26,7 @@ final class PortDetectorWatcherTests: XCTestCase {
         try super.tearDownWithError()
     }
 
+    @MainActor
     func testObservesOrdinaryStateFileReplacement() async throws {
         let detector = try makeDetector()
         defer { detector.stop() }
@@ -38,6 +38,7 @@ final class PortDetectorWatcherTests: XCTestCase {
         try await waitForPort(4200, from: detector)
     }
 
+    @MainActor
     func testRecoversAfterRunStateDirectoryReplacement() async throws {
         let detector = try makeDetector()
         defer { detector.stop() }
@@ -53,6 +54,7 @@ final class PortDetectorWatcherTests: XCTestCase {
         try await waitForPort(4200, from: detector)
     }
 
+    @MainActor
     func testStopCancelsPendingDirectoryRecovery() async throws {
         let detector = try makeDetector(recoveryDelay: .milliseconds(100))
 
