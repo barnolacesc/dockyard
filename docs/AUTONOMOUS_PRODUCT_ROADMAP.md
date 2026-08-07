@@ -282,6 +282,13 @@ the token lacks `read:project`, so no Project state is inferred.
   schema, command, process, cleanup, entitlement, localization or persisted
   project-data change. Require focused tests, full macOS CI, CodeQL, diff and
   secret checks.
+- Native evidence: run `31158857337` passed XcodeGen, build and all 381 tests
+  (2 expected skips). After removing new test-fixture isolation warnings, run
+  `31159381446` compiled cleanly and all three watcher regressions passed; its
+  only failure was the unrelated pre-existing
+  `SetupRunnerTests.test_captures_output_to_log_tail` timing assertion. The
+  automation account's failed-job rerun request returned `403`, so the final
+  documentation head must receive a fresh green macOS run before handoff.
 
 ### Ready queue while R11 awaits review
 
