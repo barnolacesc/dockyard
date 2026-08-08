@@ -291,20 +291,41 @@ private struct FileLookup {
     let base: URL
 
     init(directory: String) {
-        base = URL(fileURLWithPath: directory)
+        base = URL(fileURLWithPath: directory, isDirectory: true)
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
     }
 
     func exists(_ relativePath: String) -> Bool {
-        FileManager.default.fileExists(atPath: base.appendingPathComponent(relativePath).path)
+        guard let url = containedURL(relativePath) else { return false }
+        return FileManager.default.fileExists(atPath: url.path)
     }
 
     func read(_ relativePath: String) -> String? {
-        try? String(contentsOf: base.appendingPathComponent(relativePath), encoding: .utf8)
+        guard let url = containedURL(relativePath) else { return nil }
+        return try? String(contentsOf: url, encoding: .utf8)
     }
 
     func json(_ relativePath: String) -> [String: Any]? {
-        guard let data = FileManager.default.contents(atPath: base.appendingPathComponent(relativePath).path) else { return nil }
+        guard let url = containedURL(relativePath),
+              let data = FileManager.default.contents(atPath: url.path)
+        else { return nil }
         return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+    }
+
+    private func containedURL(_ relativePath: String) -> URL? {
+        let candidate = base
+            .appendingPathComponent(relativePath)
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
+        let baseComponents = base.pathComponents
+        let candidateComponents = candidate.pathComponents
+
+        guard candidateComponents.count > baseComponents.count,
+              candidateComponents.prefix(baseComponents.count).elementsEqual(baseComponents)
+        else { return nil }
+
+        return candidate
     }
 }
 
