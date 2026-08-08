@@ -328,8 +328,8 @@ because the token lacks `read:project`, so no Project status is inferred.
 
 ### R13 — Contain stack-detection metadata reads
 
-- Status: **Implementation prepared for Cesc review** for issue #104 on
-  `fix/contain-stack-metadata-reads`; PR and native CI evidence are pending.
+- Status: **Awaiting Cesc review in PR #105** for issue #104 on
+  `fix/contain-stack-metadata-reads`; never auto-merge.
 - User outcome and success signal: stack setup/run proposals use only
   manifests and lockfiles whose resolved paths remain inside the selected
   project. Focused tests cover regular behavior, contained symlinks, escaping
@@ -344,6 +344,11 @@ because the token lacks `read:project`, so no Project status is inferred.
   CodeQL, diff and secret checks are required. The Linux automation container
   has neither Swift/Xcode nor XcodeGen, so GitHub `macos-15` CI is the required
   native evidence.
+- Native evidence: GitHub macOS CI run `31246720596` passed XcodeGen, the native
+  build and the full XCTest suite at implementation head `2b9f4f0`. CodeQL run
+  `31246720595` completed its configured actions and JavaScript analyses
+  successfully; Swift analysis was skipped by workflow configuration. The
+  final roadmap-only head must also remain green before handoff.
 
 ### Independent Ready queue while R13 awaits review
 
@@ -367,6 +372,6 @@ because the token lacks `read:project`, so no Project status is inferred.
 - **2026-08-08 09:30 CEST:** reconciled `origin/main`, `TODO.md`, issues,
   releases, every open PR path and current check at its head. Projects v2
   remained unavailable without `read:project`. Selected independent R13,
-  created issue #104 and implemented its tested slice from current
+  created issue #104 and PR #105, and implemented its tested slice from current
   `origin/main`; no prior PR was modified or commented on, and no merge or
   release action was taken.
