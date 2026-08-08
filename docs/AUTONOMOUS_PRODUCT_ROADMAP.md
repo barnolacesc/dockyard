@@ -314,3 +314,59 @@ not an automatically trusted backlog.
   upstream branch to bypass fork approval. R1 remains the only selected item.
   Cesc must approve the fork workflow runs before native CI can execute; no
   merge or release action was taken.
+
+## Live reconciliation — 2026-08-08 09:30 CEST
+
+This section supersedes older statuses above while roadmap-bearing PRs await
+review. `origin/main` is `99b68df`; R1 / PR #70 is merged. Implementation PRs
+#71–#103 (odd numbers) are cleanly mergeable with successful macOS
+`build-and-test` checks at their current heads and are **awaiting Cesc review**.
+Their implementation paths do not overlap this run's `StackDetector` paths or
+behavior. Release-please PR #63 remains approval-gated, and v0.2.1 remains the
+latest published release. GitHub Projects v2 returned `INSUFFICIENT_SCOPES`
+because the token lacks `read:project`, so no Project status is inferred.
+
+### R13 — Contain stack-detection metadata reads
+
+- Status: **Implementation prepared for Cesc review** for issue #104 on
+  `fix/contain-stack-metadata-reads`; PR and native CI evidence are pending.
+- User outcome and success signal: stack setup/run proposals use only
+  manifests and lockfiles whose resolved paths remain inside the selected
+  project. Focused tests cover regular behavior, contained symlinks, escaping
+  manifests and lockfiles, an escaping nested metadata directory, Compose
+  teardown inference and symlinked project roots.
+- Impact and scope: resolve the project root once, then enforce a
+  path-component boundary before every `StackDetector` existence check or
+  read. No script approval, command execution, persisted configuration,
+  cleanup, entitlement or localization behavior changes.
+- Risk and tests: low, bounded proposal-only file reads. Six focused XCTest
+  regressions plus the existing `StackDetectorTests`, full macOS build/test,
+  CodeQL, diff and secret checks are required. The Linux automation container
+  has neither Swift/Xcode nor XcodeGen, so GitHub `macos-15` CI is the required
+  native evidence.
+
+### Independent Ready queue while R13 awaits review
+
+- **R14 — Keep editor navigation inside the worktree:** prevent
+  tree-discovered traversal or symlinked directories from escaping
+  workspace-relative open/save boundaries while preserving explicit Save As.
+  Medium file-access boundary; focused model/editor tests, full macOS CI and
+  Cesc review required.
+- **R15 — Preserve current cache state during legacy migration:** when old and
+  canonical run-state or tmux cache entries both exist, never delete the
+  canonical destination before a fallible move. `CacheMigration` and focused
+  tests only; migration behavior is approval-gated and must stop at a tested
+  PR for Cesc.
+- **R16 — Contain automatic virtual-environment activation:** automatic run
+  wrapping must not source `venv/bin/activate` or `.venv/bin/activate` through
+  a symlink that resolves outside the selected project. Preserve ordinary and
+  contained activation paths plus symlinked project roots. `RunLauncher` and a
+  new focused test file only; this command boundary is approval-gated and must
+  stop at a tested PR for Cesc.
+
+- **2026-08-08 09:30 CEST:** reconciled `origin/main`, `TODO.md`, issues,
+  releases, every open PR path and current check at its head. Projects v2
+  remained unavailable without `read:project`. Selected independent R13,
+  created issue #104 and implemented its tested slice from current
+  `origin/main`; no prior PR was modified or commented on, and no merge or
+  release action was taken.
