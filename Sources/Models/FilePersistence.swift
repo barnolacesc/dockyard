@@ -16,6 +16,13 @@ enum FilePersistence {
             withIntermediateDirectories: true,
             attributes: [.posixPermissions: 0o700]
         )
+        // `createDirectory` does not apply attributes when the directory already
+        // exists. State watchers may create these directories first, so repair the
+        // mode before placing a temporary file containing private state inside it.
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o700],
+            ofItemAtPath: directory.path
+        )
 
         let tempURL = directory.appendingPathComponent(".\(url.lastPathComponent).\(UUID().uuidString).tmp")
         do {

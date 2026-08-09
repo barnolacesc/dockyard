@@ -6,6 +6,18 @@ import AppKit
 import XCTest
 
 final class WorkspaceTabSnapshotTests: XCTestCase {
+    private let snapshotsKey = "dockyard.workspaceTabSnapshots"
+
+    override func setUp() {
+        super.setUp()
+        UserDefaults.standard.removeObject(forKey: snapshotsKey)
+    }
+
+    override func tearDown() {
+        UserDefaults.standard.removeObject(forKey: snapshotsKey)
+        super.tearDown()
+    }
+
     func testSaveAndRestore() {
         let workstreamID = UUID()
         let terminalID = derivedUUID(from: workstreamID, salt: "terminal-1")
@@ -65,6 +77,60 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         XCTAssertEqual(restored.editorFilePaths[editorID], "Sources/App.swift")
         XCTAssertTrue(restored.runStarted)
         XCTAssertFalse(restored.runStoppedManually)
+    }
+
+    func testDecodingMixedSnapshotsPreservesOnlyValidEntries() throws {
+        let validID = UUID()
+        let invalidID = UUID()
+        let validSnapshot = makeSnapshot(activeTab: .agent)
+        let validObject = try JSONSerialization.jsonObject(with: JSONEncoder().encode(validSnapshot))
+        let data = try JSONSerialization.data(withJSONObject: [
+            validID.uuidString: validObject,
+            invalidID.uuidString: ["tabs": "not-an-array"],
+        ])
+
+        let decoded = try XCTUnwrap(WorkspaceTabSnapshotStore.decodeSnapshots(from: data))
+
+        XCTAssertEqual(decoded[validID.uuidString]?.activeTab, .agent)
+        XCTAssertNil(decoded[invalidID.uuidString])
+    }
+
+    func testSavePreservesValidSnapshotWhenAnotherEntryIsMalformed() throws {
+        let existingID = UUID()
+        let malformedID = UUID()
+        let newID = UUID()
+        let existingObject = try JSONSerialization.jsonObject(
+            with: JSONEncoder().encode(makeSnapshot(activeTab: .agent))
+        )
+        let data = try JSONSerialization.data(withJSONObject: [
+            existingID.uuidString: existingObject,
+            malformedID.uuidString: ["tabs": "not-an-array"],
+        ])
+        UserDefaults.standard.set(data, forKey: snapshotsKey)
+
+        WorkspaceTabSnapshotStore.save(makeSnapshot(activeTab: .info), for: newID)
+
+        XCTAssertEqual(WorkspaceTabSnapshotStore.load(for: existingID)?.activeTab, .agent)
+        XCTAssertEqual(WorkspaceTabSnapshotStore.load(for: newID)?.activeTab, .info)
+        XCTAssertNil(WorkspaceTabSnapshotStore.load(for: malformedID))
+    }
+
+    func testRemovePreservesValidSnapshotWhenAnotherEntryIsMalformed() throws {
+        let validID = UUID()
+        let malformedID = UUID()
+        let validObject = try JSONSerialization.jsonObject(
+            with: JSONEncoder().encode(makeSnapshot(activeTab: .agent))
+        )
+        let data = try JSONSerialization.data(withJSONObject: [
+            validID.uuidString: validObject,
+            malformedID.uuidString: ["tabs": "not-an-array"],
+        ])
+        UserDefaults.standard.set(data, forKey: snapshotsKey)
+
+        WorkspaceTabSnapshotStore.remove(for: malformedID)
+
+        XCTAssertEqual(WorkspaceTabSnapshotStore.load(for: validID)?.activeTab, .agent)
+        XCTAssertNil(WorkspaceTabSnapshotStore.load(for: malformedID))
     }
 
     func testReconcileFiltersDeadTerminals() {
@@ -301,6 +367,21 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
     func testResolvedTerminalEditorCommandKeepsCustomCommand() {
         XCTAssertEqual(resolvedTerminalEditorCommand("vim"), "vim")
         XCTAssertEqual(resolvedTerminalEditorCommand("hx ."), "hx .")
+    }
+
+    private func makeSnapshot(activeTab: WorkspaceTab) -> WorkspaceTabSnapshot {
+        WorkspaceTabSnapshot(
+            tabs: [.info, .agent],
+            terminalCount: 0,
+            browserCount: 0,
+            editorCount: 0,
+            activeTab: activeTab,
+            browserTitles: [:],
+            terminalTitles: [:],
+            editorFilePaths: [:],
+            runStarted: false,
+            runStoppedManually: false
+        )
     }
 }
 

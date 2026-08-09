@@ -199,14 +199,19 @@ struct EditorView: View {
 
     private func loadFile() {
         guard let relativePath = currentFilePath else { return }
-        let fullPath = (workingDirectory as NSString).appendingPathComponent(relativePath)
-        let url = URL(fileURLWithPath: fullPath)
+        guard let url = WorkspaceFileAccess.resolvedURL(
+            for: relativePath,
+            rootPath: workingDirectory
+        ) else {
+            loadError = CocoaError(.fileReadNoPermission).localizedDescription
+            return
+        }
 
         do {
             let content = try String(contentsOf: url, encoding: .utf8)
             let fileName = (relativePath as NSString).lastPathComponent
             let langId = Self.monacoLanguageId(for: fileName)
-            bridge.openFile(modelId: modelId, text: content, languageId: langId, filePath: fullPath)
+            bridge.openFile(modelId: modelId, text: content, languageId: langId, filePath: url.path)
             isDirtyState = false
             fileLoaded = true
             loadError = nil
@@ -217,10 +222,16 @@ struct EditorView: View {
 
     private func saveFile() async {
         guard let relativePath = currentFilePath, fileLoaded, isDirty else { return }
-        let fullPath = (workingDirectory as NSString).appendingPathComponent(relativePath)
+        guard let url = WorkspaceFileAccess.resolvedURL(
+            for: relativePath,
+            rootPath: workingDirectory
+        ) else {
+            loadError = CocoaError(.fileWriteNoPermission).localizedDescription
+            return
+        }
         guard let content = await bridge.getContent(modelId: modelId) else { return }
         do {
-            try content.write(toFile: fullPath, atomically: true, encoding: .utf8)
+            try content.write(to: url, atomically: true, encoding: .utf8)
             bridge.markClean(modelId: modelId)
             isDirtyState = false
 
@@ -235,9 +246,13 @@ struct EditorView: View {
 
         let panel = NSSavePanel()
         panel.nameFieldStringValue = currentFileName
-        if let currentFilePath {
-            let fullPath = (workingDirectory as NSString).appendingPathComponent(currentFilePath)
-            panel.directoryURL = URL(fileURLWithPath: fullPath).deletingLastPathComponent()
+        if let currentFilePath,
+           let currentFileURL = WorkspaceFileAccess.resolvedURL(
+               for: currentFilePath,
+               rootPath: workingDirectory
+           )
+        {
+            panel.directoryURL = currentFileURL.deletingLastPathComponent()
         }
 
         guard let window = NSApp.keyWindow else { return }

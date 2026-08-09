@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-07-30 against `origin/main` at
-`99b68dfb91afbb80c2a48f0c20b3f0aa3cfd4f9e`.
+Last reconciled: 2026-07-27 against `origin/main` at
+`33b3fdb6c227d8b633f3163e22aba93046046d84`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -11,11 +11,11 @@ not an automatically trusted backlog.
 
 - Repository: `barnolacesc/dockyard`; native SwiftUI/AppKit macOS app using
   Ghostty, git worktrees, tmux, WKWebView, Monaco and XcodeGen.
-- Open implementation issues at reconciliation: #40, #41, #43 and #54.
-- Open pull requests: release-please #63 only. PR #63 must not be changed,
-  merged or released without Cesc's explicit approval.
+- Open implementation issues at reconciliation: #40, #41, #43, #54 and #69.
+- Open pull requests: implementation PR #70 and release-please #63. PR #63
+  must not be changed, merged or released without Cesc's explicit approval.
 - Latest published release: v0.2.1. `main` CI, Release and CodeQL were green at
-  `99b68df`.
+  `33b3fdb`; the most recent scheduled CodeQL run was also green.
 - GitHub Projects v2 was not reviewed. The current token has `repo` and
   `workflow`, but lacks `read:project`; the API returned
   `INSUFFICIENT_SCOPES`. Project status must not be inferred.
@@ -43,7 +43,7 @@ not an automatically trusted backlog.
 | Track | Current evidence | Next decision or item |
 | --- | --- | --- |
 | Worktree lifecycle, persistence, cleanup and merged-PR review | Creation, remove-without-delete, purge, orphan listing and clean prune exist. Force-removal and branch deletion have tests. `TODO.md` still requests merged-PR-aware cleanup. | R2 adds classification only; any destructive bulk action remains approval-gated. |
-| Tmux, terminal and session resilience | Dedicated `dockyard` socket, deterministic sessions, `new-session -A`, respawn hooks, tab snapshots and tests preserve sessions across app restart. PR #70 removed the regressing global server kill. This does not preserve sessions across a macOS reboot. | System-reboot persistence is separate future scope and must not be inferred from app-restart behavior. |
+| Tmux, terminal and session resilience | Dedicated `dockyard` socket, deterministic sessions, `new-session -A`, respawn hooks, tab snapshots and tests already implemented app-restart persistence. A later termination cleanup regressed that behavior by killing the dedicated server on quit. This does not preserve sessions across a macOS reboot. | R1 / issue #69 restores the original app-restart contract; system-reboot persistence is separate future scope. |
 | Coding CLI compatibility and agent/subagent status | Claude Code and Codex have specialized command builders. OpenCode and Gemini are detected and launched through the generic builder; README only claims Claude/Codex. Claude/Codex hooks report main-agent state. | R3 defines and tests the honest OpenCode contract. Issue #54 needs discovery before implementation. |
 | macOS lifecycle, performance, accessibility, contrast and keyboard behavior | AppDelegate tests, shortcut references, accessibility labels and five localizations exist. Issue #41 reports slow quit; #40 reports sidebar contrast failure. | Profile #41 on macOS; R4 fixes #40 with contrast and visual evidence. |
 | Script guardrails, worktree containment, privacy and entitlements | Script fingerprint approval, re-approval on change, command quoting tests, worktree prompts, `SECURITY.md`, `PRIVACY.md`, `THREAT_MODEL.md` and minimal entitlement docs exist. | Continue boundary tests before new execution features. Changes to approval, bypass, privacy or entitlements stop at PR for Cesc. |
@@ -52,11 +52,12 @@ not an automatically trusted backlog.
 | Onboarding, tours, What's New, docs and localization | Onboarding, Getting Started, What's New and five app localizations exist. Two tour follow-ups remain in `TODO.md`. | R6 adds the smaller workspace-tabs tour with all locale coverage. |
 | CI, Ghostty, dependencies, release/update integrity and distribution | macOS build/test CI, CodeQL, Dependabot, pinned actions, Ghostty compatibility workflow, checksums, Sparkle and Homebrew paths exist. Release-please #63 is pending. | Release/update mutations remain approval-gated; verify feed and published artifacts separately from CI. |
 
-## Recently delivered
+## Now
 
 ### R1 — Restore tmux persistence across Dockyard app restarts
 
-- Status: **Complete on `main`** via PR #70; issue #69 closed.
+- Status: **In review, blocked on fork CI approval (PR #70)** on
+  `fix/preserve-tmux-restarts`; issue #69.
 - Classification: **regression fix, not a new persistence feature**. The
   original tmux architecture already used deterministic session names and
   `new-session -A` to reconnect after relaunch. The later
@@ -86,15 +87,9 @@ not an automatically trusted backlog.
 - Sources: README Tmux Mode, repository `AGENTS.md`, `TmuxSession.swift`,
   `DockyardApp.swift`, issue #69.
 
-## Now
-
 ### R4 — Guarantee readable sidebar workstream states
 
-- Status: **In review (PR #71)** on `fix/sidebar-selected-contrast`; source
-  issue #40. GitHub reports the PR mergeable but blocked; as of 09:41 CEST it
-  has not created the required CI/CodeQL runs for this fork PR. Awaiting those
-  checks (and Cesc's workflow approval if GitHub prompts), plus Cesc's
-  light/dark/custom-accent visual verification; never auto-merge.
+- Status: **Ready**, after R1. Source issue #40.
 - User outcome: primary and secondary workstream text remains readable while
   default, hovered, selected, waiting, working or invalid.
 - Success signal: a deterministic state/token matrix has no selected-state
@@ -136,10 +131,7 @@ not an automatically trusted backlog.
 
 ### R2 — Classify merged-PR worktrees without deleting them
 
-- Status: **In review (PR #73)** on
-  `feat/merged-pr-worktree-status`; issue #72. GitHub `macos-15` build and
-  XCTest passed at `a80a496`; awaiting Cesc's native project-overview
-  verification. Never auto-merge.
+- Status: **Ready**.
 - User outcome: users can see which retained worktrees belong to merged PRs
   before deciding what to remove.
 - Success signal: pure classification identifies clean, dirty, ahead,
@@ -154,17 +146,11 @@ not an automatically trusted backlog.
 - Acceptance criteria: classification tests cover dirty, ahead and unavailable
   PR data; no cleanup command is added.
 - Required tests: focused classifier/UI model tests and full macOS CI.
-- Sources: issue #72 and the unchecked merged-PR bulk action in `TODO.md`.
-- Next independent Ready item after this PR: R3, the OpenCode compatibility
-  contract. It does not depend on this worktree-status slice or sidebar PR #71.
+- Sources: unchecked merged-PR bulk action in `TODO.md`.
 
 ### R3 — Define and prove the OpenCode compatibility contract
 
-- Status: **In review (PR #75)** on
-  `feat/opencode-compatibility-contract`; issue #74. GitHub macOS build and
-  all 381 XCTest cases passed at `ac3e684` (two expected Fish-dependent
-  skips). Awaiting Cesc's review; never auto-merge. This is independent of
-  sidebar PR #71 and worktree-classification PR #73.
+- Status: **Ready**.
 - User outcome: an OpenCode user knows exactly what launch, tmux and status
   behavior Dockyard supports.
 - Success signal: command-builder tests cover OpenCode launch paths and docs
@@ -180,18 +166,11 @@ not an automatically trusted backlog.
 - Acceptance criteria: tested direct and tmux-wrapped commands, accurate README
   support matrix, no claim of hooks/resume/bypass unless implemented.
 - Required tests: `CommandBuilderTests`, `AgentHooksTests`, full macOS CI.
-- Sources: issue #74, hard product direction, `CommandBuilder.swift` and
-  `SettingsView.swift`.
-- Next independent Ready item: R5, stale run-state rejection. It does not
-  depend on R3 or pending PRs #71 and #73.
+- Sources: hard product direction, `CommandBuilder.swift`, `SettingsView.swift`.
 
 ### R5 — Reject stale run-state after a run process exits
 
-- Status: **In review (PR #77)** on `fix/reject-stale-run-state`; issue #76.
-  The slice is independent of sidebar PR #71, worktree-classification PR #73
-  and OpenCode PR #75. GitHub macOS build and all 384 XCTest cases passed at
-  `4dd7d8f` (two expected Fish-dependent skips), and CodeQL passed. Awaiting
-  Cesc's review and never auto-merge.
+- Status: **Ready**.
 - User outcome: an embedded browser does not keep targeting a dead dev server
   after an abnormal run-script exit or app restart.
 - Success signal: stale/mismatched run-state JSON is ignored and tested without
@@ -205,11 +184,7 @@ not an automatically trusted backlog.
 - Acceptance criteria: fixtures cover valid, stale, malformed and mismatched
   workstream state; current valid port detection remains green.
 - Required tests: `PortDetectionTests`, full macOS CI.
-- Sources: issue #76 and the setup/run/teardown and port-detection required
-  track.
-- Next independent Ready item: R6, the passive workspace-tabs showcase tour.
-  It does not depend on this run-state validation slice or pending PRs #71,
-  #73 and #75.
+- Sources: setup/run/teardown and port-detection required track.
 
 ### R6 — Add the workspace-tabs showcase tour
 
@@ -339,16 +314,63 @@ not an automatically trusted backlog.
   upstream branch to bypass fork approval. R1 remains the only selected item.
   Cesc must approve the fork workflow runs before native CI can execute; no
   merge or release action was taken.
-- **2026-07-30:** reconciled `origin/main` at `99b68df` after R1/PR #70 merged
-  with green macOS CI, Release and CodeQL. Open implementation work is now
-  issues #40, #41, #43 and #54; release-please #63 is the only open PR and
-  remains approval-gated. Selected R4/issue #40 as the highest-priority
-  independent Ready item. The implementation resolves selected-row primary,
-  secondary and completed-state text through macOS's selected-control
-  foreground token, with a deterministic unit-tested state matrix. No strings,
-  execution boundaries, persistence or entitlements changed. Native CI and
-  light/dark/custom-accent visual evidence remain required before merge. PR
-  #71 was opened for Cesc's review and left unmerged. GitHub reports the PR
-  mergeable but blocked and had not created CI/CodeQL runs by 09:41 CEST;
-  workflow approval may be required before native evidence can run. R2 is the
-  next independent Ready item.
+
+## Live reconciliation — 2026-08-09 09:30 CEST
+
+This section supersedes older statuses above while roadmap-bearing PRs await
+review. `origin/main` is `99b68df`; R1 / PR #70 is merged. Implementation PRs
+#71–#105 (odd numbers) are **awaiting Cesc review** and have successful macOS
+`build-and-test` checks at their current heads. Their implementation paths and
+behaviors were compared before selecting this run. Release-please PR #63
+remains approval-gated, and v0.2.1 remains the latest published release.
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the token lacks
+`read:project`, so no Project status is inferred.
+
+### R14 — Keep editor navigation inside the worktree
+
+- Status: **Awaiting Cesc review in PR #107** for issue #106 on
+  `fix/contain-editor-workspace-paths`; the PR must not be auto-merged.
+- User outcome and success signal: repository files discovered through the
+  embedded editor tree cannot read or overwrite a path outside the selected
+  worktree. Tests cover ordinary descendants, a symlinked worktree root,
+  absolute and traversal-shaped paths, same-prefix siblings, contained
+  symlinks, escaping file/directory symlinks and lazy child loading.
+- Impact and scope: add one canonical workspace-relative resolver, filter
+  escaping entries from `FileNode`, and use the resolver for implicit editor
+  loads, ordinary saves and the Save As starting directory. The explicit
+  `NSSavePanel` destination remains user-directed and unrestricted. No command
+  execution, entitlement, persisted-data migration, localization or generated
+  project behavior changes.
+- Risk and required evidence: medium file-access boundary. Focused
+  `WorkspaceFileAccessTests`, full macOS build/test, CodeQL, diff and secret
+  checks are required. The Linux automation container has neither Swift/Xcode
+  nor XcodeGen, so GitHub `macos-15` CI is the mandatory native evidence.
+- Native evidence: GitHub macOS CI run `31301763342` passed XcodeGen, the native
+  build and the full XCTest suite at head `76dee1f`. CodeQL run `31301763333`
+  completed successfully; its Swift analysis was skipped by workflow
+  configuration. The final roadmap-only head must also remain green.
+- Independence: PR #89 changes only bundled Monaco resource-scheme validation;
+  R14 changes workspace tree/file I/O and can merge in either order.
+
+### Independent Ready queue while R14 awaits review
+
+- **R15 — Preserve current cache state during legacy migration:** when legacy
+  and canonical run-state or tmux cache entries both exist, never delete the
+  canonical destination before a fallible move. `CacheMigration` and focused
+  tests only; migration behavior is approval-gated and must stop at a tested
+  PR for Cesc.
+- **R16 — Contain automatic development-environment activation:** automatic
+  run wrapping and PATH injection must not source or prepend `venv`, `.venv`
+  or `node_modules/.bin` paths that resolve outside the selected project.
+  `RunLauncher`, `WorkstreamEnvironment` and focused tests only; this command
+  boundary is approval-gated and must stop at a tested PR for Cesc.
+- **R17 — Protect tmux diagnostic state:** create the Dockyard tmux cache
+  directory and stderr log with private permissions before shell redirection,
+  without changing tmux commands, session persistence or cleanup behavior.
+  `TmuxSession` and focused tests only; full macOS CI is required.
+
+- **2026-08-09 09:30 CEST:** reconciled `origin/main`, `TODO.md`, issues,
+  releases, every open PR path and current check at its head. Projects v2
+  remained unavailable without `read:project`. Selected independent R14,
+  created issue #106 and opened PR #107 from current `origin/main`; no prior PR
+  was modified or commented on, and no merge or release action was taken.

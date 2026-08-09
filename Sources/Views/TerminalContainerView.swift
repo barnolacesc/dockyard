@@ -137,7 +137,7 @@ enum WorkspaceTabSnapshotStore {
 
     static func load(for workstreamID: UUID) -> WorkspaceTabSnapshot? {
         guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
-              let saved = try? JSONDecoder().decode([String: WorkspaceTabSnapshot].self, from: data)
+              let saved = decodeSnapshots(from: data)
         else { return nil }
         return saved[workstreamID.uuidString]
     }
@@ -145,7 +145,7 @@ enum WorkspaceTabSnapshotStore {
     static func save(_ snapshot: WorkspaceTabSnapshot, for workstreamID: UUID) {
         var saved: [String: WorkspaceTabSnapshot] = [:]
         if let data = UserDefaults.standard.data(forKey: userDefaultsKey),
-           let existing = try? JSONDecoder().decode([String: WorkspaceTabSnapshot].self, from: data)
+           let existing = decodeSnapshots(from: data)
         {
             saved = existing
         }
@@ -156,11 +156,46 @@ enum WorkspaceTabSnapshotStore {
 
     static func remove(for workstreamID: UUID) {
         guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
-              var saved = try? JSONDecoder().decode([String: WorkspaceTabSnapshot].self, from: data)
+              var saved = decodeSnapshots(from: data)
         else { return }
         saved.removeValue(forKey: workstreamID.uuidString)
         guard let encoded = try? JSONEncoder().encode(saved) else { return }
         UserDefaults.standard.set(encoded, forKey: userDefaultsKey)
+    }
+
+    /// Decodes each workstream independently so one obsolete or malformed
+    /// snapshot cannot prevent every other workstream from being restored.
+    static func decodeSnapshots(from data: Data) -> [String: WorkspaceTabSnapshot]? {
+        try? JSONDecoder().decode(LossyWorkspaceTabSnapshots.self, from: data).snapshots
+    }
+
+    private struct LossyWorkspaceTabSnapshots: Decodable {
+        let snapshots: [String: WorkspaceTabSnapshot]
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: SnapshotKey.self)
+            var decoded: [String: WorkspaceTabSnapshot] = [:]
+            for key in container.allKeys {
+                if let snapshot = try? container.decode(WorkspaceTabSnapshot.self, forKey: key) {
+                    decoded[key.stringValue] = snapshot
+                }
+            }
+            snapshots = decoded
+        }
+    }
+
+    private struct SnapshotKey: CodingKey {
+        let stringValue: String
+
+        init?(stringValue: String) {
+            self.stringValue = stringValue
+        }
+
+        let intValue: Int? = nil
+
+        init?(intValue: Int) {
+            return nil
+        }
     }
 }
 

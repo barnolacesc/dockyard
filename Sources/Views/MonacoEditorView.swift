@@ -30,7 +30,7 @@ final class MonacoResourceSchemeHandler: NSObject, WKURLSchemeHandler {
         let fileURL = baseURL.appendingPathComponent(relativePath).standardized
 
         // Reject path traversal attempts that escape the base directory
-        guard fileURL.path.hasPrefix(baseURL.standardized.path) else {
+        guard Self.isContainedResourceURL(fileURL, within: baseURL) else {
             urlSchemeTask.didFailWithError(URLError(.badURL))
             return
         }
@@ -56,6 +56,17 @@ final class MonacoResourceSchemeHandler: NSObject, WKURLSchemeHandler {
     }
 
     func webView(_: WKWebView, stop _: any WKURLSchemeTask) {}
+
+    /// Returns whether a resource URL is a descendant of the Monaco resource root.
+    /// Comparing path components prevents a sibling such as `MonacoEditorBackup`
+    /// from passing a plain string-prefix check.
+    static func isContainedResourceURL(_ resourceURL: URL, within baseURL: URL) -> Bool {
+        let baseComponents = baseURL.standardizedFileURL.pathComponents
+        let resourceComponents = resourceURL.standardizedFileURL.pathComponents
+
+        return resourceComponents.count > baseComponents.count
+            && resourceComponents.starts(with: baseComponents)
+    }
 
     private static func mimeType(for ext: String) -> String {
         switch ext.lowercased() {

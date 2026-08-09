@@ -58,6 +58,9 @@ struct LaunchLogEntry: Codable {
 }
 
 enum LaunchLogger {
+    private static let privateDirectoryPermissions = 0o700
+    private static let privateFilePermissions = 0o600
+
     static var logsDirectoryURL: URL {
         AppConstants.cacheDirectory.appendingPathComponent("logs", isDirectory: true)
     }
@@ -77,19 +80,37 @@ enum LaunchLogger {
         else { return }
         line += "\n"
 
+        let fileManager = FileManager.default
         let dir = logsDirectoryURL
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        do {
+            try fileManager.createDirectory(
+                at: dir,
+                withIntermediateDirectories: true,
+                attributes: [.posixPermissions: privateDirectoryPermissions]
+            )
+            try fileManager.setAttributes(
+                [.posixPermissions: privateDirectoryPermissions],
+                ofItemAtPath: dir.path
+            )
 
-        let fileURL = logFileURL(for: entry.workstreamID)
-        if FileManager.default.fileExists(atPath: fileURL.path) {
-            if let handle = try? FileHandle(forWritingTo: fileURL) {
+            let fileURL = logFileURL(for: entry.workstreamID)
+            if fileManager.fileExists(atPath: fileURL.path) {
+                try fileManager.setAttributes(
+                    [.posixPermissions: privateFilePermissions],
+                    ofItemAtPath: fileURL.path
+                )
+                let handle = try FileHandle(forWritingTo: fileURL)
                 handle.seekToEndOfFile()
                 handle.write(Data(line.utf8))
                 handle.closeFile()
+            } else {
+                try Data(line.utf8).write(to: fileURL, options: .atomic)
+                try fileManager.setAttributes(
+                    [.posixPermissions: privateFilePermissions],
+                    ofItemAtPath: fileURL.path
+                )
             }
-        } else {
-            try? Data(line.utf8).write(to: fileURL, options: .atomic)
-        }
+        } catch {}
     }
 
     /// Delete the log file for a workstream. Called during archive cleanup.
