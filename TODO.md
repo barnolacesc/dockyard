@@ -36,7 +36,7 @@
 - [~] **Embedded Browser Claude Integration**: Foundation shipped — embedded WKWebView writes URL / title / recent console logs to `~/Library/Caches/dockyard/browser-state/<id>.json`, exposed via `DOCKYARD_BROWSER_STATE_FILE`. Full bidirectional CDP control deferred (WKWebView cannot run Chrome extensions, so this needs its own design).
 - [ ] External Chrome integration: launch with --remote-debugging-port for WebMCP/CDP — dropped, doesn't unlock "Claude in Chrome" extension since that lives inside Chrome and doesn't talk CDP.
 - [x] Horizontal terminal splits within a tab: split panes existed already (Cmd+Shift+T/B/Return). Added Cmd+Shift+D to toggle between horizontal (side-by-side) and vertical (stacked) layouts.
-- [~] Tour: workspace-tabs showcase flow (passive: Cmd+T/B/O, tab cycling) — issue #80 / PR #81 awaiting review; do not mark complete before merge
+- [x] Tour: workspace-tabs showcase flow (passive: Cmd+T/B/O, tab cycling) — issue #80 / PR #81 merged via reviewed merge train #108
 - [ ] Tour: power-features showcase flow (shortcut hints, usage meters, tmux, archiving)
 
 ## Done
@@ -107,4 +107,4 @@
 - [x] VRA hardening phase 1 (issue #48): telemetry removed, entitlements minimized, script approval prompts
 - [ ] VRA phase 2 (issue #48): SECURITY.md, PRIVACY.md, THREAT_MODEL.md, vendor-risk Q&A, install-from-source guide
 - [x] VRA phase 3 (issue #48): PR build/test CI, CodeQL, Dependabot, SHA-pinned actions, release checksums (CodeQL now also covers actions + javascript on every PR, not just swift on push/schedule; Dependabot has PR limits, commit prefixes, and a native bun ecosystem for editor/; all workflow actions SHA-pinned)
-- [ ] Worktree review: issue #72 adds read-only merged-PR classification first; any bulk delete action remains a separate approval-gated follow-up
+- [x] Worktree review: issue #72 / PR #73 shipped read-only merged-PR classification via reviewed merge train #108; any bulk delete action remains a separate approval-gated follow-up
