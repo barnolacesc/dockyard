@@ -17,6 +17,11 @@ jobs:
         with:
           submodules: true
 
+      - name: Check localization key drift
+        run: |
+          python3 scripts/test_check_localizations.py
+          python3 scripts/check_localizations.py
+
       # Match the Xcode the codebase is developed against (see docs/install-from-source.md).
       - name: Select Xcode 26.2
         run: sudo xcode-select -s /Applications/Xcode_26.2.app

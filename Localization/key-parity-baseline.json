@@ -1,0 +1,31 @@
+{
+  "de": {
+    "missing": [
+      "Agent Teams is only available with Claude Code.",
+      "Ahead",
+      "Auto-rename branch is only available with Claude Code.",
+      "Base",
+      "Codex is not installed.",
+      "Codex not found",
+      "Continue to Agent",
+      "Created today",
+      "Hard Reload",
+      "Hard reload browser",
+      "Install Claude Code or Codex to use the Coding Agent.",
+      "Install Codex",
+      "Install Codex to use the Coding Agent.",
+      "Reload",
+      "Reload browser",
+      "Running setup...",
+      "Setup failed.",
+      "Split Agent",
+      "Split Browser",
+      "Split Terminal",
+      "Uncommitted",
+      "Worktree Age"
+    ],
+    "extra": [
+      "Rebuild"
+    ]
+  }
+}
