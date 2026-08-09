@@ -23,19 +23,24 @@
 
 ## Get Started
 
-Install via Homebrew:
+### Install
 
 ```bash
 brew install --cask barnolacesc/tap/dockyard
 ```
 
-Or [download the latest release](https://github.com/barnolacesc/dockyard/releases/latest).
+Or [download the latest release](https://github.com/barnolacesc/dockyard/releases/latest). Upgrade later with `brew upgrade --cask dockyard`.
 
-Then:
+Homebrew also installs the `dy` command-line tool. If you installed via DMG, install the CLI from Settings > Environment.
+
+On corporate or locked-down machines, Dockyard can be built and updated entirely from source — no DMG required. See [docs/install-from-source.md](docs/install-from-source.md). Security review material: [SECURITY.md](SECURITY.md), [PRIVACY.md](PRIVACY.md), [THREAT_MODEL.md](THREAT_MODEL.md), [docs/vendor-risk.md](docs/vendor-risk.md).
+
+### Use it
 
 1. **Open Dockyard** and add a project by clicking the `+` button in the sidebar, then selecting a repository directory.
 2. **Create a workstream** with `Cmd+N`. Dockyard sets up a git worktree and launches your selected coding CLI automatically.
 3. **Start building.** Add terminals (`Cmd+T`), browsers (`Cmd+B`), editors (`Cmd+O`), or configure [run scripts](#script-configuration) to auto-detect your dev server.
+4. **Ship it.** Archive the workstream with `Cmd+Shift+W` when the branch is merged; teardown scripts run automatically.
 
 ---
 
@@ -190,33 +195,6 @@ English, Catalan, German, Spanish, Swedish.
 
 ---
 
-## Install
-
-```bash
-brew install --cask barnolacesc/tap/dockyard
-```
-
-Or [download the latest release](https://github.com/barnolacesc/dockyard/releases/latest).
-
-### Upgrade
-
-```bash
-brew upgrade --cask dockyard
-```
-
-### CLI
-
-Homebrew automatically installs the `dy` command. If you installed via DMG, install the CLI from Settings > Environment.
-
-### Corporate / locked-down machines
-
-Dockyard can be built and updated entirely from source — no DMG required. See
-[docs/install-from-source.md](docs/install-from-source.md). Security review
-material: [SECURITY.md](SECURITY.md), [PRIVACY.md](PRIVACY.md),
-[THREAT_MODEL.md](THREAT_MODEL.md), [docs/vendor-risk.md](docs/vendor-risk.md).
-
----
-
 ## Development
 
 Requires: Xcode, [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`), [Zig](https://ziglang.org) (`brew install zig`).
@@ -294,6 +272,5 @@ If Dockyard helped you ship faster, automate your workflow, or experiment with c
 ---
 
 <p align="center">
-  Built by <a href="https://github.com/barnolacesc">barnolacesc</a>.<br>
-  Made with ❤️ in Barcelona.
+  Built by <a href="https://github.com/barnolacesc">barnolacesc</a>.
 </p>
