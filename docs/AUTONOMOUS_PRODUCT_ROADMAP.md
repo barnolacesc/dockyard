@@ -328,9 +328,9 @@ GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the token lacks
 
 ### R14 — Keep editor navigation inside the worktree
 
-- Status: **In implementation** for issue #106 on
-  `fix/contain-editor-workspace-paths`; the resulting PR must remain open for
-  Cesc review and must not be auto-merged.
+- Status: **In review with native CI pending in PR #107** for issue #106 on
+  `fix/contain-editor-workspace-paths`; the PR must remain open for Cesc review
+  and must not be auto-merged.
 - User outcome and success signal: repository files discovered through the
   embedded editor tree cannot read or overwrite a path outside the selected
   worktree. Tests cover ordinary descendants, a symlinked worktree root,
@@ -368,6 +368,6 @@ GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the token lacks
 
 - **2026-08-09 09:30 CEST:** reconciled `origin/main`, `TODO.md`, issues,
   releases, every open PR path and current check at its head. Projects v2
-  remained unavailable without `read:project`. Selected independent R14 and
-  created issue #106 from current `origin/main`; no prior PR was modified or
-  commented on, and no merge or release action was taken.
+  remained unavailable without `read:project`. Selected independent R14,
+  created issue #106 and opened PR #107 from current `origin/main`; no prior PR
+  was modified or commented on, and no merge or release action was taken.
