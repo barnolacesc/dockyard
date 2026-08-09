@@ -7,6 +7,37 @@ This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
 not an automatically trusted backlog.
 
+## Active reconciliation — 2026-08-03 16:30 CEST
+
+This amendment supersedes stale execution statuses below while the earlier
+roadmap-bearing PRs await review. `origin/main` is at `99b68df`; R1 is complete
+there. Implementation PRs #71, #73, #75, #77, #79, #81, #83, #85 and #87 are
+Git-mergeable with green macOS CI and await Cesc's review. Release-please #63
+remains approval-gated. GitHub Projects v2 is still unavailable because the
+token lacks `read:project`; no Project status is inferred.
+
+- **R11 — Enforce Monaco resource containment by path component:** **In review**
+  in PR #89; issue #88. Valid nested resources must load while traversal and
+  same-prefix sibling paths are rejected. Scope is
+  `MonacoResourceSchemeHandler` and focused tests only. Static diff and secret
+  checks pass; full macOS CI is required at the final PR head.
+- **R12 — Make browser-state cache files private:** **Ready**. Repair the
+  browser-state directory to `0700` and JSON files to `0600`, with focused
+  `BrowserViewTests`; no bridge, origin or entitlement expansion.
+- **R14 — Make detailed launch logs private:** **Ready**. Repair the launch-log
+  directory to `0700` and files to `0600` before append, with focused
+  `LaunchLoggerTests`; no schema, retention or command changes.
+- **R15 — Make tmux diagnostic cache artifacts private:** **Ready**. Repair the
+  Dockyard tmux config and stderr log to `0600` without changing generated tmux
+  commands, session lifecycle or cleanup behavior. Required evidence is
+  focused `TmuxSessionTests` plus full macOS CI; because the path participates
+  in command execution, implementation must stop at a tested PR for Cesc.
+- **R13 — Close the German localization-key baseline:** dependency-blocked
+  until locale-changing PRs #73 and #81 are merged or closed.
+
+R12, R14 and R15 are independent Ready items with disjoint implementation and
+test paths. R12 is the next highest-priority item after R11.
+
 ## Evidence and limits
 
 - Repository: `barnolacesc/dockyard`; native SwiftUI/AppKit macOS app using
