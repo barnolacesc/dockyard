@@ -51,6 +51,18 @@ final class AgentStateTests: XCTestCase {
 final class AgentStateStoreTests: XCTestCase {
     private var tempDir: URL!
 
+    private func waitUntil(
+        timeout: TimeInterval = 2,
+        condition: () -> Bool
+    ) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return true }
+            RunLoop.main.run(until: Date().addingTimeInterval(0.01))
+        }
+        return condition()
+    }
+
     private func writeSnapshot(_ state: AgentState, pid: Int32, updatedAt: Date = Date(), for id: UUID) throws {
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
         let snapshot = AgentStateSnapshot(state: state, updatedAt: updatedAt, pid: pid)
@@ -116,6 +128,25 @@ final class AgentStateStoreTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
         XCTAssertTrue(store.isChromeActive(for: id))
+    }
+
+    func testWatcherReattachesAfterDirectoryReplacement() throws {
+        let id = UUID()
+        let store = AgentStateStore(directoryURL: tempDir)
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: tempDir.path))
+        try FileManager.default.removeItem(at: tempDir)
+
+        XCTAssertTrue(waitUntil {
+            FileManager.default.fileExists(atPath: self.tempDir.path)
+        })
+
+        try writeSnapshot(.waiting, pid: Int32(getpid()), for: id)
+
+        XCTAssertTrue(waitUntil {
+            store.agentState(for: id) == .waiting
+        })
+        XCTAssertEqual(store.agentState(for: id), .waiting)
     }
 
     func testDecaysWorkingOlderThanThirtyMinutesToIdle() {

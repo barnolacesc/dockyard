@@ -12,15 +12,15 @@ not an automatically trusted backlog.
 - Repository: `barnolacesc/dockyard`; native SwiftUI/AppKit macOS app using
   Ghostty, git worktrees, tmux, WKWebView, Monaco and XcodeGen.
 - Open implementation issues at reconciliation: #40, #41, #43, #54, #72,
-  #74, #76, #78, #80 and #82.
-- Open implementation pull requests: #71, #73, #75, #77, #79, #81 and #83.
-  The first six are Git-mergeable with green macOS `build-and-test` and await
-  Cesc's review. PR #83 is this run's independent R8 implementation and must
-  remain unmerged for review.
-- Release-please PR #63 remains open and blocked. It must not be changed,
-  merged or released without Cesc's explicit approval.
-- Latest published release: v0.2.1. `main` CI, Release and CodeQL were green at
-  `99b68df`; the most recent scheduled CodeQL run was also green.
+  #74, #76, #78, #80, #82 and #84.
+- Open implementation pull requests: #71, #73, #75, #77, #79, #81, #83 and
+  #85. They are independent, have green macOS CI evidence and await Cesc's
+  review. PR #71 still needs native visual contrast review; PR #85 does not
+  modify or stack on earlier pending work.
+- Release-please PR #63 remains open. It must not be changed, merged or
+  released without Cesc's explicit approval.
+- Latest published release: v0.2.1. `main` is at `99b68df`; recent autonomous
+  PRs with native changes have green macOS CI where noted in their PR evidence.
 - GitHub Projects v2 was not reviewed. The current token has `repo` and
   `workflow`, but lacks `read:project`; the API returned
   `INSUFFICIENT_SCOPES`. Project status must not be inferred.
@@ -49,12 +49,12 @@ not an automatically trusted backlog.
 | --- | --- | --- |
 | Worktree lifecycle, persistence, cleanup and merged-PR review | Creation, remove-without-delete, purge, orphan listing and clean prune exist. Force-removal and branch deletion have tests. `TODO.md` still requests merged-PR-aware cleanup. | R2 / PR #73 adds read-only classification; any destructive bulk action remains approval-gated. |
 | Tmux, terminal and session resilience | Dedicated `dockyard` socket, deterministic sessions, `new-session -A`, respawn hooks and tab snapshots preserve normal app restarts. R1 / PR #70 removed the regressing global server kill. This does not preserve sessions across a macOS reboot. | R8 / PR #83 isolates malformed tab snapshots; system-reboot persistence remains separate scope. |
-| Coding CLI compatibility and agent/subagent status | Claude Code and Codex have specialized command builders. OpenCode and Gemini are detected and launched through the generic builder; README only claims Claude/Codex. Claude/Codex hooks report main-agent state. | R3 / PR #75 defines the OpenCode contract. Issue #54 needs discovery before implementation. |
+| Coding CLI compatibility and agent/subagent status | Claude Code and Codex have specialized command builders. OpenCode and Gemini are detected and launched through the generic builder; README only claims Claude/Codex. Claude/Codex hooks report main-agent state. | R3 defines and tests the honest OpenCode contract. Issue #54 needs discovery before implementation. |
 | macOS lifecycle, performance, accessibility, contrast and keyboard behavior | AppDelegate tests, shortcut references, accessibility labels and five localizations exist. Issue #41 reports slow quit; #40 reports sidebar contrast failure. | R4 / PR #71 fixes #40; profile #41 on macOS before changing lifecycle behavior. |
 | Script guardrails, worktree containment, privacy and entitlements | Script fingerprint approval, re-approval on change, command quoting tests, worktree prompts, `SECURITY.md`, `PRIVACY.md`, `THREAT_MODEL.md` and minimal entitlement docs exist. | R7 / PR #79 repairs state-directory modes. Changes to approval, bypass, privacy or entitlements stop at PR for Cesc. |
 | Setup/run/teardown reliability and port detection | Fallback configs, environment injection, `dy-run`, process-tree port detection, FSEvents state and focused tests exist. | R5 / PR #77 rejects stale and mismatched run-state. |
 | Embedded browser/editor quality and safe boundaries | WKWebView browser state and Monaco editor exist; browser JavaScript policy and navigation have tests. Full Chrome/CDP control was explicitly deferred in `TODO.md`. | Review bridge/navigation boundaries before any bidirectional automation. |
-| Onboarding, tours, What's New, docs and localization | Onboarding, Getting Started, What's New and five app localizations exist. Two tour follow-ups remain in `TODO.md`. | R6 / PR #81 adds the smaller workspace-tabs tour; R10 adds locale-key parity. |
+| Onboarding, tours, What's New, docs and localization | Onboarding, Getting Started, What's New and five app localizations exist. Two tour follow-ups remain in `TODO.md`. | R6 / PR #81 adds the workspace-tabs tour; R10 adds locale-key parity. |
 | CI, Ghostty, dependencies, release/update integrity and distribution | macOS build/test CI, CodeQL, Dependabot, pinned actions, Ghostty compatibility workflow, checksums, Sparkle and Homebrew paths exist. Release-please #63 is pending. | R10 adds deterministic localization-key parity; release/update mutations remain approval-gated. |
 
 ## Now
@@ -94,7 +94,7 @@ not an automatically trusted backlog.
 ### R4 — Guarantee readable sidebar workstream states
 
 - Status: **Awaiting Cesc review** in PR #71 with green macOS CI. Source issue
-  #40 remains open until merge.
+  #40. Native visual contrast review remains required before merge.
 - User outcome: primary and secondary workstream text remains readable while
   default, hovered, selected, waiting, working or invalid.
 - Success signal: a deterministic state/token matrix has no selected-state
@@ -210,10 +210,27 @@ not an automatically trusted backlog.
 - Required tests: tour/localization tests, full macOS CI and screenshots.
 - Sources: unchecked workspace-tabs tour in `TODO.md`.
 
+### R7 — Enforce private state-directory permissions
+
+- Status: **Awaiting Cesc review** in PR #79 with green macOS CI; issue #78.
+- User outcome: agent and run-state metadata remains private to the current
+  macOS account even when a watcher created the state directory first.
+- Success signal: every atomic state write repairs its parent directory to
+  `0700`, keeps the destination file at `0600`, and leaves no temporary file.
+- macOS impact: local filesystem permissions for helper/app state.
+- Persistence/security impact: privacy hardening only; no state schema,
+  command, worktree, entitlement or telemetry change.
+- Scope: `FilePersistence` and focused tests.
+- Dependencies: none; its implementation paths do not overlap this run.
+- Risk: low and reversible, but privacy-related; stop at a tested PR for Cesc.
+- Acceptance criteria: first and replacement writes enforce private modes,
+  replacement content is correct, and no temporary file remains.
+- Required tests: `FilePersistenceTests` and full macOS CI.
+- Sources: issue #78 and PR #79.
+
 ### R8 — Isolate malformed workspace-tab snapshots
 
-- Status: **In review (PR #83), awaiting Cesc review**; issue #82. Native
-  macOS CI is required on the final head.
+- Status: **Awaiting Cesc review** in PR #83 with green macOS CI; issue #82.
 - User outcome: one malformed or old workstream snapshot does not erase the
   restored tabs for every other workstream.
 - Success signal: snapshot decoding skips only the invalid entry and preserves
@@ -222,17 +239,17 @@ not an automatically trusted backlog.
 - Persistence/security impact: recovery-only behavior; no destructive migration.
 - Scope: `WorkspaceTabSnapshotStore` plus focused tests; no terminal lifecycle
   or UI redesign.
-- Dependencies: none. No other open PR touches `TerminalContainerView.swift`
-  or `WorkspaceTabStateTests.swift`, so implementation can merge in any order.
+- Dependencies: none; no other open PR touches its implementation paths.
 - Risk: low and reversible.
 - Acceptance criteria: mixed valid/invalid fixtures preserve valid entries;
   save and remove preserve unrelated valid entries; load deletes no snapshot.
-- Required tests: focused `WorkspaceTabStateTests` and full macOS CI.
-- Sources: issue #82 and the current all-or-nothing dictionary decoder.
+- Required tests: `WorkspaceTabStateTests` and full macOS CI.
+- Sources: issue #82 and PR #83.
 
 ### R9 — Recover the agent-state watcher after directory replacement
 
-- Status: **Ready**.
+- Status: **In review (PR #85), awaiting Cesc review**; issue #84. macOS build
+  and 379 XCTest passed at `db2bedc` with 2 expected skips and 0 failures.
 - User outcome: agent attention indicators resume updating if the cache/state
   directory is cleared or replaced while Dockyard is running.
 - Success signal: a delete/rename event recreates and reattaches the directory
@@ -241,12 +258,14 @@ not an automatically trusted backlog.
 - Persistence/security impact: observes cache state only; no new writer or CLI
   capability.
 - Scope: `AgentStateStore` watcher recovery plus focused tests.
-- Dependencies: none; no open PR touches its implementation paths.
+- Dependencies: none; no open PR touches `AgentStateStore.swift` or
+  `AgentStateTests.swift`.
 - Risk: low to medium due filesystem-event timing.
-- Acceptance criteria: deterministic recovery test, descriptor cleanup, and
-  existing decay/stale-PID behavior remain green.
+- Acceptance criteria: deterministic recovery test, old watcher cancellation
+  closes its descriptor, and existing decay/stale-PID behavior remains green.
 - Required tests: `AgentStateTests` and full macOS CI.
-- Sources: `.delete`/`.rename` events currently do not reattach the watcher.
+- Sources: issue #84 and the existing `.delete`/`.rename` event mask without
+  reattachment.
 
 ### R10 — Enforce localization-key parity in CI
 
@@ -409,13 +428,14 @@ not an automatically trusted backlog.
   upstream branch to bypass fork approval. R1 remains the only selected item.
   Cesc must approve the fork workflow runs before native CI can execute; no
   merge or release action was taken.
-- **2026-08-02:** reconciled `origin/main` at `99b68df`, open issues, release
-  state, and changed paths/checks for PRs #71, #73, #75, #77, #79 and #81.
-  All six implementation PRs are Git-mergeable with green macOS CI and await
-  Cesc review; none was modified or commented on. Projects v2 remains
-  unavailable because the token lacks `read:project`. Selected independent R8,
-  opened issue #82 and PR #83, and changed workspace-tab persistence to decode
-  each workstream independently. Focused fixtures cover mixed valid/invalid
-  data and preservation through save/remove. Linux static checks passed;
-  native macOS CI is mandatory on the final head. No merge or release action
-  was taken. R9 is the next independent Ready item.
+- **2026-08-02 (16:30 CEST):** reconciled `origin/main` at `99b68df`, open
+  issues, release state, and the changed paths and checks for implementation
+  PRs #71, #73, #75, #77, #79, #81 and #83. All remain independent and await
+  Cesc's review; none was modified or commented on. Projects v2 remains
+  unavailable because the token lacks `read:project`. Selected R9, opened
+  issue #84 and PR #85, and added watcher recovery after the agent-state
+  directory is deleted or renamed. A focused test removes the directory and
+  proves a new valid snapshot is observed without manual refresh. Linux static
+  checks passed; macOS build and 379 XCTest passed at `db2bedc` with 2 expected
+  skips and 0 failures, and CodeQL passed. No merge or release action was
+  taken. R10 is the next independent Ready item.
