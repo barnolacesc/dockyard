@@ -85,6 +85,7 @@ final class PortDetectorWatcherTests: XCTestCase {
 
     private func writeState(port: Int) throws {
         let snapshot = RunStateSnapshot(
+            workstreamID: workstreamID,
             pid: getpid(),
             status: .running,
             detectedPorts: [port],
