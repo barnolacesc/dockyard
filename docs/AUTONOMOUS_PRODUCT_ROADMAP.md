@@ -315,63 +315,62 @@ not an automatically trusted backlog.
   Cesc must approve the fork workflow runs before native CI can execute; no
   merge or release action was taken.
 
-## Live reconciliation — 2026-08-08 09:30 CEST
+## Live reconciliation — 2026-08-09 09:30 CEST
 
 This section supersedes older statuses above while roadmap-bearing PRs await
 review. `origin/main` is `99b68df`; R1 / PR #70 is merged. Implementation PRs
-#71–#103 (odd numbers) are cleanly mergeable with successful macOS
-`build-and-test` checks at their current heads and are **awaiting Cesc review**.
-Their implementation paths do not overlap this run's `StackDetector` paths or
-behavior. Release-please PR #63 remains approval-gated, and v0.2.1 remains the
-latest published release. GitHub Projects v2 returned `INSUFFICIENT_SCOPES`
-because the token lacks `read:project`, so no Project status is inferred.
+#71–#105 (odd numbers) are **awaiting Cesc review** and have successful macOS
+`build-and-test` checks at their current heads. Their implementation paths and
+behaviors were compared before selecting this run. Release-please PR #63
+remains approval-gated, and v0.2.1 remains the latest published release.
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the token lacks
+`read:project`, so no Project status is inferred.
 
-### R13 — Contain stack-detection metadata reads
+### R14 — Keep editor navigation inside the worktree
 
-- Status: **Awaiting Cesc review in PR #105** for issue #104 on
-  `fix/contain-stack-metadata-reads`; never auto-merge.
-- User outcome and success signal: stack setup/run proposals use only
-  manifests and lockfiles whose resolved paths remain inside the selected
-  project. Focused tests cover regular behavior, contained symlinks, escaping
-  manifests and lockfiles, an escaping nested metadata directory, Compose
-  teardown inference and symlinked project roots.
-- Impact and scope: resolve the project root once, then enforce a
-  path-component boundary before every `StackDetector` existence check or
-  read. No script approval, command execution, persisted configuration,
-  cleanup, entitlement or localization behavior changes.
-- Risk and tests: low, bounded proposal-only file reads. Six focused XCTest
-  regressions plus the existing `StackDetectorTests`, full macOS build/test,
-  CodeQL, diff and secret checks are required. The Linux automation container
-  has neither Swift/Xcode nor XcodeGen, so GitHub `macos-15` CI is the required
-  native evidence.
-- Native evidence: GitHub macOS CI run `31246720596` passed XcodeGen, the native
-  build and the full XCTest suite at implementation head `2b9f4f0`. CodeQL run
-  `31246720595` completed its configured actions and JavaScript analyses
-  successfully; Swift analysis was skipped by workflow configuration. The
-  final roadmap-only head must also remain green before handoff.
+- Status: **Awaiting Cesc review in PR #107** for issue #106 on
+  `fix/contain-editor-workspace-paths`; the PR must not be auto-merged.
+- User outcome and success signal: repository files discovered through the
+  embedded editor tree cannot read or overwrite a path outside the selected
+  worktree. Tests cover ordinary descendants, a symlinked worktree root,
+  absolute and traversal-shaped paths, same-prefix siblings, contained
+  symlinks, escaping file/directory symlinks and lazy child loading.
+- Impact and scope: add one canonical workspace-relative resolver, filter
+  escaping entries from `FileNode`, and use the resolver for implicit editor
+  loads, ordinary saves and the Save As starting directory. The explicit
+  `NSSavePanel` destination remains user-directed and unrestricted. No command
+  execution, entitlement, persisted-data migration, localization or generated
+  project behavior changes.
+- Risk and required evidence: medium file-access boundary. Focused
+  `WorkspaceFileAccessTests`, full macOS build/test, CodeQL, diff and secret
+  checks are required. The Linux automation container has neither Swift/Xcode
+  nor XcodeGen, so GitHub `macos-15` CI is the mandatory native evidence.
+- Native evidence: GitHub macOS CI run `31301763342` passed XcodeGen, the native
+  build and the full XCTest suite at head `76dee1f`. CodeQL run `31301763333`
+  completed successfully; its Swift analysis was skipped by workflow
+  configuration. The final roadmap-only head must also remain green.
+- Independence: PR #89 changes only bundled Monaco resource-scheme validation;
+  R14 changes workspace tree/file I/O and can merge in either order.
 
-### Independent Ready queue while R13 awaits review
+### Independent Ready queue while R14 awaits review
 
-- **R14 — Keep editor navigation inside the worktree:** prevent
-  tree-discovered traversal or symlinked directories from escaping
-  workspace-relative open/save boundaries while preserving explicit Save As.
-  Medium file-access boundary; focused model/editor tests, full macOS CI and
-  Cesc review required.
-- **R15 — Preserve current cache state during legacy migration:** when old and
-  canonical run-state or tmux cache entries both exist, never delete the
+- **R15 — Preserve current cache state during legacy migration:** when legacy
+  and canonical run-state or tmux cache entries both exist, never delete the
   canonical destination before a fallible move. `CacheMigration` and focused
   tests only; migration behavior is approval-gated and must stop at a tested
   PR for Cesc.
-- **R16 — Contain automatic virtual-environment activation:** automatic run
-  wrapping must not source `venv/bin/activate` or `.venv/bin/activate` through
-  a symlink that resolves outside the selected project. Preserve ordinary and
-  contained activation paths plus symlinked project roots. `RunLauncher` and a
-  new focused test file only; this command boundary is approval-gated and must
-  stop at a tested PR for Cesc.
+- **R16 — Contain automatic development-environment activation:** automatic
+  run wrapping and PATH injection must not source or prepend `venv`, `.venv`
+  or `node_modules/.bin` paths that resolve outside the selected project.
+  `RunLauncher`, `WorkstreamEnvironment` and focused tests only; this command
+  boundary is approval-gated and must stop at a tested PR for Cesc.
+- **R17 — Protect tmux diagnostic state:** create the Dockyard tmux cache
+  directory and stderr log with private permissions before shell redirection,
+  without changing tmux commands, session persistence or cleanup behavior.
+  `TmuxSession` and focused tests only; full macOS CI is required.
 
-- **2026-08-08 09:30 CEST:** reconciled `origin/main`, `TODO.md`, issues,
+- **2026-08-09 09:30 CEST:** reconciled `origin/main`, `TODO.md`, issues,
   releases, every open PR path and current check at its head. Projects v2
-  remained unavailable without `read:project`. Selected independent R13,
-  created issue #104 and PR #105, and implemented its tested slice from current
-  `origin/main`; no prior PR was modified or commented on, and no merge or
-  release action was taken.
+  remained unavailable without `read:project`. Selected independent R14,
+  created issue #106 and opened PR #107 from current `origin/main`; no prior PR
+  was modified or commented on, and no merge or release action was taken.
