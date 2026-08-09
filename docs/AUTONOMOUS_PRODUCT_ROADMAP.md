@@ -399,10 +399,10 @@ Project item or status is inferred.
 
 ### R15 — Preserve current cache state during legacy migration
 
-- Status: **Implemented on `fix/preserve-cache-migration-destination` for
-  issue #109; PR and native CI evidence pending**. This is persisted-data
-  migration behavior, so the implementation must stop at a tested PR for
-  Cesc's review.
+- Status: **Awaiting Cesc review in PR #110** on
+  `fix/preserve-cache-migration-destination` for issue #109; native CI evidence
+  is pending. This is persisted-data migration behavior, so the implementation
+  must stop at a tested PR for Cesc's review.
 - User outcome: launching Dockyard cannot replace a current run-state directory
   or tmux configuration merely because a legacy cache entry also exists.
 - Success signal: legacy entries move only when their canonical destinations
