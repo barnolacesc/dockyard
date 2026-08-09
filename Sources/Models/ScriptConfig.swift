@@ -23,19 +23,20 @@ struct ScriptConfig {
         
         for dirPath in directories {
             let dir = URL(fileURLWithPath: dirPath)
-            let candidates: [(path: String, source: String, loader: (String) throws -> ScriptConfig)] = [
-                (dir.appendingPathComponent(".dockyard.json").path, ".dockyard.json", loadDockyard),
-                (dir.appendingPathComponent(".emdash.json").path, ".emdash.json", loadEmdash),
-                (dir.appendingPathComponent("conductor.json").path, "conductor.json", loadConductor),
-                (dir.appendingPathComponent(".superset/config.json").path, ".superset/config.json", loadSuperset),
+            let candidates: [(url: URL, source: String, loader: (String) throws -> ScriptConfig)] = [
+                (dir.appendingPathComponent(".dockyard.json"), ".dockyard.json", loadDockyard),
+                (dir.appendingPathComponent(".emdash.json"), ".emdash.json", loadEmdash),
+                (dir.appendingPathComponent("conductor.json"), "conductor.json", loadConductor),
+                (dir.appendingPathComponent(".superset/config.json"), ".superset/config.json", loadSuperset),
             ]
 
             for candidate in candidates {
-                guard FileManager.default.fileExists(atPath: candidate.path) else { continue }
+                guard FileManager.default.fileExists(atPath: candidate.url.path) else { continue }
                 do {
-                    return try candidate.loader(candidate.path)
+                    let resolvedPath = try resolvedConfigPath(candidate.url, within: dir)
+                    return try candidate.loader(resolvedPath)
                 } catch {
-                    logger.error("Failed to load \(candidate.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                    logger.error("Failed to load \(candidate.url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
                     return ScriptConfig(setup: nil, run: nil, teardown: nil, expectedPort: nil, source: candidate.source, loadError: error.localizedDescription)
                 }
             }
@@ -74,11 +75,14 @@ struct ScriptConfig {
     enum LoadError: LocalizedError {
         case unreadable(String)
         case invalidJSON(String)
+        case outsideProjectDirectory
 
         var errorDescription: String? {
             switch self {
             case let .unreadable(path): return "Cannot read \(path)"
             case let .invalidJSON(detail): return "Invalid JSON: \(detail)"
+            case .outsideProjectDirectory:
+                return NSLocalizedString("Script configuration must stay inside the project directory.", comment: "")
             }
         }
     }
@@ -93,7 +97,7 @@ struct ScriptConfig {
         guard setup != nil || run != nil || teardown != nil || expectedPort != nil else {
             return .empty
         }
-        return ScriptConfig(setup: nonEmpty(setup), run: nonEmpty(run), teardown: nonEmpty(teardown), expectedPort: expectedPort, source: URL(fileURLWithPath: path).lastPathComponent, loadError: nil)
+        return ScriptConfig(setup: nonEmpty(setup), run: nonEmpty(run), teardown: nonEmpty(teardown), expectedPort: expectedPort, source: ".dockyard.json", loadError: nil)
     }
 
     /// .emdash.json: { "scripts": { "setup": "cmd", "run": "cmd", "teardown": "cmd" } }
@@ -151,6 +155,23 @@ struct ScriptConfig {
             throw LoadError.invalidJSON("expected object, got \(type(of: obj))")
         }
         return dict
+    }
+
+    /// Resolve both paths before parsing so a config file or ancestor symlink
+    /// cannot redirect script loading outside the directory it configures.
+    private static func resolvedConfigPath(_ candidate: URL, within directory: URL) throws -> String {
+        let resolvedDirectory = directory.standardizedFileURL.resolvingSymlinksInPath()
+        let resolvedCandidate = candidate.standardizedFileURL.resolvingSymlinksInPath()
+        let directoryComponents = resolvedDirectory.pathComponents
+        let candidateComponents = resolvedCandidate.pathComponents
+
+        guard candidateComponents.count > directoryComponents.count,
+              Array(candidateComponents.prefix(directoryComponents.count)) == directoryComponents
+        else {
+            throw LoadError.outsideProjectDirectory
+        }
+
+        return resolvedCandidate.path
     }
 
     private static func nonEmpty(_ s: String?) -> String? {
