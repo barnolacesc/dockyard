@@ -859,13 +859,20 @@ struct DocFile: Identifiable {
 
     static func loadFrom(directory: String) -> [DocFile] {
         let fm = FileManager.default
+        let projectRoot = URL(fileURLWithPath: directory, isDirectory: true)
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
         var found: [DocFile] = []
         for name in standardNames {
-            let path = URL(fileURLWithPath: directory).appendingPathComponent(name).path
-            guard let attrs = try? fm.attributesOfItem(atPath: path),
+            let documentURL = projectRoot
+                .appendingPathComponent(name, isDirectory: false)
+                .standardizedFileURL
+                .resolvingSymlinksInPath()
+            guard isContained(documentURL, by: projectRoot),
+                  let attrs = try? fm.attributesOfItem(atPath: documentURL.path),
                   attrs[.type] as? FileAttributeType == .typeRegular
             else { continue }
-            if let data = fm.contents(atPath: path),
+            if let data = fm.contents(atPath: documentURL.path),
                data.count >= 20,
                let content = String(data: data, encoding: .utf8)
             {
@@ -873,6 +880,13 @@ struct DocFile: Identifiable {
             }
         }
         return found
+    }
+
+    private static func isContained(_ item: URL, by directory: URL) -> Bool {
+        let directoryComponents = directory.pathComponents
+        let itemComponents = item.pathComponents
+        return itemComponents.count > directoryComponents.count
+            && itemComponents.starts(with: directoryComponents)
     }
 }
 

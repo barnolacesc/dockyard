@@ -433,3 +433,59 @@ the token lacks `read:project`, so no Project state is inferred.
   upstream branch to bypass fork approval. R1 remains the only selected item.
   Cesc must approve the fork workflow runs before native CI can execute; no
   merge or release action was taken.
+
+## Live reconciliation — 2026-08-07 16:30 CEST
+
+This section supersedes older statuses above while roadmap-bearing PRs await
+review. `origin/main` is `99b68df`; R1 / PR #70 is merged. Implementation PRs
+#71–#101 (odd numbers) are cleanly mergeable with green macOS CI at their
+current heads and are **awaiting Cesc review**; none overlaps this run's
+standard-document paths or behavior. Release-please PR #63 remains
+approval-gated, and v0.2.1 remains the latest published release. GitHub
+Projects v2 returned `INSUFFICIENT_SCOPES` because the token lacks
+`read:project`, so no Project status is inferred.
+
+### R12 — Contain standard-document reads
+
+- Status: **Awaiting Cesc review in PR #103** for issue #102 on
+  `fix/contain-standard-document-reads`; never auto-merge.
+- User outcome and success signal: a repository cannot make Dockyard's native
+  preview read an arbitrary file through `README.md`, `CLAUDE.md` or
+  `AGENTS.md` symlinks. Focused tests prove regular files, contained symlinks
+  and symlinked project roots still load while direct and ancestor-symlink
+  escapes are ignored.
+- Impact and scope: resolve the project root and each standard-document
+  candidate, then enforce a component boundary before the existing regular
+  file, minimum-length and UTF-8 checks. No editor save behavior, command
+  execution, persisted data, entitlement, cleanup or localization change.
+- Risk and tests: low, bounded read-only file-access change. Seven focused
+  XCTest cases, full macOS build/test, CodeQL, diff and secret checks are
+  required. The Linux automation container has neither Swift/Xcode nor
+  XcodeGen, so GitHub `macos-15` CI is the native evidence.
+- Native evidence: GitHub macOS CI run `31188582798` passed XcodeGen, the full
+  build and the full XCTest suite at implementation commit `d66ecb7`. CodeQL
+  run `31188582136` passed its configured analyses. The final roadmap-only
+  head must also remain green before handoff.
+
+### Independent Ready queue while R12 awaits review
+
+- **R13 — Contain stack-detection metadata reads:** do not follow manifest or
+  lockfile symlinks outside the selected project when proposing commands.
+  `StackDetector` lookup and focused tests only; independent of PR #97 and no
+  approval or automatic-execution change.
+- **R14 — Keep editor navigation inside the worktree:** prevent
+  tree-discovered traversal or symlinked directories from escaping
+  workspace-relative open/save boundaries while preserving explicit Save As.
+  Medium file-access boundary; focused model/editor tests, full macOS CI and
+  Cesc review required.
+- **R15 — Preserve current cache state during legacy migration:** when old and
+  canonical run-state or tmux cache entries both exist, never delete the
+  canonical destination before a fallible move. `CacheMigration` and focused
+  tests only; migration behavior is approval-gated and must stop at a tested
+  PR for Cesc.
+
+- **2026-08-07 16:30 CEST:** reconciled `origin/main`, `TODO.md`, issues,
+  releases, all open PR paths and current checks. Projects v2 remained
+  unavailable without `read:project`. Selected independent R12, created issue
+  #102 and PR #103 from current `origin/main`; no prior PR was modified or
+  commented on, and no merge or release action was taken.
