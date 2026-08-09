@@ -1,11 +1,15 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-07-27 against `origin/main` at
-`33b3fdb6c227d8b633f3163e22aba93046046d84`.
+Last reconciled: 2026-08-09 against `origin/main` at
+`2a92c7ebb8963f991bceecfd431d22be162c2c04`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
 not an automatically trusted backlog.
+
+The final **Live reconciliation** section is canonical. Earlier dated sections
+are retained as an audit trail and can contain statuses superseded by a later
+reconciliation.
 
 ## Evidence and limits
 
@@ -374,3 +378,79 @@ GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the token lacks
   remained unavailable without `read:project`. Selected independent R14,
   created issue #106 and opened PR #107 from current `origin/main`; no prior PR
   was modified or commented on, and no merge or release action was taken.
+
+## Live reconciliation — 2026-08-09 16:30 CEST
+
+This section supersedes all earlier item statuses. Cesc reviewed and merged
+autonomous PRs #71–#77 directly, then PR #108 merged reviewed PRs #79–#107 as
+a tested merge train. `origin/main` is now `2a92c7e`; its macOS CI, CodeQL and
+Release workflows succeeded. The prior Ready items for sidebar contrast,
+merged-PR classification, OpenCode compatibility, stale run-state rejection,
+workspace-tabs tour, persistence/privacy hardening and path containment are
+therefore shipped on `main`, not awaiting review.
+
+Only release-please PR #63 remains open. It is approval-gated, has
+`action_required` fork workflow runs and must not be merged or published by an
+autonomous cycle. The latest published release remains v0.2.1. Open issues at
+selection time were #41, #43 and #54; bounded issue #109 records this cycle's
+implementation. GitHub Projects v2 again returned `INSUFFICIENT_SCOPES`
+because the token has `repo` and `workflow` but lacks `read:project`; no
+Project item or status is inferred.
+
+### R15 — Preserve current cache state during legacy migration
+
+- Status: **Awaiting Cesc review in PR #110** on
+  `fix/preserve-cache-migration-destination` for issue #109; native CI evidence
+  is pending. This is persisted-data migration behavior, so the implementation
+  must stop at a tested PR for Cesc's review.
+- User outcome: launching Dockyard cannot replace a current run-state directory
+  or tmux configuration merely because a legacy cache entry also exists.
+- Success signal: legacy entries move only when their canonical destinations
+  are absent; when both exist, canonical bytes remain unchanged and legacy
+  data remains available for inspection.
+- macOS impact: startup cache migration only; no UI or localization changes.
+- Persistence/security impact: removes destructive conflict handling from a
+  one-time persisted-data migration. No schema, command, entitlement, cleanup
+  or release behavior changes.
+- Scope: `CacheMigration` plus focused `CacheMigrationTests`.
+- Risk: medium because startup migration touches retained terminal/run state.
+- Acceptance criteria:
+  1. Existing canonical run-state and tmux entries are never removed or
+     replaced by conflicting legacy entries.
+  2. Legacy entries still migrate when the canonical destination is absent.
+  3. Conflicting legacy entries remain in place rather than being silently
+     discarded.
+  4. Focused tests and full GitHub macOS build/test pass.
+- Required evidence: focused XCTest, full macOS CI, CodeQL as configured,
+  `git diff --check`, localization parity and secret scan.
+- Native evidence: at implementation head `02e0be9`, macOS CI run
+  `31319027774` passed localization parity, XcodeGen, the native build and the
+  full XCTest suite including `CacheMigrationTests`. CodeQL run `31319027777`
+  passed Actions and JavaScript analysis; Swift analysis was skipped by the
+  repository workflow configuration. The final roadmap-only head must also
+  remain green.
+- Independence: release-please #63 changes version/changelog material only;
+  R15 changes cache migration and tests, so neither depends on the other.
+
+### Independent Ready queue while R15 awaits review
+
+- **R16 — Contain automatic development-environment activation:** automatic
+  run wrapping and PATH injection must not source or prepend `venv`, `.venv`
+  or `node_modules/.bin` paths that resolve outside the selected project.
+  `RunLauncher`, `WorkstreamEnvironment` and focused tests only; this command
+  boundary is approval-gated and must stop at a tested PR for Cesc.
+- **R17 — Protect tmux diagnostic state:** create the Dockyard tmux cache
+  directory and stderr log with private permissions before shell redirection,
+  without changing tmux commands, session persistence or cleanup behavior.
+  `TmuxSession` and focused tests only; full macOS CI is required.
+- **R18 — Add the passive power-features tour:** expose existing shortcut
+  hints, usage meters, tmux persistence and archive semantics without launching
+  commands or changing persisted workstreams. One `TourFlow`, controller tests,
+  five localizations and native visual/accessibility evidence; source is the
+  remaining unchecked tour item in `TODO.md`.
+
+- **2026-08-09 16:30 CEST:** reconciled the reviewed merge train, current
+  `origin/main`, `TODO.md`, open issues/PRs, releases, CI and Projects v2 scope.
+  Selected R15 / issue #109 as the highest-priority independent Ready item from
+  a fresh `origin/main` worktree. No release, merge or older-PR comment was
+  performed.
