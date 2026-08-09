@@ -80,6 +80,31 @@ final class LaunchLoggerTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: logFile.path), "Log file should exist when detailed logging is enabled")
     }
 
+    func testLogCreatesPrivateDirectoryAndFile() throws {
+        LaunchLogger.log(makeEntry(event: "agent-start"))
+
+        XCTAssertEqual(try permissions(of: LaunchLogger.logsDirectoryURL), 0o700)
+        XCTAssertEqual(try permissions(of: LaunchLogger.logFileURL(for: testWorkstreamID)), 0o600)
+    }
+
+    func testLogRepairsOverlyPermissiveDirectoryAndExistingFile() throws {
+        let fileManager = FileManager.default
+        try fileManager.createDirectory(at: testLogsDir, withIntermediateDirectories: true)
+        try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: testLogsDir.path)
+
+        let logFile = LaunchLogger.logFileURL(for: testWorkstreamID)
+        try Data("existing entry\n".utf8).write(to: logFile)
+        try fileManager.setAttributes([.posixPermissions: 0o644], ofItemAtPath: logFile.path)
+
+        LaunchLogger.log(makeEntry(event: "agent-start"))
+
+        XCTAssertEqual(try permissions(of: testLogsDir), 0o700)
+        XCTAssertEqual(try permissions(of: logFile), 0o600)
+        let contents = try String(contentsOf: logFile, encoding: .utf8)
+        XCTAssertTrue(contents.hasPrefix("existing entry\n"), "Existing log contents should be preserved")
+        XCTAssertTrue(contents.contains("\"event\":\"agent-start\""), "New entry should be appended")
+    }
+
     func testLogSkipsWhenDisabled() {
         UserDefaults.standard.set(false, forKey: "dockyard.detailedLogging")
 
@@ -185,5 +210,10 @@ final class LaunchLoggerTests: XCTestCase {
             settings: LaunchLogEntry.Settings(tmuxMode: false, bypassPermissions: false, agentTeams: false, autoRenameBranch: false, allowOutsideWorktree: false),
             shell: "/bin/zsh"
         )
+    }
+
+    private func permissions(of url: URL) throws -> Int {
+        let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+        return try XCTUnwrap(attributes[.posixPermissions] as? NSNumber).intValue & 0o777
     }
 }

@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-07-27 against `origin/main` at
-`33b3fdb6c227d8b633f3163e22aba93046046d84`.
+Last reconciled: 2026-08-05 against `origin/main` at
+`99b68dfb91afbb80c2a48f0c20b3f0aa3cfd4f9e`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -45,11 +45,16 @@ test paths. R14 is the next highest-priority item after R12.
 
 - Repository: `barnolacesc/dockyard`; native SwiftUI/AppKit macOS app using
   Ghostty, git worktrees, tmux, WKWebView, Monaco and XcodeGen.
-- Open implementation issues at reconciliation: #40, #41, #43, #54 and #69.
-- Open pull requests: implementation PR #70 and release-please #63. PR #63
-  must not be changed, merged or released without Cesc's explicit approval.
-- Latest published release: v0.2.1. `main` CI, Release and CodeQL were green at
-  `33b3fdb`; the most recent scheduled CodeQL run was also green.
+- Open implementation issues at reconciliation: #40, #41, #43, #54, #72,
+  #74, #76, #78, #80, #82, #84, #86, #88, #90 and #92.
+- Open autonomous implementation PRs awaiting Cesc review: #71, #73, #75,
+  #77, #79, #81, #83, #85, #87, #89, #91 and #93. Each is isolated from the
+  next Ready implementations; their only recurring changed path is this
+  roadmap. Release-please #63 is also open and must not be changed, merged or
+  released without Cesc's explicit approval.
+- Latest published release: v0.2.1. `origin/main` macOS `build-and-test` and
+  CodeQL were green at `99b68df`; the most recent scheduled CodeQL run was
+  also green.
 - GitHub Projects v2 was not reviewed. The current token has `repo` and
   `workflow`, but lacks `read:project`; the API returned
   `INSUFFICIENT_SCOPES`. Project status must not be inferred.
@@ -76,22 +81,22 @@ test paths. R14 is the next highest-priority item after R12.
 
 | Track | Current evidence | Next decision or item |
 | --- | --- | --- |
-| Worktree lifecycle, persistence, cleanup and merged-PR review | Creation, remove-without-delete, purge, orphan listing and clean prune exist. Force-removal and branch deletion have tests. `TODO.md` still requests merged-PR-aware cleanup. | R2 adds classification only; any destructive bulk action remains approval-gated. |
-| Tmux, terminal and session resilience | Dedicated `dockyard` socket, deterministic sessions, `new-session -A`, respawn hooks, tab snapshots and tests already implemented app-restart persistence. A later termination cleanup regressed that behavior by killing the dedicated server on quit. This does not preserve sessions across a macOS reboot. | R1 / issue #69 restores the original app-restart contract; system-reboot persistence is separate future scope. |
-| Coding CLI compatibility and agent/subagent status | Claude Code and Codex have specialized command builders. OpenCode and Gemini are detected and launched through the generic builder; README only claims Claude/Codex. Claude/Codex hooks report main-agent state. | R3 defines and tests the honest OpenCode contract. Issue #54 needs discovery before implementation. |
-| macOS lifecycle, performance, accessibility, contrast and keyboard behavior | AppDelegate tests, shortcut references, accessibility labels and five localizations exist. Issue #41 reports slow quit; #40 reports sidebar contrast failure. | Profile #41 on macOS; R4 fixes #40 with contrast and visual evidence. |
-| Script guardrails, worktree containment, privacy and entitlements | Script fingerprint approval, re-approval on change, command quoting tests, worktree prompts, `SECURITY.md`, `PRIVACY.md`, `THREAT_MODEL.md` and minimal entitlement docs exist. | Continue boundary tests before new execution features. Changes to approval, bypass, privacy or entitlements stop at PR for Cesc. |
-| Setup/run/teardown reliability and port detection | Fallback configs, environment injection, `dy-run`, process-tree port detection, FSEvents state and focused tests exist. | R5 adds bounded recovery coverage for stale run-state. |
-| Embedded browser/editor quality and safe boundaries | WKWebView browser state and Monaco editor exist; browser JavaScript policy and navigation have tests. Full Chrome/CDP control was explicitly deferred in `TODO.md`. | Review bridge/navigation boundaries before any bidirectional automation. |
-| Onboarding, tours, What's New, docs and localization | Onboarding, Getting Started, What's New and five app localizations exist. Two tour follow-ups remain in `TODO.md`. | R6 adds the smaller workspace-tabs tour with all locale coverage. |
+| Worktree lifecycle, persistence, cleanup and merged-PR review | Creation, remove-without-delete, purge, orphan listing and clean prune exist. Force-removal and branch deletion have tests. PR #73 adds read-only merged-PR classification. | PR #73 awaits Cesc review; any destructive bulk action remains approval-gated. |
+| Tmux, terminal and session resilience | Dedicated `dockyard` socket, deterministic sessions, `new-session -A`, respawn hooks and tab snapshots exist. PR #70 removed normal-quit global server cleanup and merged with green macOS CI. | R8 addresses the remaining instant branch-name watcher recovery gap; macOS reboot persistence remains separate scope. |
+| Coding CLI compatibility and agent/subagent status | Claude Code and Codex have specialized builders. PR #75 documents/tests the narrower OpenCode generic-launch contract. Claude/Codex hooks report main-agent state. | PR #75 awaits Cesc review; issue #54 remains discovery until vendor event semantics are proven. |
+| macOS lifecycle, performance, accessibility, contrast and keyboard behavior | AppDelegate tests, shortcut references, accessibility labels and five localizations exist. PR #71 addresses issue #40; issue #41 still needs native profiling. | Review PR #71 with visual evidence; profile #41 on macOS; R10 fixes path-label abbreviation deterministically. |
+| Script guardrails, worktree containment, privacy and entitlements | Script fingerprint approval, re-approval on change, command quoting tests, worktree prompts and security/privacy docs exist. Detailed launch logs contain commands and environment variables but do not enforce private permissions on `origin/main`. | R7 / issue #92 hardens launch-log permissions. R9 is the next independent config-containment slice. Approval, bypass, privacy and entitlement changes stop at PR for Cesc. |
+| Setup/run/teardown reliability and port detection | Fallback configs, environment injection, `dy-run`, process-tree port detection, FSEvents state and focused tests exist. PR #77 rejects stale/mismatched run-state snapshots. | PR #77 awaits Cesc review; R9 contains config resolution before any script is trusted or run. |
+| Embedded browser/editor quality and safe boundaries | WKWebView browser state and Monaco editor exist; browser JavaScript policy and navigation have tests. PRs #89 and #91 harden Monaco paths and browser-state permissions. | PRs #89 and #91 await Cesc review; no bidirectional automation is Ready. |
+| Onboarding, tours, What's New, docs and localization | Onboarding, Getting Started, What's New and five app localizations exist. PR #81 adds the workspace-tabs tour; one power-features follow-up remains in `TODO.md`. | PR #81 awaits Cesc review; do not duplicate its tour/catalog/localization work. |
 | CI, Ghostty, dependencies, release/update integrity and distribution | macOS build/test CI, CodeQL, Dependabot, pinned actions, Ghostty compatibility workflow, checksums, Sparkle and Homebrew paths exist. Release-please #63 is pending. | Release/update mutations remain approval-gated; verify feed and published artifacts separately from CI. |
 
 ## Now
 
 ### R1 — Restore tmux persistence across Dockyard app restarts
 
-- Status: **In review, blocked on fork CI approval (PR #70)** on
-  `fix/preserve-tmux-restarts`; issue #69.
+- Status: **Delivered on `main` by PR #70** with green macOS CI and CodeQL;
+  issue #69 is closed.
 - Classification: **regression fix, not a new persistence feature**. The
   original tmux architecture already used deterministic session names and
   `new-session -A` to reconnect after relaunch. The later
@@ -123,7 +128,8 @@ test paths. R14 is the next highest-priority item after R12.
 
 ### R4 — Guarantee readable sidebar workstream states
 
-- Status: **Ready**, after R1. Source issue #40.
+- Status: **Awaiting Cesc review in PR #71**. Source issue #40. Do not
+  duplicate or stack work on this branch.
 - User outcome: primary and secondary workstream text remains readable while
   default, hovered, selected, waiting, working or invalid.
 - Success signal: a deterministic state/token matrix has no selected-state
@@ -140,6 +146,33 @@ test paths. R14 is the next highest-priority item after R12.
 - Required tests: `WorkstreamStatusStyleTests`, full macOS build/test, visual
   matrix.
 - Sources: issue #40 and `ProjectSidebar.swift`.
+
+### R7 — Keep detailed launch logs private to the current user
+
+- Status: **Awaiting Cesc review in PR #93** for issue #92 on
+  `fix/private-launch-logs`; Xcode 26.2 build and the full XCTest suite passed
+  on GitHub `macos-15` at `b7bfb29`.
+- User outcome: enabling Detailed logging does not leave commands or
+  environment variables readable by other local accounts.
+- Success signal: the launch-log directory is `0700` and every new or
+  pre-existing per-workstream log is `0600` after an append.
+- macOS impact: Foundation cache-file creation on macOS.
+- Persistence/security impact: repairs privacy permissions without changing
+  log contents, retention, command execution or entitlements.
+- Scope: `LaunchLogger` permission enforcement and focused regressions only.
+- Dependencies: none; behavior and changed source/test paths are independent
+  of open PRs #71–#91.
+- Risk: low and reversible, but security/privacy work stops at a tested PR for
+  Cesc review.
+- Acceptance criteria:
+  1. Fresh log directories and files use `0700` and `0600` respectively.
+  2. Existing broader permissions are repaired before appending.
+  3. Existing JSONL contents and append behavior remain intact.
+  4. GitHub macOS CI and CodeQL pass.
+- Required tests: focused `LaunchLoggerTests`, full macOS build/test, diff and
+  secret checks.
+- Sources: issue #92, `LaunchLogger.swift`, `LaunchLoggerTests.swift` and the
+  local-data disclosure in `PRIVACY.md`.
 
 ### P1 — Reproduce and profile slow app termination
 
@@ -165,7 +198,8 @@ test paths. R14 is the next highest-priority item after R12.
 
 ### R2 — Classify merged-PR worktrees without deleting them
 
-- Status: **Ready**.
+- Status: **Awaiting Cesc review in PR #73** for issue #72. Do not duplicate
+  or stack work on this branch.
 - User outcome: users can see which retained worktrees belong to merged PRs
   before deciding what to remove.
 - Success signal: pure classification identifies clean, dirty, ahead,
@@ -184,7 +218,8 @@ test paths. R14 is the next highest-priority item after R12.
 
 ### R3 — Define and prove the OpenCode compatibility contract
 
-- Status: **Ready**.
+- Status: **Awaiting Cesc review in PR #75** for issue #74. Do not duplicate
+  or stack work on this branch.
 - User outcome: an OpenCode user knows exactly what launch, tmux and status
   behavior Dockyard supports.
 - Success signal: command-builder tests cover OpenCode launch paths and docs
@@ -204,7 +239,8 @@ test paths. R14 is the next highest-priority item after R12.
 
 ### R5 — Reject stale run-state after a run process exits
 
-- Status: **Ready**.
+- Status: **Awaiting Cesc review in PR #77** for issue #76. Do not duplicate
+  or stack work on this branch.
 - User outcome: an embedded browser does not keep targeting a dead dev server
   after an abnormal run-script exit or app restart.
 - Success signal: stale/mismatched run-state JSON is ignored and tested without
@@ -222,7 +258,8 @@ test paths. R14 is the next highest-priority item after R12.
 
 ### R6 — Add the workspace-tabs showcase tour
 
-- Status: **Ready**, lower priority.
+- Status: **Awaiting Cesc review in PR #81** for issue #80. Do not duplicate
+  or stack work on this branch.
 - User outcome: new users discover terminal, browser and editor tabs plus tab
   cycling without reading the full shortcut list.
 - Success signal: a passive, dismissible tour covers Cmd+T/B/O and cycling,
@@ -238,6 +275,84 @@ test paths. R14 is the next highest-priority item after R12.
   navigation and VoiceOver labels.
 - Required tests: tour/localization tests, full macOS CI and screenshots.
 - Sources: unchecked workspace-tabs tour in `TODO.md`.
+
+### Independent implementation PRs awaiting Cesc review
+
+- **PR #79 / issue #78:** private state-directory permissions; green macOS CI
+  at the current PR head.
+- **PR #83 / issue #82:** isolate malformed workspace-tab snapshots during
+  restoration; green macOS CI at the current PR head.
+- **PR #85 / issue #84:** recover the agent-state watcher after directory
+  replacement; green macOS CI at the current PR head.
+- **PR #87 / issue #86:** prevent new localization-key drift in CI; green
+  macOS CI at the current PR head.
+- **PR #89 / issue #88:** contain Monaco resource paths; green macOS CI at the
+  current PR head.
+- **PR #91 / issue #90:** secure browser-state cache files; green macOS CI at
+  the current PR head.
+- Review state: all are healthy and **awaiting Cesc review**. Their behavior
+  and changed paths were checked before selecting R7; no periodic PR comments
+  are needed. Across PRs #71–#91, CodeQL's summary is neutral: actions and
+  JavaScript analysis succeed while Swift analysis is skipped, so it is not
+  recorded as green Swift CodeQL evidence.
+
+### R8 — Reattach branch-name watchers after git-directory replacement
+
+- Status: **Ready**, highest-priority independent item after R7.
+- User outcome: branch renames continue to appear immediately after git
+  replaces or renames a watched per-worktree metadata directory.
+- Success signal: rename/delete events invalidate the old descriptor and
+  install a new watcher while the worktree remains registered.
+- macOS impact: FSEvents/DispatchSource lifecycle and sidebar freshness.
+- Persistence/security impact: read-only git metadata observation; the 15s
+  refresh remains a backstop.
+- Scope: `WorktreeHeadWatcher` lifecycle and focused tests only.
+- Dependencies: none; distinct from PR #85's agent-state cache watcher.
+- Risk: low concurrency/reliability change.
+- Acceptance criteria: watcher replacement is bounded, stop/sync cannot revive
+  removed paths, callbacks remain debounced and native race tests pass.
+- Required tests: `WorktreeHeadWatcherTests` and full macOS CI.
+- Sources: `WorktreeHeadWatcher.swift` event handling and code audit on
+  2026-08-05.
+
+### R9 — Contain script configuration files within their project roots
+
+- Status: **Ready**, approval-gated command-boundary work.
+- User outcome: a repository cannot make Dockyard approve and execute scripts
+  loaded through a config-file symlink that escapes the selected project or
+  fallback root.
+- Success signal: resolved config candidates outside the resolved root are
+  rejected before parsing, fingerprinting or execution.
+- macOS impact: setup/run/teardown configuration resolution.
+- Persistence/security impact: tightens the command-input boundary without
+  changing bypass settings, shell flags or entitlements.
+- Scope: `ScriptConfig` resolution plus fixtures; no script runner redesign.
+- Dependencies: none and no overlap with open autonomous PR paths.
+- Risk: medium security/compatibility change; stop at a tested PR for Cesc.
+- Acceptance criteria: in-root configs and symlinked project roots remain
+  supported, escaping config symlinks fail closed with a testable error, and
+  fallback precedence remains unchanged.
+- Required tests: `ScriptConfigTests`, `ScriptTrustStoreTests`, full macOS CI
+  and CodeQL.
+- Sources: `ScriptConfig.swift`, script execution boundary in `AGENTS.md`, and
+  code audit on 2026-08-05.
+
+### R10 — Abbreviate only paths actually inside the home directory
+
+- Status: **Ready**, lower priority.
+- User outcome: path labels never turn a sibling such as `/Users/cesc-old`
+  into the misleading `~-old` form.
+- Success signal: home itself and descendants abbreviate to `~`, while simple
+  string-prefix siblings remain unchanged.
+- macOS impact: native path labels throughout the app.
+- Persistence/security impact: display-only; stored paths are untouched.
+- Scope: `PathUtilities.abbreviatedPath` and pure unit tests.
+- Dependencies: none and no overlap with open autonomous PR paths.
+- Risk: low, reversible UX correctness fix.
+- Acceptance criteria: boundary, descendant, sibling-prefix and unrelated
+  paths have deterministic tests; no user-facing strings are added.
+- Required tests: focused path utility tests and full macOS CI.
+- Sources: `PathUtilities.swift` and code audit on 2026-08-05.
 
 ## Later
 
@@ -348,3 +463,17 @@ test paths. R14 is the next highest-priority item after R12.
   upstream branch to bypass fork approval. R1 remains the only selected item.
   Cesc must approve the fork workflow runs before native CI can execute; no
   merge or release action was taken.
+- **2026-08-05:** reconciled `origin/main` at `99b68df`, v0.2.1, open issues,
+  TODOs, release PR #63 and autonomous PRs #71–#91. All eleven older
+  implementation PRs are mergeable with green macOS `build-and-test` and are
+  awaiting Cesc review; configured PR CodeQL is neutral because Swift analysis
+  is skipped while actions/JavaScript analysis succeeds. Projects v2 remains
+  unavailable because the token lacks `read:project`. Selected R7 / issue #92,
+  added permission and append regressions, enforced `0700` on the launch-log
+  directory and `0600` on new/existing logs, and opened PR #93. Local diff and
+  secret checks passed; the Linux runner has no Swift/Xcode toolchain, so
+  native evidence came from GitHub `macos-15`: Xcode 26.2 build and the full
+  XCTest suite passed at `b7bfb29`. Configured PR CodeQL completed neutral
+  because Swift analysis was skipped; actions and JavaScript analysis passed.
+  R8 is the next highest-priority independent Ready item. No PR was merged and
+  no release or periodic PR comment was made.
