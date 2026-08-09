@@ -420,6 +420,83 @@ test paths. R14 is the next highest-priority item after R12.
 - **Release-please #63:** never merge or publish without explicit Cesc
   approval.
 
+## Live reconciliation — 2026-08-05 16:30 CEST
+
+This section is the current execution truth and supersedes older status text
+below until the pending roadmap-bearing PRs merge. It is intentionally
+self-contained so independent implementation PRs remain mergeable in any
+order.
+
+- Base: `origin/main` at `99b68df`; latest published release v0.2.1.
+- Autonomous PRs #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91 and
+  #93 are mergeable with successful macOS `build-and-test` at their current
+  heads and are **awaiting Cesc review**. Their implementation paths and
+  behavior do not overlap R8. Configured PR CodeQL is neutral because Swift is
+  skipped while actions and JavaScript analysis succeeds.
+- Release-please PR #63 remains open and approval-gated. It must not be merged
+  or published without Cesc's explicit instruction.
+- GitHub Projects v2 remains unavailable: the API returned
+  `INSUFFICIENT_SCOPES` because the token lacks `read:project`. No Project data
+  is inferred.
+
+### R8 — Reattach branch-name watchers after git-directory replacement
+
+- Status: **Awaiting Cesc review in PR #95** for issue #94 on
+  `fix/recover-worktree-head-watcher`. The implementation head `1a26277`
+  passed Xcode 26.2 Build and the full XCTest step in GitHub macOS CI run
+  `31016951239`; CodeQL run `31016952245` completed successfully at workflow
+  level (actions and JavaScript passed; Swift was skipped by configuration).
+- User outcome: branch renames continue to appear immediately after git
+  replaces or renames a watched per-worktree metadata directory.
+- Success signal: rename/delete closes the obsolete descriptor, attaches to a
+  replacement while the worktree remains registered, and later HEAD changes
+  notify the original worktree path.
+- macOS/persistence/security impact: DispatchSource lifecycle only; git
+  metadata remains read-only and the 15-second refresh stays as a backstop.
+- Scope and dependencies: `WorktreeHeadWatcher` plus focused tests; independent
+  of PR #85's agent-state cache watcher and all other open implementation paths.
+- Risk: low concurrency/reliability change.
+- Acceptance criteria: bounded recovery; debounced callbacks; `sync(paths:)`
+  removal and `stop()` cannot revive a path; full macOS build/XCTest passes.
+- Required tests: replacement, sync-removal and stop race regressions in
+  `WorktreeHeadWatcherTests`, full GitHub macOS CI, diff and secret checks; all
+  passed at the implementation head. The final PR head must remain green.
+
+### Ready queue while R8 awaits review
+
+#### R9 — Contain script configuration within its project root
+
+- Status: **Ready**, highest priority; approval-gated command boundary.
+- User outcome/success signal: an escaping config-file symlink is rejected
+  before parsing, fingerprinting or execution, while in-root configs and
+  symlinked project roots remain supported.
+- Impact/scope/dependencies: `ScriptConfig` resolution and fixtures only; no
+  runner, bypass or entitlement change; no overlap with open PR paths.
+- Risk/tests: medium security/compatibility risk; `ScriptConfigTests`,
+  `ScriptTrustStoreTests`, full macOS CI and CodeQL. Stop at PR for Cesc.
+
+#### R10 — Abbreviate only paths inside the home directory
+
+- Status: **Ready**, independent display-correctness item.
+- User outcome/success signal: home and descendants abbreviate to `~`, while a
+  prefix sibling such as `/Users/cesc-old` remains unchanged.
+- Impact/scope/dependencies: display-only `PathUtilities.abbreviatedPath` plus
+  pure tests; stored paths and all open PR paths are untouched.
+- Risk/tests: low and reversible; boundary, descendant, sibling-prefix and
+  unrelated-path tests plus full macOS CI.
+
+#### R11 — Recover port detection after run-state directory replacement
+
+- Status: **Ready**, independent reliability item.
+- User outcome/success signal: after the run-state cache directory is replaced,
+  a later valid snapshot updates the embedded browser's selected port without
+  polling.
+- Impact/scope/dependencies: `PortDetector` directory-source recovery and a new
+  focused test file; read-only observation, no command launch or state-schema
+  change; independent of PRs #77 and #79 and mergeable in either order.
+- Risk/tests: low concurrency risk; replacement and stop races plus full macOS
+  CI.
+
 ## Reconciliation notes
 
 - `TODO.md` says VRA phase 2 is incomplete, but `SECURITY.md`, `PRIVACY.md`,
