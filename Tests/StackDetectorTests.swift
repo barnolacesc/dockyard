@@ -195,6 +195,121 @@ final class StackDetectorTests: XCTestCase {
         XCTAssertEqual(draft.setup, "make setup")
     }
 
+    // MARK: - Metadata containment
+
+    func testContainedPackageManifestSymlinkIsDetected() throws {
+        let metadataDirectory = tmpDir.appendingPathComponent("metadata")
+        try FileManager.default.createDirectory(at: metadataDirectory, withIntermediateDirectories: true)
+        let package = metadataDirectory.appendingPathComponent("package.json")
+        let object: [String: Any] = [
+            "name": "app",
+            "scripts": ["dev": "vite"],
+            "devDependencies": ["vite": "5"],
+        ]
+        let data = try JSONSerialization.data(withJSONObject: object)
+        try data.write(to: package)
+        try FileManager.default.createSymbolicLink(
+            at: tmpDir.appendingPathComponent("package.json"),
+            withDestinationURL: package
+        )
+
+        let draft = StackDetector.detect(at: tmpDir.path)
+
+        XCTAssertEqual(draft.setup, "npm install")
+        XCTAssertEqual(draft.run, "npm run dev")
+        XCTAssertEqual(draft.expectedPort, 5173)
+    }
+
+    func testEscapingPackageManifestSymlinkIsIgnored() throws {
+        let externalDirectory = try makeExternalDirectory()
+        defer { try? FileManager.default.removeItem(at: externalDirectory) }
+        let package = externalDirectory.appendingPathComponent("package.json")
+        let object: [String: Any] = [
+            "name": "outside",
+            "scripts": ["dev": "vite"],
+            "devDependencies": ["vite": "5"],
+        ]
+        let data = try JSONSerialization.data(withJSONObject: object)
+        try data.write(to: package)
+        try FileManager.default.createSymbolicLink(
+            at: tmpDir.appendingPathComponent("package.json"),
+            withDestinationURL: package
+        )
+
+        let draft = StackDetector.detect(at: tmpDir.path)
+
+        XCTAssertTrue(draft.isEmpty)
+    }
+
+    func testEscapingLockfileSymlinkDoesNotSelectPackageManager() throws {
+        writePackageJSON(scripts: ["dev": "vite"])
+        let externalDirectory = try makeExternalDirectory()
+        defer { try? FileManager.default.removeItem(at: externalDirectory) }
+        let lockfile = externalDirectory.appendingPathComponent("pnpm-lock.yaml")
+        try Data().write(to: lockfile)
+        try FileManager.default.createSymbolicLink(
+            at: tmpDir.appendingPathComponent("pnpm-lock.yaml"),
+            withDestinationURL: lockfile
+        )
+
+        let draft = StackDetector.detect(at: tmpDir.path)
+
+        XCTAssertEqual(draft.setup, "npm install")
+        XCTAssertEqual(draft.run, "npm run dev")
+    }
+
+    func testEscapingNestedMetadataSymlinkDoesNotInferRails() throws {
+        touch("Gemfile", "gem \"rack\"\n")
+        let externalDirectory = try makeExternalDirectory()
+        defer { try? FileManager.default.removeItem(at: externalDirectory) }
+        touch(at: externalDirectory.appendingPathComponent("rails"))
+        try FileManager.default.createSymbolicLink(
+            at: tmpDir.appendingPathComponent("bin"),
+            withDestinationURL: externalDirectory
+        )
+
+        let draft = StackDetector.detect(at: tmpDir.path)
+
+        XCTAssertEqual(draft.setup, "bundle install")
+        XCTAssertNil(draft.run)
+        XCTAssertNil(draft.expectedPort)
+    }
+
+    func testEscapingComposeManifestSymlinkIsIgnored() throws {
+        let externalDirectory = try makeExternalDirectory()
+        defer { try? FileManager.default.removeItem(at: externalDirectory) }
+        let compose = externalDirectory.appendingPathComponent("compose.yml")
+        try Data("services: {}\n".utf8).write(to: compose)
+        try FileManager.default.createSymbolicLink(
+            at: tmpDir.appendingPathComponent("compose.yml"),
+            withDestinationURL: compose
+        )
+
+        let draft = StackDetector.detect(at: tmpDir.path)
+
+        XCTAssertTrue(draft.isEmpty)
+        XCTAssertNil(draft.teardown)
+    }
+
+    func testSymlinkedProjectRootRemainsDetected() throws {
+        let projectDirectory = tmpDir.appendingPathComponent("project")
+        try FileManager.default.createDirectory(at: projectDirectory, withIntermediateDirectories: true)
+        let package = projectDirectory.appendingPathComponent("package.json")
+        let object: [String: Any] = [
+            "name": "app",
+            "scripts": ["start": "node server.js"],
+        ]
+        let data = try JSONSerialization.data(withJSONObject: object)
+        try data.write(to: package)
+        let projectLink = tmpDir.appendingPathComponent("project-link")
+        try FileManager.default.createSymbolicLink(at: projectLink, withDestinationURL: projectDirectory)
+
+        let draft = StackDetector.detect(at: projectLink.path)
+
+        XCTAssertEqual(draft.setup, "npm install")
+        XCTAssertEqual(draft.run, "npm run start")
+    }
+
     // MARK: - JSON serialization
 
     func testJSONStringLogicalKeyOrder() {
@@ -326,6 +441,16 @@ final class StackDetectorTests: XCTestCase {
     private func touch(_ name: String, _ contents: String = "") {
         let path = tmpDir.appendingPathComponent(name).path
         FileManager.default.createFile(atPath: path, contents: contents.data(using: .utf8))
+    }
+
+    private func touch(at url: URL, _ contents: String = "") {
+        FileManager.default.createFile(atPath: url.path, contents: contents.data(using: .utf8))
+    }
+
+    private func makeExternalDirectory() throws -> URL {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
     }
 
     private func writePackageJSON(scripts: [String: String], deps: [String: String] = [:], devDeps: [String: String] = [:]) {
