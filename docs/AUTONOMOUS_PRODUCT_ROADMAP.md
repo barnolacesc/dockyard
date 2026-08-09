@@ -136,7 +136,10 @@ not an automatically trusted backlog.
 
 ### R2 — Classify merged-PR worktrees without deleting them
 
-- Status: **Ready**.
+- Status: **In review (PR #73)** on
+  `feat/merged-pr-worktree-status`; issue #72. GitHub `macos-15` build and
+  XCTest passed at `a80a496`; awaiting Cesc's native project-overview
+  verification. Never auto-merge.
 - User outcome: users can see which retained worktrees belong to merged PRs
   before deciding what to remove.
 - Success signal: pure classification identifies clean, dirty, ahead,
@@ -151,7 +154,9 @@ not an automatically trusted backlog.
 - Acceptance criteria: classification tests cover dirty, ahead and unavailable
   PR data; no cleanup command is added.
 - Required tests: focused classifier/UI model tests and full macOS CI.
-- Sources: unchecked merged-PR bulk action in `TODO.md`.
+- Sources: issue #72 and the unchecked merged-PR bulk action in `TODO.md`.
+- Next independent Ready item after this PR: R3, the OpenCode compatibility
+  contract. It does not depend on this worktree-status slice or sidebar PR #71.
 
 ### R3 — Define and prove the OpenCode compatibility contract
 

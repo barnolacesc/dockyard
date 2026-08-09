@@ -100,6 +100,7 @@
 "Clean" = "Net";
 "Uncommitted changes" = "Canvis sense confirmar";
 "Commits ahead" = "Commits per endavant";
+"PR status unavailable" = "Estat de la PR no disponible";
 "Open as workstream" = "Obre com a flux de treball";
 "Worktrees on disk for this repository. Pruning removes clean worktrees that are not associated with a workstream." = "Arbres de treball al disc per a aquest repositori. La neteja elimina els arbres de treball nets que no estan associats a cap flux de treball.";
 "Prune %d clean worktree" = "Neteja %d arbre de treball net";

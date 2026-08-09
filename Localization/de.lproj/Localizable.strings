@@ -100,6 +100,7 @@
 "Clean" = "Sauber";
 "Uncommitted changes" = "Nicht committete Änderungen";
 "Commits ahead" = "Commits voraus";
+"PR status unavailable" = "PR-Status nicht verfügbar";
 "Open as workstream" = "Als Workstream öffnen";
 "Worktrees on disk for this repository. Pruning removes clean worktrees that are not associated with a workstream." = "Worktrees auf der Festplatte für dieses Repository. Beim Bereinigen werden saubere Worktrees entfernt, die keinem Workstream zugeordnet sind.";
 "Prune %d clean worktree" = "%d sauberen Worktree bereinigen";

@@ -12,12 +12,18 @@ struct GitHubRepoInfo {
     let openIssues: Int
 }
 
-struct GitHubPR: Equatable {
+struct GitHubPR: Equatable, Sendable {
     let number: Int
     let title: String
     let state: String
     let branch: String
     let url: String
+}
+
+enum GitHubPRLookupResult: Equatable, Sendable {
+    case found(GitHubPR)
+    case notFound
+    case unavailable
 }
 
 enum GitHubOperations {
@@ -116,17 +122,35 @@ enum GitHubOperations {
 
     /// Find a merged PR for a specific branch.
     static func mergedPRForBranch(ghPath: String, at path: String, branch: String) -> GitHubPR? {
-        guard let json = run(ghPath, args: ["pr", "list", "--head", branch, "--state", "merged", "--json", "number,title,state,headRefName,url", "--limit", "1"], in: path) else { return nil }
+        guard case let .found(pr) = mergedPRLookupForBranch(
+            ghPath: ghPath,
+            at: path,
+            branch: branch
+        ) else { return nil }
+        return pr
+    }
+
+    /// Distinguish a branch with no merged PR from a failed/unavailable lookup.
+    static func mergedPRLookupForBranch(
+        ghPath: String,
+        at path: String,
+        branch: String
+    ) -> GitHubPRLookupResult {
+        guard let json = run(ghPath, args: ["pr", "list", "--head", branch, "--state", "merged", "--json", "number,title,state,headRefName,url", "--limit", "1"], in: path) else {
+            return .unavailable
+        }
         guard let data = json.data(using: .utf8),
-              let array = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]],
-              let dict = array.first else { return nil }
+              let array = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]
+        else { return .unavailable }
+
+        guard let dict = array.first else { return .notFound }
 
         guard let number = dict["number"] as? Int,
               let title = dict["title"] as? String,
               let state = dict["state"] as? String,
               let branch = dict["headRefName"] as? String,
-              let url = dict["url"] as? String else { return nil }
-        return GitHubPR(number: number, title: title, state: state, branch: branch, url: url)
+              let url = dict["url"] as? String else { return .unavailable }
+        return .found(GitHubPR(number: number, title: title, state: state, branch: branch, url: url))
     }
 
     private static func run(_ command: String, args: [String], in directory: String) -> String? {
