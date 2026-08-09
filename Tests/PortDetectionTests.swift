@@ -21,6 +21,112 @@ final class PortDetectionTests: XCTestCase {
         )
     }
 
+    func testValidatedRunStateAcceptsActiveMatchingProcess() throws {
+        let workstreamID = UUID()
+        defer { RunStateStore.remove(for: workstreamID) }
+        let processStart = try XCTUnwrap(RunStateStore.processStartDate(pid: getpid()))
+        try RunStateStore.write(
+            runState(
+                workstreamID: workstreamID,
+                pid: getpid(),
+                status: .running,
+                selectedPort: 5173,
+                startedAt: processStart
+            ),
+            for: workstreamID
+        )
+
+        let state = try XCTUnwrap(RunStateStore.loadValidated(for: workstreamID))
+
+        XCTAssertEqual(state.selectedPort, 5173)
+        XCTAssertEqual(state.workstreamID, workstreamID)
+    }
+
+    func testValidatedRunStateRejectsDeadProcess() throws {
+        let workstreamID = UUID()
+        defer { RunStateStore.remove(for: workstreamID) }
+        try RunStateStore.write(
+            runState(
+                workstreamID: workstreamID,
+                pid: Int32.max,
+                status: .running,
+                selectedPort: 5173
+            ),
+            for: workstreamID
+        )
+
+        XCTAssertNil(RunStateStore.loadValidated(for: workstreamID))
+    }
+
+    func testValidatedRunStateRejectsReusedProcessIdentifier() throws {
+        let workstreamID = UUID()
+        defer { RunStateStore.remove(for: workstreamID) }
+        let processStart = try XCTUnwrap(RunStateStore.processStartDate(pid: getpid()))
+        try RunStateStore.write(
+            runState(
+                workstreamID: workstreamID,
+                pid: getpid(),
+                status: .running,
+                selectedPort: 5173,
+                startedAt: processStart.addingTimeInterval(-60)
+            ),
+            for: workstreamID
+        )
+
+        XCTAssertNil(RunStateStore.loadValidated(for: workstreamID))
+    }
+
+    func testValidatedRunStateRejectsMismatchedWorkstream() throws {
+        let requestedID = UUID()
+        defer { RunStateStore.remove(for: requestedID) }
+        let processStart = try XCTUnwrap(RunStateStore.processStartDate(pid: getpid()))
+        try RunStateStore.write(
+            runState(
+                workstreamID: UUID(),
+                pid: getpid(),
+                status: .running,
+                selectedPort: 5173,
+                startedAt: processStart
+            ),
+            for: requestedID
+        )
+
+        XCTAssertNil(RunStateStore.loadValidated(for: requestedID))
+    }
+
+    func testValidatedRunStateRejectsStoppedStateForLiveProcess() throws {
+        let workstreamID = UUID()
+        defer { RunStateStore.remove(for: workstreamID) }
+        let processStart = try XCTUnwrap(RunStateStore.processStartDate(pid: getpid()))
+        try RunStateStore.write(
+            runState(
+                workstreamID: workstreamID,
+                pid: getpid(),
+                status: .stopped,
+                selectedPort: 5173,
+                startedAt: processStart
+            ),
+            for: workstreamID
+        )
+
+        XCTAssertNil(RunStateStore.loadValidated(for: workstreamID))
+    }
+
+    func testValidatedRunStateRejectsMalformedJSON() throws {
+        let workstreamID = UUID()
+        defer { RunStateStore.remove(for: workstreamID) }
+        try FileManager.default.createDirectory(
+            at: RunStateStore.directoryURL,
+            withIntermediateDirectories: true
+        )
+        try Data("{not-json".utf8).write(
+            to: RunStateStore.fileURL(for: workstreamID),
+            options: .atomic
+        )
+
+        XCTAssertNil(RunStateStore.loadValidated(for: workstreamID))
+    }
+
     func testSingleNewPortRequiresTwoPollsBeforeSelection() {
         var tracker = PortSelectionTracker(expectedPort: 40001)
 
@@ -99,5 +205,22 @@ final class PortDetectionTests: XCTestCase {
         try? "PORT=7777".write(to: envURL, atomically: true, encoding: .utf8)
         
         XCTAssertEqual(RunLauncher.inferExpectedPort(runCommand: "npm run start", projectDirectory: tempDir.path), 7777)
+    }
+
+    private func runState(
+        workstreamID: UUID,
+        pid: Int32,
+        status: RunStateStatus,
+        selectedPort: Int?,
+        startedAt: Date = Date()
+    ) -> RunStateSnapshot {
+        RunStateSnapshot(
+            workstreamID: workstreamID,
+            pid: pid,
+            status: status,
+            detectedPorts: selectedPort.map { [$0] } ?? [],
+            selectedPort: selectedPort,
+            startedAt: startedAt
+        )
     }
 }

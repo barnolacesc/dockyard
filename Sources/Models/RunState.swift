@@ -12,6 +12,7 @@ enum RunStateStatus: String, Codable {
 }
 
 struct RunStateSnapshot: Codable {
+    let workstreamID: UUID
     let pid: Int32
     let status: RunStateStatus
     let detectedPorts: [Int]
@@ -107,7 +108,10 @@ enum RunStateStore {
 
     static func loadValidated(for workstreamID: UUID) -> RunStateSnapshot? {
         guard let state = load(for: workstreamID),
-              isProcessRunning(pid: state.pid)
+              state.workstreamID == workstreamID,
+              state.status == .starting || state.status == .running,
+              isProcessRunning(pid: state.pid),
+              processStartedNearSnapshot(pid: state.pid, recordedStart: state.startedAt)
         else {
             return nil
         }
@@ -134,6 +138,27 @@ enum RunStateStore {
             return true
         }
         return errno == EPERM
+    }
+
+    static func processStartDate(pid: Int32) -> Date? {
+        guard pid > 0 else { return nil }
+        var info = proc_bsdinfo()
+        let expectedSize = Int32(MemoryLayout<proc_bsdinfo>.size)
+        let actualSize = withUnsafeMutablePointer(to: &info) { pointer in
+            proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, pointer, expectedSize)
+        }
+        guard actualSize == expectedSize else { return nil }
+
+        let seconds = TimeInterval(info.pbi_start_tvsec)
+        let microseconds = TimeInterval(info.pbi_start_tvusec) / 1_000_000
+        return Date(timeIntervalSince1970: seconds + microseconds)
+    }
+
+    private static func processStartedNearSnapshot(pid: Int32, recordedStart: Date) -> Bool {
+        guard let processStart = processStartDate(pid: pid) else { return false }
+        // dy-run records its timestamp immediately after spawning the monitor.
+        // A reused PID points to a process with a materially different birth time.
+        return abs(recordedStart.timeIntervalSince(processStart)) <= 5
     }
 
     private static let encoder: JSONEncoder = {
