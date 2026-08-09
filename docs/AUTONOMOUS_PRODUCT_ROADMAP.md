@@ -328,9 +328,8 @@ GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the token lacks
 
 ### R14 — Keep editor navigation inside the worktree
 
-- Status: **In review with native CI pending in PR #107** for issue #106 on
-  `fix/contain-editor-workspace-paths`; the PR must remain open for Cesc review
-  and must not be auto-merged.
+- Status: **Awaiting Cesc review in PR #107** for issue #106 on
+  `fix/contain-editor-workspace-paths`; the PR must not be auto-merged.
 - User outcome and success signal: repository files discovered through the
   embedded editor tree cannot read or overwrite a path outside the selected
   worktree. Tests cover ordinary descendants, a symlinked worktree root,
@@ -346,6 +345,10 @@ GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the token lacks
   `WorkspaceFileAccessTests`, full macOS build/test, CodeQL, diff and secret
   checks are required. The Linux automation container has neither Swift/Xcode
   nor XcodeGen, so GitHub `macos-15` CI is the mandatory native evidence.
+- Native evidence: GitHub macOS CI run `31301763342` passed XcodeGen, the native
+  build and the full XCTest suite at head `76dee1f`. CodeQL run `31301763333`
+  completed successfully; its Swift analysis was skipped by workflow
+  configuration. The final roadmap-only head must also remain green.
 - Independence: PR #89 changes only bundled Monaco resource-scheme validation;
   R14 changes workspace tree/file I/O and can merge in either order.
 
