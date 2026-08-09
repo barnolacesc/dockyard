@@ -287,8 +287,6 @@
 
 /* HelpView - credits */
 "Version %@" = "Version %@";
-"Made with " = "Gjort med ";
-" in Poblenou, Barcelona" = " i Poblenou, Barcelona";
 "Built by David Poblador i Garcia" = "Skapat av David Poblador i Garcia";
 "with the support of" = "med stöd av";
 "by " = "av ";
