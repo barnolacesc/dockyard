@@ -3,6 +3,44 @@
 
 import Foundation
 
+// MARK: - Workspace File Access
+
+enum WorkspaceFileAccess {
+    /// Resolves a workspace-relative path after proving that its canonical
+    /// destination remains below the canonical workspace root.
+    static func resolvedURL(for relativePath: String, rootPath: String) -> URL? {
+        guard !relativePath.isEmpty,
+              !(relativePath as NSString).isAbsolutePath
+        else { return nil }
+
+        let components = (relativePath as NSString).pathComponents
+        guard !components.contains("."), !components.contains("..") else { return nil }
+
+        let rootURL = canonicalRootURL(for: rootPath)
+        let candidateURL = URL(fileURLWithPath: rootPath, isDirectory: true)
+            .appendingPathComponent(relativePath)
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
+
+        guard isDescendant(candidateURL, of: rootURL) else { return nil }
+        return candidateURL
+    }
+
+    static func canonicalRootURL(for rootPath: String) -> URL {
+        URL(fileURLWithPath: rootPath, isDirectory: true)
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
+    }
+
+    private static func isDescendant(_ candidateURL: URL, of rootURL: URL) -> Bool {
+        let rootComponents = rootURL.standardizedFileURL.pathComponents
+        let candidateComponents = candidateURL.standardizedFileURL.pathComponents
+
+        return candidateComponents.count > rootComponents.count
+            && candidateComponents.starts(with: rootComponents)
+    }
+}
+
 // MARK: - FileNode
 
 struct FileNode: Identifiable {
@@ -18,15 +56,32 @@ struct FileNode: Identifiable {
 
     /// Build a shallow tree (root level only). Directory children are nil (lazy).
     static func buildShallowTree(rootPath: String) -> [FileNode] {
-        buildShallowChildren(at: rootPath, relativeTo: rootPath)
+        buildShallowChildren(
+            at: WorkspaceFileAccess.canonicalRootURL(for: rootPath),
+            relativePathPrefix: "",
+            rootPath: rootPath
+        )
     }
 
     /// Load immediate children of a single directory. Directories get children = nil (lazy).
     static func loadChildren(atRelativePath relativePath: String, rootPath: String) -> [FileNode] {
-        let dirPath = relativePath.isEmpty
-            ? rootPath
-            : (rootPath as NSString).appendingPathComponent(relativePath)
-        return buildShallowChildren(at: dirPath, relativeTo: rootPath)
+        let directoryURL: URL
+        if relativePath.isEmpty {
+            directoryURL = WorkspaceFileAccess.canonicalRootURL(for: rootPath)
+        } else if let resolvedURL = WorkspaceFileAccess.resolvedURL(
+            for: relativePath,
+            rootPath: rootPath
+        ) {
+            directoryURL = resolvedURL
+        } else {
+            return []
+        }
+
+        return buildShallowChildren(
+            at: directoryURL,
+            relativePathPrefix: relativePath,
+            rootPath: rootPath
+        )
     }
 
     /// Insert loaded children at a specific path in the tree, returning the updated tree.
@@ -61,7 +116,7 @@ struct FileNode: Identifiable {
 
     /// Refresh all previously-loaded nodes, preserving lazy structure for unloaded directories.
     static func refreshLoadedNodes(in nodes: [FileNode], rootPath: String) -> [FileNode] {
-        let freshRoot = buildShallowChildren(at: rootPath, relativeTo: rootPath)
+        let freshRoot = buildShallowTree(rootPath: rootPath)
         return mergeNodes(fresh: freshRoot, existing: nodes, rootPath: rootPath)
     }
 
@@ -77,9 +132,13 @@ struct FileNode: Identifiable {
         return nil
     }
 
-    private static func buildShallowChildren(at directoryPath: String, relativeTo rootPath: String) -> [FileNode] {
+    private static func buildShallowChildren(
+        at directoryURL: URL,
+        relativePathPrefix: String,
+        rootPath: String
+    ) -> [FileNode] {
         let fm = FileManager.default
-        guard let entries = try? fm.contentsOfDirectory(atPath: directoryPath) else {
+        guard let entries = try? fm.contentsOfDirectory(atPath: directoryURL.path) else {
             return []
         }
 
@@ -89,16 +148,16 @@ struct FileNode: Identifiable {
         for entry in entries {
             if entry == ".git" { continue }
 
-            let fullPath = (directoryPath as NSString).appendingPathComponent(entry)
-            var isDir: ObjCBool = false
-            guard fm.fileExists(atPath: fullPath, isDirectory: &isDir) else { continue }
+            let relativePath = relativePathPrefix.isEmpty
+                ? entry
+                : relativePathPrefix + "/" + entry
+            guard let resolvedURL = WorkspaceFileAccess.resolvedURL(
+                for: relativePath,
+                rootPath: rootPath
+            ) else { continue }
 
-            let relativePath: String
-            if rootPath.hasSuffix("/") {
-                relativePath = String(fullPath.dropFirst(rootPath.count))
-            } else {
-                relativePath = String(fullPath.dropFirst(rootPath.count + 1))
-            }
+            var isDir: ObjCBool = false
+            guard fm.fileExists(atPath: resolvedURL.path, isDirectory: &isDir) else { continue }
 
             if isDir.boolValue {
                 dirs.append(FileNode(id: relativePath, name: entry, isDirectory: true, children: nil))
@@ -123,8 +182,7 @@ struct FileNode: Identifiable {
                existingNode.isLoaded
             {
                 // Previously loaded — refresh its children recursively
-                let dirPath = (rootPath as NSString).appendingPathComponent(freshNode.id)
-                let freshChildren = buildShallowChildren(at: dirPath, relativeTo: rootPath)
+                let freshChildren = loadChildren(atRelativePath: freshNode.id, rootPath: rootPath)
                 let mergedChildren = mergeNodes(
                     fresh: freshChildren,
                     existing: existingNode.children ?? [],

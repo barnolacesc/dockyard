@@ -314,3 +314,60 @@ not an automatically trusted backlog.
   upstream branch to bypass fork approval. R1 remains the only selected item.
   Cesc must approve the fork workflow runs before native CI can execute; no
   merge or release action was taken.
+
+## Live reconciliation — 2026-08-09 09:30 CEST
+
+This section supersedes older statuses above while roadmap-bearing PRs await
+review. `origin/main` is `99b68df`; R1 / PR #70 is merged. Implementation PRs
+#71–#105 (odd numbers) are **awaiting Cesc review** and have successful macOS
+`build-and-test` checks at their current heads. Their implementation paths and
+behaviors were compared before selecting this run. Release-please PR #63
+remains approval-gated, and v0.2.1 remains the latest published release.
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the token lacks
+`read:project`, so no Project status is inferred.
+
+### R14 — Keep editor navigation inside the worktree
+
+- Status: **In implementation** for issue #106 on
+  `fix/contain-editor-workspace-paths`; the resulting PR must remain open for
+  Cesc review and must not be auto-merged.
+- User outcome and success signal: repository files discovered through the
+  embedded editor tree cannot read or overwrite a path outside the selected
+  worktree. Tests cover ordinary descendants, a symlinked worktree root,
+  absolute and traversal-shaped paths, same-prefix siblings, contained
+  symlinks, escaping file/directory symlinks and lazy child loading.
+- Impact and scope: add one canonical workspace-relative resolver, filter
+  escaping entries from `FileNode`, and use the resolver for implicit editor
+  loads, ordinary saves and the Save As starting directory. The explicit
+  `NSSavePanel` destination remains user-directed and unrestricted. No command
+  execution, entitlement, persisted-data migration, localization or generated
+  project behavior changes.
+- Risk and required evidence: medium file-access boundary. Focused
+  `WorkspaceFileAccessTests`, full macOS build/test, CodeQL, diff and secret
+  checks are required. The Linux automation container has neither Swift/Xcode
+  nor XcodeGen, so GitHub `macos-15` CI is the mandatory native evidence.
+- Independence: PR #89 changes only bundled Monaco resource-scheme validation;
+  R14 changes workspace tree/file I/O and can merge in either order.
+
+### Independent Ready queue while R14 awaits review
+
+- **R15 — Preserve current cache state during legacy migration:** when legacy
+  and canonical run-state or tmux cache entries both exist, never delete the
+  canonical destination before a fallible move. `CacheMigration` and focused
+  tests only; migration behavior is approval-gated and must stop at a tested
+  PR for Cesc.
+- **R16 — Contain automatic development-environment activation:** automatic
+  run wrapping and PATH injection must not source or prepend `venv`, `.venv`
+  or `node_modules/.bin` paths that resolve outside the selected project.
+  `RunLauncher`, `WorkstreamEnvironment` and focused tests only; this command
+  boundary is approval-gated and must stop at a tested PR for Cesc.
+- **R17 — Protect tmux diagnostic state:** create the Dockyard tmux cache
+  directory and stderr log with private permissions before shell redirection,
+  without changing tmux commands, session persistence or cleanup behavior.
+  `TmuxSession` and focused tests only; full macOS CI is required.
+
+- **2026-08-09 09:30 CEST:** reconciled `origin/main`, `TODO.md`, issues,
+  releases, every open PR path and current check at its head. Projects v2
+  remained unavailable without `read:project`. Selected independent R14 and
+  created issue #106 from current `origin/main`; no prior PR was modified or
+  commented on, and no merge or release action was taken.
