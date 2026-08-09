@@ -1150,6 +1150,7 @@ enum WorkstreamStatusColor: Equatable {
     case primary
     case secondary
     case tertiary
+    case selected
     case green
     case blue
     case orange
@@ -1162,6 +1163,8 @@ enum WorkstreamStatusColor: Equatable {
             return AnyShapeStyle(Color.secondary.opacity(opacity))
         case .tertiary:
             return opacity == 1 ? AnyShapeStyle(.tertiary) : AnyShapeStyle(Color.secondary.opacity(0.5 * opacity))
+        case .selected:
+            return AnyShapeStyle(Color(nsColor: .selectedControlTextColor).opacity(opacity))
         case .green:
             return AnyShapeStyle(DesignColor.statusSuccess.opacity(opacity))
         case .blue:
@@ -1173,7 +1176,7 @@ enum WorkstreamStatusColor: Equatable {
 
     func tintColor(opacity: Double = 1) -> Color? {
         switch self {
-        case .primary, .secondary, .tertiary:
+        case .primary, .secondary, .tertiary, .selected:
             return nil
         case .green:
             return DesignColor.statusSuccess.opacity(opacity)
@@ -1269,6 +1272,39 @@ struct WorkstreamStatusStyle: Equatable {
     }
 }
 
+struct WorkstreamRowForegroundStyle: Equatable {
+    let labelColor: WorkstreamStatusColor
+    let subtitleColor: WorkstreamStatusColor
+    let subtitleOpacity: Double
+    let contentOpacity: Double
+
+    init(statusStyle: WorkstreamStatusStyle, stageStyle: WorkstreamStageStyle, isSelected: Bool) {
+        if isSelected {
+            // A sidebar List can use any macOS accent color for its selection
+            // background. Keep every text-bearing state on the system's
+            // selected-control foreground instead of stacking muted/status
+            // colors over that background.
+            labelColor = .selected
+            subtitleColor = .selected
+            subtitleOpacity = 1
+            contentOpacity = 1
+        } else {
+            labelColor = stageStyle.recedesRow ? .secondary : statusStyle.labelColor
+            subtitleColor = stageStyle.recedesRow ? .secondary : statusStyle.subtitleColor
+            subtitleOpacity = stageStyle.recedesRow ? 1 : statusStyle.subtitleOpacity
+            contentOpacity = stageStyle.recedesRow ? 0.65 : 1
+        }
+    }
+
+    var labelStyle: AnyShapeStyle {
+        labelColor.shapeStyle()
+    }
+
+    var subtitleStyle: AnyShapeStyle {
+        subtitleColor.shapeStyle(opacity: subtitleOpacity)
+    }
+}
+
 private struct WorkstreamRowBackground: View {
     let statusStyle: WorkstreamStatusStyle
 
@@ -1350,12 +1386,20 @@ private struct WorkstreamRow: View {
         WorkstreamStatusStyle(agentState: agentState, isPathValid: isPathValid)
     }
 
+    private var foregroundStyle: WorkstreamRowForegroundStyle {
+        WorkstreamRowForegroundStyle(
+            statusStyle: statusStyle,
+            stageStyle: stageStyle,
+            isSelected: isSelected
+        )
+    }
+
     private var contentOpacity: Double {
-        stageStyle.recedesRow ? 0.65 : 1
+        foregroundStyle.contentOpacity
     }
 
     private var labelStyle: AnyShapeStyle {
-        stageStyle.recedesRow ? AnyShapeStyle(.secondary) : statusStyle.labelStyle
+        foregroundStyle.labelStyle
     }
 
     var body: some View {
@@ -1456,13 +1500,7 @@ private struct WorkstreamRow: View {
     }
 
     private var subtitleStyle: AnyShapeStyle {
-        if stageStyle.recedesRow {
-            return AnyShapeStyle(.secondary)
-        }
-        if statusStyle.labelColor == .blue {
-            return statusStyle.subtitleStyle
-        }
-        return statusStyle.subtitleStyle
+        foregroundStyle.subtitleStyle
     }
 
     private var rowContent: some View {
@@ -1499,7 +1537,7 @@ private struct WorkstreamRow: View {
                         if dirtyCount > 0 {
                             Text("±\(dirtyCount)")
                                 .tabularNumbers()
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(subtitleStyle)
                                 .help(NSLocalizedString("Uncommitted changes", comment: ""))
                         }
                     }
