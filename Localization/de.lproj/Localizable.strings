@@ -479,4 +479,16 @@
 "A guided tour walks you through projects, workstreams, and the Coding Agent. Restart it anytime from the Help menu." = "Eine geführte Tour zeigt dir Projekte, Workstreams und den Coding Agent. Starte sie jederzeit über das Hilfe‑Menü neu.";
 "What's New Panel" = "Neuigkeiten‑Panel";
 "After each update, the highlights show up right here." = "Nach jedem Update erscheinen die Highlights genau hier.";
+"Workspace Tabs Tour" = "Tour durch die Arbeitsbereich-Tabs";
+"Learn how to open and switch terminals, browsers, and editors without leaving the keyboard." = "Lerne, Terminals, Browser und Editoren zu öffnen und zu wechseln, ohne die Tastatur zu verlassen.";
+
+// Tour — Workspace Tabs steps
+"Workspace tabs at a glance" = "Arbeitsbereich-Tabs auf einen Blick";
+"Info and Coding Agent are always ready. Extra terminals, browsers, and editors stay grouped with this workstream." = "Info und Coding Agent sind immer bereit. Zusätzliche Terminals, Browser und Editoren bleiben mit diesem Workstream gruppiert.";
+"Open the tool you need" = "Öffne das benötigte Werkzeug";
+"Press ⌘T for a terminal, ⌘B for a browser, or ⌘O for an editor. This tour never opens them for you." = "Drücke ⌘T für ein Terminal, ⌘B für einen Browser oder ⌘O für einen Editor. Diese Tour öffnet sie nie für dich.";
+"Move between tabs" = "Zwischen Tabs wechseln";
+"Press ⌘3–9 to jump directly, or ⌘⇧[ and ⌘⇧] to cycle through every open tab." = "Drücke ⌘3–9, um direkt zu springen, oder ⌘⇧[ und ⌘⇧], um durch alle offenen Tabs zu wechseln.";
+"Keep working your way" = "Arbeite auf deine Weise weiter";
+"The tour is complete. Press ⌘/ whenever you want the full keyboard shortcut reference." = "Die Tour ist abgeschlossen. Drücke jederzeit ⌘/, um die vollständige Tastenkürzel-Übersicht zu öffnen.";
 "Claude in Chrome is active" = "Claude in Chrome ist aktiv";

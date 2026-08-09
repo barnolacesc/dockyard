@@ -508,4 +508,16 @@
 "A guided tour walks you through projects, workstreams, and the Coding Agent. Restart it anytime from the Help menu." = "Una visita guiada et mostra els projectes, els workstreams i l'agent de programació. Reinicia-la quan vulguis des del menú Ajuda.";
 "What's New Panel" = "Tauler de novetats";
 "After each update, the highlights show up right here." = "Després de cada actualització, les novetats destacades apareixen aquí mateix.";
+"Workspace Tabs Tour" = "Visita de les pestanyes de l'espai de treball";
+"Learn how to open and switch terminals, browsers, and editors without leaving the keyboard." = "Aprèn a obrir i canviar entre terminals, navegadors i editors sense deixar el teclat.";
+
+// Tour — Workspace Tabs steps
+"Workspace tabs at a glance" = "Les pestanyes de l'espai de treball, d'un cop d'ull";
+"Info and Coding Agent are always ready. Extra terminals, browsers, and editors stay grouped with this workstream." = "Info i l'agent de programació sempre estan a punt. Els terminals, navegadors i editors addicionals es mantenen agrupats amb aquest workstream.";
+"Open the tool you need" = "Obre l'eina que necessites";
+"Press ⌘T for a terminal, ⌘B for a browser, or ⌘O for an editor. This tour never opens them for you." = "Prem ⌘T per a un terminal, ⌘B per a un navegador o ⌘O per a un editor. Aquesta visita no els obre mai per tu.";
+"Move between tabs" = "Mou-te entre pestanyes";
+"Press ⌘3–9 to jump directly, or ⌘⇧[ and ⌘⇧] to cycle through every open tab." = "Prem ⌘3–9 per saltar-hi directament o ⌘⇧[ i ⌘⇧] per recórrer totes les pestanyes obertes.";
+"Keep working your way" = "Continua treballant a la teva manera";
+"The tour is complete. Press ⌘/ whenever you want the full keyboard shortcut reference." = "La visita s'ha completat. Prem ⌘/ quan vulguis consultar la referència completa de dreceres de teclat.";
 "Claude in Chrome is active" = "Claude a Chrome esta actiu";

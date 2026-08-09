@@ -508,4 +508,16 @@
 "A guided tour walks you through projects, workstreams, and the Coding Agent. Restart it anytime from the Help menu." = "A guided tour walks you through projects, workstreams, and the Coding Agent. Restart it anytime from the Help menu.";
 "What's New Panel" = "What's New Panel";
 "After each update, the highlights show up right here." = "After each update, the highlights show up right here.";
+"Workspace Tabs Tour" = "Workspace Tabs Tour";
+"Learn how to open and switch terminals, browsers, and editors without leaving the keyboard." = "Learn how to open and switch terminals, browsers, and editors without leaving the keyboard.";
+
+// Tour — Workspace Tabs steps
+"Workspace tabs at a glance" = "Workspace tabs at a glance";
+"Info and Coding Agent are always ready. Extra terminals, browsers, and editors stay grouped with this workstream." = "Info and Coding Agent are always ready. Extra terminals, browsers, and editors stay grouped with this workstream.";
+"Open the tool you need" = "Open the tool you need";
+"Press ⌘T for a terminal, ⌘B for a browser, or ⌘O for an editor. This tour never opens them for you." = "Press ⌘T for a terminal, ⌘B for a browser, or ⌘O for an editor. This tour never opens them for you.";
+"Move between tabs" = "Move between tabs";
+"Press ⌘3–9 to jump directly, or ⌘⇧[ and ⌘⇧] to cycle through every open tab." = "Press ⌘3–9 to jump directly, or ⌘⇧[ and ⌘⇧] to cycle through every open tab.";
+"Keep working your way" = "Keep working your way";
+"The tour is complete. Press ⌘/ whenever you want the full keyboard shortcut reference." = "The tour is complete. Press ⌘/ whenever you want the full keyboard shortcut reference.";
 "Claude in Chrome is active" = "Claude in Chrome is active";

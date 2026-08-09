@@ -9,6 +9,12 @@ enum WhatsNewCatalog {
     static let releases: [WhatsNewRelease] = [
         WhatsNewRelease(version: "0.3.0", entries: [
             WhatsNewEntry(
+                symbol: "rectangle.3.group",
+                titleKey: "Workspace Tabs Tour",
+                bodyKey: "Learn how to open and switch terminals, browsers, and editors without leaving the keyboard.",
+                tourFlowID: WorkspaceTabsFlow.id
+            ),
+            WhatsNewEntry(
                 symbol: "sparkles",
                 titleKey: "Interactive Tour",
                 bodyKey: "A guided tour walks you through projects, workstreams, and the Coding Agent. Restart it anytime from the Help menu.",

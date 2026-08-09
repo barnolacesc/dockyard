@@ -508,4 +508,16 @@
 "A guided tour walks you through projects, workstreams, and the Coding Agent. Restart it anytime from the Help menu." = "En guidad rundtur visar dig projekt, workstreams och kodagenten. Starta om den när som helst från Hjälp‑menyn.";
 "What's New Panel" = "Nyhetspanel";
 "After each update, the highlights show up right here." = "Efter varje uppdatering visas höjdpunkterna precis här.";
+"Workspace Tabs Tour" = "Rundtur för arbetsytans flikar";
+"Learn how to open and switch terminals, browsers, and editors without leaving the keyboard." = "Lär dig öppna och växla mellan terminaler, webbläsare och redigerare utan att lämna tangentbordet.";
+
+// Tour — Workspace Tabs steps
+"Workspace tabs at a glance" = "Arbetsytans flikar i korthet";
+"Info and Coding Agent are always ready. Extra terminals, browsers, and editors stay grouped with this workstream." = "Info och kodagenten är alltid redo. Extra terminaler, webbläsare och redigerare hålls samlade med denna workstream.";
+"Open the tool you need" = "Öppna verktyget du behöver";
+"Press ⌘T for a terminal, ⌘B for a browser, or ⌘O for an editor. This tour never opens them for you." = "Tryck ⌘T för en terminal, ⌘B för en webbläsare eller ⌘O för en redigerare. Den här rundturen öppnar dem aldrig åt dig.";
+"Move between tabs" = "Växla mellan flikar";
+"Press ⌘3–9 to jump directly, or ⌘⇧[ and ⌘⇧] to cycle through every open tab." = "Tryck ⌘3–9 för att hoppa direkt, eller ⌘⇧[ och ⌘⇧] för att gå igenom alla öppna flikar.";
+"Keep working your way" = "Fortsätt arbeta på ditt sätt";
+"The tour is complete. Press ⌘/ whenever you want the full keyboard shortcut reference." = "Rundturen är klar. Tryck ⌘/ när du vill se den fullständiga referensen för kortkommandon.";
 "Claude in Chrome is active" = "Claude i Chrome är aktiv";
