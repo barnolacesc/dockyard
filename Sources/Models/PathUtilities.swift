@@ -38,8 +38,13 @@ extension String {
     /// Replaces the home directory prefix with ~ for compact display.
     var abbreviatedPath: String {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
-        if hasPrefix(home) {
-            return "~" + dropFirst(home.count)
+        if self == home {
+            return "~"
+        }
+
+        let descendantPrefix = home == "/" ? home : home + "/"
+        if hasPrefix(descendantPrefix) {
+            return "~/" + dropFirst(descendantPrefix.count)
         }
         return self
     }
