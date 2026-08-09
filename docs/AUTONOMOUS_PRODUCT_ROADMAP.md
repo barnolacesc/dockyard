@@ -423,6 +423,12 @@ Project item or status is inferred.
   4. Focused tests and full GitHub macOS build/test pass.
 - Required evidence: focused XCTest, full macOS CI, CodeQL as configured,
   `git diff --check`, localization parity and secret scan.
+- Native evidence: at implementation head `02e0be9`, macOS CI run
+  `31319027774` passed localization parity, XcodeGen, the native build and the
+  full XCTest suite including `CacheMigrationTests`. CodeQL run `31319027777`
+  passed Actions and JavaScript analysis; Swift analysis was skipped by the
+  repository workflow configuration. The final roadmap-only head must also
+  remain green.
 - Independence: release-please #63 changes version/changelog material only;
   R15 changes cache migration and tests, so neither depends on the other.
 
