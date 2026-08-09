@@ -160,7 +160,11 @@ not an automatically trusted backlog.
 
 ### R3 — Define and prove the OpenCode compatibility contract
 
-- Status: **Ready**.
+- Status: **In review (PR #75)** on
+  `feat/opencode-compatibility-contract`; issue #74. GitHub macOS build and
+  all 381 XCTest cases passed at `ac3e684` (two expected Fish-dependent
+  skips). Awaiting Cesc's review; never auto-merge. This is independent of
+  sidebar PR #71 and worktree-classification PR #73.
 - User outcome: an OpenCode user knows exactly what launch, tmux and status
   behavior Dockyard supports.
 - Success signal: command-builder tests cover OpenCode launch paths and docs
@@ -176,7 +180,10 @@ not an automatically trusted backlog.
 - Acceptance criteria: tested direct and tmux-wrapped commands, accurate README
   support matrix, no claim of hooks/resume/bypass unless implemented.
 - Required tests: `CommandBuilderTests`, `AgentHooksTests`, full macOS CI.
-- Sources: hard product direction, `CommandBuilder.swift`, `SettingsView.swift`.
+- Sources: issue #74, hard product direction, `CommandBuilder.swift` and
+  `SettingsView.swift`.
+- Next independent Ready item: R5, stale run-state rejection. It does not
+  depend on R3 or pending PRs #71 and #73.
 
 ### R5 — Reject stale run-state after a run process exits
 

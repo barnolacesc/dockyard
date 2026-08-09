@@ -48,7 +48,7 @@ Dockyard is a native macOS app built on [Ghostty](https://ghostty.org)'s GPU-ren
 ### Features
 
 - **Git Worktrees** &mdash; Each workstream gets its own branch and worktree. Switch between tasks without stashing.
-- **Selectable Coding CLI** &mdash; Run Claude Code or Codex in the Agent tab, with session resume support.
+- **Selectable Coding CLI** &mdash; Run Claude Code, Codex, OpenCode, or Gemini CLI in the Agent tab. Capabilities vary by CLI as documented below.
 - **Tmux Persistence** &mdash; Agent sessions survive app restarts via tmux on a dedicated socket.
 - **Setup & Run Scripts** &mdash; Configure setup, run, and teardown scripts per project via `.dockyard.json`. Environment tab with split-pane terminals, Start/Rerun (⌘⇧⏎).
 - **Embedded Browser** &mdash; WKWebView tab with automatic port detection. The browser navigates to the port your run script opens.
@@ -57,6 +57,29 @@ Dockyard is a native macOS app built on [Ghostty](https://ghostty.org)'s GPU-ren
 - **Dynamic Tabs** &mdash; Open as many terminals, browsers, and editors as you need. Close with Cmd+W or Ctrl+D.
 - **Update Notifications** &mdash; Checks for new versions and shows a badge in the sidebar.
 - **Keyboard-first** &mdash; Every action has a shortcut. Cmd+1-9 for tabs, Cmd+Return for agent, Cmd+T for terminal, Cmd+B for browser, Cmd+O for editor.
+
+### Coding CLI support
+
+Dockyard launches each detected CLI in the workstream directory. Tmux
+persistence is provided by Dockyard's dedicated tmux session and does not imply
+that the CLI itself supports resume after that session exits.
+
+| Capability | Claude Code | Codex | OpenCode | Gemini CLI |
+|---|---:|---:|---:|---:|
+| Direct launch in a workstream | Yes | Yes | Yes | Yes |
+| Dockyard tmux persistence | Yes | Yes | Yes | Yes |
+| CLI session resume after tmux exits | Yes | Yes | No | No |
+| Dockyard agent-status hooks | Yes | Yes | No | No |
+| Dangerous permission bypass | Yes | Yes | No | No |
+| Automatic branch rename | Yes | No | No | No |
+| Agent Teams | Yes | No | No | No |
+
+OpenCode support is intentionally generic: Dockyard starts the detected
+`opencode` executable directly and can keep that process alive through tmux,
+but it does not add OpenCode-specific resume, hook, permission-bypass, or
+branch-rename flags. Dockyard does not currently report normalized subagent
+status for any CLI; that work is tracked in
+[issue #54](https://github.com/barnolacesc/dockyard/issues/54).
 
 ### Tmux Mode
 
