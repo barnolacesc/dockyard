@@ -158,4 +158,151 @@ final class WorkstreamEnvironmentTests: XCTestCase {
         XCTAssertNil(vars["EMDASH_TASK_NAME"])
         XCTAssertNil(vars["SUPERSET_WORKSPACE_NAME"])
     }
+
+    // MARK: - Automatic development environments
+
+    func testContainedEnvironmentPathsKeepVenvPrecedence() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let project = root.appendingPathComponent("project", isDirectory: true)
+        let venvBin = project.appendingPathComponent("venv/bin", isDirectory: true)
+        let dotVenvBin = project.appendingPathComponent(".venv/bin", isDirectory: true)
+        let nodeBin = project.appendingPathComponent("node_modules/.bin", isDirectory: true)
+        try createActivationFile(in: venvBin)
+        try createActivationFile(in: dotVenvBin)
+        try FileManager.default.createDirectory(at: nodeBin, withIntermediateDirectories: true)
+
+        let script = RunLauncher.wrapWithVenv("python app.py", projectDirectory: project.path)
+        XCTAssertTrue(script.hasPrefix("source \(CommandBuilder.shellQuote(venvBin.appendingPathComponent("activate").path))"))
+        XCTAssertFalse(script.contains(dotVenvBin.path))
+
+        let vars = variables(projectDirectory: project.path)
+        let prependedPaths = try XCTUnwrap(vars["PATH"]?.split(separator: ":").map(String.init))
+        XCTAssertEqual(Array(prependedPaths.prefix(2)), [venvBin.path, nodeBin.path])
+        XCTAssertFalse(vars["PATH"]?.contains(dotVenvBin.path) ?? true)
+    }
+
+    func testEscapingVenvFallsBackToContainedDotVenv() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let project = root.appendingPathComponent("project", isDirectory: true)
+        let outsideVenv = root.appendingPathComponent("outside-venv", isDirectory: true)
+        let dotVenvBin = project.appendingPathComponent(".venv/bin", isDirectory: true)
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        try createActivationFile(in: outsideVenv.appendingPathComponent("bin", isDirectory: true))
+        try createActivationFile(in: dotVenvBin)
+        try FileManager.default.createSymbolicLink(
+            at: project.appendingPathComponent("venv"),
+            withDestinationURL: outsideVenv
+        )
+
+        let script = RunLauncher.wrapWithVenv("python app.py", projectDirectory: project.path)
+        XCTAssertTrue(script.hasPrefix("source \(CommandBuilder.shellQuote(dotVenvBin.appendingPathComponent("activate").path))"))
+        XCTAssertFalse(script.contains(outsideVenv.path))
+
+        let prependedPaths = variables(projectDirectory: project.path)["PATH"]?
+            .split(separator: ":")
+            .map(String.init)
+        XCTAssertEqual(prependedPaths?.first, dotVenvBin.path)
+        XCTAssertFalse(prependedPaths?.contains(outsideVenv.appendingPathComponent("bin").path) ?? true)
+    }
+
+    func testEscapingEnvironmentSymlinksAreIgnored() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let project = root.appendingPathComponent("project", isDirectory: true)
+        let outsideVenv = root.appendingPathComponent("outside-venv", isDirectory: true)
+        let outsideNodeModules = root.appendingPathComponent("outside-node-modules", isDirectory: true)
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        try createActivationFile(in: outsideVenv.appendingPathComponent("bin", isDirectory: true))
+        try FileManager.default.createDirectory(
+            at: outsideNodeModules.appendingPathComponent(".bin", isDirectory: true),
+            withIntermediateDirectories: true
+        )
+        try FileManager.default.createSymbolicLink(
+            at: project.appendingPathComponent("venv"),
+            withDestinationURL: outsideVenv
+        )
+        try FileManager.default.createSymbolicLink(
+            at: project.appendingPathComponent("node_modules"),
+            withDestinationURL: outsideNodeModules
+        )
+
+        XCTAssertEqual(
+            RunLauncher.wrapWithVenv("python app.py", projectDirectory: project.path),
+            "python app.py"
+        )
+        XCTAssertNil(variables(projectDirectory: project.path)["PATH"])
+    }
+
+    func testContainedSymlinksWorkThroughSymlinkedProjectRoot() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let project = root.appendingPathComponent("real-project", isDirectory: true)
+        let projectAlias = root.appendingPathComponent("project-alias", isDirectory: true)
+        let sharedVenv = project.appendingPathComponent("shared-venv", isDirectory: true)
+        let sharedNodeBin = project.appendingPathComponent("shared-node-bin", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: project.appendingPathComponent("node_modules", isDirectory: true),
+            withIntermediateDirectories: true
+        )
+        try createActivationFile(in: sharedVenv.appendingPathComponent("bin", isDirectory: true))
+        try FileManager.default.createDirectory(at: sharedNodeBin, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(
+            at: project.appendingPathComponent("venv"),
+            withDestinationURL: sharedVenv
+        )
+        try FileManager.default.createSymbolicLink(
+            at: project.appendingPathComponent("node_modules/.bin"),
+            withDestinationURL: sharedNodeBin
+        )
+        try FileManager.default.createSymbolicLink(at: projectAlias, withDestinationURL: project)
+
+        let activation = sharedVenv.appendingPathComponent("bin/activate").path
+        let script = RunLauncher.wrapWithVenv("python app.py", projectDirectory: projectAlias.path)
+        XCTAssertTrue(script.hasPrefix("source \(CommandBuilder.shellQuote(activation))"))
+
+        let prependedPaths = try XCTUnwrap(
+            variables(projectDirectory: projectAlias.path)["PATH"]?
+                .split(separator: ":")
+                .map(String.init)
+        )
+        XCTAssertEqual(
+            Array(prependedPaths.prefix(2)),
+            [sharedVenv.appendingPathComponent("bin").path, sharedNodeBin.path]
+        )
+    }
+
+    private func temporaryDirectory() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("dockyard-environment-tests-\(UUID().uuidString)", isDirectory: true)
+    }
+
+    private func createActivationFile(in binDirectory: URL) throws {
+        try FileManager.default.createDirectory(at: binDirectory, withIntermediateDirectories: true)
+        try "# contained test environment\n".write(
+            to: binDirectory.appendingPathComponent("activate"),
+            atomically: true,
+            encoding: .utf8
+        )
+    }
+
+    private func variables(projectDirectory: String) -> [String: String] {
+        WorkstreamEnvironment.variables(
+            workstreamID: baseParams.0,
+            projectName: baseParams.1,
+            workstreamName: baseParams.2,
+            projectDirectory: projectDirectory,
+            workingDirectory: baseParams.4,
+            port: baseParams.5,
+            codingCLI: .claude,
+            agentTeams: baseParams.6,
+            defaultBranch: "main",
+            scriptSource: nil
+        )
+    }
 }
