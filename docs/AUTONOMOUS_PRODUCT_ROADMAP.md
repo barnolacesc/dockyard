@@ -26,9 +26,9 @@ issue #114 records this run.
 
 ### R17 — Protect tmux diagnostic state
 
-- Status: **Implementation prepared on `fix/private-tmux-diagnostics` for
-  issue #114; PR pending**. The final native evidence and PR number must be
-  recorded before this run completes.
+- Status: **Awaiting Cesc review in PR #115** on
+  `fix/private-tmux-diagnostics` for issue #114. The PR must not be
+  auto-merged.
 - User outcome: tmux diagnostic output is not left readable by other local
   users after first creation or when an older permissive cache exists.
 - Success signal: constructing a tmux command creates or repairs the Dockyard
@@ -49,6 +49,12 @@ issue #114 records this run.
   5. Full GitHub macOS build/test passes.
 - Required evidence: focused XCTest, full `macos-15` CI, CodeQL as configured,
   localization parity, diff and secret checks.
+- Native evidence: at implementation head `12200ab`, macOS CI run
+  `31399327020` passed localization parity, XcodeGen, the native build and the
+  full XCTest suite including `TmuxSessionTests`. CodeQL run `31399327146`
+  passed Actions and JavaScript analysis; Swift analysis was skipped by the
+  repository's PR workflow configuration. The final roadmap-only head must
+  also remain green.
 - Independence: PR #113 changes environment activation paths; PR #63 changes
   release metadata. R17 changes tmux diagnostic setup and its tests, so the
   implementations can merge in either order. Roadmap updates use this
