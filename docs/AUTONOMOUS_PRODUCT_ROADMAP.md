@@ -212,8 +212,8 @@ reconciliation.
 ### R19 — Contain close-tab editor saves within the worktree
 
 - Status: **Awaiting Cesc review in PR #119** for issue #118 on
-  `fix/contain-close-tab-editor-saves`; do not auto-merge. Native macOS CI is
-  pending at the final head.
+  `fix/contain-close-tab-editor-saves`; do not auto-merge. Required native
+  implementation CI is green.
 - User outcome: choosing Save while closing a dirty editor tab cannot write
   outside the selected worktree, including when restored or malformed editor
   state contains an absolute path, traversal, same-prefix sibling or escaping
@@ -242,10 +242,12 @@ reconciliation.
   4. Existing editor and workspace file-access behavior remains green.
   5. Full GitHub macOS build/test passes.
 - Evidence: localization parser tests and 418-key parity passed locally;
-  `git diff --check` and the added-line secret scan passed. The Linux host has
-  no Xcode/XCTest runner, so full GitHub macOS CI is mandatory. CodeQL evidence
-  is required as configured. Local `prek`/SwiftFormat was unavailable because
-  those executables are not installed on the automation host.
+  `git diff --check` and the added-line secret scan passed. At head `41e8f97`,
+  macOS CI run `31502647742` passed localization parity, XcodeGen, the native
+  build and full XCTest. CodeQL run `31502647712` passed its Actions and
+  JavaScript analyses; Swift analysis was skipped by the PR workflow. The
+  final roadmap-only head must also remain green. Local `prek`/SwiftFormat was
+  unavailable because those executables are not installed on the Linux host.
 - Sources: issue #118, `TerminalContainerView.confirmCloseEditor`,
   `EditorView.saveFile` and `WorkspaceFileAccess`.
 
