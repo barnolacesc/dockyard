@@ -472,9 +472,9 @@ and #114; issue #116 records this run.
 
 ### R18 — Add the passive power-features tour
 
-- Status: **Implementation prepared for review** on
-  `feat/power-features-tour-r18` for issue #116. The PR number and final native
-  CI evidence will be recorded after GitHub creates them; do not auto-merge.
+- Status: **Awaiting Cesc review in PR #117** on
+  `feat/power-features-tour-r18` for issue #116; do not auto-merge. Native CI
+  is pending at the current head.
 - User outcome: users can discover keyboard hints, local Claude Code/Codex
   usage meters, tmux restart persistence and non-destructive archive semantics
   without the tour running a command or mutating a workstream.
@@ -523,4 +523,5 @@ and #114; issue #116 records this run.
 - **2026-08-11 09:30 CEST:** fetched current `origin/main`, reconciled code,
   `TODO.md`, issues, every open PR path/check, release state and Projects v2
   scope. Selected independent R18 / issue #116 from a fresh worktree. No older
-  PR was modified or commented on, and no merge or release action was taken.
+  PR was modified or commented on. Opened PR #117 for Cesc review; no merge or
+  release action was taken.

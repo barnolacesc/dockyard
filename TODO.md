@@ -37,7 +37,7 @@
 - [ ] External Chrome integration: launch with --remote-debugging-port for WebMCP/CDP — dropped, doesn't unlock "Claude in Chrome" extension since that lives inside Chrome and doesn't talk CDP.
 - [x] Horizontal terminal splits within a tab: split panes existed already (Cmd+Shift+T/B/Return). Added Cmd+Shift+D to toggle between horizontal (side-by-side) and vertical (stacked) layouts.
 - [x] Tour: workspace-tabs showcase flow (passive: Cmd+T/B/O, tab cycling) — issue #80 / PR #81 merged via reviewed merge train #108
-- [x] Tour: power-features showcase flow (shortcut hints, usage meters, tmux, archiving) — issue #116
+- [x] Tour: power-features showcase flow (shortcut hints, usage meters, tmux, archiving) — issue #116 / PR #117 awaiting Cesc review
 
 ## Done
 - [x] PR management: create and manage PRs from workstreams via Quick Actions
