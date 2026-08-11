@@ -520,3 +520,19 @@
 "Keep working your way" = "Keep working your way";
 "The tour is complete. Press ⌘/ whenever you want the full keyboard shortcut reference." = "The tour is complete. Press ⌘/ whenever you want the full keyboard shortcut reference.";
 "Claude in Chrome is active" = "Claude in Chrome is active";
+
+// Tour — Power Features
+"Power Features" = "Power Features";
+"Discover Dockyard's keyboard-first tools, usage meters, tmux persistence, and safe workstream cleanup in a passive tour." = "Discover Dockyard's keyboard-first tools, usage meters, tmux persistence, and safe workstream cleanup in a passive tour.";
+"Work faster without losing context" = "Work faster without losing context";
+"This passive tour highlights Dockyard's power features. It will not run commands, change settings, or modify your workstreams." = "This passive tour highlights Dockyard's power features. It will not run commands, change settings, or modify your workstreams.";
+"Hold Command for shortcut hints" = "Hold Command for shortcut hints";
+"Hold ⌘ to reveal available shortcuts on visible controls. Nothing runs until you choose a command." = "Hold ⌘ to reveal available shortcuts on visible controls. Nothing runs until you choose a command.";
+"Track local agent usage" = "Track local agent usage";
+"The sidebar meter shows locally available Claude Code or Codex usage. Use its arrows to switch providers, or click the meter to refresh." = "The sidebar meter shows locally available Claude Code or Codex usage. Use its arrows to switch providers, or click the meter to refresh.";
+"Resume Coding Agent sessions" = "Resume Coding Agent sessions";
+"When tmux mode is enabled, Dockyard reconnects to this workstream's Coding Agent session after you quit and reopen the app." = "When tmux mode is enabled, Dockyard reconnects to this workstream's Coding Agent session after you quit and reopen the app.";
+"Remove without deleting work" = "Remove without deleting work";
+"Remove is Dockyard's archive action: it stops terminals and hides the workstream while keeping its worktree and branch. Purge is the separate destructive action." = "Remove is Dockyard's archive action: it stops terminals and hides the workstream while keeping its worktree and branch. Purge is the separate destructive action.";
+"Power features, on your terms" = "Power features, on your terms";
+"Press ⌘/ for the complete shortcut reference. Settings lets you choose shortcut hints, tmux mode, and usage options." = "Press ⌘/ for the complete shortcut reference. Settings lets you choose shortcut hints, tmux mode, and usage options.";

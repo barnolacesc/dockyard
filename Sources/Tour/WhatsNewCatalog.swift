@@ -9,6 +9,12 @@ enum WhatsNewCatalog {
     static let releases: [WhatsNewRelease] = [
         WhatsNewRelease(version: "0.3.0", entries: [
             WhatsNewEntry(
+                symbol: "bolt.fill",
+                titleKey: "Power Features",
+                bodyKey: "Discover Dockyard's keyboard-first tools, usage meters, tmux persistence, and safe workstream cleanup in a passive tour.",
+                tourFlowID: PowerFeaturesFlow.id
+            ),
+            WhatsNewEntry(
                 symbol: "rectangle.3.group",
                 titleKey: "Workspace Tabs Tour",
                 bodyKey: "Learn how to open and switch terminals, browsers, and editors without leaving the keyboard.",

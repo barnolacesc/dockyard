@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-08-09 against `origin/main` at
-`2a92c7ebb8963f991bceecfd431d22be162c2c04`.
+Last reconciled: 2026-08-11 against `origin/main` at
+`ceeea0811d385396f497632469a705b184a13953`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -454,3 +454,79 @@ Project item or status is inferred.
   Selected R15 / issue #109 as the highest-priority independent Ready item from
   a fresh `origin/main` worktree. No release, merge or older-PR comment was
   performed.
+
+## Live reconciliation — 2026-08-11 09:30 CEST
+
+This section supersedes every earlier item status. `origin/main` is `ceeea08`;
+its latest push CI, CodeQL and release workflows are green. R15 / PR #110 and
+the reviewed documentation PR #111 are merged. R16 / PR #113 and R17 / PR
+#115 are healthy, mergeable, have successful macOS `build-and-test` checks and
+are **awaiting Cesc review**. They were left open without status comments.
+Release-please PR #63 remains approval-gated and must not be merged or
+published autonomously. The latest published release remains v0.2.1.
+
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
+`repo` and `workflow`, but lacks `read:project`. No Project items or status are
+inferred. Open implementation issues at selection were #41, #43, #54, #112
+and #114; issue #116 records this run.
+
+### R18 — Add the passive power-features tour
+
+- Status: **Awaiting Cesc review in PR #117** on
+  `feat/power-features-tour-r18` for issue #116; do not auto-merge. Required
+  macOS implementation CI is green.
+- User outcome: users can discover keyboard hints, local Claude Code/Codex
+  usage meters, tmux restart persistence and non-destructive archive semantics
+  without the tour running a command or mutating a workstream.
+- Success signal: the What's New entry starts a stable six-step flow; every
+  step advances manually, has no `onEnter` action, and uses existing passive
+  spotlight anchors or a centered card.
+- macOS impact: native SwiftUI tour overlays and sidebar/workspace spotlight
+  anchors. Light/dark appearance and VoiceOver still require native review.
+- Persistence/security impact: none. The flow does not post workflow
+  notifications, execute commands, change settings, archive/purge anything or
+  write persisted workstream state.
+- Scope: one `TourFlow`, two passive anchors, catalog routing, What's New,
+  focused tests, all five app localizations, `TODO.md` and roadmap evidence.
+- Risk: low and reversible native onboarding UI; stop at a tested PR for Cesc.
+- Acceptance criteria:
+  1. Stable unique step IDs cover shortcuts, usage, tmux and remove-versus-purge.
+  2. All six steps are `.manual` with no action callbacks.
+  3. What's New resolves the flow by its stable ID.
+  4. English, Catalan, German, Spanish and Swedish contain every new key.
+  5. Full GitHub macOS build/test passes.
+  6. Cesc verifies light/dark spotlight placement and VoiceOver before merge.
+- Evidence: localization parser tests and 432-key parity passed locally;
+  `git diff --check`, static passive-flow checks and the diff secret scan
+  passed. At head `dc4f5f9`, macOS CI run `31470173354` passed localization
+  parity, XcodeGen, the native build and the full XCTest suite including
+  `PowerFeaturesFlowTests`. CodeQL run `31470173434` passed Actions and
+  JavaScript analysis; Swift analysis was skipped by repository PR workflow
+  configuration. The final evidence-only head must remain green. The Linux
+  host cannot provide light/dark or VoiceOver evidence.
+- Independence: PR #113 changes automatic environment activation; PR #115
+  changes tmux diagnostic file permissions; PR #63 changes release metadata.
+  R18 changes tour content, passive anchors, localizations and focused tests,
+  so its implementation can merge in any order with those PRs.
+
+### Independent Ready queue while R16–R18 await review
+
+- **R19 — Contain close-tab editor saves:** resolve the unsaved-editor close
+  path through `WorkspaceFileAccess` before writing, matching ordinary saves
+  and rejecting absolute, traversal, same-prefix and escaping-symlink paths.
+  This file-write boundary is approval-gated; focused tests and full macOS CI
+  are required.
+- **R20 — Keep watcher-created state directories private:** create and repair
+  run-state and agent-state watcher directories as `0700` before attaching
+  filesystem observers. Scope is `PortDetector`, `AgentStateStore` and focused
+  tests; state schemas, writers and watcher recovery remain unchanged.
+- **R21 — Validate localized macOS privacy prompts in CI:** extend the
+  deterministic localization checker to verify `InfoPlist.strings` key parity
+  across all five locales. This is a read-only release-integrity guard; it must
+  not add usage descriptions, entitlements or privacy claims.
+
+- **2026-08-11 09:30 CEST:** fetched current `origin/main`, reconciled code,
+  `TODO.md`, issues, every open PR path/check, release state and Projects v2
+  scope. Selected independent R18 / issue #116 from a fresh worktree. No older
+  PR was modified or commented on. Opened PR #117 for Cesc review; no merge or
+  release action was taken.
