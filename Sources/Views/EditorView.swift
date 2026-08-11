@@ -222,16 +222,13 @@ struct EditorView: View {
 
     private func saveFile() async {
         guard let relativePath = currentFilePath, fileLoaded, isDirty else { return }
-        guard let url = WorkspaceFileAccess.resolvedURL(
-            for: relativePath,
-            rootPath: workingDirectory
-        ) else {
-            loadError = CocoaError(.fileWriteNoPermission).localizedDescription
-            return
-        }
         guard let content = await bridge.getContent(modelId: modelId) else { return }
         do {
-            try content.write(to: url, atomically: true, encoding: .utf8)
+            try WorkspaceFileAccess.writeEditorContent(
+                content,
+                to: relativePath,
+                rootPath: workingDirectory
+            )
             bridge.markClean(modelId: modelId)
             isDirtyState = false
 

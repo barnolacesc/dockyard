@@ -209,6 +209,54 @@ reconciliation.
 - Required tests: tour/localization tests, full macOS CI and screenshots.
 - Sources: unchecked workspace-tabs tour in `TODO.md`.
 
+### R19 — Contain close-tab editor saves within the worktree
+
+- Status: **Selected for implementation** in issue #118 on
+  `fix/contain-close-tab-editor-saves`; the pull request will remain open for
+  Cesc's review.
+- User outcome: choosing Save while closing a dirty editor tab cannot write
+  outside the selected worktree, including when restored or malformed editor
+  state contains an absolute path, traversal, same-prefix sibling or escaping
+  symlink.
+- Success signal: ordinary and close-tab saves share one
+  `WorkspaceFileAccess` writer; contained relative paths save successfully,
+  while unsafe paths raise a file-write permission error and leave external
+  bytes unchanged.
+- macOS impact: the existing native Save / Don't Save / Cancel close alert is
+  unchanged; only its Save destination resolution changes.
+- Persistence/security impact: narrows an editor file-write boundary. Save As
+  remains explicitly user-directed, and no persisted schema or cleanup
+  behavior changes.
+- Scope: `WorkspaceFileAccess`, ordinary editor save reuse, close-tab save and
+  focused tests. No command execution, worktree, entitlement, localization or
+  release changes.
+- Dependencies: none; implementation paths do not overlap open PRs #113, #115,
+  #117 or release-please #63.
+- Risk: medium because this is a file-write boundary; stop at a tested PR for
+  Cesc and do not auto-merge.
+- Acceptance criteria:
+  1. A contained relative path writes the requested bytes.
+  2. Absolute, traversal, same-prefix and escaping-symlink paths fail before
+     writing outside the worktree.
+  3. External files remain unchanged for every rejected case.
+  4. Existing editor and workspace file-access behavior remains green.
+  5. Full GitHub macOS build/test passes.
+- Required evidence: focused `WorkspaceFileAccessTests`, localization parity,
+  diff and secret checks, full macOS CI and CodeQL as configured.
+- Sources: issue #118, `TerminalContainerView.confirmCloseEditor`,
+  `EditorView.saveFile` and `WorkspaceFileAccess`.
+
+### Independent Ready queue after R19
+
+- **R20 — Keep watcher-created state directories private:** create and repair
+  run-state and agent-state watcher directories as `0700` before attaching
+  filesystem observers. Scope is `PortDetector`, `AgentStateStore` and focused
+  tests; state schemas, writers and watcher recovery remain unchanged.
+- **R21 — Validate localized macOS privacy prompts in CI:** extend the
+  deterministic localization checker to verify `InfoPlist.strings` key parity
+  across all five locales. This is a read-only release-integrity guard; it must
+  not add usage descriptions, entitlements or privacy claims.
+
 ## Later
 
 ### D1 — Design truthful main-agent and subagent status reporting

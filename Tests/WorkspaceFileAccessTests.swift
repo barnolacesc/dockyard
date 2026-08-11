@@ -86,6 +86,63 @@ final class WorkspaceFileAccessTests: XCTestCase {
         XCTAssertNil(WorkspaceFileAccess.resolvedURL(for: "external-file", rootPath: workspace.path))
     }
 
+    func testWritesEditorContentOnlyToContainedRelativePath() throws {
+        let sourceDirectory = workspace.appendingPathComponent("Sources", isDirectory: true)
+        let file = sourceDirectory.appendingPathComponent("App.swift")
+        try FileManager.default.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
+        try "old".write(to: file, atomically: true, encoding: .utf8)
+
+        try WorkspaceFileAccess.writeEditorContent(
+            "new",
+            to: "Sources/App.swift",
+            rootPath: workspace.path
+        )
+
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "new")
+    }
+
+    func testRejectsUnsafeEditorWritePathsWithoutChangingOutsideFiles() throws {
+        let sibling = temporaryDirectory.appendingPathComponent("workspace-backup", isDirectory: true)
+        let siblingFile = sibling.appendingPathComponent("secret.txt")
+        let outsideDirectory = temporaryDirectory.appendingPathComponent("outside", isDirectory: true)
+        let outsideFile = outsideDirectory.appendingPathComponent("secret.txt")
+        try FileManager.default.createDirectory(at: sibling, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: outsideDirectory, withIntermediateDirectories: true)
+        try "sibling".write(to: siblingFile, atomically: true, encoding: .utf8)
+        try "outside".write(to: outsideFile, atomically: true, encoding: .utf8)
+        try FileManager.default.createSymbolicLink(
+            at: workspace.appendingPathComponent("external-directory"),
+            withDestinationURL: outsideDirectory
+        )
+        try FileManager.default.createSymbolicLink(
+            at: workspace.appendingPathComponent("external-file"),
+            withDestinationURL: outsideFile
+        )
+
+        let unsafePaths = [
+            siblingFile.path,
+            "../workspace-backup/secret.txt",
+            "external-directory/secret.txt",
+            "external-file",
+        ]
+
+        for path in unsafePaths {
+            XCTAssertThrowsError(
+                try WorkspaceFileAccess.writeEditorContent(
+                    "overwritten",
+                    to: path,
+                    rootPath: workspace.path
+                ),
+                "Expected write rejection for \(path)"
+            ) { error in
+                XCTAssertEqual((error as? CocoaError)?.code, .fileWriteNoPermission)
+            }
+        }
+
+        XCTAssertEqual(try String(contentsOf: siblingFile, encoding: .utf8), "sibling")
+        XCTAssertEqual(try String(contentsOf: outsideFile, encoding: .utf8), "outside")
+    }
+
     func testFileTreeOmitsEscapingSymlinksAndKeepsContainedOnes() throws {
         let containedDirectory = workspace.appendingPathComponent("contained", isDirectory: true)
         let containedFile = containedDirectory.appendingPathComponent("visible.txt")

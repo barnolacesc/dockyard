@@ -32,6 +32,20 @@ enum WorkspaceFileAccess {
             .resolvingSymlinksInPath()
     }
 
+    /// Writes editor content only after resolving a workspace-relative path
+    /// through the same containment boundary used for editor reads.
+    static func writeEditorContent(
+        _ content: String,
+        to relativePath: String,
+        rootPath: String
+    ) throws {
+        guard let destinationURL = resolvedURL(for: relativePath, rootPath: rootPath) else {
+            throw CocoaError(.fileWriteNoPermission)
+        }
+
+        try content.write(to: destinationURL, atomically: true, encoding: .utf8)
+    }
+
     private static func isDescendant(_ candidateURL: URL, of rootURL: URL) -> Bool {
         let rootComponents = rootURL.standardizedFileURL.pathComponents
         let candidateComponents = candidateURL.standardizedFileURL.pathComponents
