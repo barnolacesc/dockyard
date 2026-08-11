@@ -27,6 +27,7 @@ struct SidebarStatusStrip: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
+        .tourAnchor(.sidebarStatusStrip)
     }
 
     // MARK: - Counts
