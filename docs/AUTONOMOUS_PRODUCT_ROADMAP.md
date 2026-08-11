@@ -211,9 +211,9 @@ reconciliation.
 
 ### R19 — Contain close-tab editor saves within the worktree
 
-- Status: **Selected for implementation** in issue #118 on
-  `fix/contain-close-tab-editor-saves`; the pull request will remain open for
-  Cesc's review.
+- Status: **Awaiting Cesc review in PR #119** for issue #118 on
+  `fix/contain-close-tab-editor-saves`; do not auto-merge. Native macOS CI is
+  pending at the final head.
 - User outcome: choosing Save while closing a dirty editor tab cannot write
   outside the selected worktree, including when restored or malformed editor
   state contains an absolute path, traversal, same-prefix sibling or escaping
@@ -241,12 +241,19 @@ reconciliation.
   3. External files remain unchanged for every rejected case.
   4. Existing editor and workspace file-access behavior remains green.
   5. Full GitHub macOS build/test passes.
-- Required evidence: focused `WorkspaceFileAccessTests`, localization parity,
-  diff and secret checks, full macOS CI and CodeQL as configured.
+- Evidence: localization parser tests and 418-key parity passed locally;
+  `git diff --check` and the added-line secret scan passed. The Linux host has
+  no Xcode/XCTest runner, so full GitHub macOS CI is mandatory. CodeQL evidence
+  is required as configured. Local `prek`/SwiftFormat was unavailable because
+  those executables are not installed on the automation host.
 - Sources: issue #118, `TerminalContainerView.confirmCloseEditor`,
   `EditorView.saveFile` and `WorkspaceFileAccess`.
 
 ### Independent Ready queue after R19
+
+GitHub Projects v2 remains unavailable: the token has `repo` and `workflow`
+but lacks `read:project`, and the API returned `INSUFFICIENT_SCOPES`. No
+Project item or status is inferred.
 
 - **R20 — Keep watcher-created state directories private:** create and repair
   run-state and agent-state watcher directories as `0700` before attaching
