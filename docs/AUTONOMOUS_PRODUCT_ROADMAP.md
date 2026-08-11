@@ -473,8 +473,8 @@ and #114; issue #116 records this run.
 ### R18 — Add the passive power-features tour
 
 - Status: **Awaiting Cesc review in PR #117** on
-  `feat/power-features-tour-r18` for issue #116; do not auto-merge. Native CI
-  is pending at the current head.
+  `feat/power-features-tour-r18` for issue #116; do not auto-merge. Required
+  macOS implementation CI is green.
 - User outcome: users can discover keyboard hints, local Claude Code/Codex
   usage meters, tmux restart persistence and non-destructive archive semantics
   without the tour running a command or mutating a workstream.
@@ -496,9 +496,14 @@ and #114; issue #116 records this run.
   4. English, Catalan, German, Spanish and Swedish contain every new key.
   5. Full GitHub macOS build/test passes.
   6. Cesc verifies light/dark spotlight placement and VoiceOver before merge.
-- Evidence before push: localization parser tests and 432-key parity passed;
-  `git diff --check` and static passive-flow checks passed. The Linux host has
-  no Swift, Xcode or XcodeGen, so it is not native macOS evidence.
+- Evidence: localization parser tests and 432-key parity passed locally;
+  `git diff --check`, static passive-flow checks and the diff secret scan
+  passed. At head `dc4f5f9`, macOS CI run `31470173354` passed localization
+  parity, XcodeGen, the native build and the full XCTest suite including
+  `PowerFeaturesFlowTests`. CodeQL run `31470173434` passed Actions and
+  JavaScript analysis; Swift analysis was skipped by repository PR workflow
+  configuration. The final evidence-only head must remain green. The Linux
+  host cannot provide light/dark or VoiceOver evidence.
 - Independence: PR #113 changes automatic environment activation; PR #115
   changes tmux diagnostic file permissions; PR #63 changes release metadata.
   R18 changes tour content, passive anchors, localizations and focused tests,
