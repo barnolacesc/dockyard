@@ -4,6 +4,8 @@
 import Foundation
 
 final class PortDetector: ObservableObject, @unchecked Sendable {
+    private static let privateDirectoryPermissions = 0o700
+
     @Published private(set) var selectedPort: Int?
 
     private let directoryURL: URL
@@ -42,7 +44,6 @@ final class PortDetector: ObservableObject, @unchecked Sendable {
 
     private func start() {
         queue.sync {
-            try? FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
             attachDirectoryWatcher()
             refreshState()
         }
@@ -123,6 +124,7 @@ final class PortDetector: ObservableObject, @unchecked Sendable {
 
     private func attachDirectoryWatcher() {
         guard !isStopped, directorySource == nil else { return }
+        guard prepareStateDirectory() else { return }
 
         let descriptor = open(directoryURL.path, O_EVTONLY)
         guard descriptor >= 0 else { return }
@@ -142,6 +144,24 @@ final class PortDetector: ObservableObject, @unchecked Sendable {
         source.resume()
 
         attachFileWatcherIfNeeded()
+    }
+
+    private func prepareStateDirectory() -> Bool {
+        do {
+            try FileManager.default.createDirectory(
+                at: directoryURL,
+                withIntermediateDirectories: true,
+                attributes: [.posixPermissions: Self.privateDirectoryPermissions]
+            )
+            // Existing directories retain their previous mode after createDirectory.
+            try FileManager.default.setAttributes(
+                [.posixPermissions: Self.privateDirectoryPermissions],
+                ofItemAtPath: directoryURL.path
+            )
+            return true
+        } catch {
+            return false
+        }
     }
 
     private func attachFileWatcherIfNeeded() {

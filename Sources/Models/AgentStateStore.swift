@@ -5,6 +5,7 @@ import Foundation
 
 final class AgentStateStore: ObservableObject, @unchecked Sendable {
     static let shared = AgentStateStore()
+    private static let privateDirectoryPermissions = 0o700
 
     @Published private(set) var states: [UUID: AgentState] = [:]
     @Published private(set) var chromeActiveWorkstreamIDs = Set<UUID>()
@@ -24,7 +25,6 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
     }
 
     private func start() {
-        try? FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         attachDirectoryWatcher()
         attachRefreshTimer()
         refreshState()
@@ -39,6 +39,7 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
 
     private func attachDirectoryWatcher() {
         guard directorySource == nil else { return }
+        guard prepareStateDirectory() else { return }
 
         let directoryPath = directoryURL.path
         let descriptor = open(directoryPath, O_EVTONLY)
@@ -64,6 +65,24 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
         source.resume()
     }
 
+    private func prepareStateDirectory() -> Bool {
+        do {
+            try FileManager.default.createDirectory(
+                at: directoryURL,
+                withIntermediateDirectories: true,
+                attributes: [.posixPermissions: Self.privateDirectoryPermissions]
+            )
+            // Existing directories retain their previous mode after createDirectory.
+            try FileManager.default.setAttributes(
+                [.posixPermissions: Self.privateDirectoryPermissions],
+                ofItemAtPath: directoryURL.path
+            )
+            return true
+        } catch {
+            return false
+        }
+    }
+
     private func handleDirectoryEvent() {
         guard let directorySource else { return }
         let event = directorySource.data
@@ -77,7 +96,6 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
     private func replaceDirectoryWatcher() {
         directorySource?.cancel()
         directorySource = nil
-        try? FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         attachDirectoryWatcher()
         refreshState()
     }

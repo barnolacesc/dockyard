@@ -85,6 +85,27 @@ final class AgentStateStoreTests: XCTestCase {
         super.tearDown()
     }
 
+    func testCreatesMissingStateDirectoryWithPrivatePermissions() throws {
+        let store = AgentStateStore(directoryURL: tempDir)
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: tempDir.path))
+        XCTAssertEqual(try permissions(of: tempDir), 0o700)
+        _ = store
+    }
+
+    func testRepairsExistingStateDirectoryPermissionsWithoutRemovingState() throws {
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        let retainedState = tempDir.appendingPathComponent("retained.txt")
+        try Data("retained".utf8).write(to: retainedState)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: tempDir.path)
+
+        let store = AgentStateStore(directoryURL: tempDir)
+
+        XCTAssertEqual(try permissions(of: tempDir), 0o700)
+        XCTAssertEqual(try Data(contentsOf: retainedState), Data("retained".utf8))
+        _ = store
+    }
+
     func testInitialScanLoadsExistingFiles() throws {
         let id = UUID()
         try writeSnapshot(.working, pid: Int32(getpid()), for: id)
@@ -140,6 +161,7 @@ final class AgentStateStoreTests: XCTestCase {
         XCTAssertTrue(waitUntil {
             FileManager.default.fileExists(atPath: self.tempDir.path)
         })
+        XCTAssertEqual(try permissions(of: tempDir), 0o700)
 
         try writeSnapshot(.waiting, pid: Int32(getpid()), for: id)
 
@@ -147,6 +169,11 @@ final class AgentStateStoreTests: XCTestCase {
             store.agentState(for: id) == .waiting
         })
         XCTAssertEqual(store.agentState(for: id), .waiting)
+    }
+
+    private func permissions(of url: URL) throws -> Int {
+        let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+        return try XCTUnwrap(attributes[.posixPermissions] as? NSNumber).intValue & 0o777
     }
 
     func testDecaysWorkingOlderThanThirtyMinutesToIdle() {
