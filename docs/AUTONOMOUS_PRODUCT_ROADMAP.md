@@ -137,7 +137,7 @@ reconciliation.
 
 - Status: **Awaiting Cesc review in PR #121** on
   `fix/private-watcher-state-directories` for issue #120; do not auto-merge.
-  Required native implementation CI is pending.
+  Required native implementation CI is green.
 - User outcome: Dockyard does not leave run-state or agent-state watcher
   directories readable or traversable by other local users because of a
   permissive process umask or an existing permissive directory.
@@ -169,7 +169,10 @@ reconciliation.
 - Evidence so far: localization parser tests and 418-key parity passed locally;
   `git diff --check` and the added-line secret scan passed. The Linux host has
   no Swift, Xcode or XcodeGen, so GitHub macOS CI is the mandatory native
-  build/test evidence.
+  build/test evidence. At head `9718872`, macOS CI run `31574879569` passed
+  localization parity, XcodeGen, the native build and the full XCTest suite;
+  CodeQL run `31574879598` passed its configured analyses. The final
+  roadmap-only head must also remain green.
 - Sources: issue #120, `PortDetector`, `AgentStateStore`, and private-state
   invariants already enforced by `FilePersistence`.
 
