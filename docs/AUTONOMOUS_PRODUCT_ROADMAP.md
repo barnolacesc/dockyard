@@ -135,9 +135,9 @@ reconciliation.
 
 ### R20 — Keep watcher-created state directories private
 
-- Status: **Implementation prepared for Cesc review** on
-  `fix/private-watcher-state-directories` for issue #120; PR pending. Do not
-  auto-merge.
+- Status: **Awaiting Cesc review in PR #121** on
+  `fix/private-watcher-state-directories` for issue #120; do not auto-merge.
+  Required native implementation CI is pending.
 - User outcome: Dockyard does not leave run-state or agent-state watcher
   directories readable or traversable by other local users because of a
   permissive process umask or an existing permissive directory.
@@ -166,6 +166,10 @@ reconciliation.
   5. Full GitHub macOS build/test passes.
 - Required evidence: focused XCTest, full `macos-15` CI, CodeQL as configured,
   localization parity, diff and secret checks.
+- Evidence so far: localization parser tests and 418-key parity passed locally;
+  `git diff --check` and the added-line secret scan passed. The Linux host has
+  no Swift, Xcode or XcodeGen, so GitHub macOS CI is the mandatory native
+  build/test evidence.
 - Sources: issue #120, `PortDetector`, `AgentStateStore`, and private-state
   invariants already enforced by `FilePersistence`.
 
