@@ -172,7 +172,13 @@ reconciliation.
   build/test evidence. At head `9718872`, macOS CI run `31574879569` passed
   localization parity, XcodeGen, the native build and the full XCTest suite;
   CodeQL run `31574879598` passed its configured analyses. The final
-  roadmap-only head must also remain green.
+  roadmap-only head must also remain green. Roadmap head `f40847a` passed
+  localization parity and XcodeGen before the third-party `setup-bun` action
+  failed with a transient `TypeError: fetch failed` in run `31575222849`; no
+  repository build or test ran on that attempt. The automation token received
+  `403` when requesting a failed-job rerun, so a subsequent evidence-only head
+  is required rather than treating that infrastructure failure as product
+  evidence.
 - Sources: issue #120, `PortDetector`, `AgentStateStore`, and private-state
   invariants already enforced by `FilePersistence`.
 
