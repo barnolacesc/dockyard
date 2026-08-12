@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# ABOUTME: Verifies Localizable.strings key parity across every supported Dockyard locale.
-# ABOUTME: Parses strings files without external dependencies and fails on malformed syntax.
-"""Check Dockyard localization files for deterministic key parity."""
+# ABOUTME: Verifies app-string and privacy-prompt key parity across supported locales.
+# ABOUTME: Parses Apple strings files without dependencies and fails on malformed syntax.
+"""Check Dockyard Apple strings resources for deterministic key parity."""
 
 from __future__ import annotations
 
@@ -12,11 +12,12 @@ from typing import Sequence
 
 
 SUPPORTED_LOCALES = ("en", "ca", "de", "es", "sv")
+RESOURCE_FILENAMES = ("Localizable.strings", "InfoPlist.strings")
 BASELINE_FILENAME = "key-parity-baseline.json"
 
 
 class StringsSyntaxError(ValueError):
-    """Raised when a Localizable.strings file cannot be parsed safely."""
+    """Raised when an Apple strings file cannot be parsed safely."""
 
 
 class StringsParser:
@@ -134,8 +135,12 @@ def parse_strings(text: str, source: str = "<string>") -> set[str]:
     return StringsParser(text, source).parse_keys()
 
 
-def _locale_path(localization_directory: Path, locale: str) -> Path:
-    return localization_directory / f"{locale}.lproj" / "Localizable.strings"
+def _locale_path(
+    localization_directory: Path,
+    locale: str,
+    filename: str = "Localizable.strings",
+) -> Path:
+    return localization_directory / f"{locale}.lproj" / filename
 
 
 def _display_keys(keys: set[str]) -> str:
@@ -188,61 +193,76 @@ def check_localizations(localization_directory: Path) -> list[str]:
     baseline, errors = _load_baseline(localization_directory)
     if errors:
         return errors
-    reference_path = _locale_path(localization_directory, "en")
-    if not reference_path.is_file():
-        return ["en: missing Localization/en.lproj/Localizable.strings"]
 
-    try:
-        reference_keys = parse_strings(
-            reference_path.read_text(encoding="utf-8"), str(reference_path)
-        )
-    except (OSError, UnicodeError, StringsSyntaxError) as error:
-        return [f"en: {error}"]
-
-    for locale in SUPPORTED_LOCALES[1:]:
-        locale_path = _locale_path(localization_directory, locale)
-        if not locale_path.is_file():
-            errors.append(
-                f"{locale}: missing Localization/{locale}.lproj/Localizable.strings"
-            )
+    for filename in RESOURCE_FILENAMES:
+        reference_path = _locale_path(localization_directory, "en", filename)
+        if not reference_path.is_file():
+            errors.append(f"en: missing Localization/en.lproj/{filename}")
             continue
+
+        reference_label = (
+            "en" if filename == "Localizable.strings" else f"en {filename}"
+        )
         try:
-            locale_keys = parse_strings(
-                locale_path.read_text(encoding="utf-8"), str(locale_path)
+            reference_keys = parse_strings(
+                reference_path.read_text(encoding="utf-8"), str(reference_path)
             )
         except (OSError, UnicodeError, StringsSyntaxError) as error:
-            errors.append(f"{locale}: {error}")
+            errors.append(f"{reference_label}: {error}")
             continue
 
-        missing = reference_keys - locale_keys
-        extra = locale_keys - reference_keys
-        expected_missing = baseline.get(locale, {}).get("missing", set())
-        expected_extra = baseline.get(locale, {}).get("extra", set())
-        new_missing = missing - expected_missing
-        new_extra = extra - expected_extra
-        resolved_missing = expected_missing - missing
-        resolved_extra = expected_extra - extra
-        if new_missing:
-            errors.append(f"{locale}: missing keys: {_display_keys(new_missing)}")
-        if new_extra:
-            errors.append(f"{locale}: extra keys: {_display_keys(new_extra)}")
-        if resolved_missing:
-            errors.append(
-                f"{locale}: remove resolved missing keys from {BASELINE_FILENAME}: "
-                f"{_display_keys(resolved_missing)}"
+        for locale in SUPPORTED_LOCALES[1:]:
+            locale_path = _locale_path(localization_directory, locale, filename)
+            if not locale_path.is_file():
+                errors.append(
+                    f"{locale}: missing Localization/{locale}.lproj/{filename}"
+                )
+                continue
+            label = (
+                locale
+                if filename == "Localizable.strings"
+                else f"{locale} {filename}"
             )
-        if resolved_extra:
-            errors.append(
-                f"{locale}: remove resolved extra keys from {BASELINE_FILENAME}: "
-                f"{_display_keys(resolved_extra)}"
+            try:
+                locale_keys = parse_strings(
+                    locale_path.read_text(encoding="utf-8"), str(locale_path)
+                )
+            except (OSError, UnicodeError, StringsSyntaxError) as error:
+                errors.append(f"{label}: {error}")
+                continue
+
+            missing = reference_keys - locale_keys
+            extra = locale_keys - reference_keys
+            resource_baseline = (
+                baseline if filename == "Localizable.strings" else {}
             )
+            expected_missing = resource_baseline.get(locale, {}).get("missing", set())
+            expected_extra = resource_baseline.get(locale, {}).get("extra", set())
+            new_missing = missing - expected_missing
+            new_extra = extra - expected_extra
+            resolved_missing = expected_missing - missing
+            resolved_extra = expected_extra - extra
+            if new_missing:
+                errors.append(f"{label}: missing keys: {_display_keys(new_missing)}")
+            if new_extra:
+                errors.append(f"{label}: extra keys: {_display_keys(new_extra)}")
+            if resolved_missing:
+                errors.append(
+                    f"{label}: remove resolved missing keys from {BASELINE_FILENAME}: "
+                    f"{_display_keys(resolved_missing)}"
+                )
+            if resolved_extra:
+                errors.append(
+                    f"{label}: remove resolved extra keys from {BASELINE_FILENAME}: "
+                    f"{_display_keys(resolved_extra)}"
+                )
 
     return errors
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Check Dockyard Localizable.strings key drift."
+        description="Check Dockyard Apple strings resource key drift."
     )
     parser.add_argument(
         "--localization-directory",
@@ -257,12 +277,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"ERROR: {error}")
         return 1
 
-    reference_path = _locale_path(arguments.localization_directory, "en")
-    key_count = len(
-        parse_strings(reference_path.read_text(encoding="utf-8"), str(reference_path))
-    )
+    key_counts = []
+    for filename in RESOURCE_FILENAMES:
+        reference_path = _locale_path(arguments.localization_directory, "en", filename)
+        key_counts.append(
+            f"{len(parse_strings(reference_path.read_text(encoding='utf-8'), str(reference_path)))} "
+            f"{filename} keys"
+        )
     print(
-        f"Localization key drift verified: {key_count} English keys across "
+        f"Localization key drift verified: {', '.join(key_counts)} across "
         f"{', '.join(SUPPORTED_LOCALES)}; known debt matches {BASELINE_FILENAME}."
     )
     return 0
