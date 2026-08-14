@@ -287,6 +287,7 @@ struct SettingsView: View {
                     description: "Starts Coding Agents in their full dangerous mode. Claude Code uses bypassPermissions. Codex bypasses approvals and sandboxing. Use only for trusted workstreams.",
                     descriptionStyle: bypassPermissions ? .warning : .secondary
                 )
+                .disabled(!selectedCodingCLI.capabilities.supportsDangerousPermissionBypass)
 
                 SettingToggle(
                     "Allow writes outside worktree",
@@ -296,7 +297,7 @@ struct SettingsView: View {
                 )
                 .disabled(bypassPermissions)
 
-                if bypassPermissions, selectedCodingCLI == .opencode || selectedCodingCLI == .gemini {
+                if bypassPermissions, !selectedCodingCLI.capabilities.supportsDangerousPermissionBypass {
                     Text("Dangerous permission mode is only wired for Claude Code and Codex.")
                         .font(.caption)
                         .foregroundStyle(DesignColor.statusWarning)

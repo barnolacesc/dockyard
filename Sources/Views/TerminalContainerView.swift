@@ -393,7 +393,7 @@ struct TerminalContainerView: View {
     }
 
     private var supportsLivePermissionControl: Bool {
-        selectedCodingCLI == .claude || selectedCodingCLI == .codex
+        selectedCodingCLI.capabilities.supportsLivePermissionControl
     }
 
     private var agentID: UUID {

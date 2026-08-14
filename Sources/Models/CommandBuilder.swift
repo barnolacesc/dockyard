@@ -176,14 +176,6 @@ enum CodingCLI: String, CaseIterable, Identifiable {
             return NSLocalizedString("Install Gemini CLI", comment: "")
         }
     }
-
-    var supportsAgentTeams: Bool {
-        self == .claude
-    }
-
-    var supportsAutoRenameBranch: Bool {
-        self == .claude
-    }
 }
 
 func effectiveCodingCLIRaw(workstream: String?, global: String) -> String {
@@ -275,7 +267,7 @@ enum CodingCLICommandBuilder {
         hookInvocation: AgentHookInvocation? = nil
     ) -> AgentLaunchCommand {
         let command: AgentLaunchCommand
-        switch cli {
+        switch cli.capabilities.commandStrategy {
         case .claude:
             command = buildClaudeAgentCommand(
                 cliPath: cliPath,
@@ -297,14 +289,14 @@ enum CodingCLICommandBuilder {
                 allowOutsideWorktree: allowOutsideWorktree,
                 hookInvocation: hookInvocation
             )
-        case .opencode, .gemini:
+        case .generic:
             command = buildGenericAgentCommand(
                 cliPath: cliPath,
                 workingDirectory: workingDirectory
             )
         }
 
-        if useTmux, let tmuxPath {
+        if useTmux, cli.capabilities.supportsDockyardTmuxPersistence, let tmuxPath {
             let session = TmuxSession.sessionName(project: projectName, workstream: workstreamName, role: "agent")
             let wrapped = TmuxSession.wrapCommand(
                 tmuxPath: tmuxPath,
