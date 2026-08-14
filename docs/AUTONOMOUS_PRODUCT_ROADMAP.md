@@ -555,6 +555,29 @@ slices instead of speed-running into an incident report.
 - Acceptance: retention/decay rules, restart recovery, VoiceOver labels,
   five locales and macOS visual evidence.
 
+#### UX direction — statusline first, not dashboard chrome
+
+The primary ambient-status surface is a **thin horizontal statusline anchored at
+the bottom of the Dockyard window**. It replaces neither the detailed sidebar
+nor the future attention inbox; it makes opening either one unnecessary for the
+common “is anything on fire?” glance.
+
+- Keep it one line, low-contrast and optically quiet: monospaced/tabular
+  numbers, concise SF Symbols and compact separators. No cards, gauges or
+  animated badge soup.
+- Show only actionable or bounded facts: selected Claude/Codex usage and reset
+  window, active/waiting agent counts, open/failed PR count, and the current
+  workstream’s agent state. Zero values stay hidden where possible.
+- A click opens the existing detailed surface (usage, workstream or PR); the
+  strip never creates a new control plane and never executes a command.
+- The existing sidebar status strip is useful source material, but R24 must
+  **compact and relocate** its signal rather than duplicate a bulky usage
+  meter in two places.
+- Success signal: at 13-inch width, the line remains readable without wrapping,
+  does not push terminal/editor content, and still exposes a VoiceOver summary.
+  Require screenshots at narrow and wide macOS window widths plus localization
+  and accessibility evidence.
+
 ### R25 — Local diff review and queued feedback
 
 - Status: **Ready for a read-only spike after R24**.
