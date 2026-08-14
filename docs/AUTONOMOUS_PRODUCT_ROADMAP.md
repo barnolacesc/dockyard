@@ -521,6 +521,36 @@ slices instead of speed-running into an incident report.
    five localizations, privacy/no telemetry, minimum entitlements and
    durable-restart correctness.
 
+### Herdr comparison — borrow the runtime ideas, not a second UI
+
+Herdr is a terminal-native agent multiplexer rather than an ADE window: it
+keeps real PTYs alive, can detach/reattach over SSH, recognizes agent state and
+offers a local CLI/socket API plus plugins. Dockyard already has a native
+Ghostty terminal, worktree lifecycle and tmux persistence, so embedding a
+second multiplexer would be redundant and fragile.
+
+The useful adoption path is:
+
+- **R23/R24:** a normalized, adapter-backed agent state model that reports
+  working, waiting, done/idle, stale and unknown honestly; render that model in
+  the quiet bottom statusline and future inbox.
+- **R25:** direct, explicit follow-up into an agent after local diff review,
+  mirroring Herdr's “inspect, wait, continue” loop without granting hidden
+  control.
+- **R32:** treat remote attach as a terminal/runtime protocol, inspired by
+  Herdr's SSH persistence. It remains a separate, approval-gated security
+  design; do not fake it through an unchecked SSH shell command.
+- **Later:** a small local, capability-scoped control API can expose
+  read-only state and intentional layout/worktree operations to trusted local
+  tools. Plugins or an arbitrary socket API are not in scope until ownership,
+  authentication and revocation are designed.
+
+The product split is therefore explicit: Dockyard owns the visual native
+worktree/review experience; it borrows Orca's calm high-signal control plane
+and Herdr's honest terminal-runtime semantics. Neither product justifies a
+cross-platform rewrite, telemetry, account service or a second terminal
+emulator.
+
 ## Now
 
 ### R23 — Agent capability contract and truthful status foundation
