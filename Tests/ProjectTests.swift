@@ -184,6 +184,36 @@ final class ProjectTests: XCTestCase {
         XCTAssertEqual(projects, loaded)
     }
 
+    func testProjectStoreSkipsMalformedRecordWithoutHidingHealthyProjects() throws {
+        let first = Project(name: "first", directory: "/first")
+        let second = Project(name: "second", directory: "/second")
+        let encoded = try JSONEncoder().encode([first, second])
+        var records = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [[String: Any]])
+        records.insert(
+            [
+                "id": UUID().uuidString,
+                "name": "missing required project fields",
+            ],
+            at: 1
+        )
+        testDefaults.set(
+            try JSONSerialization.data(withJSONObject: records),
+            forKey: "dockyard.projects"
+        )
+
+        let loaded = ProjectStore.load(defaults: testDefaults)
+
+        XCTAssertEqual(loaded.map(\.id), [first.id, second.id])
+        XCTAssertEqual(loaded.map(\.name), ["first", "second"])
+        XCTAssertEqual(loaded.map(\.directory), ["/first", "/second"])
+    }
+
+    func testProjectStoreRejectsInvalidTopLevelPayload() {
+        testDefaults.set(Data(#"{"unexpected":"object"}"#.utf8), forKey: "dockyard.projects")
+
+        XCTAssertTrue(ProjectStore.load(defaults: testDefaults).isEmpty)
+    }
+
     func testProjectDefaultsToNoWorkstreams() {
         let project = Project(name: "test", directory: "/test")
         XCTAssertTrue(project.workstreams.isEmpty)
