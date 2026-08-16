@@ -68,6 +68,121 @@ final class GitOperationsTests: XCTestCase {
         XCTAssertNil(GitOperations.mainRepositoryPath(for: subDir.path))
     }
 
+    // MARK: - registeredWorktreePath and removeWorktree
+
+    func testRegisteredWorktreePathAcceptsRegisteredNonMainWorktree() throws {
+        let repoDir = makeRepository(named: "registered-main")
+        let worktreeDir = tempDir.appendingPathComponent("registered-worktree")
+        XCTAssertTrue(git(["worktree", "add", "-b", "feature/registered", worktreeDir.path], in: repoDir))
+
+        XCTAssertEqual(
+            GitOperations.registeredWorktreePath(
+                projectPath: repoDir.path,
+                candidatePath: worktreeDir.path
+            ),
+            worktreeDir.resolvingSymlinksInPath().standardizedFileURL.path
+        )
+    }
+
+    func testRegisteredWorktreePathRejectsMainCheckoutAndUnrelatedDirectory() throws {
+        let repoDir = makeRepository(named: "rejected-main")
+        let nestedDir = repoDir.appendingPathComponent("nested")
+        try FileManager.default.createDirectory(at: nestedDir, withIntermediateDirectories: true)
+        let unrelatedDir = tempDir.appendingPathComponent("unrelated-directory")
+        try FileManager.default.createDirectory(at: unrelatedDir, withIntermediateDirectories: true)
+
+        XCTAssertNil(
+            GitOperations.registeredWorktreePath(
+                projectPath: repoDir.path,
+                candidatePath: repoDir.path
+            )
+        )
+        XCTAssertNil(
+            GitOperations.registeredWorktreePath(
+                projectPath: nestedDir.path,
+                candidatePath: repoDir.path
+            ),
+            "The actual main checkout must be rejected even when the project path is nested"
+        )
+        XCTAssertNil(
+            GitOperations.registeredWorktreePath(
+                projectPath: nestedDir.path,
+                candidatePath: unrelatedDir.path
+            )
+        )
+    }
+
+    func testRemoveWorktreeRejectsUnregisteredDirectoryWithoutDeletingIt() throws {
+        let repoDir = makeRepository(named: "remove-reject-main")
+        let unrelatedDir = tempDir.appendingPathComponent("remove-reject-unrelated")
+        try FileManager.default.createDirectory(at: unrelatedDir, withIntermediateDirectories: true)
+        let sentinel = unrelatedDir.appendingPathComponent("keep.txt")
+        try "keep".write(to: sentinel, atomically: true, encoding: .utf8)
+
+        XCTAssertFalse(
+            GitOperations.removeWorktree(
+                projectPath: repoDir.path,
+                worktreePath: unrelatedDir.path
+            )
+        )
+        XCTAssertTrue(FileManager.default.fileExists(atPath: sentinel.path))
+    }
+
+    func testRemoveWorktreeRejectsMainCheckoutWithoutDeletingIt() throws {
+        let repoDir = makeRepository(named: "remove-main")
+
+        XCTAssertFalse(
+            GitOperations.removeWorktree(
+                projectPath: repoDir.path,
+                worktreePath: repoDir.path
+            )
+        )
+        XCTAssertTrue(FileManager.default.fileExists(atPath: repoDir.appendingPathComponent(".git").path))
+        XCTAssertTrue(git(["rev-parse", "--verify", "refs/heads/main"], in: repoDir))
+    }
+
+    func testRemoveWorktreeRemovesRegisteredWorktreeButKeepsBranch() throws {
+        let repoDir = makeRepository(named: "remove-success-main")
+        let worktreeDir = tempDir.appendingPathComponent("remove-success-worktree")
+        XCTAssertTrue(git(["worktree", "add", "-b", "feature/remove-success", worktreeDir.path], in: repoDir))
+
+        XCTAssertTrue(
+            GitOperations.removeWorktree(
+                projectPath: repoDir.path,
+                worktreePath: worktreeDir.path
+            )
+        )
+        XCTAssertFalse(FileManager.default.fileExists(atPath: worktreeDir.path))
+        XCTAssertTrue(
+            git(["rev-parse", "--verify", "refs/heads/feature/remove-success"], in: repoDir),
+            "The caller owns branch deletion after a successful worktree removal"
+        )
+    }
+
+    func testRemoveWorktreeFailureKeepsRegisteredDirectoryAndBranch() throws {
+        let repoDir = makeRepository(named: "remove-failure-main")
+        let worktreeDir = tempDir.appendingPathComponent("remove-failure-worktree")
+        XCTAssertTrue(git(["worktree", "add", "-b", "feature/remove-failure", worktreeDir.path], in: repoDir))
+        XCTAssertTrue(git(["worktree", "lock", worktreeDir.path], in: repoDir))
+
+        XCTAssertNil(
+            GitOperations.registeredWorktreePath(
+                projectPath: repoDir.path,
+                candidatePath: worktreeDir.path
+            ),
+            "Locked worktrees must be rejected before teardown starts"
+        )
+
+        XCTAssertFalse(
+            GitOperations.removeWorktree(
+                projectPath: repoDir.path,
+                worktreePath: worktreeDir.path
+            )
+        )
+        XCTAssertTrue(FileManager.default.fileExists(atPath: worktreeDir.path))
+        XCTAssertTrue(git(["rev-parse", "--verify", "refs/heads/feature/remove-failure"], in: repoDir))
+    }
+
     // MARK: - defaultBranch
 
     func testDefaultBranchReturnsLocalMainWhenNoRemote() throws {
@@ -434,6 +549,17 @@ final class GitOperationsTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    private func makeRepository(named name: String) -> URL {
+        let repoDir = tempDir.appendingPathComponent(name)
+        try! FileManager.default.createDirectory(at: repoDir, withIntermediateDirectories: true)
+        XCTAssertTrue(git(["init", "-b", "main"], in: repoDir))
+        XCTAssertTrue(git([
+            "-c", "user.email=test@test.com", "-c", "user.name=Test",
+            "commit", "--allow-empty", "-m", "init",
+        ], in: repoDir))
+        return repoDir
+    }
 
     @discardableResult
     private func git(_ args: [String], in dir: URL) -> Bool {

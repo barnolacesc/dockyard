@@ -61,18 +61,27 @@ enum WorkstreamArchiver {
     ) {
         if let ws = project.workstreams.first(where: { $0.id == workstreamID }) {
             let projectDir = project.directory
-            let worktreePath = ws.worktreePath ?? projectDir
+            let configuredWorktreePath = ws.worktreePath
             let wsName = ws.name
             let projName = project.name
-            // Capture the branch name before the worktree is removed
-            let branchName = GitOperations.currentBranch(at: worktreePath)
             Task.detached {
-                ScriptConfig.runTeardown(in: worktreePath, projectDirectory: projectDir)
-                GitOperations.removeWorktree(projectPath: projectDir, worktreePath: worktreePath)
-                if let branchName {
-                    GitOperations.deleteLocalBranch(at: projectDir, branchName: branchName)
+                if let configuredWorktreePath,
+                   let worktreePath = GitOperations.registeredWorktreePath(
+                       projectPath: projectDir,
+                       candidatePath: configuredWorktreePath
+                   )
+                {
+                    // Capture the branch before Git removes the worktree. Teardown and
+                    // deletion are forbidden until the persisted path is registered.
+                    let branchName = GitOperations.currentBranch(at: worktreePath)
+                    ScriptConfig.runTeardown(in: worktreePath, projectDirectory: projectDir)
+                    if GitOperations.removeWorktree(projectPath: projectDir, worktreePath: worktreePath) {
+                        if let branchName {
+                            GitOperations.deleteLocalBranch(at: projectDir, branchName: branchName)
+                        }
+                        GitOperations.fetchDefaultBranch(at: projectDir)
+                    }
                 }
-                GitOperations.fetchDefaultBranch(at: projectDir)
                 if let tmuxPath {
                     TmuxSession.killWorkstreamSessions(tmuxPath: tmuxPath, project: projName, workstream: wsName)
                 }
