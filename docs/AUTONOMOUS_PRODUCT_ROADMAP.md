@@ -473,8 +473,9 @@ be merged or published autonomously.
 
 ### R35 — Refuse unregistered worktree purge targets
 
-- Status: **Implementation prepared for issue #132** on
-  `fix/refuse-unregistered-worktree-purge-r35`; stop at a tested PR for Cesc.
+- Status: **Awaiting Cesc review in PR #133** for issue #132 on
+  `fix/refuse-unregistered-worktree-purge-r35`; macOS CI is pending and the PR
+  must not be auto-merged.
 - User outcome: purging malformed or stale persisted state cannot run teardown
   against, force-remove, or recursively delete the main checkout or an
   unrelated directory.
