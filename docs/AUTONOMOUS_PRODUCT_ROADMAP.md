@@ -474,8 +474,8 @@ be merged or published autonomously.
 ### R35 — Refuse unregistered worktree purge targets
 
 - Status: **Awaiting Cesc review in PR #133** for issue #132 on
-  `fix/refuse-unregistered-worktree-purge-r35`; macOS CI is pending and the PR
-  must not be auto-merged.
+  `fix/refuse-unregistered-worktree-purge-r35`; the implementation head passed
+  macOS CI and the PR must not be auto-merged.
 - User outcome: purging malformed or stale persisted state cannot run teardown
   against, force-remove, or recursively delete the main checkout or an
   unrelated directory.
@@ -498,6 +498,12 @@ be merged or published autonomously.
   5. Focused XCTest and full GitHub macOS build/test pass.
 - Risk: high-adjacency bounded hardening because purge is destructive. Never
   auto-merge; Cesc must review and test the PR.
+- Native evidence: at implementation head `7666469`, macOS CI run
+  `31934526117` passed localization parity, XcodeGen, the native build and the
+  full XCTest suite including the new real-Git worktree tests. CodeQL run
+  `31934526124` passed Actions and JavaScript analysis; Swift analysis was
+  skipped by repository workflow configuration. The final roadmap-only head
+  must remain green.
 - Independence: the implementation paths and purge behavior do not overlap
   the open R16–R23/R34 changes, roadmap-only #126 or release metadata #63.
 
