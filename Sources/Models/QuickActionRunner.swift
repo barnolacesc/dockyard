@@ -84,13 +84,90 @@ struct QuickActionLogEntry: Identifiable {
     var exitCode: Int32?
 }
 
+struct QuickActionProcessResult: Sendable {
+    let output: String
+    let exitCode: Int32
+}
+
+protocol QuickActionProcess: AnyObject, Sendable {
+    func terminate()
+}
+
+typealias QuickActionProcessFactory = @MainActor (
+    _ executableURL: URL,
+    _ arguments: [String],
+    _ workingDirectoryURL: URL,
+    _ completion: @escaping @Sendable (QuickActionProcessResult) -> Void
+) throws -> any QuickActionProcess
+
+private final class FoundationQuickActionProcess: QuickActionProcess, @unchecked Sendable {
+    private let process: Process
+    private let pipe: Pipe
+    private let completion: @Sendable (QuickActionProcessResult) -> Void
+
+    init(
+        executableURL: URL,
+        arguments: [String],
+        workingDirectoryURL: URL,
+        completion: @escaping @Sendable (QuickActionProcessResult) -> Void
+    ) throws {
+        let process = Process()
+        let pipe = Pipe()
+        self.process = process
+        self.pipe = pipe
+        self.completion = completion
+
+        process.executableURL = executableURL
+        process.arguments = arguments
+        process.currentDirectoryURL = workingDirectoryURL
+        process.standardOutput = pipe
+        process.standardError = pipe
+        process.terminationHandler = { [weak self] terminatedProcess in
+            guard let self else { return }
+            let data = self.pipe.fileHandleForReading.readDataToEndOfFile()
+            self.completion(
+                QuickActionProcessResult(
+                    output: String(data: data, encoding: .utf8) ?? "",
+                    exitCode: terminatedProcess.terminationStatus
+                )
+            )
+        }
+
+        do {
+            try process.run()
+        } catch {
+            process.terminationHandler = nil
+            throw error
+        }
+    }
+
+    func terminate() {
+        if process.isRunning {
+            process.terminate()
+        }
+    }
+}
+
 @MainActor
 final class QuickActionRunner: ObservableObject {
     @Published var state: QuickActionState = .idle
     @Published var log: [QuickActionLogEntry] = []
     var onSuccess: ((QuickAction) -> Void)?
-    private var runningProcess: Process?
+    private let processFactory: QuickActionProcessFactory
+    private var runningProcess: (any QuickActionProcess)?
+    private var activeOperationID: UUID?
     private var dismissWork: DispatchWorkItem?
+
+    init(processFactory: @escaping QuickActionProcessFactory = { executableURL, arguments, workingDirectoryURL, completion in
+        try FoundationQuickActionProcess(
+            executableURL: executableURL,
+            arguments: arguments,
+            workingDirectoryURL: workingDirectoryURL,
+            completion: completion
+        )
+    }) {
+        self.processFactory = processFactory
+    }
 
     func run(
         action: QuickAction,
@@ -146,39 +223,41 @@ final class QuickActionRunner: ObservableObject {
         appendLog(action: .closePR, command: command)
         logger.info("Quick action closePR starting in \(workingDirectory, privacy: .public)")
 
-        let dir = workingDirectory
-        let path = ghPath
-        let branch = branchName
-        Task.detached {
-            let process = Process()
-            let pipe = Pipe()
-            process.executableURL = URL(fileURLWithPath: path)
-            process.arguments = ["pr", "close", branch, "--comment", "Closed from Dockyard"]
-            process.currentDirectoryURL = URL(fileURLWithPath: dir)
-            process.standardOutput = pipe
-            process.standardError = pipe
-            let success: Bool
-            let output: String
-            do {
-                try process.run()
-                process.waitUntilExit()
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                output = String(data: data, encoding: .utf8) ?? ""
-                success = process.terminationStatus == 0
-            } catch {
-                output = "Failed to launch: \(error.localizedDescription)"
-                success = false
-            }
-            await MainActor.run {
-                self.updateLog(output: output, exitCode: success ? 0 : 1)
-                self.runningProcess = nil
-                self.state = success ? .succeeded(.closePR) : .failed(.closePR)
-                if success {
-                    self.onSuccess?(.closePR)
+        let operationID = UUID()
+        activeOperationID = operationID
+
+        do {
+            runningProcess = try processFactory(
+                URL(fileURLWithPath: ghPath),
+                ["pr", "close", branchName, "--comment", "Closed from Dockyard"],
+                URL(fileURLWithPath: workingDirectory)
+            ) { [weak self] result in
+                Task { @MainActor [weak self] in
+                    self?.finishClosePR(operationID: operationID, result: result)
                 }
-                self.scheduleDismiss()
             }
+        } catch {
+            activeOperationID = nil
+            runningProcess = nil
+            updateLog(output: "Failed to launch: \(error.localizedDescription)", exitCode: 1)
+            state = .failed(.closePR)
+            scheduleDismiss()
         }
+    }
+
+    private func finishClosePR(operationID: UUID, result: QuickActionProcessResult) {
+        guard activeOperationID == operationID else { return }
+
+        activeOperationID = nil
+        runningProcess = nil
+        updateLog(output: result.output, exitCode: result.exitCode)
+
+        let succeeded = result.exitCode == 0
+        state = succeeded ? .succeeded(.closePR) : .failed(.closePR)
+        if succeeded {
+            onSuccess?(.closePR)
+        }
+        scheduleDismiss()
     }
 
     @discardableResult
@@ -200,8 +279,12 @@ final class QuickActionRunner: ObservableObject {
     }
 
     func cancel() {
-        runningProcess?.terminate()
+        dismissWork?.cancel()
+        dismissWork = nil
+        activeOperationID = nil
+        let process = runningProcess
         runningProcess = nil
+        process?.terminate()
         state = .idle
     }
 
