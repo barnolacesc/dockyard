@@ -909,11 +909,19 @@ struct ContentView: View {
 enum ProjectStore {
     private static let userDefaultsKey = "dockyard.projects"
 
+    private struct PersistedProject: Decodable {
+        let value: Project?
+
+        init(from decoder: Decoder) throws {
+            value = try? Project(from: decoder)
+        }
+    }
+
     static func load(defaults: UserDefaults = .standard) -> [Project] {
         guard let data = defaults.data(forKey: userDefaultsKey),
-              let projects = try? JSONDecoder().decode([Project].self, from: data)
+              let persistedProjects = try? JSONDecoder().decode([PersistedProject].self, from: data)
         else { return [] }
-        return projects
+        return persistedProjects.compactMap(\.value)
     }
 
     static func save(_ projects: [Project], defaults: UserDefaults = .standard) {
