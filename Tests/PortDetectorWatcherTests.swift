@@ -27,6 +27,29 @@ final class PortDetectorWatcherTests: XCTestCase {
     }
 
     @MainActor
+    func testCreatesMissingRunStateDirectoryWithPrivatePermissions() throws {
+        try FileManager.default.removeItem(at: root)
+
+        let detector = try makeDetector()
+        defer { detector.stop() }
+
+        XCTAssertEqual(try permissions(of: root), 0o700)
+    }
+
+    @MainActor
+    func testRepairsExistingRunStateDirectoryPermissionsWithoutRemovingState() throws {
+        let retainedState = root.appendingPathComponent("retained.json")
+        try Data("retained".utf8).write(to: retainedState)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: root.path)
+
+        let detector = try makeDetector()
+        defer { detector.stop() }
+
+        XCTAssertEqual(try permissions(of: root), 0o700)
+        XCTAssertEqual(try Data(contentsOf: retainedState), Data("retained".utf8))
+    }
+
+    @MainActor
     func testObservesOrdinaryStateFileReplacement() async throws {
         let detector = try makeDetector()
         defer { detector.stop() }
@@ -52,6 +75,7 @@ final class PortDetectorWatcherTests: XCTestCase {
         try writeState(port: 4200)
 
         try await waitForPort(4200, from: detector)
+        XCTAssertEqual(try permissions(of: root), 0o700)
     }
 
     @MainActor
@@ -96,6 +120,11 @@ final class PortDetectorWatcherTests: XCTestCase {
         encoder.dateEncodingStrategy = .iso8601
         let data = try encoder.encode(snapshot)
         try data.write(to: stateURL, options: .atomic)
+    }
+
+    private func permissions(of url: URL) throws -> Int {
+        let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+        return try XCTUnwrap(attributes[.posixPermissions] as? NSNumber).intValue & 0o777
     }
 
     @MainActor

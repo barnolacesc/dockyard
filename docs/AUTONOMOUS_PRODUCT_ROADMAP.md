@@ -199,6 +199,73 @@ issue #114 records this run.
 
 ## Next
 
+### R20 — Keep watcher-created state directories private
+
+- Status: **Awaiting Cesc review in PR #121** on
+  `fix/private-watcher-state-directories` for issue #120; do not auto-merge.
+  Required native implementation CI is green.
+- User outcome: Dockyard does not leave run-state or agent-state watcher
+  directories readable or traversable by other local users because of a
+  permissive process umask or an existing permissive directory.
+- Success signal: both watchers create and repair their state directories as
+  `0700` before attaching filesystem observers, including agent-state watcher
+  recovery, without replacing retained state files.
+- macOS impact: local filesystem watcher setup only; no UI, accessibility,
+  localization or visual behavior changes.
+- Persistence/security impact: narrows permissions on existing cache
+  directories without changing schemas, state writers, worktree behavior,
+  command execution, entitlements or cleanup.
+- Scope: `PortDetector`, `AgentStateStore`, focused watcher/state tests and
+  roadmap evidence only.
+- Dependencies: none. Open PRs #113, #115, #117 and #119 change environment
+  activation, tmux diagnostics, tour/sidebar content and editor writes;
+  release-please #63 changes release metadata. R20's implementation paths and
+  behavior are independent and can merge in either order.
+- Risk: low and reversible local permission hardening. Native CI is mandatory.
+- Acceptance criteria:
+  1. Missing run-state and agent-state directories are created as `0700`.
+  2. Existing `0755` directories are repaired to `0700` without replacing
+     retained files.
+  3. Agent-state directory replacement recovery re-establishes `0700` before
+     watching the replacement.
+  4. Existing run-state and agent-state observation behavior remains green.
+  5. Full GitHub macOS build/test passes.
+- Required evidence: focused XCTest, full `macos-15` CI, CodeQL as configured,
+  localization parity, diff and secret checks.
+- Evidence so far: localization parser tests and 418-key parity passed locally;
+  `git diff --check` and the added-line secret scan passed. The Linux host has
+  no Swift, Xcode or XcodeGen, so GitHub macOS CI is the mandatory native
+  build/test evidence. At head `9718872`, macOS CI run `31574879569` passed
+  localization parity, XcodeGen, the native build and the full XCTest suite;
+  CodeQL run `31574879598` passed its configured analyses. The final
+  roadmap-only head must also remain green. Roadmap head `f40847a` passed
+  localization parity and XcodeGen before the third-party `setup-bun` action
+  failed with a transient `TypeError: fetch failed` in run `31575222849`; no
+  repository build or test ran on that attempt. The automation token received
+  `403` when requesting a failed-job rerun, so a subsequent evidence-only head
+  is required rather than treating that infrastructure failure as product
+  evidence.
+- Sources: issue #120, `PortDetector`, `AgentStateStore`, and private-state
+  invariants already enforced by `FilePersistence`.
+
+### Independent Ready queue while R16–R20 await review
+
+GitHub Projects v2 remains unavailable: the token has `repo` and `workflow`
+but lacks `read:project`, and the API returned `INSUFFICIENT_SCOPES`. No
+Project item or status is inferred. `origin/main` is `ceeea08`; its latest
+push CI, CodeQL and Release workflows are green. The latest published release
+remains v0.2.1.
+
+- **R21 — Validate localized macOS privacy prompts in CI:** extend the
+  deterministic localization checker to verify `InfoPlist.strings` key parity
+  across all five locales. This is a read-only release-integrity guard; it must
+  not add usage descriptions, entitlements or privacy claims.
+- **R22 — Validate localization bundle membership in CI:** add a deterministic
+  manifest check proving `project.yml` includes `Localizable.strings` and
+  `InfoPlist.strings` for every supported locale. Scope is a standalone script,
+  focused Python tests and one CI invocation; it must not regenerate or edit
+  the Xcode project, localization values, usage descriptions or entitlements.
+
 ### R2 — Classify merged-PR worktrees without deleting them
 
 - Status: **Ready**.
