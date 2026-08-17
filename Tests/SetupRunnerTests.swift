@@ -103,3 +103,77 @@ final class SetupRunnerTests: XCTestCase {
         SetupStateStore.remove(for: id2)
     }
 }
+
+final class SetupStateStoreTests: XCTestCase {
+    private let userDefaultsKey = "dockyard.setupCompleted"
+    private var suiteName: String!
+    private var defaults: UserDefaults!
+
+    override func setUp() {
+        super.setUp()
+        suiteName = "SetupStateStoreTests.\(UUID().uuidString)"
+        defaults = UserDefaults(suiteName: suiteName)
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
+    override func tearDown() {
+        defaults.removePersistentDomain(forName: suiteName)
+        defaults = nil
+        suiteName = nil
+        super.tearDown()
+    }
+
+    func test_mixedPayloadPreservesValidCompletionIdentifiers() throws {
+        let first = UUID()
+        let second = UUID()
+        let payload: [Any] = [
+            first.uuidString,
+            ["unexpected": true],
+            "not-a-uuid",
+            42,
+            second.uuidString,
+            NSNull(),
+        ]
+        defaults.set(try JSONSerialization.data(withJSONObject: payload), forKey: userDefaultsKey)
+
+        XCTAssertTrue(SetupStateStore.isCompleted(for: first, defaults: defaults))
+        XCTAssertTrue(SetupStateStore.isCompleted(for: second, defaults: defaults))
+        XCTAssertFalse(SetupStateStore.isCompleted(for: UUID(), defaults: defaults))
+    }
+
+    func test_markCompletedPreservesRecoveredIdentifiersAndCanonicalizesStorage() throws {
+        let existing = UUID()
+        let added = UUID()
+        let payload: [Any] = [existing.uuidString, ["unexpected": true]]
+        defaults.set(try JSONSerialization.data(withJSONObject: payload), forKey: userDefaultsKey)
+
+        SetupStateStore.markCompleted(for: added, defaults: defaults)
+
+        let savedData = try XCTUnwrap(defaults.data(forKey: userDefaultsKey))
+        let saved = try JSONDecoder().decode(Set<String>.self, from: savedData)
+        XCTAssertEqual(saved, Set([existing.uuidString, added.uuidString]))
+    }
+
+    func test_invalidTopLevelPayloadFailsClosed() throws {
+        let workstreamID = UUID()
+        let payload = ["completed": [workstreamID.uuidString]]
+        defaults.set(try JSONSerialization.data(withJSONObject: payload), forKey: userDefaultsKey)
+
+        XCTAssertFalse(SetupStateStore.isCompleted(for: workstreamID, defaults: defaults))
+    }
+
+    func test_removePreservesOtherRecoveredIdentifiers() throws {
+        let removed = UUID()
+        let retained = UUID()
+        let payload: [Any] = [removed.uuidString, false, retained.uuidString]
+        defaults.set(try JSONSerialization.data(withJSONObject: payload), forKey: userDefaultsKey)
+
+        SetupStateStore.remove(for: removed, defaults: defaults)
+
+        XCTAssertFalse(SetupStateStore.isCompleted(for: removed, defaults: defaults))
+        XCTAssertTrue(SetupStateStore.isCompleted(for: retained, defaults: defaults))
+        let savedData = try XCTUnwrap(defaults.data(forKey: userDefaultsKey))
+        let saved = try JSONDecoder().decode(Set<String>.self, from: savedData)
+        XCTAssertEqual(saved, Set([retained.uuidString]))
+    }
+}

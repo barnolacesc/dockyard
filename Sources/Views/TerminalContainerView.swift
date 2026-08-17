@@ -29,32 +29,44 @@ extension Notification.Name {
 enum SetupStateStore {
     private static let userDefaultsKey = "dockyard.setupCompleted"
 
-    static func isCompleted(for workstreamID: UUID) -> Bool {
-        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
-              let saved = try? JSONDecoder().decode(Set<String>.self, from: data)
-        else { return false }
-        return saved.contains(workstreamID.uuidString)
+    private struct LossyIdentifier: Decodable {
+        let value: String?
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            guard let rawValue = try? container.decode(String.self),
+                  let identifier = UUID(uuidString: rawValue)
+            else {
+                value = nil
+                return
+            }
+            value = identifier.uuidString
+        }
     }
 
-    static func markCompleted(for workstreamID: UUID) {
-        var saved: Set<String> = []
-        if let data = UserDefaults.standard.data(forKey: userDefaultsKey),
-           let existing = try? JSONDecoder().decode(Set<String>.self, from: data)
-        {
-            saved = existing
-        }
+    private static func completedIdentifiers(in defaults: UserDefaults) -> Set<String> {
+        guard let data = defaults.data(forKey: userDefaultsKey),
+              let decoded = try? JSONDecoder().decode([LossyIdentifier].self, from: data)
+        else { return [] }
+        return Set(decoded.compactMap(\.value))
+    }
+
+    static func isCompleted(for workstreamID: UUID, defaults: UserDefaults = .standard) -> Bool {
+        completedIdentifiers(in: defaults).contains(workstreamID.uuidString)
+    }
+
+    static func markCompleted(for workstreamID: UUID, defaults: UserDefaults = .standard) {
+        var saved = completedIdentifiers(in: defaults)
         saved.insert(workstreamID.uuidString)
         guard let data = try? JSONEncoder().encode(saved) else { return }
-        UserDefaults.standard.set(data, forKey: userDefaultsKey)
+        defaults.set(data, forKey: userDefaultsKey)
     }
 
-    static func remove(for workstreamID: UUID) {
-        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
-              var saved = try? JSONDecoder().decode(Set<String>.self, from: data)
-        else { return }
+    static func remove(for workstreamID: UUID, defaults: UserDefaults = .standard) {
+        var saved = completedIdentifiers(in: defaults)
         saved.remove(workstreamID.uuidString)
         guard let encoded = try? JSONEncoder().encode(saved) else { return }
-        UserDefaults.standard.set(encoded, forKey: userDefaultsKey)
+        defaults.set(encoded, forKey: userDefaultsKey)
     }
 }
 
