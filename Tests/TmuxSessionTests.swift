@@ -5,6 +5,64 @@
 import XCTest
 
 final class TmuxSessionTests: XCTestCase {
+    private var cacheDirectory: URL!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        cacheDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("dockyard-tmux-session-\(UUID().uuidString)", isDirectory: true)
+    }
+
+    override func tearDownWithError() throws {
+        try? FileManager.default.removeItem(at: cacheDirectory)
+        try super.tearDownWithError()
+    }
+
+    func testWrapCommandCreatesPrivateDiagnosticStateBeforeRedirection() throws {
+        let command = TmuxSession.wrapCommand(
+            tmuxPath: "/opt/homebrew/bin/tmux",
+            sessionName: "proj/ws/agent",
+            command: "claude",
+            shell: "/bin/zsh",
+            cacheDirectory: cacheDirectory
+        )
+        let logURL = cacheDirectory.appendingPathComponent("tmux-stderr.log")
+
+        XCTAssertEqual(try permissions(of: cacheDirectory), 0o700)
+        XCTAssertEqual(try permissions(of: logURL), 0o600)
+        XCTAssertTrue(command.contains("tmux-stderr.log"))
+    }
+
+    func testWrapCommandRepairsPermissiveDiagnosticStateWithoutReplacingLog() throws {
+        try FileManager.default.createDirectory(
+            at: cacheDirectory,
+            withIntermediateDirectories: true
+        )
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o755],
+            ofItemAtPath: cacheDirectory.path
+        )
+        let logURL = cacheDirectory.appendingPathComponent("tmux-stderr.log")
+        let existingContents = Data("existing diagnostics\n".utf8)
+        try existingContents.write(to: logURL)
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o644],
+            ofItemAtPath: logURL.path
+        )
+
+        _ = TmuxSession.wrapCommand(
+            tmuxPath: "/opt/homebrew/bin/tmux",
+            sessionName: "proj/ws/agent",
+            command: "claude",
+            shell: "/bin/zsh",
+            cacheDirectory: cacheDirectory
+        )
+
+        XCTAssertEqual(try permissions(of: cacheDirectory), 0o700)
+        XCTAssertEqual(try permissions(of: logURL), 0o600)
+        XCTAssertEqual(try Data(contentsOf: logURL), existingContents)
+    }
+
     func testConfigKeepsNativeMouseSelectionEnabled() {
         XCTAssertTrue(TmuxSession.configContents.contains("set -g mouse off"))
         XCTAssertFalse(TmuxSession.configContents.contains("set -g mouse on"))
@@ -176,5 +234,10 @@ final class TmuxSessionTests: XCTestCase {
         XCTAssertTrue(command.contains("source-file"))
         XCTAssertTrue(command.contains("new-session -A -s"))
         XCTAssertTrue(command.contains("bun run build"))
+    }
+
+    private func permissions(of url: URL) throws -> Int {
+        let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+        return try XCTUnwrap(attributes[.posixPermissions] as? NSNumber).intValue & 0o777
     }
 }

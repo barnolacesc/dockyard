@@ -4,9 +4,12 @@
 import Foundation
 
 enum TmuxSession {
+    private static let privateDirectoryPermissions = 0o700
+    private static let privateFilePermissions = 0o600
+
     /// Path to the tmux stderr log file in the cache directory.
     static var stderrLogPath: String {
-        AppConstants.cacheDirectory.appendingPathComponent("tmux-stderr.log").path
+        stderrLogURL(in: AppConstants.cacheDirectory).path
     }
 
     /// Build a deterministic session name from project, workstream, and role.
@@ -43,11 +46,11 @@ enum TmuxSession {
     }
 
     /// Path to the minimal tmux config that makes tmux invisible.
-    private static var configPath: String {
-        let path = AppConstants.cacheDirectory.appendingPathComponent("tmux.conf")
+    private static func configPath(in cacheDirectory: URL) -> String {
+        let path = cacheDirectory.appendingPathComponent("tmux.conf")
         // Write config if missing or outdated
         let fm = FileManager.default
-        try? fm.createDirectory(at: AppConstants.cacheDirectory, withIntermediateDirectories: true)
+        try? fm.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
         if let existing = try? String(contentsOfFile: path.path, encoding: .utf8), existing == configContents {
             return path.path
         }
@@ -62,8 +65,19 @@ enum TmuxSession {
     /// Dedicated socket name so we don't interfere with the user's tmux.
     private static let socketName = AppConstants.appID
 
-    static func wrapCommand(tmuxPath: String, sessionName: String, command: String?, environmentVars: [String: String] = [:], respawnOnExit: Bool = false, shell: String = CommandBuilder.userShell) -> String {
+    static func wrapCommand(
+        tmuxPath: String,
+        sessionName: String,
+        command: String?,
+        environmentVars: [String: String] = [:],
+        respawnOnExit: Bool = false,
+        shell: String = CommandBuilder.userShell,
+        cacheDirectory: URL = AppConstants.cacheDirectory
+    ) -> String {
+        try? prepareDiagnosticState(in: cacheDirectory)
+
         let socket = shellEscape(socketName)
+        let configPath = configPath(in: cacheDirectory)
         let conf = shellEscape(configPath)
         let escaped = shellEscape(sessionName)
 
@@ -85,7 +99,11 @@ enum TmuxSession {
         // Use login shell for proper PATH, with inner sh for POSIX syntax.
         // Both the sh -c argument and the outer login shell argument use
         // Fish-aware quoting when Fish is the shell.
-        let setup = serverSetupCommand(tmuxPath: tmuxPath, configPath: configPath)
+        let setup = serverSetupCommand(
+            tmuxPath: tmuxPath,
+            configPath: configPath,
+            stderrLogPath: stderrLogURL(in: cacheDirectory).path
+        )
         let innerCmd = "\(setup); exec \(tmuxCmd)"
         let shArgQuote = CommandBuilder.isFish(shell)
             ? CommandBuilder.shellQuote(innerCmd, forShell: shell)
@@ -144,7 +162,43 @@ enum TmuxSession {
             .replacingOccurrences(of: "`", with: "\\`")
     }
 
-    private static func serverSetupCommand(tmuxPath: String, configPath: String) -> String {
+    static func prepareDiagnosticState(
+        in cacheDirectory: URL,
+        fileManager: FileManager = .default
+    ) throws {
+        try fileManager.createDirectory(
+            at: cacheDirectory,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: privateDirectoryPermissions]
+        )
+        try fileManager.setAttributes(
+            [.posixPermissions: privateDirectoryPermissions],
+            ofItemAtPath: cacheDirectory.path
+        )
+
+        let logURL = stderrLogURL(in: cacheDirectory)
+        if !fileManager.fileExists(atPath: logURL.path) {
+            _ = fileManager.createFile(
+                atPath: logURL.path,
+                contents: nil,
+                attributes: [.posixPermissions: privateFilePermissions]
+            )
+        }
+        try fileManager.setAttributes(
+            [.posixPermissions: privateFilePermissions],
+            ofItemAtPath: logURL.path
+        )
+    }
+
+    private static func stderrLogURL(in cacheDirectory: URL) -> URL {
+        cacheDirectory.appendingPathComponent("tmux-stderr.log")
+    }
+
+    private static func serverSetupCommand(
+        tmuxPath: String,
+        configPath: String,
+        stderrLogPath: String
+    ) -> String {
         let socket = shellEscape(socketName)
         let conf = shellEscape(configPath)
         let logFile = shellEscape(stderrLogPath)

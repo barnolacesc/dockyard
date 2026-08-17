@@ -1,15 +1,81 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-08-09 against `origin/main` at
-`2a92c7ebb8963f991bceecfd431d22be162c2c04`.
+Last reconciled: 2026-08-10 against `origin/main` at
+`ceeea0811d385396f497632469a705b184a13953`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
 not an automatically trusted backlog.
 
-The final **Live reconciliation** section is canonical. Earlier dated sections
-are retained as an audit trail and can contain statuses superseded by a later
-reconciliation.
+The **Current autonomous queue** is canonical. Dated **Live reconciliation**
+sections are retained as an audit trail and can contain superseded statuses.
+
+## Current autonomous queue — 2026-08-10 16:30 CEST
+
+`origin/main` is `ceeea08`; its macOS `build-and-test`, CodeQL and release
+automation checks are green. R16 / PR #113 is healthy and **awaiting Cesc
+review**; it changes `RunLauncher`, `WorkstreamEnvironment` and focused tests.
+Release-please PR #63 changes only version/changelog metadata, remains
+approval-gated and must not be merged or published autonomously. The latest
+published release remains v0.2.1.
+
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the automation token
+has `repo` and `workflow` but lacks `read:project`. No Project data or status is
+inferred. Open implementation issues at selection were #41, #43, #54 and #112;
+issue #114 records this run.
+
+### R17 — Protect tmux diagnostic state
+
+- Status: **Awaiting Cesc review in PR #115** on
+  `fix/private-tmux-diagnostics` for issue #114. The PR must not be
+  auto-merged.
+- User outcome: tmux diagnostic output is not left readable by other local
+  users after first creation or when an older permissive cache exists.
+- Success signal: constructing a tmux command creates or repairs the Dockyard
+  cache directory to `0700` and `tmux-stderr.log` to `0600` before shell
+  redirection, while preserving existing log bytes.
+- macOS impact: tmux command preparation only; no UI, accessibility,
+  localization or visual behavior changes.
+- Persistence/security impact: narrows local diagnostic-file permissions. Tmux
+  commands, session names, app-restart persistence, archive/purge cleanup,
+  entitlements and release behavior remain unchanged.
+- Scope: `TmuxSession`, focused `TmuxSessionTests` and roadmap evidence only.
+- Risk: low and reversible; full GitHub macOS CI is mandatory.
+- Acceptance criteria:
+  1. First use creates the cache directory as `0700` and stderr log as `0600`.
+  2. Existing `0755`/`0644` modes are repaired without replacing log content.
+  3. Diagnostic state exists before the generated command can use `2>>`.
+  4. Existing tmux command-composition and shell-parsing tests remain green.
+  5. Full GitHub macOS build/test passes.
+- Required evidence: focused XCTest, full `macos-15` CI, CodeQL as configured,
+  localization parity, diff and secret checks.
+- Native evidence: at implementation head `12200ab`, macOS CI run
+  `31399327020` passed localization parity, XcodeGen, the native build and the
+  full XCTest suite including `TmuxSessionTests`. CodeQL run `31399327146`
+  passed Actions and JavaScript analysis; Swift analysis was skipped by the
+  repository's PR workflow configuration. The final roadmap-only head must
+  also remain green.
+- Independence: PR #113 changes environment activation paths; PR #63 changes
+  release metadata. R17 changes tmux diagnostic setup and its tests, so the
+  implementations can merge in either order. Roadmap updates use this
+  top-level canonical queue to avoid conflicting dated audit-log appends.
+
+### Independent Ready queue while R16 and R17 await review
+
+- **R18 — Add the passive power-features tour:** expose existing shortcut
+  hints, usage meters, tmux persistence and archive semantics without launching
+  commands or changing persisted workstreams. One `TourFlow`, controller tests,
+  five localizations and native visual/accessibility evidence; source is the
+  remaining unchecked tour item in `TODO.md`.
+- **R19 — Contain close-tab editor saves:** resolve the unsaved-editor close
+  path through `WorkspaceFileAccess` before writing, matching ordinary saves
+  and rejecting absolute, traversal, same-prefix and escaping-symlink paths.
+  This file-write boundary is approval-gated; focused tests and full macOS CI
+  are required.
+- **R20 — Keep watcher-created state directories private:** create and repair
+  run-state and agent-state watcher directories as `0700` before attaching
+  filesystem observers. Scope is `PortDetector`, `AgentStateStore` and focused
+  tests; state schemas, writers and watcher recovery behavior remain unchanged.
 
 ## Evidence and limits
 
