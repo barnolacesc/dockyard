@@ -75,24 +75,26 @@ enum WorkstreamEnvironment {
 
         
         var pathsToPrepend: [String] = []
-        let fileManager = FileManager.default
-        let projectURL = URL(fileURLWithPath: projectDirectory)
-        
-        let venvBin = projectURL.appendingPathComponent("venv/bin").path
-        let dotVenvBin = projectURL.appendingPathComponent(".venv/bin").path
-        let nodeBin = projectURL.appendingPathComponent("node_modules/.bin").path
-        
-        if fileManager.fileExists(atPath: venvBin + "/activate") {
-            pathsToPrepend.append(venvBin)
-        } else if fileManager.fileExists(atPath: dotVenvBin + "/activate") {
-            pathsToPrepend.append(dotVenvBin)
+
+        if let activationURL = ProjectEnvironmentAccess.containedFileURL(
+            "venv/bin/activate",
+            projectDirectory: projectDirectory
+        ) {
+            pathsToPrepend.append(activationURL.deletingLastPathComponent().path)
+        } else if let activationURL = ProjectEnvironmentAccess.containedFileURL(
+            ".venv/bin/activate",
+            projectDirectory: projectDirectory
+        ) {
+            pathsToPrepend.append(activationURL.deletingLastPathComponent().path)
         }
-        
-        var isDir: ObjCBool = false
-        if fileManager.fileExists(atPath: nodeBin, isDirectory: &isDir), isDir.boolValue {
-            pathsToPrepend.append(nodeBin)
+
+        if let nodeBinURL = ProjectEnvironmentAccess.containedDirectoryURL(
+            "node_modules/.bin",
+            projectDirectory: projectDirectory
+        ) {
+            pathsToPrepend.append(nodeBinURL.path)
         }
-        
+
         if !pathsToPrepend.isEmpty {
             let currentPath = ProcessInfo.processInfo.environment["PATH"] ?? ""
             vars["PATH"] = (pathsToPrepend + [currentPath]).filter { !$0.isEmpty }.joined(separator: ":")

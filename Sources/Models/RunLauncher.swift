@@ -6,6 +6,64 @@ import os
 
 private let logger = Logger(subsystem: "dockyard", category: "run-launcher")
 
+enum ProjectEnvironmentAccess {
+    static func containedFileURL(
+        _ relativePath: String,
+        projectDirectory: String,
+        fileManager: FileManager = .default
+    ) -> URL? {
+        guard let candidateURL = containedURL(relativePath, projectDirectory: projectDirectory) else {
+            return nil
+        }
+
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: candidateURL.path, isDirectory: &isDirectory),
+              !isDirectory.boolValue
+        else { return nil }
+
+        return candidateURL
+    }
+
+    static func containedDirectoryURL(
+        _ relativePath: String,
+        projectDirectory: String,
+        fileManager: FileManager = .default
+    ) -> URL? {
+        guard let candidateURL = containedURL(relativePath, projectDirectory: projectDirectory) else {
+            return nil
+        }
+
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: candidateURL.path, isDirectory: &isDirectory),
+              isDirectory.boolValue
+        else { return nil }
+
+        return candidateURL
+    }
+
+    private static func containedURL(_ relativePath: String, projectDirectory: String) -> URL? {
+        guard !relativePath.isEmpty,
+              !(relativePath as NSString).isAbsolutePath
+        else { return nil }
+
+        let projectURL = URL(fileURLWithPath: projectDirectory, isDirectory: true)
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
+        let candidateURL = URL(fileURLWithPath: projectDirectory, isDirectory: true)
+            .appendingPathComponent(relativePath)
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
+        let projectComponents = projectURL.pathComponents
+        let candidateComponents = candidateURL.pathComponents
+
+        guard candidateComponents.count > projectComponents.count,
+              candidateComponents.prefix(projectComponents.count).elementsEqual(projectComponents)
+        else { return nil }
+
+        return candidateURL
+    }
+}
+
 enum RunLauncher {
     static func executableURL(bundle: Bundle = .main) -> URL? {
         let helperURL = bundle.bundleURL.appendingPathComponent("Contents/Helpers/dy-run")
@@ -24,11 +82,12 @@ enum RunLauncher {
         return nil
     }
 static func wrapWithVenv(_ script: String, projectDirectory: String) -> String {
-    let fm = FileManager.default
     for candidate in ["venv/bin/activate", ".venv/bin/activate"] {
-        let path = (projectDirectory as NSString).appendingPathComponent(candidate)
-        if fm.fileExists(atPath: path) {
-            return "source \(CommandBuilder.shellQuote(path)) && \(script)"
+        if let activationURL = ProjectEnvironmentAccess.containedFileURL(
+            candidate,
+            projectDirectory: projectDirectory
+        ) {
+            return "source \(CommandBuilder.shellQuote(activationURL.path)) && \(script)"
         }
     }
     return script
