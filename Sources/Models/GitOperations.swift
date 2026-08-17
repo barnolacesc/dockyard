@@ -181,18 +181,78 @@ enum GitOperations {
         }
     }
 
-    /// Remove a git worktree.
-    static func removeWorktree(projectPath: String, worktreePath: String) {
-        let worktreeDir = URL(fileURLWithPath: worktreePath)
-
-        _ = run(args: ["worktree", "remove", "--force", worktreePath], in: projectPath)
-
-        // Clean up empty directories
-        try? FileManager.default.removeItem(at: worktreeDir)
-        let parentDir = worktreeDir.deletingLastPathComponent()
-        if let contents = try? FileManager.default.contentsOfDirectory(atPath: parentDir.path), contents.isEmpty {
-            try? FileManager.default.removeItem(at: parentDir)
+    /// Resolve a candidate to a removable, registered non-main worktree owned by the project.
+    /// Persisted paths are untrusted because stale or malformed state must never turn
+    /// purge into a recursive deletion of an unrelated directory.
+    static func registeredWorktreePath(projectPath: String, candidatePath: String) -> String? {
+        guard let output = run(args: ["worktree", "list", "--porcelain"], in: projectPath) else {
+            return nil
         }
+
+        let records = output.components(separatedBy: "\n\n")
+        guard let mainPathLine = records.first?
+            .components(separatedBy: .newlines)
+            .first(where: { $0.hasPrefix("worktree ") })
+        else { return nil }
+        let mainURL = URL(fileURLWithPath: String(mainPathLine.dropFirst("worktree ".count)))
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
+        let candidateURL = URL(fileURLWithPath: candidatePath)
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
+        guard candidateURL.path != mainURL.path else { return nil }
+
+        for record in records {
+            let lines = record.components(separatedBy: .newlines)
+            guard !lines.contains(where: { $0.hasPrefix("locked") || $0.hasPrefix("prunable") }),
+                  let pathLine = lines.first(where: { $0.hasPrefix("worktree ") })
+            else { continue }
+            let listedPath = String(pathLine.dropFirst("worktree ".count))
+            let listedURL = URL(fileURLWithPath: listedPath)
+                .standardizedFileURL
+                .resolvingSymlinksInPath()
+            guard listedURL.path != mainURL.path else { continue }
+            if listedURL.path == candidateURL.path {
+                return listedURL.path
+            }
+        }
+        return nil
+    }
+
+    /// Remove a registered non-main git worktree.
+    /// Returns false without deleting files when Git does not recognize or refuses the target.
+    @discardableResult
+    static func removeWorktree(projectPath: String, worktreePath: String) -> Bool {
+        guard let registeredPath = registeredWorktreePath(
+            projectPath: projectPath,
+            candidatePath: worktreePath
+        ) else {
+            logger.warning("[Dockyard] Refusing to remove unregistered worktree path")
+            return false
+        }
+
+        guard run(args: ["worktree", "remove", "--force", registeredPath], in: projectPath) != nil else {
+            return false
+        }
+
+        // Git owns removal of the worktree itself. Only tidy an empty Dockyard-created
+        // project container, never an arbitrary parent directory.
+        let parentDir = URL(fileURLWithPath: registeredPath).deletingLastPathComponent()
+        let rootURL = AppConstants.worktreesDirectory
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
+        let parentURL = parentDir.standardizedFileURL.resolvingSymlinksInPath()
+        let rootComponents = rootURL.pathComponents
+        let parentComponents = parentURL.pathComponents
+        let isDockyardContainer = parentComponents.count > rootComponents.count
+            && Array(parentComponents.prefix(rootComponents.count)) == rootComponents
+        if isDockyardContainer,
+           let contents = try? FileManager.default.contentsOfDirectory(atPath: parentURL.path),
+           contents.isEmpty
+        {
+            try? FileManager.default.removeItem(at: parentURL)
+        }
+        return true
     }
 
     /// Check if a worktree has uncommitted changes (staged, unstaged, or untracked files).

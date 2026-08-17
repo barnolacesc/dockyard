@@ -454,3 +454,90 @@ Project item or status is inferred.
   Selected R15 / issue #109 as the highest-priority independent Ready item from
   a fresh `origin/main` worktree. No release, merge or older-PR comment was
   performed.
+
+## Live reconciliation — 2026-08-16 09:30 CEST
+
+This section supersedes every earlier status. `origin/main` is `ceeea08`; its
+latest macOS CI, CodeQL and Release workflows succeeded. v0.2.1 remains the
+latest published release. GitHub Projects v2 was queried and returned
+`INSUFFICIENT_SCOPES`: the automation token has `repo` and `workflow` but not
+`read:project`, so no Project item or status is inferred.
+
+Implementation PRs #113 (R16), #115 (R17), #117 (R18), #119 (R19), #121
+(R20), #123 (R21), #125 (R22), #128 (R23) and #131 (R34) are clean,
+Git-mergeable, green on macOS `build-and-test`, and **awaiting Cesc review**.
+Roadmap-only PR #126 is also clean and green. Their changed paths, behaviors
+and dependencies were compared before this run; none is modified, stacked on
+or duplicated here. Release-please PR #63 remains approval-gated and must not
+be merged or published autonomously.
+
+### R35 — Refuse unregistered worktree purge targets
+
+- Status: **Awaiting Cesc review in PR #133** for issue #132 on
+  `fix/refuse-unregistered-worktree-purge-r35`; the implementation head passed
+  macOS CI and the PR must not be auto-merged.
+- User outcome: purging malformed or stale persisted state cannot run teardown
+  against, force-remove, or recursively delete the main checkout or an
+  unrelated directory.
+- Success signal: only a removable Git-registered non-main worktree reaches
+  teardown/removal; a refused Git removal leaves its directory and branch
+  intact; branch deletion occurs only after successful removal.
+- macOS impact: no UI change. This is worktree cleanup behavior exercised by
+  the native app.
+- Persistence/security impact: treats persisted worktree paths as untrusted
+  and narrows a destructive filesystem and command-execution boundary.
+- Scope: `GitOperations`, `WorkstreamArchiver` and focused real-repository
+  tests. Preserve the explicit Purge UI, valid teardown, tmux cleanup and
+  metadata removal. No migration, entitlement, release or localization change.
+- Acceptance criteria:
+  1. Registered non-main worktrees resolve and retain existing force-removal.
+  2. Missing, main, unrelated, locked and stale/prunable paths are rejected
+     before teardown or filesystem deletion.
+  3. Git refusal preserves the candidate directory and branch.
+  4. The caller deletes a branch only after confirmed worktree removal.
+  5. Focused XCTest and full GitHub macOS build/test pass.
+- Risk: high-adjacency bounded hardening because purge is destructive. Never
+  auto-merge; Cesc must review and test the PR.
+- Native evidence: at implementation head `7666469`, macOS CI run
+  `31934526117` passed localization parity, XcodeGen, the native build and the
+  full XCTest suite including the new real-Git worktree tests. CodeQL run
+  `31934526124` passed Actions and JavaScript analysis; Swift analysis was
+  skipped by repository workflow configuration. The final roadmap-only head
+  must remain green.
+- Independence: the implementation paths and purge behavior do not overlap
+  the open R16–R23/R34 changes, roadmap-only #126 or release metadata #63.
+
+### Independent Ready queue while R35 and older PRs await review
+
+- **R36 — Make Quick Action cancellation real:** retain the running `gh`
+  process and terminate it on Cancel so a user cannot see an idle UI while a
+  Close PR mutation continues in the background. Success: deterministic
+  process-double tests prove cancellation, completion and single terminal
+  state. Scope: `QuickActionRunner` and focused tests only; no new GitHub
+  operation or permission. Independent of every open implementation PR.
+- **R37 — Preserve setup-completion records through malformed entries:** decode
+  setup-completion IDs independently so one invalid persisted element cannot
+  erase all valid markers and unexpectedly rerun previously completed setup
+  scripts. Success: mixed valid/invalid fixtures preserve valid UUIDs while
+  invalid top-level data fails closed. Scope: `SetupStateStore` and focused
+  persistence tests; no script content, trust or launch change. Its storage
+  behavior is independent of PR #119's editor close-save path in the same view
+  file and can merge in either order.
+- **R38 — Keep dirty default checkouts on their current commit:** do not move a
+  local default-branch ref to `origin` when its checkout has staged, unstaged
+  or untracked work and cannot be safely reset. Success: temporary-remote tests
+  prove clean checkouts fast-forward while dirty checkout refs, index and files
+  remain unchanged. Scope: the later `updateDefaultBranch` block and focused
+  Git tests; it is behaviorally separate from R35's worktree-removal block and
+  can merge in either order.
+
+R24 remains **blocked on R23 merging** because its normalized activity
+vocabulary must not be duplicated while PR #128 awaits review. R25 and R27–R29
+retain their documented dependencies. Issues #41, #43 and #54 remain open;
+#41 needs native profiling, #43 crosses the update-execution approval gate and
+#54 must not be claimed complete by the capability-only R23 slice.
+
+- **2026-08-16 09:30 CEST:** reconciled current main, `TODO.md`, all open
+  issues/PRs and their changed paths/checks, latest release and Projects v2
+  scope. Selected independent R35 / issue #132 from a fresh `origin/main`
+  worktree. No older PR comment, merge, release or Project mutation occurred.
