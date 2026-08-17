@@ -458,9 +458,9 @@ enum GitOperations {
         _ = run(args: ["branch", "-D", branchName], in: path)
     }
 
-    /// Fetch the default branch from origin, fast-forward the local ref to match,
-    /// and reset the working tree if it is clean. Fails silently when there is no
-    /// remote, the network is unreachable, or the working tree has local changes.
+    /// Fetch the default branch from origin, then fast-forward the local ref and
+    /// working tree only when the checkout is clean. Fails silently when there is
+    /// no remote, the network is unreachable, or the working tree has local changes.
     static func updateDefaultBranch(at path: String) {
         guard run(args: ["remote", "get-url", "origin"], in: path) != nil else { return }
 
@@ -481,18 +481,25 @@ enum GitOperations {
             return
         }
 
+        // Moving a checked-out ref before checking status can strand staged,
+        // unstaged, or untracked work against a different HEAD. Fail closed if
+        // status cannot prove that the checkout is clean.
+        guard let status = run(args: ["status", "--porcelain", "--ignore-submodules=dirty"], in: path),
+              status.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else {
+            logger.info(
+                "[Dockyard] Fetched latest \(branch, privacy: .public), but left the dirty checkout unchanged"
+            )
+            return
+        }
+
         // Move the local ref to match origin
         guard run(args: ["update-ref", "refs/heads/\(branch)", "refs/remotes/origin/\(branch)"], in: path) != nil else {
             return
         }
 
-        // Reset the working tree only if it is clean
-        if !hasUncommittedChanges(at: path) {
-            _ = run(args: ["reset", "--hard", "--quiet"], in: path)
-            logger.info("[Dockyard] Updated \(branch, privacy: .public) to latest")
-        } else {
-            logger.info("[Dockyard] Updated \(branch, privacy: .public) ref but working tree has local changes, skipping reset")
-        }
+        _ = run(args: ["reset", "--hard", "--quiet"], in: path)
+        logger.info("[Dockyard] Updated \(branch, privacy: .public) to latest")
     }
 
     /// Per-file git status for the file tree (modified, untracked, ignored).

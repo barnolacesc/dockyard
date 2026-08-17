@@ -358,6 +358,35 @@ final class GitOperationsTests: XCTestCase {
         XCTAssertNotEqual(beforeSHA, remoteSHA, "Remote tracking ref should have advanced")
     }
 
+    // MARK: - updateDefaultBranch
+
+    func testUpdateDefaultBranchFastForwardsCleanCheckout() throws {
+        let (remoteDir, repoDir) = try makeRemoteClone(named: "clean-default-update")
+        let remoteSHA = try advanceRemote(remoteDir)
+
+        GitOperations.updateDefaultBranch(at: repoDir.path)
+
+        XCTAssertEqual(gitOutput(["rev-parse", "refs/heads/main"], in: repoDir), remoteSHA)
+        XCTAssertEqual(gitOutput(["rev-parse", "refs/remotes/origin/main"], in: repoDir), remoteSHA)
+        XCTAssertEqual(
+            try String(contentsOf: repoDir.appendingPathComponent("remote.txt"), encoding: .utf8),
+            "remote change"
+        )
+        XCTAssertEqual(gitOutput(["status", "--porcelain"], in: repoDir), "")
+    }
+
+    func testUpdateDefaultBranchPreservesStagedCheckout() throws {
+        try assertDirtyDefaultCheckoutIsPreserved(.staged)
+    }
+
+    func testUpdateDefaultBranchPreservesUnstagedCheckout() throws {
+        try assertDirtyDefaultCheckoutIsPreserved(.unstaged)
+    }
+
+    func testUpdateDefaultBranchPreservesUntrackedCheckout() throws {
+        try assertDirtyDefaultCheckoutIsPreserved(.untracked)
+    }
+
     // MARK: - fileStatuses
 
     func testFileStatusesReturnsModifiedForTrackedChanges() throws {
@@ -546,6 +575,83 @@ final class GitOperationsTests: XCTestCase {
         XCTAssertEqual(byBranch["feature/dirty"]?.isDirty, true)
         XCTAssertEqual(byBranch["feature/ahead"]?.isDirty, false)
         XCTAssertEqual(byBranch["feature/ahead"]?.hasBranchCommits, true)
+    }
+
+    // MARK: - updateDefaultBranch Helpers
+
+    private enum DirtyCheckoutKind: String {
+        case staged
+        case unstaged
+        case untracked
+    }
+
+    private func makeRemoteClone(named name: String) throws -> (remote: URL, clone: URL) {
+        let remoteDir = tempDir.appendingPathComponent("\(name)-remote")
+        try FileManager.default.createDirectory(at: remoteDir, withIntermediateDirectories: true)
+        XCTAssertTrue(git(["init", "-b", "main"], in: remoteDir))
+        try "base".write(
+            to: remoteDir.appendingPathComponent("tracked.txt"),
+            atomically: true,
+            encoding: .utf8
+        )
+        XCTAssertTrue(git(["add", "tracked.txt"], in: remoteDir))
+        XCTAssertTrue(git([
+            "-c", "user.email=test@test.com", "-c", "user.name=Test",
+            "commit", "-m", "initial",
+        ], in: remoteDir))
+
+        let repoDir = tempDir.appendingPathComponent("\(name)-local")
+        XCTAssertTrue(git(["clone", remoteDir.path, repoDir.path], in: tempDir))
+        return (remoteDir, repoDir)
+    }
+
+    private func advanceRemote(_ remoteDir: URL) throws -> String {
+        try "remote change".write(
+            to: remoteDir.appendingPathComponent("remote.txt"),
+            atomically: true,
+            encoding: .utf8
+        )
+        XCTAssertTrue(git(["add", "remote.txt"], in: remoteDir))
+        XCTAssertTrue(git([
+            "-c", "user.email=test@test.com", "-c", "user.name=Test",
+            "commit", "-m", "remote change",
+        ], in: remoteDir))
+        return gitOutput(["rev-parse", "HEAD"], in: remoteDir)
+    }
+
+    private func assertDirtyDefaultCheckoutIsPreserved(_ kind: DirtyCheckoutKind) throws {
+        let (remoteDir, repoDir) = try makeRemoteClone(named: "dirty-\(kind.rawValue)")
+        let trackedFile = repoDir.appendingPathComponent("tracked.txt")
+        let untrackedFile = repoDir.appendingPathComponent("untracked.txt")
+
+        switch kind {
+        case .staged:
+            try "staged change".write(to: trackedFile, atomically: true, encoding: .utf8)
+            XCTAssertTrue(git(["add", "tracked.txt"], in: repoDir))
+        case .unstaged:
+            try "unstaged change".write(to: trackedFile, atomically: true, encoding: .utf8)
+        case .untracked:
+            try "untracked change".write(to: untrackedFile, atomically: true, encoding: .utf8)
+        }
+
+        let localSHABefore = gitOutput(["rev-parse", "refs/heads/main"], in: repoDir)
+        let indexBefore = gitOutput(["ls-files", "--stage"], in: repoDir)
+        let statusBefore = gitOutput(["status", "--porcelain"], in: repoDir)
+        let trackedContentsBefore = try String(contentsOf: trackedFile, encoding: .utf8)
+        let untrackedContentsBefore = try? String(contentsOf: untrackedFile, encoding: .utf8)
+        let remoteSHA = try advanceRemote(remoteDir)
+
+        GitOperations.updateDefaultBranch(at: repoDir.path)
+
+        XCTAssertEqual(gitOutput(["rev-parse", "refs/heads/main"], in: repoDir), localSHABefore)
+        XCTAssertEqual(gitOutput(["rev-parse", "refs/remotes/origin/main"], in: repoDir), remoteSHA)
+        XCTAssertEqual(gitOutput(["ls-files", "--stage"], in: repoDir), indexBefore)
+        XCTAssertEqual(gitOutput(["status", "--porcelain"], in: repoDir), statusBefore)
+        XCTAssertEqual(try String(contentsOf: trackedFile, encoding: .utf8), trackedContentsBefore)
+        XCTAssertEqual(try? String(contentsOf: untrackedFile, encoding: .utf8), untrackedContentsBefore)
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: repoDir.appendingPathComponent("remote.txt").path)
+        )
     }
 
     // MARK: - Helpers
