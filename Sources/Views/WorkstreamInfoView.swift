@@ -265,6 +265,7 @@ struct WorkstreamInfoView: View {
                     }
 
                     Toggle("Dangerously skip permissions", isOn: $bypassPermissions)
+                        .disabled(!selectedCodingCLI.capabilities.supportsDangerousPermissionBypass)
 
                     Text("Saved for the next Coding Agent start.")
                         .font(.caption)

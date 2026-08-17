@@ -21,17 +21,17 @@ enum AgentHooks {
     /// Returns hook invocation data for the given CLI, or nil if the CLI does
     /// not support hooks in a way we can target.
     static func hookInvocation(for cli: CodingCLI, workstreamID: UUID, helperPath: String) throws -> AgentHookInvocation? {
-        switch cli {
-        case .claude:
+        switch cli.capabilities.stateReportingStrategy {
+        case .claudeHooks:
             let url = try writeClaudeSettings(workstreamID: workstreamID, helperPath: helperPath)
             return AgentHookInvocation(
                 generatedConfigURL: url,
                 commandConfigOverrides: [],
                 commandFlags: []
             )
-        case .codex:
+        case .codexHooks:
             return codexHookInvocation(workstreamID: workstreamID, helperPath: helperPath)
-        case .opencode, .gemini:
+        case .unavailable:
             return nil
         }
     }

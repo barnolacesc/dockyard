@@ -47,7 +47,7 @@ enum WorkstreamEnvironment {
             vars["DY_VENV_DIR"] = inferredVenv
         }
         
-        if codingCLI == .claude, agentTeams {
+        if codingCLI.capabilities.supportsAgentTeams, agentTeams {
             vars["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "1"
         }
 
