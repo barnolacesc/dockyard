@@ -1288,11 +1288,13 @@ struct TerminalContainerView: View {
                 if let bridge = editorBridge,
                    let relativePath = editorFilePaths[id]
                 {
-                    let fullPath = (workingDirectory as NSString)
-                        .appendingPathComponent(relativePath)
                     guard let content = await bridge.getContent(modelId: id.uuidString) else { return }
                     do {
-                        try content.write(toFile: fullPath, atomically: true, encoding: .utf8)
+                        try WorkspaceFileAccess.writeEditorContent(
+                            content,
+                            to: relativePath,
+                            rootPath: workingDirectory
+                        )
                     } catch {
                         let errorAlert = NSAlert(error: error)
                         errorAlert.runModal()
