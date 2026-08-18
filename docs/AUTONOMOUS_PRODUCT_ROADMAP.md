@@ -750,8 +750,9 @@ published autonomously. GitHub Projects v2 again returned
 
 ### R39 — Aggregate active Claude Code subagents into workstream status
 
-- Status: **Selected for implementation** on
-  `feat/claude-subagent-status-r39`; source issue #54.
+- Status: **Awaiting Cesc review in PR #140** on
+  `feat/claude-subagent-status-r39`; source issue #54. Native macOS CI is
+  pending at this reconciliation point.
 - User outcome: a workstream no longer appears idle while one or more Claude
   Code subagents are still running, while a main-agent permission/waiting
   state remains the higher-priority actionable signal.
@@ -821,6 +822,6 @@ future slices of issue #54 and must not be inferred from R39.
 
 - **2026-08-18 09:30 CEST:** reconciled current `origin/main`, `TODO.md`,
   open issues/PRs and changed paths, release/CI state and Projects v2 scope.
-  Selected R39 / issue #54 from a fresh `origin/main` worktree. No older PR
-  was modified or commented on, and no merge, release or Project mutation was
-  performed.
+  Selected R39 / issue #54 from a fresh `origin/main` worktree and opened PR
+  #140 for Cesc review. No older PR was modified or commented on, and no merge,
+  release or Project mutation was performed.
