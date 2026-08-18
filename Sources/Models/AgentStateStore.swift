@@ -9,6 +9,7 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
 
     @Published private(set) var states: [UUID: AgentState] = [:]
     @Published private(set) var chromeActiveWorkstreamIDs = Set<UUID>()
+    @Published private(set) var activeSubagentCounts: [UUID: Int] = [:]
 
     private let queue = DispatchQueue(label: "dockyard.agent-state-store")
     private var directorySource: DispatchSourceFileSystemObject?
@@ -123,6 +124,10 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
         chromeActiveWorkstreamIDs.contains(workstreamID)
     }
 
+    func activeSubagentCount(for workstreamID: UUID) -> Int {
+        activeSubagentCounts[workstreamID, default: 0]
+    }
+
     /// Synchronous rescan of the directory. Tests call this directly so they
     /// do not depend on filesystem-event delivery timing.
     func refresh() {
@@ -140,12 +145,16 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
             if self.chromeActiveWorkstreamIDs != next.chromeActiveWorkstreamIDs {
                 self.chromeActiveWorkstreamIDs = next.chromeActiveWorkstreamIDs
             }
+            if self.activeSubagentCounts != next.activeSubagentCounts {
+                self.activeSubagentCounts = next.activeSubagentCounts
+            }
         }
     }
 
     private struct ScannedState {
         var states: [UUID: AgentState] = [:]
         var chromeActiveWorkstreamIDs = Set<UUID>()
+        var activeSubagentCounts: [UUID: Int] = [:]
     }
 
     private static func scanDirectory(at dirURL: URL, now: Date) -> ScannedState {
@@ -154,12 +163,26 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
         }
         var result = ScannedState()
         for url in entries where url.pathExtension == "json" {
+            if AgentSubagentFiles.isSubagentFile(url) {
+                guard let snapshot = AgentSubagentFiles.load(from: url),
+                      RunStateStore.isProcessRunning(pid: snapshot.pid)
+                else {
+                    continue
+                }
+                result.activeSubagentCounts[snapshot.workstreamID, default: 0] += 1
+                continue
+            }
             let basename = url.deletingPathExtension().lastPathComponent
             guard let id = UUID(uuidString: basename) else { continue }
             guard let snapshot = Self.loadValidated(from: url) else { continue }
             result.states[id] = Self.decayedState(snapshot, now: now)
             if snapshot.chromeActive {
                 result.chromeActiveWorkstreamIDs.insert(id)
+            }
+        }
+        for (workstreamID, count) in result.activeSubagentCounts where count > 0 {
+            if result.states[workstreamID] != .waiting {
+                result.states[workstreamID] = .working
             }
         }
         return result

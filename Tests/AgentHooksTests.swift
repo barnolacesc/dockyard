@@ -86,6 +86,8 @@ final class AgentHooksTests: XCTestCase {
         XCTAssertNotNil(hooks?["UserPromptSubmit"])
         XCTAssertNotNil(hooks?["Notification"])
         XCTAssertNotNil(hooks?["Stop"])
+        XCTAssertNotNil(hooks?["SubagentStart"])
+        XCTAssertNotNil(hooks?["SubagentStop"])
         XCTAssertNotNil(hooks?["PreToolUse"])
         XCTAssertNotNil(hooks?["PostToolUse"])
 
@@ -107,6 +109,14 @@ final class AgentHooksTests: XCTestCase {
         XCTAssertEqual(postToolUse?["matcher"] as? String, "mcp__claude-in-chrome__.*")
         let postToolHook = (postToolUse?["hooks"] as? [[String: Any]])?.first
         XCTAssertTrue((postToolHook?["command"] as? String)?.contains("--chrome-active false") == true)
+
+        let subagentStart = (hooks?["SubagentStart"] as? [[String: Any]])?.first
+        let subagentStartHook = (subagentStart?["hooks"] as? [[String: Any]])?.first
+        XCTAssertTrue((subagentStartHook?["command"] as? String)?.contains("--subagent-event start") == true)
+
+        let subagentStop = (hooks?["SubagentStop"] as? [[String: Any]])?.first
+        let subagentStopHook = (subagentStop?["hooks"] as? [[String: Any]])?.first
+        XCTAssertTrue((subagentStopHook?["command"] as? String)?.contains("--subagent-event stop") == true)
     }
 
     func testHelperPathWithSpacesIsShellQuoted() throws {
