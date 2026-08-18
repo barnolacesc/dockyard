@@ -790,6 +790,11 @@ published autonomously. GitHub Projects v2 again returned
 - Required evidence: `AgentHooksTests`, `AgentStateTests`,
   `CodingAgentCapabilitiesTests`, localization scripts, `git diff --check`,
   diff secret scan and GitHub macOS `build-and-test`.
+- Native evidence: implementation head `7964325` passed macOS CI run
+  `32113214528`: localization resource/key checks, XcodeGen, the native build
+  and the full XCTest suite all succeeded. CodeQL run `32113214601` passed
+  Actions and JavaScript analysis; Swift analysis was skipped by repository
+  workflow configuration. The final roadmap-only head must also remain green.
 - Sources: issue #54, `AgentHooks.swift`, `AgentStateStore.swift`, and the
   official Claude Code hooks reference for `SubagentStart` /
   `SubagentStop`.
