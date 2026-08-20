@@ -70,5 +70,11 @@ jobs:
       - name: Build
         run: ./scripts/dev.sh build
 
+      - name: Verify bundled helpers
+        run: |
+          python3 scripts/test_check_bundled_helpers.py
+          python3 scripts/check_bundled_helpers.py \
+            --app-bundle "build/debug/derived/Build/Products/Debug/Dockyard Debug.app"
+
       - name: Test
         run: ./scripts/dev.sh test
