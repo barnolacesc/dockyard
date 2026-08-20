@@ -36,8 +36,8 @@ inferred. Open product issues at selection were #41, #43, #54 and #116; issue
 ### R40 — Verify bundled helper integrity in macOS CI
 
 - Status: **Awaiting Cesc review in PR #142** on
-  `ci/verify-bundled-helpers-r40` for issue #141. Native CI is pending; never
-  auto-merge this PR.
+  `ci/verify-bundled-helpers-r40` for issue #141. Required native
+  implementation CI is green; never auto-merge this PR.
 - User outcome: a green native build cannot omit the `dy-run` or
   `dy-agent-state` helper and silently break environment launch or agent-status
   integration at runtime.
@@ -62,7 +62,12 @@ inferred. Open product issues at selection were #41, #43, #54 and #116; issue
 - Required evidence: focused Python tests, localization scripts,
   `git diff --check`, added-line secret scan, full macOS `build-and-test` and
   configured CodeQL.
-- Native evidence: pending GitHub checks; Linux is not native macOS evidence.
+- Native evidence: at head `a6f318c`, macOS CI run `32344974032` passed
+  localization checks, XcodeGen, the native build, the actual bundled-helper
+  verification and the full XCTest suite. CodeQL run `32344974025` passed its
+  configured Actions and JavaScript analyses; Swift analysis was skipped by
+  the repository workflow configuration. The final roadmap-only head must also
+  remain green. Linux is not native macOS evidence.
 - Sources: issue #141, PR #142, `project.yml` helper post-build phases,
   `.github/workflows/ci.yml` and the R40 Ready item recorded by PR #140.
 
