@@ -27,9 +27,9 @@ inferred. Open product issues before this run were #41, #43, #54, #116 and
 
 ### R41 — Bound run-state cache reads before decoding
 
-- Status: **Implementation in progress** on
-  `fix/bound-run-state-cache-reads-r41` for issue #143. The resulting PR must
-  remain open for Cesc review and must not be auto-merged.
+- Status: **Awaiting Cesc review in PR #144** on
+  `fix/bound-run-state-cache-reads-r41` for issue #143. Native CI is pending;
+  the PR must remain open and must not be auto-merged.
 - User outcome: a malformed local run-state cache entry cannot make browser
   retargeting allocate unbounded memory or follow a symbolic link outside the
   expected cache file.
@@ -58,6 +58,11 @@ inferred. Open product issues before this run were #41, #43, #54, #116 and
 - Required evidence: focused XCTest, localization scripts, XcodeGen/native
   build, full XCTest, `git diff --check`, added-line secret scan and configured
   CodeQL.
+- Evidence so far: localization resource/key tests and repository checks pass,
+  including 418 app keys and 15 privacy keys across all five locales;
+  `git diff --check` and the added-line secret scan pass. The Linux host has no
+  Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is
+  the mandatory native build/test evidence.
 
 ### Independent Ready queue while R39–R41 await review
 
