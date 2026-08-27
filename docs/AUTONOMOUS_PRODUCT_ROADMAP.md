@@ -754,9 +754,9 @@ and #143; issue #145 records this run.
 
 ### R42 — Build a read-only GitHub issue task preview
 
-- Status: **Implementation prepared for issue #145** on
-  `feat/github-issue-task-preview-r42`; the pull request and native evidence
-  will be recorded after push. The PR must remain open for Cesc's review.
+- Status: **Awaiting Cesc review in PR #146** for issue #145 on
+  `feat/github-issue-task-preview-r42`; native CI is pending and the PR must
+  not be auto-merged.
 - User outcome: issue intake can show exactly what would be handed to a coding
   agent before any worktree or prompt exists.
 - Success signal: a pure parser deterministically retains the positive issue
@@ -785,6 +785,11 @@ and #143; issue #145 records this run.
 - Required evidence: focused XCTest, localization scripts, XcodeGen/native
   build, full XCTest, `git diff --check`, added-line secret scan and configured
   CodeQL.
+- Evidence so far: both deterministic localization checker suites and live
+  checks pass (10 resource declarations, 418 app keys and 15 privacy keys
+  across all five locales); `git diff --check` and the added-file secret scan
+  pass. The Linux host has no Swift, Xcode, XcodeGen, SwiftFormat or prek
+  executable, so GitHub macOS CI is the mandatory native build/test evidence.
 
 ### Independent Ready queue while R39–R42 await review
 
