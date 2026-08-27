@@ -1,6 +1,7 @@
 // ABOUTME: Application settings pane displayed in the detail area.
 // ABOUTME: Environment, general, coding agent, and advanced settings.
 
+import Foundation
 import SwiftUI
 
 struct SettingsView: View {
@@ -578,6 +579,10 @@ enum BinaryStatus {
 }
 
 struct ToolStatus {
+    static let probeTimeout: TimeInterval = 2
+    static let probeTerminationGrace: TimeInterval = 0.25
+    static let maximumProbeOutputBytes = 64 * 1024
+
     var tmux: BinaryStatus = .notFound
     var tmuxVersion: String?
     var claude: BinaryStatus = .notFound
@@ -640,8 +645,12 @@ struct ToolStatus {
         return .found(path)
     }
 
-    private static func runForVersion(_ path: String, args: [String]) -> String? {
-        guard let output = runCommand(path, args: args) else { return nil }
+    static func runForVersion(
+        _ path: String,
+        args: [String],
+        processFactory: ToolProbeProcessFactory = defaultToolProbeProcessFactory
+    ) -> String? {
+        guard let output = runCommand(path, args: args, processFactory: processFactory) else { return nil }
         let trimmed = output
             .replacingOccurrences(of: "tmux ", with: "")
             .replacingOccurrences(of: "gh version ", with: "")
@@ -649,8 +658,17 @@ struct ToolStatus {
         return trimmed.components(separatedBy: .newlines).first?.trimmingCharacters(in: .whitespaces)
     }
 
-    private static func helpContainsFlag(_ path: String, flag: String) -> Bool {
-        guard let output = runCommand(path, args: ["--help"], includeStderr: true) else { return false }
+    static func helpContainsFlag(
+        _ path: String,
+        flag: String,
+        processFactory: ToolProbeProcessFactory = defaultToolProbeProcessFactory
+    ) -> Bool {
+        guard let output = runCommand(
+            path,
+            args: ["--help"],
+            includeStderr: true,
+            processFactory: processFactory
+        ) else { return false }
         return output.contains(flag)
     }
 
@@ -671,23 +689,40 @@ struct ToolStatus {
         return "Not authenticated"
     }
 
-    private static func runCommand(_ path: String, args: [String], includeStderr: Bool = false) -> String? {
-        let process = Process()
-        let pipe = Pipe()
-        let errPipe = Pipe()
-        process.executableURL = URL(fileURLWithPath: path)
-        process.arguments = args
-        process.standardOutput = pipe
-        process.standardError = includeStderr ? pipe : errPipe
+    static func runCommand(
+        _ path: String,
+        args: [String],
+        includeStderr: Bool = false,
+        processFactory: ToolProbeProcessFactory = defaultToolProbeProcessFactory
+    ) -> String? {
+        let process: any ToolProbeProcess
         do {
+            process = try processFactory(
+                URL(fileURLWithPath: path),
+                args,
+                includeStderr,
+                maximumProbeOutputBytes
+            )
             try process.run()
-            process.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            guard process.terminationStatus == 0 || includeStderr else { return nil }
-            return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
         } catch {
             return nil
         }
+
+        guard process.waitForExit(timeout: probeTimeout) else {
+            process.terminate()
+            if !process.waitForExit(timeout: probeTerminationGrace) {
+                process.forceTerminate()
+                _ = process.waitForExit(timeout: probeTerminationGrace)
+            }
+            return nil
+        }
+
+        let result = process.result
+        guard !result.outputExceededLimit,
+              result.terminationStatus == 0 || includeStderr
+        else { return nil }
+        return String(data: result.output, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
