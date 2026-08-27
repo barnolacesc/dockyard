@@ -29,7 +29,7 @@ inferred. Open product issues before selection were #41, #43, #54, #116, #141,
 ### R43 — Bound startup tool-detection probes
 
 - Status: **Awaiting Cesc review in PR #148** for issue #147 on
-  `fix/bound-startup-tool-probes-r43`; native implementation CI is running and
+  `fix/bound-startup-tool-probes-r43`; native implementation CI is green and
   the PR must not be auto-merged.
 - User outcome: a broken installed CLI cannot hang Dockyard startup or emit
   unbounded version/help output while tools are detected.
@@ -64,7 +64,12 @@ inferred. Open product issues before selection were #41, #43, #54, #116, #141,
   pass (10 resource declarations, 418 app keys and 15 privacy keys across all
   five locales); `git diff --check` and the added-line secret scan pass. The
   Linux runner has no Swift, Xcode, XcodeGen, SwiftFormat or prek, so GitHub
-  macOS CI is mandatory native evidence.
+  macOS CI is mandatory native evidence. At head `32fd7f7`, macOS run
+  `33083805970` passed resource/localization checks, XcodeGen, the native build
+  and the full XCTest suite including `ToolStatusTests`. CodeQL run
+  `33083804885` passed its configured Actions and JavaScript analyses; Swift
+  analysis was skipped by repository workflow configuration. The final
+  roadmap-only head must also remain green.
 
 ### Independent Ready queue while R39–R43 await review
 
