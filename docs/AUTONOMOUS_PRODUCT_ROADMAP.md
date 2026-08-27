@@ -755,8 +755,8 @@ and #143; issue #145 records this run.
 ### R42 — Build a read-only GitHub issue task preview
 
 - Status: **Awaiting Cesc review in PR #146** for issue #145 on
-  `feat/github-issue-task-preview-r42`; native CI is pending and the PR must
-  not be auto-merged.
+  `feat/github-issue-task-preview-r42`; native implementation CI is green and
+  the PR must not be auto-merged.
 - User outcome: issue intake can show exactly what would be handed to a coding
   agent before any worktree or prompt exists.
 - Success signal: a pure parser deterministically retains the positive issue
@@ -789,7 +789,15 @@ and #143; issue #145 records this run.
   checks pass (10 resource declarations, 418 app keys and 15 privacy keys
   across all five locales); `git diff --check` and the added-file secret scan
   pass. The Linux host has no Swift, Xcode, XcodeGen, SwiftFormat or prek
-  executable, so GitHub macOS CI is the mandatory native build/test evidence.
+  executable, so GitHub macOS CI is the native evidence. At implementation
+  head `a139e19`, macOS run `33051297032` passed localization parity, XcodeGen,
+  the native build and the full XCTest suite including the focused preview
+  tests. The initial run exposed that broad Unicode control normalization
+  removed an emoji zero-width joiner; the focused grapheme test failed, the
+  implementation was narrowed to ASCII/C1 controls, and the replacement run
+  passed. CodeQL run `33051297065` passed its configured Actions and JavaScript
+  analyses; Swift analysis was skipped by repository workflow configuration.
+  The final roadmap-only head must also remain green.
 
 ### Independent Ready queue while R39–R42 await review
 
