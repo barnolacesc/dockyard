@@ -42,7 +42,7 @@ struct GitHubIssueTaskPreview: Equatable, Sendable {
             .unicodeScalars
             .map { scalar in
                 if CharacterSet.whitespacesAndNewlines.contains(scalar)
-                    || CharacterSet.controlCharacters.contains(scalar)
+                    || isDisallowedControl(scalar)
                 {
                     return " "
                 }
@@ -62,13 +62,17 @@ struct GitHubIssueTaskPreview: Equatable, Sendable {
             if scalar == "\n" || scalar == "\t" {
                 return String(scalar)
             }
-            if CharacterSet.controlCharacters.contains(scalar) {
+            if isDisallowedControl(scalar) {
                 return " "
             }
             return String(scalar)
         }
         .joined()
         .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func isDisallowedControl(_ scalar: Unicode.Scalar) -> Bool {
+        scalar.value < 0x20 || (0x7F ... 0x9F).contains(scalar.value)
     }
 
     private static func canonicalIssueURL(_ rawURL: String, issueNumber: Int) -> URL? {
