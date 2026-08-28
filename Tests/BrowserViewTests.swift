@@ -50,6 +50,67 @@ final class BrowserViewTests: XCTestCase {
         XCTAssertEqual(try BrowserBridge.decodeState(at: file).url, state.url)
     }
 
+    func testBrowserBridgeDecodesStateAtMaximumSize() throws {
+        let root = temporaryBrowserStateDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let file = root.appendingPathComponent("state.json")
+        var data = try encodedBrowserStateData()
+        XCTAssertLessThan(data.count, BrowserBridge.maximumStateBytes)
+        data.append(Data(repeating: 0x20, count: BrowserBridge.maximumStateBytes - data.count))
+        try data.write(to: file)
+
+        let decoded = try BrowserBridge.decodeState(at: file)
+
+        XCTAssertEqual(decoded.url, "https://example.test")
+        XCTAssertEqual(data.count, BrowserBridge.maximumStateBytes)
+    }
+
+    func testBrowserBridgeRejectsOversizedState() throws {
+        let root = temporaryBrowserStateDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let file = root.appendingPathComponent("state.json")
+        var data = try encodedBrowserStateData()
+        data.append(Data(repeating: 0x20, count: BrowserBridge.maximumStateBytes - data.count + 1))
+        try data.write(to: file)
+
+        XCTAssertThrowsError(try BrowserBridge.decodeState(at: file))
+        XCTAssertEqual(data.count, BrowserBridge.maximumStateBytes + 1)
+    }
+
+    func testBrowserBridgeRejectsSymbolicLinkState() throws {
+        let root = temporaryBrowserStateDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let target = root.appendingPathComponent("outside.json")
+        let link = root.appendingPathComponent("state.json")
+        try encodedBrowserStateData().write(to: target)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+
+        XCTAssertThrowsError(try BrowserBridge.decodeState(at: link))
+    }
+
+    func testBrowserBridgeRejectsNonRegularState() throws {
+        let root = temporaryBrowserStateDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let directoryCandidate = root.appendingPathComponent("state.json", isDirectory: true)
+        try FileManager.default.createDirectory(at: directoryCandidate, withIntermediateDirectories: false)
+
+        XCTAssertThrowsError(try BrowserBridge.decodeState(at: directoryCandidate))
+    }
+
+    func testBrowserBridgeRejectsMalformedState() throws {
+        let root = temporaryBrowserStateDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let file = root.appendingPathComponent("state.json")
+        try Data("{not-json".utf8).write(to: file)
+
+        XCTAssertThrowsError(try BrowserBridge.decodeState(at: file))
+    }
+
     func testWebViewCacheReturnsSameInstance() {
         let cache = TerminalSurfaceCache()
         let id = UUID()
@@ -100,5 +161,23 @@ final class BrowserViewTests: XCTestCase {
     private func permissions(of url: URL) throws -> Int {
         let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
         return try XCTUnwrap(attributes[.posixPermissions] as? NSNumber).intValue
+    }
+
+    private func encodedBrowserStateData() throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(
+            BrowserBridge.State(
+                url: "https://example.test",
+                title: "Preview",
+                updatedAt: Date(timeIntervalSince1970: 1_700_000_000),
+                consoleLog: []
+            )
+        )
+    }
+
+    private func temporaryBrowserStateDirectory() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("dockyard-browser-state-tests-\(UUID().uuidString)", isDirectory: true)
     }
 }
