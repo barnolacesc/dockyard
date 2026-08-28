@@ -752,9 +752,9 @@ inferred. Open product issues before selection were #41, #43, #54, #116, #141,
 
 ### R45 — Bound Claude transcript parsing for the usage meter
 
-- Status: **Implementation prepared for issue #151** on
-  `fix/bound-claude-transcript-parsing-r45`; PR and mandatory native CI evidence
-  are pending. The implementation must not be auto-merged.
+- Status: **Awaiting Cesc review in PR #152** on
+  `fix/bound-claude-transcript-parsing-r45` for issue #151. Required native
+  implementation CI is green and the PR must not be auto-merged.
 - User outcome: one oversized, malformed, symlinked or non-regular recent
   Claude transcript cannot cause an unbounded in-memory read while Dockyard
   refreshes its local usage estimate.
@@ -785,7 +785,12 @@ inferred. Open product issues before selection were #41, #43, #54, #116, #141,
   checks pass (10 resource declarations, 418 app keys and 15 privacy keys
   across all five locales); `git diff --check` passes. The Linux runner has no
   Swift, Xcode, XcodeGen, SwiftFormat or prek, so GitHub macOS CI is mandatory
-  native evidence.
+  native evidence. At implementation head `f4debee`, macOS CI run
+  `33181284231` passed resource/localization checks, XcodeGen, the native build
+  and the full XCTest suite including the new Claude usage fixtures. CodeQL run
+  `33181284128` passed its configured Actions and JavaScript analyses; Swift
+  analysis was skipped by repository workflow configuration. The final
+  roadmap-only head must also remain green.
 
 ### Independent Ready queue while R39–R45 await review
 
