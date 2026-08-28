@@ -62,6 +62,90 @@ final class ClaudeUsageTests: XCTestCase {
         XCTAssertNil(ClaudeUsageParser.parseTimestamp("not a date"))
     }
 
+    func testParseEntriesReadsRecentRegularTranscript() throws {
+        let root = temporaryTranscriptDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let transcript = root.appendingPathComponent("session.jsonl")
+        try Data(transcriptLine(inputTokens: 120, outputTokens: 30).utf8).write(to: transcript)
+
+        let entries = ClaudeUsageParser.parseEntries(in: root, since: .distantPast)
+
+        XCTAssertEqual(entries.count, 1)
+        XCTAssertEqual(entries.first?.tokens, 150)
+    }
+
+    func testParseEntriesSkipsTranscriptOlderThanHorizon() throws {
+        let root = temporaryTranscriptDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let transcript = root.appendingPathComponent("session.jsonl")
+        try Data(transcriptLine(inputTokens: 120, outputTokens: 30).utf8).write(to: transcript)
+        try FileManager.default.setAttributes(
+            [.modificationDate: Date(timeIntervalSince1970: 1_000)],
+            ofItemAtPath: transcript.path
+        )
+
+        let entries = ClaudeUsageParser.parseEntries(
+            in: root,
+            since: Date(timeIntervalSince1970: 2_000)
+        )
+
+        XCTAssertTrue(entries.isEmpty)
+    }
+
+    func testParseEntriesRejectsSymbolicLinkTranscript() throws {
+        let root = temporaryTranscriptDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let target = root.appendingPathComponent("outside.json")
+        let link = root.appendingPathComponent("session.jsonl")
+        try Data(transcriptLine(inputTokens: 500, outputTokens: 25).utf8).write(to: target)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+
+        XCTAssertTrue(ClaudeUsageParser.parseEntries(in: root, since: .distantPast).isEmpty)
+    }
+
+    func testParseEntriesRejectsNonRegularTranscript() throws {
+        let root = temporaryTranscriptDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(
+            at: root.appendingPathComponent("session.jsonl", isDirectory: true),
+            withIntermediateDirectories: false
+        )
+
+        XCTAssertTrue(ClaudeUsageParser.parseEntries(in: root, since: .distantPast).isEmpty)
+    }
+
+    func testParseEntriesRejectsOversizedTranscript() throws {
+        let root = temporaryTranscriptDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let transcript = root.appendingPathComponent("session.jsonl")
+        XCTAssertTrue(FileManager.default.createFile(atPath: transcript.path, contents: nil))
+        let handle = try FileHandle(forWritingTo: transcript)
+        try handle.truncate(atOffset: UInt64(ClaudeUsageParser.maximumTranscriptBytes + 1))
+        try handle.close()
+
+        XCTAssertTrue(ClaudeUsageParser.parseEntries(in: root, since: .distantPast).isEmpty)
+    }
+
+    func testParseEntriesSkipsOversizedLineAndKeepsFollowingRecord() throws {
+        let root = temporaryTranscriptDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let transcript = root.appendingPathComponent("session.jsonl")
+        var data = Data(repeating: 0x78, count: ClaudeUsageParser.maximumLineBytes + 1)
+        data.append(0x0A)
+        data.append(Data(transcriptLine(inputTokens: 70, outputTokens: 5).utf8))
+        try data.write(to: transcript)
+
+        let entries = ClaudeUsageParser.parseEntries(in: root, since: .distantPast)
+
+        XCTAssertEqual(entries.map(\.tokens), [75])
+    }
+
     func testPlanTierBudgets() {
         XCTAssertNil(ClaudePlanTier.none.fiveHourTokenBudget)
         XCTAssertNotNil(ClaudePlanTier.pro.fiveHourTokenBudget)
@@ -69,5 +153,16 @@ final class ClaudeUsageTests: XCTestCase {
             ClaudePlanTier.max20.fiveHourTokenBudget ?? 0,
             ClaudePlanTier.max5.fiveHourTokenBudget ?? 0
         )
+    }
+
+    private func temporaryTranscriptDirectory() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("dockyard-claude-usage-tests-\(UUID().uuidString)", isDirectory: true)
+    }
+
+    private func transcriptLine(inputTokens: Int, outputTokens: Int) -> String {
+        """
+        {"timestamp":"2026-08-28T14:30:00Z","message":{"usage":{"input_tokens":\(inputTokens),"output_tokens":\(outputTokens)}}}
+        """
     }
 }
