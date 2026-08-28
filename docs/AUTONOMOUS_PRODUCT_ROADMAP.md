@@ -751,9 +751,9 @@ inferred. Open product issues before selection were #41, #43, #54, #116, #141,
 
 ### R44 — Bound browser-state cache reads before decoding
 
-- Status: **Implementation in progress** on
-  `fix/bound-browser-state-cache-reads-r44` for issue #149. The resulting PR
-  must remain open for Cesc review.
+- Status: **Awaiting Cesc review in PR #150** on
+  `fix/bound-browser-state-cache-reads-r44` for issue #149. Native CI is
+  pending and the PR must not be auto-merged.
 - User outcome: restoring or appending embedded-browser state cannot follow a
   cache symlink or allocate unbounded memory before JSON decoding.
 - Success signal: a valid regular snapshot at the 1 MiB boundary decodes,
