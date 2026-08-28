@@ -782,7 +782,12 @@ inferred. Open product issues before selection were #41, #43, #54, #116, #141,
   checks pass (10 resource declarations, 418 app keys and 15 privacy keys
   across all five locales); `git diff --check` passes. The Linux runner has no
   Swift, Xcode, XcodeGen, SwiftFormat or prek, so GitHub macOS CI is mandatory
-  native evidence.
+  native evidence. At head `df351b9`, macOS CI run `33152303202` passed
+  resource/localization checks, XcodeGen, the native build and the full XCTest
+  suite including the new browser-state fixtures. CodeQL run `33152303132`
+  passed its configured Actions and JavaScript analyses; Swift analysis was
+  skipped by repository workflow configuration. The final roadmap-only head
+  must also remain green.
 
 ### Independent Ready queue while R39–R44 await review
 
