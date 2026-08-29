@@ -66,9 +66,13 @@ before selection were #41, #43, #54, #116, #141, #143, #145, #147, #149,
 - Evidence so far: deterministic resource/localization checker suites and live
   checks pass (10 resource declarations, 418 app keys and 15 privacy keys
   across all five locales); `git diff --check` and the added-line secret scan
-  pass. The Linux runner has no Swift, Xcode, XcodeGen, SwiftFormat or prek, so
-  GitHub macOS CI is mandatory native build/test evidence and is pending at the
-  initial implementation head `7bb6c12`.
+  pass. The Linux runner has no Swift, Xcode, XcodeGen, SwiftFormat or prek. At
+  head `37c027f`, macOS CI run `33258275692` passed localization/resource
+  checks, XcodeGen, the native build and the full XCTest suite including
+  `RunLauncherPortInferenceTests`. CodeQL run `33258275694` passed its
+  configured Actions and JavaScript analyses; Swift analysis was skipped by
+  the repository's PR workflow configuration. The final roadmap-only head must
+  also remain green.
 
 ### Independent Ready queue while R39–R47 await review
 
