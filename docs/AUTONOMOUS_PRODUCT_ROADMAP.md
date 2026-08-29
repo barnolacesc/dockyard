@@ -33,9 +33,9 @@ before selection were #41, #43, #54, #116, #141, #143, #145, #147, #149,
 
 ### R47 — Contain and bound `.env` port inference
 
-- Status: **Implementation in progress** on
-  `fix/contain-env-port-inference-r47` for issue #155. The implementation must
-  stop at a tested PR for Cesc's review and must not be auto-merged.
+- Status: **Awaiting Cesc review in PR #156** on
+  `fix/contain-env-port-inference-r47` for issue #155. The PR must not be
+  auto-merged.
 - User outcome: embedded-browser port inference cannot follow an escaping
   `.env` symlink or read an unbounded environment file.
 - Success signal: contained bounded `.env` fixtures retain `PORT` inference,
@@ -63,6 +63,12 @@ before selection were #41, #43, #54, #116, #141, #143, #145, #147, #149,
 - Required evidence: resource/localization checker suites, XcodeGen/native
   build, focused and full XCTest, `git diff --check`, added-line secret scan and
   configured CodeQL.
+- Evidence so far: deterministic resource/localization checker suites and live
+  checks pass (10 resource declarations, 418 app keys and 15 privacy keys
+  across all five locales); `git diff --check` and the added-line secret scan
+  pass. The Linux runner has no Swift, Xcode, XcodeGen, SwiftFormat or prek, so
+  GitHub macOS CI is mandatory native build/test evidence and is pending at the
+  initial implementation head `7bb6c12`.
 
 ### Independent Ready queue while R39–R47 await review
 
