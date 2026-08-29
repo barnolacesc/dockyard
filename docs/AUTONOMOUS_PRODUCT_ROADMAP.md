@@ -753,9 +753,10 @@ inferred. Open product issues before selection were #41, #43, #54, #116, #141,
 
 ### R46 — Bound login-shell PATH discovery
 
-- Status: **Implementation in progress** on
-  `fix/bound-login-shell-path-r46` for issue #153. Stop at a tested PR for Cesc
-  because this changes a command-execution boundary.
+- Status: **Awaiting Cesc review in PR #154** on
+  `fix/bound-login-shell-path-r46` for issue #153. Stop at this tested PR
+  because the implementation changes a command-execution boundary; never
+  auto-merge it.
 - User outcome: a stalled or noisy login-shell startup file cannot
   indefinitely delay Dockyard command-line tool discovery or accumulate
   unbounded captured output.
@@ -786,6 +787,11 @@ inferred. Open product issues before selection were #41, #43, #54, #116, #141,
 - Required evidence: focused XCTest, resource/localization checker suites,
   XcodeGen/native build, full XCTest, `git diff --check`, added-line secret scan
   and configured CodeQL.
+- Evidence so far: deterministic resource/localization checker suites and live
+  checks pass (10 resource declarations, 418 app keys and 15 privacy keys
+  across all five locales); `git diff --check` and the added-line secret scan
+  pass. The Linux runner has no Swift, Xcode, XcodeGen, SwiftFormat or prek, so
+  GitHub macOS CI is mandatory native evidence at the final PR head.
 
 ### Independent Ready queue while R39–R46 await review
 
