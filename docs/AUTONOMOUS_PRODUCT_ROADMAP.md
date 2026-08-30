@@ -34,8 +34,8 @@ inferred. Open issues before selection were #41, #43, #54, #116, #141, #143,
 
 ### R49 — Bound Quick Action mutation output
 
-- Status: **Implementation ready on `fix/bound-quick-action-output-r49` for
-  issue #159; PR pending**. This command-boundary change must not be
+- Status: **Awaiting Cesc review in PR #160** for issue #159 on
+  `fix/bound-quick-action-output-r49`. This command-boundary change must not be
   auto-merged.
 - User outcome: a noisy `gh pr close` invocation cannot block indefinitely on
   a full pipe or retain unbounded combined stdout/stderr while Dockyard closes
@@ -70,7 +70,12 @@ inferred. Open issues before selection were #41, #43, #54, #116, #141, #143,
   checks pass (10 resource declarations, 418 app keys and 15 privacy keys
   across all five locales); `git diff --check` and the added-line secret scan
   pass. The Linux host has no Swift, Xcode, XcodeGen, SwiftFormat, uv or prek,
-  so GitHub macOS CI is the mandatory native build/test evidence.
+  so GitHub macOS CI is the mandatory native build/test evidence. At
+  implementation head `1140b97`, macOS CI run `33317475996` passed XcodeGen,
+  the native build and the full XCTest suite including `QuickActionTests`.
+  CodeQL run `33317475997` passed its configured Actions and JavaScript
+  analyses; Swift analysis was skipped by repository PR workflow
+  configuration. The final roadmap-only head must also remain green.
 
 ### Independent Ready queue while R39–R49 await review
 
