@@ -34,8 +34,8 @@ inferred. Open product issues before selection were #41, #43, #54, #116, #141,
 
 ### R48 — Bound the Claude usage probe subprocess
 
-- Status: **In implementation for issue #157** on
-  `fix/bound-claude-usage-probe-r48`; the resulting PR must not be auto-merged.
+- Status: **Awaiting Cesc review in PR #158** for issue #157 on
+  `fix/bound-claude-usage-probe-r48`; the PR must not be auto-merged.
 - User outcome: a stalled or noisy `claude -p /usage` probe cannot hang a
   background usage refresh indefinitely or retain unbounded stdout.
 - Success signal: successful bounded JSON still parses, stdout is continuously
@@ -65,7 +65,15 @@ inferred. Open product issues before selection were #41, #43, #54, #116, #141,
 - Required evidence: resource/localization checker suites, XcodeGen/native
   build, focused and full XCTest, `git diff --check`, added-line secret scan and
   configured CodeQL.
-- Evidence so far: implementation and native evidence are pending.
+- Evidence: deterministic resource/localization checker suites and live checks
+  pass (10 resource declarations, 418 app keys and 15 privacy keys across all
+  five locales); `git diff --check` and the added-line secret scan pass. The
+  Linux host has no Swift, Xcode, XcodeGen, SwiftFormat, uv or prek. At
+  implementation head `5f77de9`, macOS CI run `33299803122` passed XcodeGen,
+  the native build and the full XCTest suite including
+  `ClaudeUsageProbeProcessTests`. CodeQL run `33299803147` passed its configured
+  Actions and JavaScript analyses; Swift analysis was skipped by repository
+  workflow configuration. The final roadmap-only head must also remain green.
 
 ### Independent Ready queue while R39–R48 await review
 
