@@ -67,8 +67,12 @@ inferred. Issue #163 records this run.
 - Evidence so far: deterministic resource/localization suites pass (10 resource
   declarations, 418 app keys and 15 privacy keys across all five locales);
   `git diff --check` and the added-line secret scan pass. The Linux runner has
-  no Swift, Xcode, XcodeGen or SwiftFormat, so GitHub macOS CI is the mandatory
-  native build/test and formatting evidence.
+  no Swift, Xcode, XcodeGen or SwiftFormat. At implementation head `a69b334`,
+  macOS CI run `33404715337` passed localization/resource checks, XcodeGen, the
+  native build and the full XCTest suite including `WorktreeHeadWatcherTests`.
+  CodeQL run `33404715453` passed its configured Actions and JavaScript
+  analyses; Swift analysis was skipped by repository PR workflow
+  configuration. The final roadmap-only head must also remain green.
 
 ### Independent Ready queue while R39–R51 and R50 await review
 
