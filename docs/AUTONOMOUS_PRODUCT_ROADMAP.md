@@ -33,9 +33,9 @@ inferred. Issue #163 records this run.
 
 ### R50 — Bound linked-worktree `.git` indirection reads
 
-- Status: **Selected for implementation in issue #163** on
-  `fix/bound-worktree-gitfile-r50`; the pull request and native evidence are
-  pending.
+- Status: **Awaiting Cesc review in PR #164** for issue #163 on
+  `fix/bound-worktree-gitfile-r50`; the PR must not be auto-merged and native
+  evidence is pending.
 - User outcome: Dockyard cannot read an unbounded or non-regular linked-worktree
   `.git` indirection file while preparing branch-name observation.
 - Success signal: watcher resolution accepts a normal `.git` directory or at
@@ -64,6 +64,11 @@ inferred. Issue #163 records this run.
 - Required evidence: resource/localization checker suites, XcodeGen/native
   build, focused and full XCTest, `git diff --check`, added-line secret scan and
   configured CodeQL.
+- Evidence so far: deterministic resource/localization suites pass (10 resource
+  declarations, 418 app keys and 15 privacy keys across all five locales);
+  `git diff --check` and the added-line secret scan pass. The Linux runner has
+  no Swift, Xcode, XcodeGen or SwiftFormat, so GitHub macOS CI is the mandatory
+  native build/test and formatting evidence.
 
 ### Independent Ready queue while R39–R51 and R50 await review
 
