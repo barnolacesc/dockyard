@@ -36,9 +36,9 @@ inferred. Issue #165 records this run.
 
 ### R52 — Bound Quick Action push output
 
-- Status: **Implementation prepared on `fix/bound-push-output-r52` for issue
-  #165; PR and native CI pending**. The command-boundary change must stop at a
-  tested PR for Cesc and must not be auto-merged.
+- Status: **Awaiting Cesc review in PR #166** on
+  `fix/bound-push-output-r52` for issue #165; native CI is pending. The
+  command-boundary change must not be auto-merged.
 - User outcome: a noisy Git remote cannot block Dockyard's Push Quick Action by
   filling the combined stdout/stderr pipe, and Dockyard retains only bounded
   push output in the existing action log.
