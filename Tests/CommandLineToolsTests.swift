@@ -4,7 +4,138 @@
 @testable import Dockyard
 import XCTest
 
+private final class LoginShellProcessDouble: LoginShellProcess, @unchecked Sendable {
+    var result: LoginShellProcessResult
+    var waitResults: [Bool]
+    private(set) var runCallCount = 0
+    private(set) var waitTimeouts: [TimeInterval] = []
+    private(set) var terminateCallCount = 0
+    private(set) var forceTerminateCallCount = 0
+
+    init(
+        output: String = "",
+        terminationStatus: Int32 = 0,
+        outputExceededLimit: Bool = false,
+        waitResults: [Bool] = [true]
+    ) {
+        result = LoginShellProcessResult(
+            output: Data(output.utf8),
+            terminationStatus: terminationStatus,
+            outputExceededLimit: outputExceededLimit
+        )
+        self.waitResults = waitResults
+    }
+
+    func run() throws {
+        runCallCount += 1
+    }
+
+    func waitForExit(timeout: TimeInterval) -> Bool {
+        waitTimeouts.append(timeout)
+        return waitResults.isEmpty ? false : waitResults.removeFirst()
+    }
+
+    func terminate() {
+        terminateCallCount += 1
+    }
+
+    func forceTerminate() {
+        forceTerminateCallCount += 1
+    }
+}
+
+private final class LoginShellProcessProvider: @unchecked Sendable {
+    let process: LoginShellProcessDouble
+    private(set) var factoryCallCount = 0
+
+    init(process: LoginShellProcessDouble) {
+        self.process = process
+    }
+
+    func makeProcess(
+        executableURL: URL,
+        arguments: [String],
+        maximumOutputBytes: Int
+    ) -> any LoginShellProcess {
+        factoryCallCount += 1
+        return process
+    }
+}
+
 final class CommandLineToolsTests: XCTestCase {
+    func testLoginShellPathUsesBoundedProcessAndParsesPath() {
+        let process = LoginShellProcessDouble(output: " /opt/homebrew/bin:/usr/bin \n")
+        let cache = CommandLineTools.ShellPathCache { executableURL, arguments, maximumOutputBytes in
+            XCTAssertEqual(executableURL.path, "/bin/zsh")
+            XCTAssertEqual(arguments, ["-lic", "printenv PATH"])
+            XCTAssertEqual(maximumOutputBytes, CommandLineTools.maximumLoginShellOutputBytes)
+            return process
+        }
+
+        XCTAssertEqual(cache.resolve(shell: "/bin/zsh"), "/opt/homebrew/bin:/usr/bin")
+        XCTAssertEqual(process.runCallCount, 1)
+        XCTAssertEqual(process.waitTimeouts, [CommandLineTools.loginShellTimeout])
+        XCTAssertEqual(process.terminateCallCount, 0)
+        XCTAssertEqual(process.forceTerminateCallCount, 0)
+    }
+
+    func testLoginShellPathTerminatesThenForceTerminatesAfterTimeout() {
+        let process = LoginShellProcessDouble(waitResults: [false, false, true])
+        let cache = CommandLineTools.ShellPathCache { _, _, _ in process }
+
+        XCTAssertNil(cache.resolve(shell: "/bin/zsh"))
+        XCTAssertEqual(
+            process.waitTimeouts,
+            [
+                CommandLineTools.loginShellTimeout,
+                CommandLineTools.loginShellTerminationGrace,
+                CommandLineTools.loginShellTerminationGrace,
+            ]
+        )
+        XCTAssertEqual(process.terminateCallCount, 1)
+        XCTAssertEqual(process.forceTerminateCallCount, 1)
+    }
+
+    func testLoginShellPathDoesNotForceTerminateAfterGracefulExit() {
+        let process = LoginShellProcessDouble(waitResults: [false, true])
+        let cache = CommandLineTools.ShellPathCache { _, _, _ in process }
+
+        XCTAssertNil(cache.resolve(shell: "/bin/zsh"))
+        XCTAssertEqual(
+            process.waitTimeouts,
+            [CommandLineTools.loginShellTimeout, CommandLineTools.loginShellTerminationGrace]
+        )
+        XCTAssertEqual(process.terminateCallCount, 1)
+        XCTAssertEqual(process.forceTerminateCallCount, 0)
+    }
+
+    func testLoginShellPathRejectsOversizedOutput() {
+        let process = LoginShellProcessDouble(
+            output: "/partial/path",
+            outputExceededLimit: true
+        )
+        let cache = CommandLineTools.ShellPathCache { _, _, _ in process }
+
+        XCTAssertNil(cache.resolve(shell: "/bin/zsh"))
+    }
+
+    func testLoginShellPathCachesFailure() {
+        let process = LoginShellProcessDouble(terminationStatus: 1)
+        let provider = LoginShellProcessProvider(process: process)
+        let cache = CommandLineTools.ShellPathCache { executableURL, arguments, maximumOutputBytes in
+            provider.makeProcess(
+                executableURL: executableURL,
+                arguments: arguments,
+                maximumOutputBytes: maximumOutputBytes
+            )
+        }
+
+        XCTAssertNil(cache.resolve(shell: "/bin/zsh"))
+        XCTAssertNil(cache.resolve(shell: "/bin/zsh"))
+        XCTAssertEqual(provider.factoryCallCount, 1)
+        XCTAssertEqual(process.runCallCount, 1)
+    }
+
     func testPrefersLoginShellPath() {
         // The login shell PATH should take priority over known locations
         // so we find the same binary the user's terminal would.
