@@ -27,7 +27,109 @@ struct WorktreeInfo: Identifiable {
     }
 }
 
+struct GitPushProcessResult: Sendable {
+    let output: Data
+    let terminationStatus: Int32
+}
+
+final class GitPushOutputCollector: @unchecked Sendable {
+    private let lock = NSLock()
+    private let maximumOutputBytes: Int
+    private var output = Data()
+
+    init(maximumOutputBytes: Int) {
+        self.maximumOutputBytes = max(0, maximumOutputBytes)
+    }
+
+    /// Retains a bounded prefix while allowing the process pipe to be drained to EOF.
+    func ingest(_ chunk: Data) {
+        lock.withLock {
+            guard output.count < maximumOutputBytes else { return }
+            output.append(chunk.prefix(maximumOutputBytes - output.count))
+        }
+    }
+
+    var snapshot: Data {
+        lock.withLock { output }
+    }
+}
+
+protocol GitPushProcess: AnyObject, Sendable {
+    func run() throws -> GitPushProcessResult
+}
+
+typealias GitPushProcessFactory = @Sendable (
+    _ executableURL: URL,
+    _ arguments: [String],
+    _ maximumOutputBytes: Int
+) throws -> any GitPushProcess
+
+final class FoundationGitPushProcess: GitPushProcess, @unchecked Sendable {
+    private let process = Process()
+    private let outputPipe = Pipe()
+    private let collector: GitPushOutputCollector
+    private let readerFinished = DispatchGroup()
+
+    init(
+        executableURL: URL,
+        arguments: [String],
+        maximumOutputBytes: Int
+    ) {
+        collector = GitPushOutputCollector(maximumOutputBytes: maximumOutputBytes)
+        process.executableURL = executableURL
+        process.arguments = arguments
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+    }
+
+    func run() throws -> GitPushProcessResult {
+        startOutputReader()
+        do {
+            try process.run()
+        } catch {
+            outputPipe.fileHandleForWriting.closeFile()
+            readerFinished.wait()
+            throw error
+        }
+
+        // The child owns duplicated descriptors after launch. Closing the parent's
+        // writer lets the reader observe EOF as soon as the process exits.
+        outputPipe.fileHandleForWriting.closeFile()
+        process.waitUntilExit()
+        readerFinished.wait()
+
+        return GitPushProcessResult(
+            output: collector.snapshot,
+            terminationStatus: process.terminationStatus
+        )
+    }
+
+    private func startOutputReader() {
+        readerFinished.enter()
+        DispatchQueue.global(qos: .utility).async { [self] in
+            defer { readerFinished.leave() }
+            let handle = outputPipe.fileHandleForReading
+            while let chunk = try? handle.read(upToCount: 16 * 1024), !chunk.isEmpty {
+                collector.ingest(chunk)
+            }
+        }
+    }
+}
+
+let defaultGitPushProcessFactory: GitPushProcessFactory = {
+    executableURL,
+    arguments,
+    maximumOutputBytes in
+    FoundationGitPushProcess(
+        executableURL: executableURL,
+        arguments: arguments,
+        maximumOutputBytes: maximumOutputBytes
+    )
+}
+
 enum GitOperations {
+    static let maximumPushOutputBytes = 64 * 1024
+
     private static var gitPath: String? {
         CommandLineTools.path(for: "git")
     }
@@ -315,18 +417,29 @@ enum GitOperations {
     /// Push the current branch to origin, setting upstream if needed.
     static func pushCurrentBranch(at path: String) -> (success: Bool, output: String) {
         guard let gitPath else { return (false, "git not found") }
-        let process = Process()
-        let pipe = Pipe()
-        process.executableURL = URL(fileURLWithPath: gitPath)
-        process.arguments = ["-C", path, "push", "-u", "origin", "HEAD"]
-        process.standardOutput = pipe
-        process.standardError = pipe
+        return pushCurrentBranch(
+            at: path,
+            gitExecutableURL: URL(fileURLWithPath: gitPath),
+            processFactory: defaultGitPushProcessFactory
+        )
+    }
+
+    static func pushCurrentBranch(
+        at path: String,
+        gitExecutableURL: URL,
+        processFactory: GitPushProcessFactory
+    ) -> (success: Bool, output: String) {
         do {
-            try process.run()
-            process.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            return (process.terminationStatus == 0, output)
+            let process = try processFactory(
+                gitExecutableURL,
+                ["-C", path, "push", "-u", "origin", "HEAD"],
+                maximumPushOutputBytes
+            )
+            let result = try process.run()
+            return (
+                result.terminationStatus == 0,
+                String(data: result.output, encoding: .utf8) ?? ""
+            )
         } catch {
             return (false, error.localizedDescription)
         }
