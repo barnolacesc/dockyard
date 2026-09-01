@@ -37,8 +37,8 @@ inferred. Issue #165 records this run.
 ### R52 — Bound Quick Action push output
 
 - Status: **Awaiting Cesc review in PR #166** on
-  `fix/bound-push-output-r52` for issue #165; native CI is pending. The
-  command-boundary change must not be auto-merged.
+  `fix/bound-push-output-r52` for issue #165; required native implementation CI
+  is green. The command-boundary change must not be auto-merged.
 - User outcome: a noisy Git remote cannot block Dockyard's Push Quick Action by
   filling the combined stdout/stderr pipe, and Dockyard retains only bounded
   push output in the existing action log.
@@ -74,8 +74,12 @@ inferred. Issue #165 records this run.
   `d7aed8b`, the native build and R52 tests passed, but the full suite failed in
   unrelated existing test `SetupRunnerTests.test_captures_output_to_log_tail`;
   its other setup-runner tests passed. The automation token received `403 Must
-  have admin rights` when requesting a failed-job rerun, so a subsequent
-  evidence-only head must provide the required clean native run.
+  have admin rights` when requesting a failed-job rerun. At evidence-only head
+  `2f5af71`, macOS CI run `33483979883` passed resource/localization checks,
+  XcodeGen, the native build and all 488 XCTest cases. CodeQL run `33483979918`
+  passed its configured Actions and JavaScript analyses; Swift analysis was
+  skipped by repository PR workflow configuration. The final roadmap-only head
+  must also remain green.
 
 ### Independent Ready queue while R39–R52 await review
 
