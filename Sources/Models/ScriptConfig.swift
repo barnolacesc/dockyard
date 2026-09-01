@@ -7,6 +7,11 @@ import os
 private let logger = Logger(subsystem: "dockyard", category: "script-config")
 
 struct ScriptConfig {
+    /// Script configuration contains only a handful of command strings. Keep
+    /// reads bounded well above normal use so repository files cannot cause an
+    /// unbounded allocation before JSON parsing.
+    static let maximumConfigFileBytes = 256 * 1024
+
     let setup: String?
     let run: String?
     let teardown: String?
@@ -147,9 +152,35 @@ struct ScriptConfig {
     }
 
     private static func loadJSON(_ path: String) throws -> [String: Any] {
-        guard let data = FileManager.default.contents(atPath: path) else {
+        let url = URL(fileURLWithPath: path)
+        guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey]),
+              values.isRegularFile == true,
+              let handle = try? FileHandle(forReadingFrom: url)
+        else {
             throw LoadError.unreadable(path)
         }
+        defer { try? handle.close() }
+
+        var data = Data()
+        do {
+            while data.count <= maximumConfigFileBytes {
+                let remaining = maximumConfigFileBytes + 1 - data.count
+                guard remaining > 0,
+                      let chunk = try handle.read(upToCount: min(64 * 1024, remaining)),
+                      !chunk.isEmpty
+                else {
+                    break
+                }
+                data.append(chunk)
+            }
+        } catch {
+            throw LoadError.unreadable(path)
+        }
+
+        guard data.count <= maximumConfigFileBytes else {
+            throw LoadError.unreadable(path)
+        }
+
         let obj = try JSONSerialization.jsonObject(with: data)
         guard let dict = obj as? [String: Any] else {
             throw LoadError.invalidJSON("expected object, got \(type(of: obj))")
