@@ -34,7 +34,7 @@ inferred. Issue #167 records this run.
 
 ### R53 — Bound script-configuration reads
 
-- Status: **Implementation prepared for Cesc review** on
+- Status: **Awaiting Cesc review in PR #168** on
   `fix/bound-script-config-reads-r53` for issue #167. The command-boundary
   change must not be auto-merged.
 - User outcome: repository-owned setup/run/teardown configuration cannot stall
