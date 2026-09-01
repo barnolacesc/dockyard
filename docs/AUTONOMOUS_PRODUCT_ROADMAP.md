@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-08-10 against `origin/main` at
-`ceeea0811d385396f497632469a705b184a13953`.
+Last reconciled: 2026-08-20 against `origin/main` at
+`fce9d0f61ee8b673ea1f09f27cb82e7d0245b5fb`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -10,72 +10,92 @@ not an automatically trusted backlog.
 The **Current autonomous queue** is canonical. Dated **Live reconciliation**
 sections are retained as an audit trail and can contain superseded statuses.
 
-## Current autonomous queue — 2026-08-10 16:30 CEST
+## Current autonomous queue — 2026-08-20 09:30 CEST
 
-`origin/main` is `ceeea08`; its macOS `build-and-test`, CodeQL and release
-automation checks are green. R16 / PR #113 is healthy and **awaiting Cesc
-review**; it changes `RunLauncher`, `WorkstreamEnvironment` and focused tests.
-Release-please PR #63 changes only version/changelog metadata, remains
-approval-gated and must not be merged or published autonomously. The latest
-published release remains v0.2.1.
+`origin/main` is `fce9d0f`; its latest macOS CI, CodeQL and Release workflows
+are green. R36–R38 are merged. PR #140 (R39) is clean, green and **awaiting
+Cesc review**. PRs #117 and #126 are green at their heads but conflict with
+current `main`; they also remain awaiting Cesc review and are not modified or
+stacked on here. Release-please PR #63 remains approval-gated and must not be
+merged or published autonomously. The latest published release is v0.2.1.
 
-GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the automation token
-has `repo` and `workflow` but lacks `read:project`. No Project data or status is
-inferred. Open implementation issues at selection were #41, #43, #54 and #112;
-issue #114 records this run.
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
+`repo` and `workflow` but lacks `read:project`. No Project item or status is
+inferred. Open product issues at selection were #41, #43, #54 and #116; issue
+#141 records this run.
 
-### R17 — Protect tmux diagnostic state
+### R39 — Aggregate active Claude Code subagents into workstream status
 
-- Status: **Awaiting Cesc review in PR #115** on
-  `fix/private-tmux-diagnostics` for issue #114. The PR must not be
-  auto-merged.
-- User outcome: tmux diagnostic output is not left readable by other local
-  users after first creation or when an older permissive cache exists.
-- Success signal: constructing a tmux command creates or repairs the Dockyard
-  cache directory to `0700` and `tmux-stderr.log` to `0600` before shell
-  redirection, while preserving existing log bytes.
-- macOS impact: tmux command preparation only; no UI, accessibility,
-  localization or visual behavior changes.
-- Persistence/security impact: narrows local diagnostic-file permissions. Tmux
-  commands, session names, app-restart persistence, archive/purge cleanup,
-  entitlements and release behavior remain unchanged.
-- Scope: `TmuxSession`, focused `TmuxSessionTests` and roadmap evidence only.
-- Risk: low and reversible; full GitHub macOS CI is mandatory.
+- Status: **Awaiting Cesc review in PR #140** on
+  `feat/claude-subagent-status-r39` for issue #54. Required macOS CI and
+  configured CodeQL checks are green at head `eeb0988`.
+- Independence: R39 changes agent hooks, state aggregation, capability docs and
+  focused Swift tests. R40 changes only deterministic build verification and
+  macOS CI, so either implementation can merge first.
+
+### R40 — Verify bundled helper integrity in macOS CI
+
+- Status: **Awaiting Cesc review in PR #142** on
+  `ci/verify-bundled-helpers-r40` for issue #141. Required native
+  implementation CI is green; never auto-merge this PR.
+- User outcome: a green native build cannot omit the `dy-run` or
+  `dy-agent-state` helper and silently break environment launch or agent-status
+  integration at runtime.
+- Success signal: the post-build CI verifier accepts the actual Debug app only
+  when both canonical `Contents/Helpers` entries are regular executable files.
+- macOS impact: verifies the native app bundle produced on `macos-15`; no UI,
+  accessibility, localization, shortcut or runtime behavior changes.
+- Persistence/security impact: read-only artifact inspection. It does not
+  execute helpers or change commands, state, signing, entitlements, updates or
+  releases.
+- Scope: a standalone Python verifier, deterministic fixture tests, one
+  post-build CI invocation and roadmap evidence. `project.yml` and generated
+  Xcode project files are unchanged.
+- Dependencies: none. Open PRs #117, #126, #140 and #63 own disjoint
+  implementation paths and behavior.
+- Risk: low and reversible CI hardening; green GitHub macOS CI is mandatory.
 - Acceptance criteria:
-  1. First use creates the cache directory as `0700` and stderr log as `0600`.
-  2. Existing `0755`/`0644` modes are repaired without replacing log content.
-  3. Diagnostic state exists before the generated command can use `2>>`.
-  4. Existing tmux command-composition and shell-parsing tests remain green.
-  5. Full GitHub macOS build/test passes.
-- Required evidence: focused XCTest, full `macos-15` CI, CodeQL as configured,
-  localization parity, diff and secret checks.
-- Native evidence: at implementation head `12200ab`, macOS CI run
-  `31399327020` passed localization parity, XcodeGen, the native build and the
-  full XCTest suite including `TmuxSessionTests`. CodeQL run `31399327146`
-  passed Actions and JavaScript analysis; Swift analysis was skipped by the
-  repository's PR workflow configuration. The final roadmap-only head must
-  also remain green.
-- Independence: PR #113 changes environment activation paths; PR #63 changes
-  release metadata. R17 changes tmux diagnostic setup and its tests, so the
-  implementations can merge in either order. Roadmap updates use this
-  top-level canonical queue to avoid conflicting dated audit-log appends.
+  1. A complete app-bundle fixture passes.
+  2. Missing, non-executable and symlinked helper fixtures fail precisely.
+  3. CI checks the actual Debug bundle after `./scripts/dev.sh build`.
+  4. Localization parity, XcodeGen, native build and full XCTest remain green.
+- Required evidence: focused Python tests, localization scripts,
+  `git diff --check`, added-line secret scan, full macOS `build-and-test` and
+  configured CodeQL.
+- Native evidence: at head `a6f318c`, macOS CI run `32344974032` passed
+  localization checks, XcodeGen, the native build, the actual bundled-helper
+  verification and the full XCTest suite. CodeQL run `32344974025` passed its
+  configured Actions and JavaScript analyses; Swift analysis was skipped by
+  the repository workflow configuration. The final roadmap-only head must also
+  remain green. Linux is not native macOS evidence.
+- Sources: issue #141, PR #142, `project.yml` helper post-build phases,
+  `.github/workflows/ci.yml` and the R40 Ready item recorded by PR #140.
 
-### Independent Ready queue while R16 and R17 await review
+### Independent Ready queue while R39 and R40 await review
 
-- **R18 — Add the passive power-features tour:** expose existing shortcut
-  hints, usage meters, tmux persistence and archive semantics without launching
-  commands or changing persisted workstreams. One `TourFlow`, controller tests,
-  five localizations and native visual/accessibility evidence; source is the
-  remaining unchecked tour item in `TODO.md`.
-- **R19 — Contain close-tab editor saves:** resolve the unsaved-editor close
-  path through `WorkspaceFileAccess` before writing, matching ordinary saves
-  and rejecting absolute, traversal, same-prefix and escaping-symlink paths.
-  This file-write boundary is approval-gated; focused tests and full macOS CI
-  are required.
-- **R20 — Keep watcher-created state directories private:** create and repair
-  run-state and agent-state watcher directories as `0700` before attaching
-  filesystem observers. Scope is `PortDetector`, `AgentStateStore` and focused
-  tests; state schemas, writers and watcher recovery behavior remain unchanged.
+- **R41 — Bound run-state cache reads before decoding.** User outcome: a
+  malformed cache entry cannot make browser retargeting allocate unbounded
+  memory or cross a symlink boundary. Success signal: only bounded regular
+  files decode, while valid state still retargets. macOS/persistence impact:
+  read-only run-state validation; no schema, deletion, migration or command
+  change. Scope: `RunStateStore` and focused fixtures. Dependencies: none and
+  no open PR owns these paths. Risk: low; focused XCTest and full macOS CI.
+- **R42 — Build a read-only GitHub issue task preview.** User outcome: future
+  issue intake can show exactly what would be handed to an agent before any
+  worktree or prompt exists. Success signal: title, number, URL and bounded
+  body text normalize deterministically as untrusted input. macOS/persistence
+  impact: pure model/parser only. Scope: no GitHub mutation, credential,
+  command, agent launch or worktree creation. Dependencies: none. Risk: low;
+  parser fixtures and full macOS CI.
+- **R43 — Bound startup tool-detection probes.** User outcome: a broken or
+  hostile CLI cannot hang Dockyard startup indefinitely or emit unbounded
+  version/help output. Success signal: process-double tests prove timeout,
+  termination, output cap and normal version detection. macOS/security impact:
+  narrows existing local executable probes without changing CLI launch
+  commands or permissions. Scope: `ToolStatus` command runner and focused
+  tests. Dependencies: none and disjoint from #140's agent-state paths. Risk:
+  medium command-boundary change; stop at a tested PR for Cesc and require full
+  macOS CI.
 
 ## Evidence and limits
 
