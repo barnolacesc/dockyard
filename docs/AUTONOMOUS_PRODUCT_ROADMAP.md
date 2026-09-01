@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-08-20 against `origin/main` at
-`fce9d0f61ee8b673ea1f09f27cb82e7d0245b5fb`.
+Last reconciled: 2026-08-10 against `origin/main` at
+`ceeea0811d385396f497632469a705b184a13953`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -10,92 +10,72 @@ not an automatically trusted backlog.
 The **Current autonomous queue** is canonical. Dated **Live reconciliation**
 sections are retained as an audit trail and can contain superseded statuses.
 
-## Current autonomous queue — 2026-08-20 09:30 CEST
+## Current autonomous queue — 2026-08-10 16:30 CEST
 
-`origin/main` is `fce9d0f`; its latest macOS CI, CodeQL and Release workflows
-are green. R36–R38 are merged. PR #140 (R39) is clean, green and **awaiting
-Cesc review**. PRs #117 and #126 are green at their heads but conflict with
-current `main`; they also remain awaiting Cesc review and are not modified or
-stacked on here. Release-please PR #63 remains approval-gated and must not be
-merged or published autonomously. The latest published release is v0.2.1.
+`origin/main` is `ceeea08`; its macOS `build-and-test`, CodeQL and release
+automation checks are green. R16 / PR #113 is healthy and **awaiting Cesc
+review**; it changes `RunLauncher`, `WorkstreamEnvironment` and focused tests.
+Release-please PR #63 changes only version/changelog metadata, remains
+approval-gated and must not be merged or published autonomously. The latest
+published release remains v0.2.1.
 
-GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
-`repo` and `workflow` but lacks `read:project`. No Project item or status is
-inferred. Open product issues at selection were #41, #43, #54 and #116; issue
-#141 records this run.
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the automation token
+has `repo` and `workflow` but lacks `read:project`. No Project data or status is
+inferred. Open implementation issues at selection were #41, #43, #54 and #112;
+issue #114 records this run.
 
-### R39 — Aggregate active Claude Code subagents into workstream status
+### R17 — Protect tmux diagnostic state
 
-- Status: **Awaiting Cesc review in PR #140** on
-  `feat/claude-subagent-status-r39` for issue #54. Required macOS CI and
-  configured CodeQL checks are green at head `eeb0988`.
-- Independence: R39 changes agent hooks, state aggregation, capability docs and
-  focused Swift tests. R40 changes only deterministic build verification and
-  macOS CI, so either implementation can merge first.
-
-### R40 — Verify bundled helper integrity in macOS CI
-
-- Status: **Awaiting Cesc review in PR #142** on
-  `ci/verify-bundled-helpers-r40` for issue #141. Required native
-  implementation CI is green; never auto-merge this PR.
-- User outcome: a green native build cannot omit the `dy-run` or
-  `dy-agent-state` helper and silently break environment launch or agent-status
-  integration at runtime.
-- Success signal: the post-build CI verifier accepts the actual Debug app only
-  when both canonical `Contents/Helpers` entries are regular executable files.
-- macOS impact: verifies the native app bundle produced on `macos-15`; no UI,
-  accessibility, localization, shortcut or runtime behavior changes.
-- Persistence/security impact: read-only artifact inspection. It does not
-  execute helpers or change commands, state, signing, entitlements, updates or
-  releases.
-- Scope: a standalone Python verifier, deterministic fixture tests, one
-  post-build CI invocation and roadmap evidence. `project.yml` and generated
-  Xcode project files are unchanged.
-- Dependencies: none. Open PRs #117, #126, #140 and #63 own disjoint
-  implementation paths and behavior.
-- Risk: low and reversible CI hardening; green GitHub macOS CI is mandatory.
+- Status: **Awaiting Cesc review in PR #115** on
+  `fix/private-tmux-diagnostics` for issue #114. The PR must not be
+  auto-merged.
+- User outcome: tmux diagnostic output is not left readable by other local
+  users after first creation or when an older permissive cache exists.
+- Success signal: constructing a tmux command creates or repairs the Dockyard
+  cache directory to `0700` and `tmux-stderr.log` to `0600` before shell
+  redirection, while preserving existing log bytes.
+- macOS impact: tmux command preparation only; no UI, accessibility,
+  localization or visual behavior changes.
+- Persistence/security impact: narrows local diagnostic-file permissions. Tmux
+  commands, session names, app-restart persistence, archive/purge cleanup,
+  entitlements and release behavior remain unchanged.
+- Scope: `TmuxSession`, focused `TmuxSessionTests` and roadmap evidence only.
+- Risk: low and reversible; full GitHub macOS CI is mandatory.
 - Acceptance criteria:
-  1. A complete app-bundle fixture passes.
-  2. Missing, non-executable and symlinked helper fixtures fail precisely.
-  3. CI checks the actual Debug bundle after `./scripts/dev.sh build`.
-  4. Localization parity, XcodeGen, native build and full XCTest remain green.
-- Required evidence: focused Python tests, localization scripts,
-  `git diff --check`, added-line secret scan, full macOS `build-and-test` and
-  configured CodeQL.
-- Native evidence: at head `a6f318c`, macOS CI run `32344974032` passed
-  localization checks, XcodeGen, the native build, the actual bundled-helper
-  verification and the full XCTest suite. CodeQL run `32344974025` passed its
-  configured Actions and JavaScript analyses; Swift analysis was skipped by
-  the repository workflow configuration. The final roadmap-only head must also
-  remain green. Linux is not native macOS evidence.
-- Sources: issue #141, PR #142, `project.yml` helper post-build phases,
-  `.github/workflows/ci.yml` and the R40 Ready item recorded by PR #140.
+  1. First use creates the cache directory as `0700` and stderr log as `0600`.
+  2. Existing `0755`/`0644` modes are repaired without replacing log content.
+  3. Diagnostic state exists before the generated command can use `2>>`.
+  4. Existing tmux command-composition and shell-parsing tests remain green.
+  5. Full GitHub macOS build/test passes.
+- Required evidence: focused XCTest, full `macos-15` CI, CodeQL as configured,
+  localization parity, diff and secret checks.
+- Native evidence: at implementation head `12200ab`, macOS CI run
+  `31399327020` passed localization parity, XcodeGen, the native build and the
+  full XCTest suite including `TmuxSessionTests`. CodeQL run `31399327146`
+  passed Actions and JavaScript analysis; Swift analysis was skipped by the
+  repository's PR workflow configuration. The final roadmap-only head must
+  also remain green.
+- Independence: PR #113 changes environment activation paths; PR #63 changes
+  release metadata. R17 changes tmux diagnostic setup and its tests, so the
+  implementations can merge in either order. Roadmap updates use this
+  top-level canonical queue to avoid conflicting dated audit-log appends.
 
-### Independent Ready queue while R39 and R40 await review
+### Independent Ready queue while R16 and R17 await review
 
-- **R41 — Bound run-state cache reads before decoding.** User outcome: a
-  malformed cache entry cannot make browser retargeting allocate unbounded
-  memory or cross a symlink boundary. Success signal: only bounded regular
-  files decode, while valid state still retargets. macOS/persistence impact:
-  read-only run-state validation; no schema, deletion, migration or command
-  change. Scope: `RunStateStore` and focused fixtures. Dependencies: none and
-  no open PR owns these paths. Risk: low; focused XCTest and full macOS CI.
-- **R42 — Build a read-only GitHub issue task preview.** User outcome: future
-  issue intake can show exactly what would be handed to an agent before any
-  worktree or prompt exists. Success signal: title, number, URL and bounded
-  body text normalize deterministically as untrusted input. macOS/persistence
-  impact: pure model/parser only. Scope: no GitHub mutation, credential,
-  command, agent launch or worktree creation. Dependencies: none. Risk: low;
-  parser fixtures and full macOS CI.
-- **R43 — Bound startup tool-detection probes.** User outcome: a broken or
-  hostile CLI cannot hang Dockyard startup indefinitely or emit unbounded
-  version/help output. Success signal: process-double tests prove timeout,
-  termination, output cap and normal version detection. macOS/security impact:
-  narrows existing local executable probes without changing CLI launch
-  commands or permissions. Scope: `ToolStatus` command runner and focused
-  tests. Dependencies: none and disjoint from #140's agent-state paths. Risk:
-  medium command-boundary change; stop at a tested PR for Cesc and require full
-  macOS CI.
+- **R18 — Add the passive power-features tour:** expose existing shortcut
+  hints, usage meters, tmux persistence and archive semantics without launching
+  commands or changing persisted workstreams. One `TourFlow`, controller tests,
+  five localizations and native visual/accessibility evidence; source is the
+  remaining unchecked tour item in `TODO.md`.
+- **R19 — Contain close-tab editor saves:** resolve the unsaved-editor close
+  path through `WorkspaceFileAccess` before writing, matching ordinary saves
+  and rejecting absolute, traversal, same-prefix and escaping-symlink paths.
+  This file-write boundary is approval-gated; focused tests and full macOS CI
+  are required.
+- **R20 — Keep watcher-created state directories private:** create and repair
+  run-state and agent-state watcher directories as `0700` before attaching
+  filesystem observers. Scope is `PortDetector`, `AgentStateStore` and focused
+  tests; state schemas, writers and watcher recovery behavior remain unchanged.
 
 ## Evidence and limits
 
@@ -752,111 +732,101 @@ retain their documented dependencies. Issues #41, #43 and #54 remain open;
   scope. Selected independent R35 / issue #132 from a fresh `origin/main`
   worktree. No older PR comment, merge, release or Project mutation occurred.
 
-## Live reconciliation — 2026-08-28 09:30 CEST
+## Live reconciliation — 2026-08-18 09:30 CEST
 
-This section supersedes every earlier queue and item status. `origin/main` is
-`fce9d0f`; its macOS `build-and-test`, release automation and configured CodeQL
-checks are green. PRs #140 (R39), #142 (R40), #144 (R41), #146 (R42) and #148
-(R43) are clean, green on macOS CI and **awaiting Cesc review**. Older PRs #117
-and #126 are green at their heads but conflict with current `main`; they also
-remain awaiting review. Their changed paths, behaviors and dependencies were
-compared before selecting R44; none is modified, stacked on or duplicated by
-this run. Release-please PR #63 remains approval-gated and must not be merged or
-published autonomously. The latest published release remains v0.2.1.
+This section supersedes every earlier status. `origin/main` is `fce9d0f`;
+its macOS CI, CodeQL and Release workflows succeeded. R36, R37 and R38 are
+merged on `main`. The latest published release remains v0.2.1.
 
-GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
-`repo` and `workflow` but lacks `read:project`. No Project data or status is
-inferred. Open product issues before selection were #41, #43, #54, #116, #141,
-#143, #145 and #147; issue #149 records this run.
+Open implementation PR #117 contains the passive power-features tour and is
+green at its head but conflicts with current `main`; it remains **awaiting
+Cesc review** and is not modified here. Roadmap-only PR #126 is also green at
+its head but conflicts with current `main`; its Orca/Herdr direction remains
+useful source material, but this run does not stack on or modify that branch.
+Release-please PR #63 remains approval-gated and must not be merged or
+published autonomously. GitHub Projects v2 again returned
+`INSUFFICIENT_SCOPES`: the token has `repo` and `workflow` but lacks
+`read:project`, so no Project item or status is inferred.
 
-### R44 — Bound browser-state cache reads before decoding
+### R39 — Aggregate active Claude Code subagents into workstream status
 
-- Status: **Awaiting Cesc review in PR #150** on
-  `fix/bound-browser-state-cache-reads-r44` for issue #149. Required native
-  implementation CI is green and the PR must not be auto-merged.
-- User outcome: restoring or appending embedded-browser state cannot follow a
-  cache symlink or allocate unbounded memory before JSON decoding.
-- Success signal: a valid regular snapshot at the 1 MiB boundary decodes,
-  while symlinked, oversized, non-regular and malformed candidates fail closed.
-- macOS impact: embedded-browser state restoration only; no visible UI,
-  accessibility, localization, shortcut or navigation behavior changes.
-- Persistence/security impact: narrows a read-side local cache boundary. It
-  does not change the state schema, atomic writer, cleanup, JavaScript policy,
-  browser environment variable, entitlements, worktrees or release execution.
-- Scope: `BrowserBridge`, focused `BrowserViewTests` and roadmap evidence only.
-- Dependencies: none. Its source/test behavior is disjoint from open PRs
-  #140, #142, #144, #146 and #148, conflicting older PRs #117/#126 and release
-  metadata #63, so the implementations can merge in either order.
-- Risk: low and reversible read-side hardening; full macOS CI is mandatory.
+- Status: **Awaiting Cesc review in PR #140** on
+  `feat/claude-subagent-status-r39`; source issue #54. Native macOS CI is
+  pending at this reconciliation point.
+- User outcome: a workstream no longer appears idle while one or more Claude
+  Code subagents are still running, while a main-agent permission/waiting
+  state remains the higher-priority actionable signal.
+- Success signal: documented `SubagentStart` and `SubagentStop` hooks create
+  independent bounded lifecycle records; the existing workstream indicator
+  resolves to working while any live record exists and returns to main-agent
+  state after the last record stops.
+- macOS impact: existing native sidebar/workstream status behavior only. No new
+  view, string, animation or shortcut is added.
+- Persistence/security impact: hook JSON is untrusted input. Reads are capped
+  at 1 MiB, identifier/type fields are bounded, filenames encode rather than
+  interpolate the external identifier, concurrent subagents use separate
+  atomic files, and dead-process records are ignored. No transcript, assistant
+  message or prompt content is retained.
+- Scope: Claude Code hook generation, `dy-agent-state`, the agent-state model
+  and store, capability documentation and focused tests. Codex, OpenCode and
+  Gemini remain explicitly unsupported for subagent status.
+- Dependencies: Claude Code's documented command-hook lifecycle payload. No
+  pending implementation PR owns these paths or behavior.
+- Risk: medium, reversible local cache/state change. It does not launch,
+  interrupt or control a subagent; command permissions, tmux, worktrees,
+  entitlements, updates and releases are unchanged.
 - Acceptance criteria:
-  1. Open and inspect the same descriptor without following symbolic links.
-  2. Accept only regular files at or below 1 MiB.
-  3. Keep reads bounded to 1 MiB plus one detection byte if a file grows.
-  4. Preserve existing valid state decoding, atomic writes and private modes.
-  5. Reject malformed JSON without changing browser or persisted state.
-  6. Full GitHub macOS build/test passes.
-- Required evidence: focused XCTest, resource/localization checker suites,
-  XcodeGen/native build, full XCTest, `git diff --check`, added-line secret
-  scan and configured CodeQL.
-- Evidence so far: deterministic resource/localization checker suites and live
-  checks pass (10 resource declarations, 418 app keys and 15 privacy keys
-  across all five locales); `git diff --check` passes. The Linux runner has no
-  Swift, Xcode, XcodeGen, SwiftFormat or prek, so GitHub macOS CI is mandatory
-  native evidence. At head `df351b9`, macOS CI run `33152303202` passed
-  resource/localization checks, XcodeGen, the native build and the full XCTest
-  suite including the new browser-state fixtures. CodeQL run `33152303132`
-  passed its configured Actions and JavaScript analyses; Swift analysis was
-  skipped by repository workflow configuration. The final roadmap-only head
-  must also remain green.
+  1. Claude settings contain non-blocking lifecycle commands for
+     `SubagentStart` and `SubagentStop`.
+  2. Valid lifecycle input creates/removes only its encoded per-workstream
+     marker; malformed, oversized and control-character input is rejected.
+  3. Multiple live markers aggregate without lost updates; dead PIDs are
+     ignored and cleanup remains scoped to one workstream.
+  4. Waiting main-agent state wins over subagent activity; idle/unknown state
+     becomes working while a live subagent exists.
+  5. The capability contract and README claim aggregate Claude support only.
+  6. Focused XCTest, localization parity, full macOS build/test and configured
+     CodeQL checks pass.
+- Required evidence: `AgentHooksTests`, `AgentStateTests`,
+  `CodingAgentCapabilitiesTests`, localization scripts, `git diff --check`,
+  diff secret scan and GitHub macOS `build-and-test`.
+- Native evidence: implementation head `7964325` passed macOS CI run
+  `32113214528`: localization resource/key checks, XcodeGen, the native build
+  and the full XCTest suite all succeeded. CodeQL run `32113214601` passed
+  Actions and JavaScript analysis; Swift analysis was skipped by repository
+  workflow configuration. The final roadmap-only head must also remain green.
+- Sources: issue #54, `AgentHooks.swift`, `AgentStateStore.swift`, and the
+  official Claude Code hooks reference for `SubagentStart` /
+  `SubagentStop`.
 
-### Independent Ready queue while R39–R44 await review
+### Independent Ready queue while R39 awaits review
 
-#### R45 — Bound Claude transcript parsing for the usage meter
+- **R40 — Verify bundled helper integrity in macOS CI:** after the native app
+  build, assert that `dy-run` and `dy-agent-state` exist at the canonical
+  bundle paths and retain executable mode. User outcome: a green build cannot
+  ship an app whose environment or status integrations silently fail because
+  a helper was omitted. Scope is CI/build verification only; no signing,
+  notarization or release mutation.
+- **R41 — Bound run-state cache reads before JSON decoding:** reject
+  non-regular, symlinked or oversized run-state candidates before parsing,
+  while preserving valid port detection. User outcome: malformed local cache
+  entries cannot make browser retargeting allocate unbounded memory or cross a
+  file boundary. Scope is `RunStateStore` and focused fixtures; no command,
+  schema, deletion or migration behavior.
+- **R42 — Build a read-only GitHub issue task preview:** normalize title,
+  number, URL and bounded body text as untrusted input for a future explicit
+  issue-to-workstream confirmation surface. User outcome: task intake can show
+  exactly what would be handed to an agent before any worktree or prompt is
+  created. Scope is a pure model/parser and tests; no GitHub mutation, agent
+  launch, credential change or worktree creation.
 
-- Status: **Ready**; no issue or implementation branch exists.
-- User outcome: one oversized or malformed recent transcript cannot cause an
-  unbounded in-memory read while Dockyard refreshes usage.
-- Success signal: bounded line/file fixtures preserve valid recent usage and
-  skip oversized input deterministically.
-- Scope and impact: `ClaudeUsageParser` and focused tests only; read-only local
-  transcript handling with no account access, plan estimate, transcript
-  mutation, telemetry, entitlement, UI or localization change.
-- Dependencies/risk/tests: none and disjoint from open PRs; low risk. Cap
-  candidate files and lines before decoding, preserve valid recent totals,
-  reject symlinked/non-regular/oversized input and pass focused plus full macOS
-  CI.
+Issue #41 still requires native profiling evidence before a lifecycle fix.
+Issue #43 still crosses the update-execution approval gate. Individual
+subagent identities/timelines and Codex/OpenCode/Gemini subagent support remain
+future slices of issue #54 and must not be inferred from R39.
 
-#### R46 — Bound login-shell PATH discovery
-
-- Status: **Ready**; no issue or implementation branch exists.
-- User outcome: a stalled or noisy login-shell startup file cannot indefinitely
-  delay Dockyard's command-line tool discovery.
-- Success signal: deterministic process-double tests prove timeout,
-  termination, output cap, successful PATH parsing and cached failure behavior.
-- Scope and impact: `CommandLineTools.loginShellPath`, its private cache and
-  focused tests only; no PATH precedence, Coding Agent command, permission,
-  persistence, UI or localization change.
-- Dependencies/risk/tests: none; source/test paths are disjoint from R43 and
-  every other open implementation PR. Medium command-boundary risk; stop at a
-  tested PR for Cesc after focused and full macOS CI.
-
-#### R47 — Contain and bound `.env` port inference
-
-- Status: **Ready**; no issue or implementation branch exists.
-- User outcome: embedded-browser port inference cannot follow an escaping
-  `.env` symlink or read an unbounded environment file.
-- Success signal: contained bounded `.env` fixtures retain `PORT` inference,
-  while escaping symlinks, non-regular and oversized candidates are ignored
-  and command-line port inference still works.
-- Scope and impact: `RunLauncher.inferExpectedPort` and focused port-detection
-  tests only; read-side inference with no environment export, run command,
-  script approval, worktree, UI, localization or entitlement change.
-- Dependencies/risk/tests: none and disjoint from every open PR; low risk.
-  Reuse the existing project-containment boundary, cap the read before parsing
-  and pass focused plus full macOS CI.
-
-- **2026-08-28 09:30 CEST:** reconciled current `origin/main`, `TODO.md`, open
-  issues, every open PR path/behavior/check, latest release, main CI and
-  Projects v2 scope. Selected independent R44 / issue #149 from a fresh
-  `origin/main` worktree. No older PR comment, merge, release or Project
-  mutation occurred.
+- **2026-08-18 09:30 CEST:** reconciled current `origin/main`, `TODO.md`,
+  open issues/PRs and changed paths, release/CI state and Projects v2 scope.
+  Selected R39 / issue #54 from a fresh `origin/main` worktree and opened PR
+  #140 for Cesc review. No older PR was modified or commented on, and no merge,
+  release or Project mutation was performed.

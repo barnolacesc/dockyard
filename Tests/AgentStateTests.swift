@@ -45,6 +45,97 @@ final class AgentStateTests: XCTestCase {
 
         XCTAssertFalse(snapshot.chromeActive)
     }
+
+    func testSubagentHookInputDecodesOnlyBoundedLifecycleFields() throws {
+        let data = Data(#"{"hook_event_name":"SubagentStart","agent_id":"agent-123","agent_type":"Explore","last_assistant_message":"ignored"}"#.utf8)
+
+        XCTAssertEqual(
+            AgentSubagentHookInput.decodeValidated(from: data),
+            AgentSubagentHookInput(agentID: "agent-123", agentType: "Explore")
+        )
+        XCTAssertNil(AgentSubagentHookInput.decodeValidated(from: Data()))
+        XCTAssertNil(AgentSubagentHookInput.decodeValidated(from: Data(repeating: 0x61, count: AgentSubagentHookInput.maximumInputBytes + 1)))
+        XCTAssertNil(AgentSubagentHookInput.decodeValidated(
+            from: Data(#"{"agent_id":"agent\n123","agent_type":"Explore"}"#.utf8)
+        ))
+    }
+
+    func testSubagentFileNameDoesNotExposeUntrustedAgentIDAsAPath() throws {
+        let workstreamID = UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC")!
+        let directory = URL(fileURLWithPath: "/tmp/agent-state", isDirectory: true)
+        let url = try XCTUnwrap(AgentSubagentFiles.fileURL(
+            for: workstreamID,
+            agentID: "agent/../../outside",
+            directoryURL: directory
+        ))
+
+        XCTAssertEqual(url.deletingLastPathComponent(), directory)
+        XCTAssertFalse(url.lastPathComponent.contains("/"))
+        XCTAssertTrue(url.lastPathComponent.hasPrefix("aabbccdd-1122-3344-5566-778899aabbcc--"))
+        XCTAssertTrue(url.lastPathComponent.hasSuffix(".subagent.json"))
+    }
+
+    func testSubagentFilesUpdateIndependentlyAndCleanupIsWorkstreamScoped() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("dockyard-subagent-file-tests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let firstWorkstream = UUID()
+        let secondWorkstream = UUID()
+        let first = AgentSubagentSnapshot(
+            workstreamID: firstWorkstream,
+            agentID: "agent-one",
+            agentType: "Explore",
+            updatedAt: Date(timeIntervalSince1970: 1_800_000_000),
+            pid: 101
+        )
+        let second = AgentSubagentSnapshot(
+            workstreamID: secondWorkstream,
+            agentID: "agent-two",
+            agentType: "Plan",
+            updatedAt: Date(timeIntervalSince1970: 1_800_000_001),
+            pid: 102
+        )
+
+        try AgentSubagentFiles.write(first, directoryURL: directory)
+        try AgentSubagentFiles.write(second, directoryURL: directory)
+        let firstURL = try XCTUnwrap(AgentSubagentFiles.fileURL(
+            for: firstWorkstream,
+            agentID: first.agentID,
+            directoryURL: directory
+        ))
+        XCTAssertEqual(AgentSubagentFiles.load(from: firstURL), first)
+
+        AgentSubagentFiles.removeAll(for: firstWorkstream, directoryURL: directory)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: firstURL.path))
+        let secondURL = try XCTUnwrap(AgentSubagentFiles.fileURL(
+            for: secondWorkstream,
+            agentID: second.agentID,
+            directoryURL: directory
+        ))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: secondURL.path))
+    }
+
+    func testSubagentSnapshotAtNoncanonicalFilenameIsIgnored() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("dockyard-subagent-canonical-tests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let snapshot = AgentSubagentSnapshot(
+            workstreamID: UUID(),
+            agentID: "agent-one",
+            agentType: "Explore",
+            updatedAt: Date(),
+            pid: Int32(getpid())
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let spoofedURL = directory.appendingPathComponent("spoofed.subagent.json")
+        try encoder.encode(snapshot).write(to: spoofedURL)
+
+        XCTAssertNil(AgentSubagentFiles.load(from: spoofedURL))
+    }
 }
 
 @MainActor
@@ -73,6 +164,24 @@ final class AgentStateStoreTests: XCTestCase {
         
         let fileURL = tempDir.appendingPathComponent("\(id.uuidString.lowercased()).json")
         try data.write(to: fileURL, options: .atomic)
+    }
+
+    private func writeSubagent(
+        workstreamID: UUID,
+        agentID: String,
+        pid: Int32
+    ) throws {
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        try AgentSubagentFiles.write(
+            AgentSubagentSnapshot(
+                workstreamID: workstreamID,
+                agentID: agentID,
+                agentType: "Explore",
+                updatedAt: Date(),
+                pid: pid
+            ),
+            directoryURL: tempDir
+        )
     }
 
     override func setUp() {
@@ -149,6 +258,46 @@ final class AgentStateStoreTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
         XCTAssertTrue(store.isChromeActive(for: id))
+    }
+
+    func testActiveSubagentPromotesIdleWorkstreamToWorking() throws {
+        let id = UUID()
+        try writeSnapshot(.idle, pid: Int32(getpid()), for: id)
+        try writeSubagent(workstreamID: id, agentID: "agent-one", pid: Int32(getpid()))
+        try writeSubagent(workstreamID: id, agentID: "agent-two", pid: Int32(getpid()))
+
+        let store = AgentStateStore(directoryURL: tempDir)
+        store.refresh()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(store.agentState(for: id), .working)
+        XCTAssertEqual(store.activeSubagentCount(for: id), 2)
+    }
+
+    func testWaitingMainAgentRemainsActionableWhileSubagentRuns() throws {
+        let id = UUID()
+        try writeSnapshot(.waiting, pid: Int32(getpid()), for: id)
+        try writeSubagent(workstreamID: id, agentID: "agent-one", pid: Int32(getpid()))
+
+        let store = AgentStateStore(directoryURL: tempDir)
+        store.refresh()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(store.agentState(for: id), .waiting)
+        XCTAssertEqual(store.activeSubagentCount(for: id), 1)
+    }
+
+    func testStaleSubagentProcessDoesNotAffectWorkstreamState() throws {
+        let id = UUID()
+        try writeSnapshot(.idle, pid: Int32(getpid()), for: id)
+        try writeSubagent(workstreamID: id, agentID: "agent-one", pid: 99999)
+
+        let store = AgentStateStore(directoryURL: tempDir)
+        store.refresh()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(store.agentState(for: id), .idle)
+        XCTAssertEqual(store.activeSubagentCount(for: id), 0)
     }
 
     func testWatcherReattachesAfterDirectoryReplacement() throws {
