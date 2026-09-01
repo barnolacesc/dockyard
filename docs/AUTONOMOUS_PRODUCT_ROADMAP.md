@@ -751,3 +751,112 @@ retain their documented dependencies. Issues #41, #43 and #54 remain open;
   issues/PRs and their changed paths/checks, latest release and Projects v2
   scope. Selected independent R35 / issue #132 from a fresh `origin/main`
   worktree. No older PR comment, merge, release or Project mutation occurred.
+
+## Live reconciliation — 2026-08-28 09:30 CEST
+
+This section supersedes every earlier queue and item status. `origin/main` is
+`fce9d0f`; its macOS `build-and-test`, release automation and configured CodeQL
+checks are green. PRs #140 (R39), #142 (R40), #144 (R41), #146 (R42) and #148
+(R43) are clean, green on macOS CI and **awaiting Cesc review**. Older PRs #117
+and #126 are green at their heads but conflict with current `main`; they also
+remain awaiting review. Their changed paths, behaviors and dependencies were
+compared before selecting R44; none is modified, stacked on or duplicated by
+this run. Release-please PR #63 remains approval-gated and must not be merged or
+published autonomously. The latest published release remains v0.2.1.
+
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
+`repo` and `workflow` but lacks `read:project`. No Project data or status is
+inferred. Open product issues before selection were #41, #43, #54, #116, #141,
+#143, #145 and #147; issue #149 records this run.
+
+### R44 — Bound browser-state cache reads before decoding
+
+- Status: **Awaiting Cesc review in PR #150** on
+  `fix/bound-browser-state-cache-reads-r44` for issue #149. Required native
+  implementation CI is green and the PR must not be auto-merged.
+- User outcome: restoring or appending embedded-browser state cannot follow a
+  cache symlink or allocate unbounded memory before JSON decoding.
+- Success signal: a valid regular snapshot at the 1 MiB boundary decodes,
+  while symlinked, oversized, non-regular and malformed candidates fail closed.
+- macOS impact: embedded-browser state restoration only; no visible UI,
+  accessibility, localization, shortcut or navigation behavior changes.
+- Persistence/security impact: narrows a read-side local cache boundary. It
+  does not change the state schema, atomic writer, cleanup, JavaScript policy,
+  browser environment variable, entitlements, worktrees or release execution.
+- Scope: `BrowserBridge`, focused `BrowserViewTests` and roadmap evidence only.
+- Dependencies: none. Its source/test behavior is disjoint from open PRs
+  #140, #142, #144, #146 and #148, conflicting older PRs #117/#126 and release
+  metadata #63, so the implementations can merge in either order.
+- Risk: low and reversible read-side hardening; full macOS CI is mandatory.
+- Acceptance criteria:
+  1. Open and inspect the same descriptor without following symbolic links.
+  2. Accept only regular files at or below 1 MiB.
+  3. Keep reads bounded to 1 MiB plus one detection byte if a file grows.
+  4. Preserve existing valid state decoding, atomic writes and private modes.
+  5. Reject malformed JSON without changing browser or persisted state.
+  6. Full GitHub macOS build/test passes.
+- Required evidence: focused XCTest, resource/localization checker suites,
+  XcodeGen/native build, full XCTest, `git diff --check`, added-line secret
+  scan and configured CodeQL.
+- Evidence so far: deterministic resource/localization checker suites and live
+  checks pass (10 resource declarations, 418 app keys and 15 privacy keys
+  across all five locales); `git diff --check` passes. The Linux runner has no
+  Swift, Xcode, XcodeGen, SwiftFormat or prek, so GitHub macOS CI is mandatory
+  native evidence. At head `df351b9`, macOS CI run `33152303202` passed
+  resource/localization checks, XcodeGen, the native build and the full XCTest
+  suite including the new browser-state fixtures. CodeQL run `33152303132`
+  passed its configured Actions and JavaScript analyses; Swift analysis was
+  skipped by repository workflow configuration. The final roadmap-only head
+  must also remain green.
+
+### Independent Ready queue while R39–R44 await review
+
+#### R45 — Bound Claude transcript parsing for the usage meter
+
+- Status: **Ready**; no issue or implementation branch exists.
+- User outcome: one oversized or malformed recent transcript cannot cause an
+  unbounded in-memory read while Dockyard refreshes usage.
+- Success signal: bounded line/file fixtures preserve valid recent usage and
+  skip oversized input deterministically.
+- Scope and impact: `ClaudeUsageParser` and focused tests only; read-only local
+  transcript handling with no account access, plan estimate, transcript
+  mutation, telemetry, entitlement, UI or localization change.
+- Dependencies/risk/tests: none and disjoint from open PRs; low risk. Cap
+  candidate files and lines before decoding, preserve valid recent totals,
+  reject symlinked/non-regular/oversized input and pass focused plus full macOS
+  CI.
+
+#### R46 — Bound login-shell PATH discovery
+
+- Status: **Ready**; no issue or implementation branch exists.
+- User outcome: a stalled or noisy login-shell startup file cannot indefinitely
+  delay Dockyard's command-line tool discovery.
+- Success signal: deterministic process-double tests prove timeout,
+  termination, output cap, successful PATH parsing and cached failure behavior.
+- Scope and impact: `CommandLineTools.loginShellPath`, its private cache and
+  focused tests only; no PATH precedence, Coding Agent command, permission,
+  persistence, UI or localization change.
+- Dependencies/risk/tests: none; source/test paths are disjoint from R43 and
+  every other open implementation PR. Medium command-boundary risk; stop at a
+  tested PR for Cesc after focused and full macOS CI.
+
+#### R47 — Contain and bound `.env` port inference
+
+- Status: **Ready**; no issue or implementation branch exists.
+- User outcome: embedded-browser port inference cannot follow an escaping
+  `.env` symlink or read an unbounded environment file.
+- Success signal: contained bounded `.env` fixtures retain `PORT` inference,
+  while escaping symlinks, non-regular and oversized candidates are ignored
+  and command-line port inference still works.
+- Scope and impact: `RunLauncher.inferExpectedPort` and focused port-detection
+  tests only; read-side inference with no environment export, run command,
+  script approval, worktree, UI, localization or entitlement change.
+- Dependencies/risk/tests: none and disjoint from every open PR; low risk.
+  Reuse the existing project-containment boundary, cap the read before parsing
+  and pass focused plus full macOS CI.
+
+- **2026-08-28 09:30 CEST:** reconciled current `origin/main`, `TODO.md`, open
+  issues, every open PR path/behavior/check, latest release, main CI and
+  Projects v2 scope. Selected independent R44 / issue #149 from a fresh
+  `origin/main` worktree. No older PR comment, merge, release or Project
+  mutation occurred.

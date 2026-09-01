@@ -1,6 +1,7 @@
 // ABOUTME: Read-only bridge that exposes the embedded WKWebView's state to the agent.
 // ABOUTME: Writes per-workstream JSON (current URL, title, recent console logs) to the cache directory.
 
+import Darwin
 import Foundation
 import OSLog
 
@@ -9,6 +10,11 @@ private let logger = Logger(subsystem: "dockyard", category: "browser-bridge")
 @MainActor
 enum BrowserBridge {
     static let envVarName = "DOCKYARD_BROWSER_STATE_FILE"
+    static let maximumStateBytes = 1_048_576
+
+    private enum StateReadError: Error {
+        case invalidCandidate
+    }
 
     static var stateDirectory: URL {
         let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
@@ -73,10 +79,40 @@ enum BrowserBridge {
     }
 
     static func decodeState(at file: URL) throws -> State {
-        let data = try Data(contentsOf: file)
+        let data = try readBoundedRegularFile(at: file)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(State.self, from: data)
+    }
+
+    private static func readBoundedRegularFile(at file: URL) throws -> Data {
+        let descriptor = open(file.path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK)
+        guard descriptor >= 0 else { throw StateReadError.invalidCandidate }
+        defer { close(descriptor) }
+
+        var metadata = stat()
+        guard fstat(descriptor, &metadata) == 0,
+              (metadata.st_mode & S_IFMT) == S_IFREG,
+              metadata.st_size >= 0,
+              metadata.st_size <= off_t(maximumStateBytes)
+        else {
+            throw StateReadError.invalidCandidate
+        }
+
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: false)
+        var data = Data()
+        data.reserveCapacity(Int(metadata.st_size))
+
+        while data.count <= maximumStateBytes {
+            let remaining = maximumStateBytes + 1 - data.count
+            let chunkSize = min(64 * 1024, remaining)
+            guard chunkSize > 0 else { break }
+            guard let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty else { break }
+            data.append(chunk)
+        }
+
+        guard data.count <= maximumStateBytes else { throw StateReadError.invalidCandidate }
+        return data
     }
 
     private static func prepareStateDirectory(at directory: URL) throws {
