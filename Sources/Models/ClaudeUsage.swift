@@ -1,6 +1,7 @@
 // ABOUTME: Parses local Claude Code transcript files to estimate token usage over the
 // ABOUTME: rolling 5-hour block and 7-day window, for the sidebar usage meter.
 
+import Darwin
 import Foundation
 
 /// Subscription plan tier. Used only to render an *approximate* "% remaining" — Anthropic
@@ -66,6 +67,11 @@ struct ClaudeUsageSnapshot: Equatable {
 enum ClaudeUsageParser {
     static let fiveHours: TimeInterval = 5 * 3600
     static let sevenDays: TimeInterval = 7 * 24 * 3600
+    static let maximumTranscriptBytes = 16 * 1024 * 1024
+    static let maximumLineBytes = 1024 * 1024
+
+    private static let readChunkBytes = 64 * 1024
+    private static let usageNeedle = Data("\"usage\"".utf8)
 
     struct Entry: Equatable {
         let time: Date
@@ -88,43 +94,110 @@ enum ClaudeUsageParser {
         return aggregate(entries: entries, now: now)
     }
 
-    /// Read every `*.jsonl` under `dir` (recursively) modified at/after `since`, extracting
-    /// (timestamp, tokens) for each assistant line that carries a `usage` object.
+    /// Read bounded `*.jsonl` files under `dir` (recursively) modified at/after `since`,
+    /// extracting (timestamp, tokens) for each assistant line that carries a `usage` object.
     static func parseEntries(in dir: URL, since: Date) -> [Entry] {
         let fm = FileManager.default
         guard let enumerator = fm.enumerator(
             at: dir,
-            includingPropertiesForKeys: [.contentModificationDateKey, .isRegularFileKey],
+            includingPropertiesForKeys: nil,
             options: [.skipsHiddenFiles]
         ) else { return [] }
 
         var entries: [Entry] = []
         for case let url as URL in enumerator where url.pathExtension == "jsonl" {
-            if let values = try? url.resourceValues(forKeys: [.contentModificationDateKey]),
-               let mtime = values.contentModificationDate, mtime < since {
-                continue
-            }
             entries.append(contentsOf: parseFile(at: url, since: since))
         }
         return entries
     }
 
     private static func parseFile(at url: URL, since: Date) -> [Entry] {
-        guard let contents = try? String(contentsOf: url, encoding: .utf8) else { return [] }
+        let descriptor = open(url.path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK)
+        guard descriptor >= 0 else { return [] }
+        defer { close(descriptor) }
+
+        var metadata = stat()
+        guard fstat(descriptor, &metadata) == 0,
+              (metadata.st_mode & S_IFMT) == S_IFREG,
+              metadata.st_size >= 0,
+              metadata.st_size <= off_t(maximumTranscriptBytes)
+        else {
+            return []
+        }
+
+        let modifiedAt = Date(
+            timeIntervalSince1970: TimeInterval(metadata.st_mtimespec.tv_sec)
+                + TimeInterval(metadata.st_mtimespec.tv_nsec) / 1_000_000_000
+        )
+        guard modifiedAt >= since else { return [] }
+
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: false)
         var entries: [Entry] = []
-        for line in contents.split(separator: "\n", omittingEmptySubsequences: true) {
-            // Cheap pre-filter: only assistant lines carry a usage object.
-            guard line.contains("\"usage\"") else { continue }
-            guard let data = line.data(using: .utf8),
-                  let record = try? decoder.decode(TranscriptLine.self, from: data),
-                  let usage = record.message?.usage,
-                  let timeString = record.timestamp,
-                  let time = parseTimestamp(timeString),
-                  time >= since
-            else { continue }
-            entries.append(Entry(time: time, tokens: usage.workTokens))
+        var pendingLine = Data()
+        pendingLine.reserveCapacity(min(maximumLineBytes, readChunkBytes))
+        var discardingOversizedLine = false
+        var bytesRead = 0
+
+        func consume(_ bytes: Data.SubSequence, endsLine: Bool) {
+            if !discardingOversizedLine {
+                if bytes.count <= maximumLineBytes - pendingLine.count {
+                    pendingLine.append(contentsOf: bytes)
+                } else {
+                    pendingLine.removeAll(keepingCapacity: true)
+                    discardingOversizedLine = true
+                }
+            }
+
+            guard endsLine else { return }
+            if !discardingOversizedLine,
+               let entry = parseLine(pendingLine, since: since)
+            {
+                entries.append(entry)
+            }
+            pendingLine.removeAll(keepingCapacity: true)
+            discardingOversizedLine = false
+        }
+
+        do {
+            while bytesRead <= maximumTranscriptBytes {
+                let remaining = maximumTranscriptBytes + 1 - bytesRead
+                let chunkSize = min(readChunkBytes, remaining)
+                guard chunkSize > 0 else { break }
+                guard let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty else { break }
+                bytesRead += chunk.count
+
+                var segmentStart = chunk.startIndex
+                while let newline = chunk[segmentStart...].firstIndex(of: 0x0A) {
+                    consume(chunk[segmentStart..<newline], endsLine: true)
+                    segmentStart = chunk.index(after: newline)
+                }
+                consume(chunk[segmentStart...], endsLine: false)
+            }
+        } catch {
+            return []
+        }
+
+        guard bytesRead <= maximumTranscriptBytes else { return [] }
+        if !discardingOversizedLine,
+           let entry = parseLine(pendingLine, since: since)
+        {
+            entries.append(entry)
         }
         return entries
+    }
+
+    private static func parseLine(_ data: Data, since: Date) -> Entry? {
+        guard !data.isEmpty,
+              data.range(of: usageNeedle) != nil,
+              let record = try? decoder.decode(TranscriptLine.self, from: data),
+              let usage = record.message?.usage,
+              let timeString = record.timestamp,
+              let time = parseTimestamp(timeString),
+              time >= since
+        else {
+            return nil
+        }
+        return Entry(time: time, tokens: usage.workTokens)
     }
 
     /// Aggregate entries into the 5-hour block and 7-day rolling windows.
