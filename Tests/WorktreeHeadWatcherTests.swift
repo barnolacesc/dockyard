@@ -2,6 +2,7 @@
 // ABOUTME: Covers linked worktrees plus replacement and removal of watched git directories.
 
 @testable import Dockyard
+import Darwin
 import XCTest
 
 final class WorktreeHeadWatcherTests: XCTestCase {
@@ -112,11 +113,89 @@ final class WorktreeHeadWatcherTests: XCTestCase {
         XCTAssertEqual(resolved, perWorktreeGitDir.path)
     }
 
+    func testResolvesRelativeGitdirPointerForLinkedWorktree() throws {
+        let perWorktreeGitDir = root.appendingPathComponent("main/.git/worktrees/feature", isDirectory: true)
+        try FileManager.default.createDirectory(at: perWorktreeGitDir, withIntermediateDirectories: true)
+
+        let worktree = root.appendingPathComponent("feature", isDirectory: true)
+        try FileManager.default.createDirectory(at: worktree, withIntermediateDirectories: true)
+        let gitFile = worktree.appendingPathComponent(".git")
+        try "gitdir: ../main/.git/worktrees/feature\n".write(
+            to: gitFile,
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let resolved = WorktreeHeadWatcher.headDirectory(forWorktree: worktree.path)
+        XCTAssertEqual(resolved, perWorktreeGitDir.standardizedFileURL.path)
+    }
+
     func testReturnsNilWhenGitFileHasNoGitdirLine() throws {
         let worktree = root.appendingPathComponent("broken", isDirectory: true)
         try FileManager.default.createDirectory(at: worktree, withIntermediateDirectories: true)
         let gitFile = worktree.appendingPathComponent(".git")
         try "not a gitdir pointer\n".write(to: gitFile, atomically: true, encoding: .utf8)
+
+        XCTAssertNil(WorktreeHeadWatcher.headDirectory(forWorktree: worktree.path))
+    }
+
+    func testReturnsNilWhenGitdirTargetIsMissingOrNotDirectory() throws {
+        let worktree = root.appendingPathComponent("broken-target", isDirectory: true)
+        try FileManager.default.createDirectory(at: worktree, withIntermediateDirectories: true)
+        let gitFile = worktree.appendingPathComponent(".git")
+
+        try "gitdir: ../missing\n".write(to: gitFile, atomically: true, encoding: .utf8)
+        XCTAssertNil(WorktreeHeadWatcher.headDirectory(forWorktree: worktree.path))
+
+        let regularTarget = root.appendingPathComponent("not-a-directory")
+        try Data("HEAD\n".utf8).write(to: regularTarget)
+        try "gitdir: ../not-a-directory\n".write(to: gitFile, atomically: true, encoding: .utf8)
+        XCTAssertNil(WorktreeHeadWatcher.headDirectory(forWorktree: worktree.path))
+    }
+
+    func testReturnsNilForSymlinkGitEntry() throws {
+        let worktree = root.appendingPathComponent("symlink-entry", isDirectory: true)
+        try FileManager.default.createDirectory(at: worktree, withIntermediateDirectories: true)
+        let pointedFile = root.appendingPathComponent("git-pointer")
+        try "gitdir: \\(root.path)\n".write(to: pointedFile, atomically: true, encoding: .utf8)
+        try FileManager.default.createSymbolicLink(
+            at: worktree.appendingPathComponent(".git"),
+            withDestinationURL: pointedFile
+        )
+
+        XCTAssertNil(WorktreeHeadWatcher.headDirectory(forWorktree: worktree.path))
+    }
+
+    func testReturnsNilForNonRegularGitEntry() throws {
+        let worktree = root.appendingPathComponent("fifo-entry", isDirectory: true)
+        try FileManager.default.createDirectory(at: worktree, withIntermediateDirectories: true)
+        let gitEntry = worktree.appendingPathComponent(".git")
+        XCTAssertEqual(mkfifo(gitEntry.path, 0o600), 0)
+
+        XCTAssertNil(WorktreeHeadWatcher.headDirectory(forWorktree: worktree.path))
+    }
+
+    func testReturnsNilForOversizedGitFile() throws {
+        let worktree = root.appendingPathComponent("oversized-entry", isDirectory: true)
+        try FileManager.default.createDirectory(at: worktree, withIntermediateDirectories: true)
+        let gitFile = worktree.appendingPathComponent(".git")
+        let oversized = Data(
+            repeating: 0x61,
+            count: WorktreeHeadWatcher.maximumGitFileBytes + 1
+        )
+        try oversized.write(to: gitFile)
+
+        XCTAssertNil(WorktreeHeadWatcher.headDirectory(forWorktree: worktree.path))
+    }
+
+    func testReturnsNilForInvalidUTF8GitFile() throws {
+        let worktree = root.appendingPathComponent("invalid-utf8-entry", isDirectory: true)
+        try FileManager.default.createDirectory(at: worktree, withIntermediateDirectories: true)
+        let gitFile = worktree.appendingPathComponent(".git")
+        var invalid = Data("gitdir: ".utf8)
+        invalid.append(0xFF)
+        invalid.append(0x0A)
+        try invalid.write(to: gitFile)
 
         XCTAssertNil(WorktreeHeadWatcher.headDirectory(forWorktree: worktree.path))
     }
