@@ -94,6 +94,8 @@ struct PortSelectionTracker {
 }
 
 enum RunStateStore {
+    static let maximumSnapshotBytes = 1_048_576
+
     static var directoryURL: URL {
         AppConstants.cacheDirectory.appendingPathComponent("run-state", isDirectory: true)
     }
@@ -119,7 +121,7 @@ enum RunStateStore {
     }
 
     static func load(from url: URL) -> RunStateSnapshot? {
-        guard let data = try? Data(contentsOf: url) else { return nil }
+        guard let data = readBoundedRegularFile(at: url) else { return nil }
         return try? decoder.decode(RunStateSnapshot.self, from: data)
     }
 
@@ -159,6 +161,40 @@ enum RunStateStore {
         // dy-run records its timestamp immediately after spawning the monitor.
         // A reused PID points to a process with a materially different birth time.
         return abs(recordedStart.timeIntervalSince(processStart)) <= 5
+    }
+
+    private static func readBoundedRegularFile(at url: URL) -> Data? {
+        let descriptor = open(url.path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK)
+        guard descriptor >= 0 else { return nil }
+        defer { close(descriptor) }
+
+        var metadata = stat()
+        guard fstat(descriptor, &metadata) == 0,
+              (metadata.st_mode & S_IFMT) == S_IFREG,
+              metadata.st_size >= 0,
+              metadata.st_size <= off_t(maximumSnapshotBytes)
+        else {
+            return nil
+        }
+
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: false)
+        var data = Data()
+        data.reserveCapacity(Int(metadata.st_size))
+
+        do {
+            while data.count <= maximumSnapshotBytes {
+                let remaining = maximumSnapshotBytes + 1 - data.count
+                let chunkSize = min(64 * 1024, remaining)
+                guard chunkSize > 0 else { break }
+                guard let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty else { break }
+                data.append(chunk)
+            }
+        } catch {
+            return nil
+        }
+
+        guard data.count <= maximumSnapshotBytes else { return nil }
+        return data
     }
 
     private static let encoder: JSONEncoder = {

@@ -127,6 +127,51 @@ final class PortDetectionTests: XCTestCase {
         XCTAssertNil(RunStateStore.loadValidated(for: workstreamID))
     }
 
+    func testRunStateLoadRejectsSymbolicLink() throws {
+        let fixtureDirectory = temporaryFixtureDirectory()
+        defer { try? FileManager.default.removeItem(at: fixtureDirectory) }
+        try FileManager.default.createDirectory(at: fixtureDirectory, withIntermediateDirectories: true)
+
+        let workstreamID = UUID()
+        let targetURL = fixtureDirectory.appendingPathComponent("outside.json")
+        let linkURL = fixtureDirectory.appendingPathComponent("run-state.json")
+        try encodedStateData(workstreamID: workstreamID).write(to: targetURL)
+        try FileManager.default.createSymbolicLink(at: linkURL, withDestinationURL: targetURL)
+
+        XCTAssertNil(RunStateStore.load(from: linkURL))
+    }
+
+    func testRunStateLoadAcceptsBoundedRegularFile() throws {
+        let fixtureDirectory = temporaryFixtureDirectory()
+        defer { try? FileManager.default.removeItem(at: fixtureDirectory) }
+        try FileManager.default.createDirectory(at: fixtureDirectory, withIntermediateDirectories: true)
+
+        let workstreamID = UUID()
+        let stateURL = fixtureDirectory.appendingPathComponent("run-state.json")
+        var data = try encodedStateData(workstreamID: workstreamID)
+        data.append(Data(repeating: 0x20, count: RunStateStore.maximumSnapshotBytes - data.count))
+        try data.write(to: stateURL)
+
+        let snapshot = try XCTUnwrap(RunStateStore.load(from: stateURL))
+
+        XCTAssertEqual(snapshot.workstreamID, workstreamID)
+        XCTAssertEqual(data.count, RunStateStore.maximumSnapshotBytes)
+    }
+
+    func testRunStateLoadRejectsOversizedRegularFile() throws {
+        let fixtureDirectory = temporaryFixtureDirectory()
+        defer { try? FileManager.default.removeItem(at: fixtureDirectory) }
+        try FileManager.default.createDirectory(at: fixtureDirectory, withIntermediateDirectories: true)
+
+        let stateURL = fixtureDirectory.appendingPathComponent("run-state.json")
+        var data = try encodedStateData(workstreamID: UUID())
+        data.append(Data(repeating: 0x20, count: RunStateStore.maximumSnapshotBytes - data.count + 1))
+        try data.write(to: stateURL)
+
+        XCTAssertNil(RunStateStore.load(from: stateURL))
+        XCTAssertEqual(data.count, RunStateStore.maximumSnapshotBytes + 1)
+    }
+
     func testSingleNewPortRequiresTwoPollsBeforeSelection() {
         var tracker = PortSelectionTracker(expectedPort: 40001)
 
@@ -222,5 +267,23 @@ final class PortDetectionTests: XCTestCase {
             selectedPort: selectedPort,
             startedAt: startedAt
         )
+    }
+
+    private func encodedStateData(workstreamID: UUID) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(
+            runState(
+                workstreamID: workstreamID,
+                pid: getpid(),
+                status: .running,
+                selectedPort: 5173
+            )
+        )
+    }
+
+    private func temporaryFixtureDirectory() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("dockyard-run-state-tests-\(UUID().uuidString)", isDirectory: true)
     }
 }
