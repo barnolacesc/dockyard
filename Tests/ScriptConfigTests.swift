@@ -181,6 +181,56 @@ final class ScriptConfigTests: XCTestCase {
         XCTAssertEqual(config.source, "conductor.json")
     }
 
+    func testLoadsConfigAtMaximumSupportedSize() {
+        let prefix = "{\"run\":\""
+        let suffix = "\"}"
+        let command = String(
+            repeating: "a",
+            count: ScriptConfig.maximumConfigFileBytes - prefix.utf8.count - suffix.utf8.count
+        )
+        let data = Data((prefix + command + suffix).utf8)
+        XCTAssertEqual(data.count, ScriptConfig.maximumConfigFileBytes)
+        FileManager.default.createFile(
+            atPath: tmpDir.appendingPathComponent(".dockyard.json").path,
+            contents: data
+        )
+
+        let config = ScriptConfig.load(from: tmpDir.path)
+
+        XCTAssertEqual(config.run, command)
+        XCTAssertNil(config.loadError)
+    }
+
+    func testRejectsConfigLargerThanMaximumSupportedSize() {
+        let data = Data(
+            repeating: 0x20,
+            count: ScriptConfig.maximumConfigFileBytes + 1
+        )
+        FileManager.default.createFile(
+            atPath: tmpDir.appendingPathComponent(".dockyard.json").path,
+            contents: data
+        )
+
+        let config = ScriptConfig.load(from: tmpDir.path)
+
+        XCTAssertFalse(config.hasAnyScript)
+        XCTAssertEqual(config.source, ".dockyard.json")
+        XCTAssertNotNil(config.loadError)
+    }
+
+    func testRejectsDirectoryAtConfigPath() throws {
+        try FileManager.default.createDirectory(
+            at: tmpDir.appendingPathComponent(".dockyard.json"),
+            withIntermediateDirectories: false
+        )
+
+        let config = ScriptConfig.load(from: tmpDir.path)
+
+        XCTAssertFalse(config.hasAnyScript)
+        XCTAssertEqual(config.source, ".dockyard.json")
+        XCTAssertNotNil(config.loadError)
+    }
+
     // MARK: - Project containment
 
     func testRejectsConfigSymlinkOutsideProjectDirectory() throws {
