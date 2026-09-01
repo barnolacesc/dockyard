@@ -70,7 +70,12 @@ inferred. Issue #165 records this run.
 - Evidence so far: resource/localization checker suites pass (10 resource
   declarations, 418 app keys and 15 privacy keys across all five locales), and
   `git diff --check` passes. The Linux runner has no Swift, Xcode, XcodeGen or
-  SwiftFormat, so GitHub `macos-15` CI is mandatory native evidence.
+  SwiftFormat, so GitHub `macos-15` CI is mandatory native evidence. At head
+  `d7aed8b`, the native build and R52 tests passed, but the full suite failed in
+  unrelated existing test `SetupRunnerTests.test_captures_output_to_log_tail`;
+  its other setup-runner tests passed. The automation token received `403 Must
+  have admin rights` when requesting a failed-job rerun, so a subsequent
+  evidence-only head must provide the required clean native run.
 
 ### Independent Ready queue while R39–R52 await review
 
