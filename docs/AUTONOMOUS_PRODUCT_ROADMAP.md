@@ -828,7 +828,7 @@ before selection; no open implementation PR changes `WorkstreamInfoView` or
 
 ### R56 — Bound workstream document-preview reads
 
-- Status: **Prepared for Cesc review** on
+- Status: **Awaiting Cesc review in PR #174** on
   `fix/bound-workstream-document-previews-r56-20260903` for issue #173. The PR
   must remain open and must not be auto-merged; GitHub macOS CI is mandatory.
 - User outcome: opening a workstream overview remains responsive when a
