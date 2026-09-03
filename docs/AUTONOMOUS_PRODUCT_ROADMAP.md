@@ -66,7 +66,11 @@ read-only metadata hardening. Issue #171 records this run.
   including 418 app keys and 15 privacy keys across all five locales;
   `git diff --check` and the added-line secret scan pass. The Linux host has no
   Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is
-  the mandatory native build/test evidence.
+  the mandatory native build/test evidence. At implementation head `250457c`,
+  macOS CI run `33729247645` passed localization parity, XcodeGen, the native
+  build, bundled-helper verification and the full XCTest suite including
+  `EnvironmentDescriptionTests`. CodeQL run `33729247661` passed its configured
+  analyses. The final roadmap-only head must also remain green.
 
 ### Independent Ready queue
 
