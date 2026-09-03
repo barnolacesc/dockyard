@@ -808,3 +808,92 @@ retain their documented dependencies. Issues #41, #43 and #54 remain open;
   issues/PRs and their changed paths/checks, latest release and Projects v2
   scope. Selected independent R35 / issue #132 from a fresh `origin/main`
   worktree. No older PR comment, merge, release or Project mutation occurred.
+
+## Live reconciliation — 2026-09-03 16:30 CEST
+
+This section supersedes every earlier status. `origin/main` is `08ec8b3`; its
+macOS CI, CodeQL and Release workflows succeeded. v0.2.1 remains the latest
+published release. GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the
+automation token has `repo` and `workflow` but lacks `read:project`, so no
+Project item or status is inferred.
+
+PRs #170 (R54) and #172 (R55) are clean, green and **awaiting Cesc review**.
+PRs #117, #126, #140, #146, #148, #152, #154, #156, #158, #160, #162, #164,
+#166 and #168 passed macOS CI at their current heads but conflict with current
+`main`; they remain awaiting review and are not modified, stacked on or
+duplicated here. Release-please PR #63 remains approval-gated and must not be
+merged or published autonomously. The open PR file/behavior matrix was checked
+before selection; no open implementation PR changes `WorkstreamInfoView` or
+`DocFileTests`.
+
+### R56 — Bound workstream document-preview reads
+
+- Status: **Prepared for Cesc review** on
+  `fix/bound-workstream-document-previews-r56-20260903` for issue #173. The PR
+  must remain open and must not be auto-merged; GitHub macOS CI is mandatory.
+- User outcome: opening a workstream overview remains responsive when a
+  README, CLAUDE or AGENTS document is unexpectedly large or non-regular.
+- Success signal: regular UTF-8 previews at or below 1 MiB preserve the
+  existing UI, while oversized, directory and FIFO candidates fail closed
+  without an unbounded read or blocking open.
+- macOS impact: native workstream and project document-preview loading only;
+  no layout, string, accessibility, shortcut or navigation change.
+- Persistence/security impact: narrows a read-only repository-file boundary.
+  The same opened descriptor is checked and read with a hard cap. Document
+  paths, contained-symlink support, state, commands, scripts, worktrees,
+  entitlements and release behavior are unchanged.
+- Scope: `DocFile` in `WorkstreamInfoView`, focused `DocFileTests` and this
+  roadmap evidence.
+- Dependencies: none. Source and test paths are disjoint from every open
+  implementation PR. This appended reconciliation also avoids the canonical
+  top-section edit in pending PR #172, so the branches can merge in either
+  order without an implementation or roadmap-text dependency.
+- Risk: low and reversible read-side hardening. Native XCTest and build
+  evidence are required; no screenshot is expected because valid preview
+  rendering and every visible state remain unchanged.
+- Acceptance criteria:
+  1. A regular UTF-8 document at exactly 1 MiB remains readable.
+  2. A larger document is rejected before unbounded allocation.
+  3. Directories and FIFOs are rejected without blocking.
+  4. Contained symlink targets remain supported; escaping targets stay
+     rejected.
+  5. Minimum-length and UTF-8 filtering remain unchanged.
+  6. Focused XCTest and the full GitHub macOS build/test pass.
+- Required evidence: focused `DocFileTests`, localization resource/key checks,
+  XcodeGen/native build, full XCTest, `git diff --check`, added-line secret
+  scan and configured CodeQL.
+- Evidence so far: localization resource and key checks pass with 10 declared
+  localized resources, 418 app keys and 15 privacy keys across all five
+  locales; `git diff --check` passes. The Linux host has no Swift, Xcode,
+  XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is the required
+  native build/test evidence.
+
+### Independent Ready queue while R54–R56 await review
+
+- **R57 — Bound update-check subprocess output.** User outcome: a malformed
+  update helper cannot retain unbounded stdout while Dockyard checks for an
+  update. Success: process-double tests prove output cap, normal parsing and
+  failure handling. Scope: `AppUpdater` and focused tests only; no release,
+  Sparkle, entitlement or update-install behavior change. Risk: command
+  boundary; stop at a tested PR for Cesc review. Source: issue #43 and the
+  current unbounded output-read path.
+- **R58 — Bound cached tmux configuration reads.** User outcome: startup cannot
+  allocate unbounded memory while comparing an unexpected cached tmux config.
+  Success: a bounded regular cache file preserves the existing no-rewrite fast
+  path while oversized and non-regular candidates are treated as stale. Scope:
+  `TmuxSession` and focused tests only; no tmux command, persistence, cleanup,
+  permission, localization or entitlement change. Risk: low; full macOS CI
+  required.
+- **R59 — Bound Monaco source-file loads.** User outcome: opening an
+  unexpectedly large repository file cannot allocate unbounded memory before
+  Monaco renders it. Success: a documented regular-file limit preserves normal
+  UTF-8 loads while oversized and non-regular candidates use the existing
+  error state. Scope: editor read path and focused tests only; no Save/Save As,
+  file-containment, JavaScript policy, entitlement or persisted-state change.
+  Risk: medium native editor behavior; full macOS CI and proportional visual
+  evidence required.
+
+- **2026-09-03 16:30 CEST:** selected R56 / issue #173 from a fresh
+  `origin/main` worktree after reconciling `TODO.md`, open issues, every open PR
+  path and current checks, main CI, the latest release and Projects v2 scope.
+  No older PR comment, merge, release or Project mutation occurred.
