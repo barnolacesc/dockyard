@@ -1,6 +1,7 @@
 // ABOUTME: Info panel for a workstream showing metadata, environment, and docs.
 // ABOUTME: First tab in the workspace, combining project info with run script controls.
 
+import Darwin
 import SwiftUI
 
 struct WorkstreamInfoView: View {
@@ -857,9 +858,9 @@ struct DocFile: Identifiable {
     }
 
     static let standardNames = ["README.md", "CLAUDE.md", "AGENTS.md"]
+    static let maximumPreviewBytes = 1_048_576
 
     static func loadFrom(directory: String) -> [DocFile] {
-        let fm = FileManager.default
         let projectRoot = URL(fileURLWithPath: directory, isDirectory: true)
             .standardizedFileURL
             .resolvingSymlinksInPath()
@@ -870,17 +871,47 @@ struct DocFile: Identifiable {
                 .standardizedFileURL
                 .resolvingSymlinksInPath()
             guard isContained(documentURL, by: projectRoot),
-                  let attrs = try? fm.attributesOfItem(atPath: documentURL.path),
-                  attrs[.type] as? FileAttributeType == .typeRegular
+                  let data = readBoundedRegularFile(at: documentURL),
+                  data.count >= 20,
+                  let content = String(data: data, encoding: .utf8)
             else { continue }
-            if let data = fm.contents(atPath: documentURL.path),
-               data.count >= 20,
-               let content = String(data: data, encoding: .utf8)
-            {
-                found.append(DocFile(name: name, content: content))
-            }
+            found.append(DocFile(name: name, content: content))
         }
         return found
+    }
+
+    private static func readBoundedRegularFile(at url: URL) -> Data? {
+        let descriptor = open(url.path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK)
+        guard descriptor >= 0 else { return nil }
+        defer { close(descriptor) }
+
+        var metadata = stat()
+        guard fstat(descriptor, &metadata) == 0,
+              (metadata.st_mode & S_IFMT) == S_IFREG,
+              metadata.st_size >= 0,
+              metadata.st_size <= off_t(maximumPreviewBytes)
+        else {
+            return nil
+        }
+
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: false)
+        var data = Data()
+        data.reserveCapacity(Int(metadata.st_size))
+
+        do {
+            while data.count <= maximumPreviewBytes {
+                let remaining = maximumPreviewBytes + 1 - data.count
+                let chunkSize = min(64 * 1024, remaining)
+                guard chunkSize > 0 else { break }
+                guard let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty else { break }
+                data.append(chunk)
+            }
+        } catch {
+            return nil
+        }
+
+        guard data.count <= maximumPreviewBytes else { return nil }
+        return data
     }
 
     private static func isContained(_ item: URL, by directory: URL) -> Bool {
