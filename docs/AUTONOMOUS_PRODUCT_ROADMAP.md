@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-08-26 against `origin/main` at
-`fce9d0f61ee8b673ea1f09f27cb82e7d0245b5fb`.
+Last reconciled: 2026-09-03 against `origin/main` at
+`08ec8b3f7a6105be759b6bf3721f19d646a05d0b`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -11,81 +11,80 @@ The first **Current autonomous queue** is canonical. Dated **Live
 reconciliation** and superseded queue sections are retained as an audit trail
 and can contain stale statuses.
 
-## Current autonomous queue — 2026-08-26 18:37 CEST
+## Current autonomous queue — 2026-09-03 09:30 CEST
 
-`origin/main` is `fce9d0f`; its latest macOS CI, CodeQL and Release workflows
-are green. PRs #140 (R39) and #142 (R40) are green and **awaiting Cesc review**.
-PRs #117 and #126 are also green at their heads but conflict with current
-`main`; they remain awaiting review and are not modified or stacked on here.
+`origin/main` is `08ec8b3`; its latest macOS CI, CodeQL and Release workflows
+are green. PR #170 (R54) is clean, green and **awaiting Cesc review**. PRs #117,
+#126, #140, #146, #148, #152, #154, #156, #158, #160, #162, #164, #166 and
+#168 passed native CI at their current heads but now conflict with `main`; they
+remain awaiting review and are not modified, stacked on or duplicated here.
 Release-please PR #63 remains approval-gated and must not be merged or
 published autonomously. The latest published release remains v0.2.1.
 
 GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
 `repo` and `workflow` but lacks `read:project`. No Project item or status is
-inferred. Open product issues before this run were #41, #43, #54, #116 and
-#141; issue #143 records this run.
+inferred. `TODO.md` still contains the passive power-features tour, external
+coordination and release-integrity follow-ups; none overlaps the selected
+read-only metadata hardening. Issue #171 records this run.
 
-### R41 — Bound run-state cache reads before decoding
+### R55 — Bound project description metadata reads
 
-- Status: **Awaiting Cesc review in PR #144** on
-  `fix/bound-run-state-cache-reads-r41` for issue #143. Native CI is pending;
-  the PR must remain open and must not be auto-merged.
-- User outcome: a malformed local run-state cache entry cannot make browser
-  retargeting allocate unbounded memory or follow a symbolic link outside the
-  expected cache file.
-- Success signal: only a regular snapshot at or below 1 MiB is decoded; a
-  symbolic link and a file above the limit are rejected while ordinary valid
-  state still retargets normally.
-- macOS impact: native run-state reads used by port detection only; no UI,
+- Status: **Implementation in progress** on
+  `fix/bound-project-description-reads-r55-20260903` for issue #171. A fresh PR
+  will remain open for Cesc review and must not be auto-merged.
+- User outcome: an oversized or non-regular worktree description cannot freeze
+  refresh or force unbounded allocation while Dockyard discovers repository
+  metadata.
+- Success signal: ordinary UTF-8 descriptions and a regular description at the
+  64 KiB limit remain available; oversized, symbolic-link, directory and
+  invalid UTF-8 candidates fail closed.
+- macOS impact: background worktree metadata refresh only; no UI,
   accessibility, localization or shortcut behavior changes.
-- Persistence/security impact: narrows a read-only local-cache boundary. The
-  opened descriptor is checked and read with a hard cap, avoiding a path
-  check/read race. The JSON schema, writer, deletion, migration, process
-  validation, scripts, commands, entitlements and release behavior are
+- Persistence/security impact: narrows a read-only repository-metadata
+  boundary. The opened descriptor is checked and read with a hard cap. Cache
+  semantics, worktree state, commands, scripts, entitlements and releases are
   unchanged.
-- Scope: `RunStateStore`, focused `PortDetectionTests` and roadmap evidence.
-- Dependencies: none. Open PRs #117, #126, #140, #142 and #63 do not own the
-  implementation or test paths and can merge in either order.
+- Scope: `Environment`, focused `EnvironmentDescriptionTests` and roadmap
+  evidence.
+- Dependencies: none. The source and test paths are disjoint from every open
+  implementation PR, so changes can merge in either order.
 - Risk: low and reversible read-side hardening; full GitHub macOS CI is
   mandatory.
 - Acceptance criteria:
-  1. A regular valid snapshot at the 1 MiB limit decodes.
-  2. A regular snapshot larger than 1 MiB is rejected without an unbounded
-     allocation.
-  3. A symbolic-link candidate is rejected even when its target has valid JSON.
-  4. Metadata validation and bounded reads apply to the same opened file.
-  5. Existing port/run-state tests and the full macOS suite remain green.
-- Required evidence: focused XCTest, localization scripts, XcodeGen/native
-  build, full XCTest, `git diff --check`, added-line secret scan and configured
-  CodeQL.
-- Evidence so far: localization resource/key tests and repository checks pass,
-  including 418 app keys and 15 privacy keys across all five locales;
-  `git diff --check` and the added-line secret scan pass. The Linux host has no
-  Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is
-  the mandatory native build/test evidence.
+  1. A regular UTF-8 description at exactly 64 KiB remains readable.
+  2. A larger description is rejected before unbounded allocation.
+  3. Symbolic links and other non-regular candidates are rejected without
+     blocking.
+  4. Invalid UTF-8 and whitespace-only content preserve the empty result.
+  5. Incremental and full metadata refresh use the same bounded reader.
+  6. Focused XCTest and the full GitHub macOS build/test pass.
+- Required evidence: focused XCTest, localization resource/key checks,
+  XcodeGen/native build, full XCTest, `git diff --check`, added-line secret scan
+  and configured CodeQL.
 
-### Independent Ready queue while R39–R41 await review
+### Independent Ready queue
 
-- **R42 — Build a read-only GitHub issue task preview.** User outcome: issue
-  intake can show exactly what would be handed to an agent before any worktree
-  or prompt exists. Success signal: title, number, URL and bounded body text
-  normalize deterministically as untrusted input. Scope: pure model/parser and
-  tests; no GitHub mutation, credential, command, agent launch or worktree
-  creation. Dependencies: none. Risk: low; full macOS CI required.
-- **R43 — Bound startup tool-detection probes.** User outcome: a broken local
-  CLI cannot hang Dockyard startup or emit unbounded version/help output.
-  Success signal: process-double tests prove timeout, termination, output cap
-  and normal version detection. Scope: `ToolStatus` command runner and focused
-  tests only; no Coding Agent launch command or permission change.
-  Dependencies: none and disjoint from #140. Risk: medium command-boundary
-  change; stop at a tested PR for Cesc and require full macOS CI.
-- **R44 — Bound browser-state cache reads before decoding.** User outcome:
-  restoring or appending browser state cannot follow a cache symlink or read an
-  unbounded file. Success signal: bounded regular fixtures decode while
-  symlinked and oversized candidates fail closed. Scope: `BrowserBridge` and
-  focused tests; no WKWebView policy, JavaScript, environment variable, state
-  schema or write behavior change. Dependencies: none. Risk: low read-side
-  hardening; full macOS CI required.
+- **R56 — Bound workstream document-preview reads.** User outcome: opening a
+  workstream overview remains responsive when a README or project document is
+  unexpectedly large or non-regular. Success: bounded regular previews render
+  while invalid candidates show the existing empty/error state. Scope:
+  `WorkstreamInfoView` and focused tests, preserving preview paths and all five
+  locales. Risk: low native UI behavior; full macOS CI and proportional visual
+  evidence required.
+- **R57 — Bound update-check subprocess output.** User outcome: a malformed
+  update helper cannot retain unbounded stdout while Dockyard checks for an
+  update. Success: process-double tests prove output cap, normal parsing and
+  failure handling. Scope: `AppUpdater` and focused tests only; no release,
+  Sparkle, entitlement or update-install behavior change. Risk: command
+  boundary; stop at a tested PR for Cesc review. Source: issue #43 and the
+  current `readDataToEndOfFile` path.
+- **R58 — Bound cached tmux configuration reads.** User outcome: startup cannot
+  allocate unbounded memory while comparing an unexpected cached tmux config.
+  Success: a bounded regular cache file preserves the existing no-rewrite fast
+  path while oversized and non-regular candidates are treated as stale. Scope:
+  `TmuxSession` and focused tests only; no tmux command, persistence, cleanup,
+  permission, localization or entitlement change. Risk: low; full macOS CI
+  required.
 
 ## Superseded autonomous queue — 2026-08-10 16:30 CEST
 
