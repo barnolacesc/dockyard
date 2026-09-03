@@ -29,9 +29,10 @@ read-only metadata hardening. Issue #171 records this run.
 
 ### R55 — Bound project description metadata reads
 
-- Status: **Implementation in progress** on
-  `fix/bound-project-description-reads-r55-20260903` for issue #171. A fresh PR
-  will remain open for Cesc review and must not be auto-merged.
+- Status: **Awaiting Cesc review in PR #172** on
+  `fix/bound-project-description-reads-r55-20260903` for issue #171. The PR
+  must remain open and must not be auto-merged; GitHub macOS CI is the required
+  native evidence.
 - User outcome: an oversized or non-regular worktree description cannot freeze
   refresh or force unbounded allocation while Dockyard discovers repository
   metadata.
@@ -61,6 +62,11 @@ read-only metadata hardening. Issue #171 records this run.
 - Required evidence: focused XCTest, localization resource/key checks,
   XcodeGen/native build, full XCTest, `git diff --check`, added-line secret scan
   and configured CodeQL.
+- Evidence so far: localization resource/key tests and repository checks pass,
+  including 418 app keys and 15 privacy keys across all five locales;
+  `git diff --check` and the added-line secret scan pass. The Linux host has no
+  Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is
+  the mandatory native build/test evidence.
 
 ### Independent Ready queue
 
