@@ -866,7 +866,11 @@ before selection; no open implementation PR changes `WorkstreamInfoView` or
   localized resources, 418 app keys and 15 privacy keys across all five
   locales; `git diff --check` passes. The Linux host has no Swift, Xcode,
   XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is the required
-  native build/test evidence.
+  native build/test evidence. At implementation-and-roadmap head `87092c3`,
+  macOS CI run `33768275883` passed localization parity, XcodeGen, the native
+  build, bundled-helper verification and the full XCTest suite including
+  `DocFileTests`. CodeQL run `33768275786` passed its configured analyses. The
+  final evidence-only head must also remain green.
 
 ### Independent Ready queue while R54–R56 await review
 
