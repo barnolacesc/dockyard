@@ -30,9 +30,9 @@ non-duplicative agent-status work respectively.
 
 ### R58 — Bound cached tmux configuration reads
 
-- Status: **Implementation ready on
-  `fix/bound-tmux-config-read-r58-20260904` for issue #177**. Native CI is
-  pending; the forthcoming PR must remain open for Cesc review.
+- Status: **Awaiting Cesc review in PR #178** on
+  `fix/bound-tmux-config-read-r58-20260904` for issue #177. Native CI is
+  pending; the PR must remain open and must not be auto-merged.
 - User outcome: an oversized or non-regular cached `tmux.conf` cannot make
   Dockyard allocate unbounded memory or block while preparing a persistent
   terminal session.
