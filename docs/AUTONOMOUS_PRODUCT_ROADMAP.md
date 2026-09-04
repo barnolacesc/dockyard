@@ -808,3 +808,88 @@ retain their documented dependencies. Issues #41, #43 and #54 remain open;
   issues/PRs and their changed paths/checks, latest release and Projects v2
   scope. Selected independent R35 / issue #132 from a fresh `origin/main`
   worktree. No older PR comment, merge, release or Project mutation occurred.
+
+## Live reconciliation — 2026-09-04 09:30 CEST
+
+This section supersedes every earlier status. `origin/main` is `08ec8b3`; its
+latest macOS CI, CodeQL and Release workflows succeeded. v0.2.1 remains the
+latest published release. GitHub Projects v2 returned `INSUFFICIENT_SCOPES`:
+the automation token has `repo` and `workflow` but lacks `read:project`, so no
+Project item or status is inferred.
+
+PRs #117, #126, #140, #146, #148, #152, #154, #156, #158, #160, #162, #164,
+#166, #168, #170, #172 and #174 remain **awaiting Cesc review** and are not
+modified, stacked on or duplicated here. Their current changed paths and
+behaviors were compared before selection; none changes `AppUpdater` or adds an
+`AppUpdater` test. Release-please PR #63 remains approval-gated and must not be
+merged or published autonomously.
+
+### R57 — Bound update-check subprocess output
+
+- Status: **Implementation in progress** on
+  `fix/bound-update-check-output-r57-20260904` for issue #175. Stop at a tested
+  PR for Cesc review; never auto-merge it.
+- User outcome: a malformed or noisy update-check subprocess cannot block
+  Dockyard by filling its stdout pipe or make the app retain unbounded output
+  while checking how many commits are available.
+- Success signal: the existing commit-count process drains stdout concurrently,
+  retains at most 64 KiB and returns a non-negative count only after a
+  successful exit and complete drain.
+- macOS impact: background source-check behavior only; no UI, string,
+  accessibility, shortcut or visual change.
+- Persistence/security impact: narrows one read-only subprocess-output
+  boundary. Fetch, update installation, AppleScript/Terminal execution,
+  Sparkle, entitlements, worktrees, persisted state and release behavior remain
+  unchanged.
+- Scope: `AppUpdater`, focused `AppUpdaterTests` and roadmap evidence.
+- Dependencies: none. Implementation and test paths are disjoint from every
+  open implementation PR, so the changes can merge in either order.
+- Risk: medium command-boundary hardening, reversible by reverting the
+  implementation commit. Native macOS CI is mandatory.
+- Acceptance criteria:
+  1. The executable, arguments and working directory remain `/usr/bin/git`,
+     `rev-list --count HEAD..origin/main` and the source checkout.
+  2. Output is drained while the process runs and retained output never exceeds
+     64 KiB, including chunk-boundary overflow.
+  3. A successful zero-or-positive integer is parsed only after process exit
+     and complete output drain.
+  4. Launch failure, nonzero exit, overflow, incomplete drain, invalid UTF-8,
+     malformed output and negative values fail closed.
+  5. Focused XCTest and the full GitHub macOS build/test pass.
+- Required evidence: focused `AppUpdaterTests`, localization resource/key
+  checks, XcodeGen/native build, full XCTest, `git diff --check`, added-line
+  secret scan and configured CodeQL.
+- Evidence so far: localization resource and key tests/checkers pass with 10
+  declared localized resources, 418 app keys and 15 privacy keys across all
+  five locales; `git diff --check` passes. The Linux host has no Swift, Xcode
+  or XcodeGen, so GitHub macOS CI is required native evidence.
+
+### Independent Ready queue while R57 and older PRs await review
+
+- **R58 — Bound cached tmux configuration reads.** User outcome: startup cannot
+  allocate unbounded memory while comparing an unexpected cached tmux config.
+  Success: a bounded regular cache file preserves the existing no-rewrite fast
+  path while oversized and non-regular candidates are treated as stale. Scope:
+  `TmuxSession` and focused tests only; no tmux command, persistence, cleanup,
+  permission, localization or entitlement change. No open PR owns these paths.
+- **R59 — Bound Monaco bundle-resource responses.** User outcome: a malformed
+  or unexpectedly large bundled editor resource cannot make the custom WKWebView
+  scheme allocate unbounded memory. Success: regular resources within a fixed
+  cap retain current MIME/response behavior while oversized and non-regular
+  candidates fail through the existing URL-scheme error path. Scope:
+  `MonacoResourceSchemeHandler` and focused tests; no repository source-file
+  saves, JavaScript policy, entitlement, localization or bundle-generation
+  change. No open PR owns these paths; full macOS CI is required.
+- **R60 — Cap detailed launch-log growth.** User outcome: opt-in per-workstream
+  launch diagnostics cannot grow a cache file without bound over repeated
+  agent/run/setup launches. Success: focused tests prove a deterministic byte
+  ceiling while preserving complete recent JSONL entries and private `0600`
+  permissions. Scope: `LaunchLogger` and focused tests; no logging default,
+  command, environment capture, UI, worktree, entitlement or release change.
+  This is persisted-cache retention behavior and must stop at a tested PR for
+  Cesc review. No open PR owns these paths.
+
+- **2026-09-04 09:30 CEST:** selected R57 / issue #175 from a fresh
+  `origin/main` worktree after reconciling current code, `TODO.md`, open issues,
+  every open PR path/behavior, main CI, the latest release and Projects v2
+  scope. No older PR comment, merge, release or Project mutation occurred.
