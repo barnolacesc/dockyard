@@ -826,9 +826,9 @@ merged or published autonomously.
 
 ### R57 — Bound update-check subprocess output
 
-- Status: **Implementation in progress** on
-  `fix/bound-update-check-output-r57-20260904` for issue #175. Stop at a tested
-  PR for Cesc review; never auto-merge it.
+- Status: **Awaiting Cesc review in PR #176** on
+  `fix/bound-update-check-output-r57-20260904` for issue #175. Native
+  implementation CI is green. Never auto-merge the PR.
 - User outcome: a malformed or noisy update-check subprocess cannot block
   Dockyard by filling its stdout pipe or make the app retain unbounded output
   while checking how many commits are available.
@@ -862,7 +862,13 @@ merged or published autonomously.
 - Evidence so far: localization resource and key tests/checkers pass with 10
   declared localized resources, 418 app keys and 15 privacy keys across all
   five locales; `git diff --check` passes. The Linux host has no Swift, Xcode
-  or XcodeGen, so GitHub macOS CI is required native evidence.
+  or XcodeGen, so GitHub macOS CI is required native evidence. At
+  implementation head `321613f`, macOS CI run `33849725617` passed
+  localization checks, XcodeGen, the native build, bundled-helper verification
+  and the full XCTest suite including `AppUpdaterTests`. CodeQL run
+  `33849725640` passed its configured Actions and JavaScript analyses; Swift
+  analysis was skipped by the repository's PR workflow. The final
+  roadmap-evidence head must also remain green.
 
 ### Independent Ready queue while R57 and older PRs await review
 
