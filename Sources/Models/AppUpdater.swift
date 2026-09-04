@@ -8,6 +8,155 @@ import AppKit
 
 private let logger = Logger(subsystem: "dockyard", category: "appUpdater")
 
+struct UpdateCheckProcessResult: Sendable {
+    let output: Data
+    let terminationStatus: Int32
+    let outputExceededLimit: Bool
+    let didFinishOutput: Bool
+}
+
+final class UpdateCheckOutputCollector: @unchecked Sendable {
+    private let lock = NSLock()
+    private let maximumOutputBytes: Int
+    private var output = Data()
+    private var outputExceededLimit = false
+
+    init(maximumOutputBytes: Int) {
+        self.maximumOutputBytes = max(0, maximumOutputBytes)
+    }
+
+    /// Retains at most the configured cap while allowing all process output to be drained.
+    func ingest(_ chunk: Data) {
+        lock.withLock {
+            let remaining = max(0, maximumOutputBytes - output.count)
+            if remaining > 0 {
+                output.append(contentsOf: chunk.prefix(remaining))
+            }
+            if chunk.count > remaining {
+                outputExceededLimit = true
+            }
+        }
+    }
+
+    var snapshot: (output: Data, outputExceededLimit: Bool) {
+        lock.withLock { (output, outputExceededLimit) }
+    }
+}
+
+protocol UpdateCheckProcess: AnyObject, Sendable {
+    func run() throws
+    func waitForExit() -> UpdateCheckProcessResult
+}
+
+typealias UpdateCheckProcessFactory = @Sendable (
+    _ executableURL: URL,
+    _ arguments: [String],
+    _ workingDirectoryURL: URL,
+    _ maximumOutputBytes: Int
+) throws -> any UpdateCheckProcess
+
+final class FoundationUpdateCheckProcess: UpdateCheckProcess, @unchecked Sendable {
+    private let process = Process()
+    private let outputPipe = Pipe()
+    private let collector: UpdateCheckOutputCollector
+    private let outputGroup = DispatchGroup()
+    private var outputReaderStarted = false
+
+    init(
+        executableURL: URL,
+        arguments: [String],
+        workingDirectoryURL: URL,
+        maximumOutputBytes: Int
+    ) {
+        collector = UpdateCheckOutputCollector(maximumOutputBytes: maximumOutputBytes)
+        process.executableURL = executableURL
+        process.arguments = arguments
+        process.currentDirectoryURL = workingDirectoryURL
+        process.standardOutput = outputPipe
+    }
+
+    func run() throws {
+        try process.run()
+        outputReaderStarted = true
+        outputGroup.enter()
+        DispatchQueue.global(qos: .utility).async { [self] in
+            defer { outputGroup.leave() }
+            let handle = outputPipe.fileHandleForReading
+            while true {
+                let chunk = handle.availableData
+                guard !chunk.isEmpty else { return }
+                collector.ingest(chunk)
+            }
+        }
+    }
+
+    func waitForExit() -> UpdateCheckProcessResult {
+        process.waitUntilExit()
+        if outputReaderStarted {
+            outputGroup.wait()
+        }
+        let snapshot = collector.snapshot
+        return UpdateCheckProcessResult(
+            output: snapshot.output,
+            terminationStatus: process.terminationStatus,
+            outputExceededLimit: snapshot.outputExceededLimit,
+            didFinishOutput: outputReaderStarted
+        )
+    }
+}
+
+let defaultUpdateCheckProcessFactory: UpdateCheckProcessFactory = {
+    executableURL,
+    arguments,
+    workingDirectoryURL,
+    maximumOutputBytes in
+    FoundationUpdateCheckProcess(
+        executableURL: executableURL,
+        arguments: arguments,
+        workingDirectoryURL: workingDirectoryURL,
+        maximumOutputBytes: maximumOutputBytes
+    )
+}
+
+enum UpdateCheckCommandRunner {
+    static let maximumOutputBytes = 64 * 1024
+
+    static func commitsAhead(
+        at path: String,
+        processFactory: UpdateCheckProcessFactory = defaultUpdateCheckProcessFactory
+    ) -> Int? {
+        let executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        let arguments = ["rev-list", "--count", "HEAD..origin/main"]
+        let workingDirectoryURL = URL(fileURLWithPath: path)
+
+        let process: any UpdateCheckProcess
+        do {
+            process = try processFactory(
+                executableURL,
+                arguments,
+                workingDirectoryURL,
+                maximumOutputBytes
+            )
+            try process.run()
+        } catch {
+            return nil
+        }
+
+        let result = process.waitForExit()
+        guard result.terminationStatus == 0,
+              result.didFinishOutput,
+              !result.outputExceededLimit,
+              let output = String(data: result.output, encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+              let count = Int(output),
+              count >= 0
+        else {
+            return nil
+        }
+        return count
+    }
+}
+
 @MainActor
 final class AppUpdater: ObservableObject {
     @Published var commitsAhead: Int = 0
@@ -53,37 +202,15 @@ final class AppUpdater: ObservableObject {
             fetchProcess.waitUntilExit()
 
             // 2. Count commits
-            let countProcess = Process()
-            countProcess.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-            countProcess.arguments = ["rev-list", "--count", "HEAD..origin/main"]
-            countProcess.currentDirectoryURL = URL(fileURLWithPath: path)
-
-            let pipe = Pipe()
-            countProcess.standardOutput = pipe
-
-            do {
-                try countProcess.run()
-                countProcess.waitUntilExit()
-
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                if let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
-                   let count = Int(output) {
-                    await MainActor.run {
-                        self.commitsAhead = count
-                        self.isChecking = false
-                        if count > 0 && !self.hasPromptedThisSession {
-                            self.hasPromptedThisSession = true
-                            self.shouldPromptUpdate = true
-                        }
+            let count = UpdateCheckCommandRunner.commitsAhead(at: path)
+            await MainActor.run {
+                self.isChecking = false
+                if let count {
+                    self.commitsAhead = count
+                    if count > 0 && !self.hasPromptedThisSession {
+                        self.hasPromptedThisSession = true
+                        self.shouldPromptUpdate = true
                     }
-                } else {
-                    await MainActor.run {
-                        self.isChecking = false
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    self.isChecking = false
                 }
             }
         }
