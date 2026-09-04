@@ -31,8 +31,9 @@ non-duplicative agent-status work respectively.
 ### R58 — Bound cached tmux configuration reads
 
 - Status: **Awaiting Cesc review in PR #178** on
-  `fix/bound-tmux-config-read-r58-20260904` for issue #177. Native CI is
-  pending; the PR must remain open and must not be auto-merged.
+  `fix/bound-tmux-config-read-r58-20260904` for issue #177. Native
+  implementation CI is green; the PR must remain open and must not be
+  auto-merged.
 - User outcome: an oversized or non-regular cached `tmux.conf` cannot make
   Dockyard allocate unbounded memory or block while preparing a persistent
   terminal session.
@@ -66,7 +67,13 @@ non-duplicative agent-status work respectively.
   bundled-helper, appcast and release-seeding script tests pass;
   `git diff --check` and the added-line secret scan pass. The Linux host has no
   Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is
-  mandatory native build/test evidence.
+  mandatory native build/test evidence. At implementation/PR-link head
+  `4aa4817`, macOS CI run `33885374623` passed localization checks, XcodeGen,
+  the native build, bundled-helper verification and the full XCTest suite
+  including `TmuxSessionTests`. CodeQL run `33885374595` passed its configured
+  Actions and JavaScript analyses; Swift analysis was skipped by the
+  repository's PR workflow. The final roadmap-evidence head must also remain
+  green.
 
 ### Independent Ready queue while R58 and older PRs await review
 
