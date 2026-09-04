@@ -2,6 +2,7 @@
 // ABOUTME: Verifies respawn behavior is scoped to agent sessions, not global.
 
 @testable import Dockyard
+import Darwin
 import XCTest
 
 final class TmuxSessionTests: XCTestCase {
@@ -61,6 +62,109 @@ final class TmuxSessionTests: XCTestCase {
         XCTAssertEqual(try permissions(of: cacheDirectory), 0o700)
         XCTAssertEqual(try permissions(of: logURL), 0o600)
         XCTAssertEqual(try Data(contentsOf: logURL), existingContents)
+    }
+
+    func testCachedConfigReaderAcceptsRegularUTF8FileAtLimit() throws {
+        try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        let configURL = cacheDirectory.appendingPathComponent("tmux.conf")
+        let contents = String(repeating: "a", count: TmuxSession.maximumConfigBytes)
+        try Data(contents.utf8).write(to: configURL)
+
+        XCTAssertEqual(TmuxSession.readCachedConfig(at: configURL), contents)
+    }
+
+    func testCachedConfigReaderRejectsOversizedRegularFile() throws {
+        try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        let configURL = cacheDirectory.appendingPathComponent("tmux.conf")
+        try Data(repeating: 0x61, count: TmuxSession.maximumConfigBytes + 1).write(to: configURL)
+
+        XCTAssertNil(TmuxSession.readCachedConfig(at: configURL))
+    }
+
+    func testCachedConfigReaderRejectsFileThatGrowsAfterMetadataCheck() throws {
+        try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        let configURL = cacheDirectory.appendingPathComponent("tmux.conf")
+        try Data(repeating: 0x61, count: TmuxSession.maximumConfigBytes).write(to: configURL)
+
+        let result = TmuxSession.readCachedConfig(at: configURL) {
+            guard let handle = try? FileHandle(forWritingTo: configURL) else { return }
+            handle.seekToEndOfFile()
+            handle.write(Data([0x62]))
+            handle.closeFile()
+        }
+
+        XCTAssertNil(result)
+        XCTAssertEqual(
+            try Data(contentsOf: configURL).count,
+            TmuxSession.maximumConfigBytes + 1
+        )
+    }
+
+    func testCachedConfigReaderRejectsSymbolicLink() throws {
+        try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        let targetURL = cacheDirectory.appendingPathComponent("target.conf")
+        let linkURL = cacheDirectory.appendingPathComponent("tmux.conf")
+        try TmuxSession.configContents.write(to: targetURL, atomically: true, encoding: .utf8)
+        try FileManager.default.createSymbolicLink(at: linkURL, withDestinationURL: targetURL)
+
+        XCTAssertNil(TmuxSession.readCachedConfig(at: linkURL))
+    }
+
+    func testCachedConfigReaderRejectsDirectory() throws {
+        let configURL = cacheDirectory.appendingPathComponent("tmux.conf", isDirectory: true)
+        try FileManager.default.createDirectory(at: configURL, withIntermediateDirectories: true)
+
+        XCTAssertNil(TmuxSession.readCachedConfig(at: configURL))
+    }
+
+    func testCachedConfigReaderRejectsFIFOWithoutBlocking() throws {
+        try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        let configURL = cacheDirectory.appendingPathComponent("tmux.conf")
+        XCTAssertEqual(mkfifo(configURL.path, 0o600), 0)
+
+        XCTAssertNil(TmuxSession.readCachedConfig(at: configURL))
+    }
+
+    func testCachedConfigReaderRejectsInvalidUTF8() throws {
+        try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        let configURL = cacheDirectory.appendingPathComponent("tmux.conf")
+        try Data([0xFF, 0xFE]).write(to: configURL)
+
+        XCTAssertNil(TmuxSession.readCachedConfig(at: configURL))
+    }
+
+    func testMatchingCachedConfigPreservesNoRewriteFastPath() throws {
+        try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        let configURL = cacheDirectory.appendingPathComponent("tmux.conf")
+        try TmuxSession.configContents.write(to: configURL, atomically: true, encoding: .utf8)
+        let originalFileNumber = try fileNumber(of: configURL)
+
+        _ = TmuxSession.wrapCommand(
+            tmuxPath: "/opt/homebrew/bin/tmux",
+            sessionName: "proj/ws/agent",
+            command: "claude",
+            shell: "/bin/zsh",
+            cacheDirectory: cacheDirectory
+        )
+
+        XCTAssertEqual(try fileNumber(of: configURL), originalFileNumber)
+        XCTAssertEqual(try String(contentsOf: configURL, encoding: .utf8), TmuxSession.configContents)
+    }
+
+    func testStaleCachedConfigIsReplaced() throws {
+        try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        let configURL = cacheDirectory.appendingPathComponent("tmux.conf")
+        try "stale".write(to: configURL, atomically: true, encoding: .utf8)
+
+        _ = TmuxSession.wrapCommand(
+            tmuxPath: "/opt/homebrew/bin/tmux",
+            sessionName: "proj/ws/agent",
+            command: "claude",
+            shell: "/bin/zsh",
+            cacheDirectory: cacheDirectory
+        )
+
+        XCTAssertEqual(try String(contentsOf: configURL, encoding: .utf8), TmuxSession.configContents)
     }
 
     func testConfigKeepsNativeMouseSelectionEnabled() {
@@ -239,5 +343,10 @@ final class TmuxSessionTests: XCTestCase {
     private func permissions(of url: URL) throws -> Int {
         let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
         return try XCTUnwrap(attributes[.posixPermissions] as? NSNumber).intValue & 0o777
+    }
+
+    private func fileNumber(of url: URL) throws -> UInt64 {
+        let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+        return try XCTUnwrap(attributes[.systemFileNumber] as? NSNumber).uint64Value
     }
 }
