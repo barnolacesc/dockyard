@@ -32,7 +32,8 @@ non-duplicative agent-status work respectively.
 
 - Status: **Awaiting Cesc review in PR #180** on
   `fix/bound-monaco-resource-responses-r59-20260905` for issue #179. Native CI
-  is pending; the PR must remain open and must not be auto-merged.
+  is green at the implementation/PR-link head; the PR must remain open and
+  must not be auto-merged.
 - User outcome: a malformed, unexpectedly large or non-regular bundled editor
   resource cannot make Dockyard allocate unbounded memory or block the custom
   WKWebView scheme.
@@ -66,7 +67,13 @@ non-duplicative agent-status work respectively.
   bundled-helper, appcast and release-seeding script tests pass;
   `git diff --check` and the added-line secret scan pass. The Linux host has no
   Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is
-  the mandatory native build/test evidence.
+  the mandatory native build/test evidence. At implementation/PR-link head
+  `1b7da71`, macOS CI run `33953228744` passed localization checks, XcodeGen,
+  the native build, bundled-helper verification and the full XCTest suite
+  including `MonacoResourceSchemeHandlerTests`. CodeQL run `33953228752`
+  passed its configured Actions and JavaScript analyses; Swift analysis was
+  skipped by the repository's PR workflow. The final roadmap-evidence head
+  must also remain green.
 
 ### Independent Ready queue while R59 and older PRs await review
 
