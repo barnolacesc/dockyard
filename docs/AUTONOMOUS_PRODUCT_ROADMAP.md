@@ -31,9 +31,9 @@ agent-status work respectively.
 
 ### R61 — Bound editor source-file reads
 
-- Status: **Implementation prepared for issue #183** on
-  `fix/bound-editor-source-reads-r61-20260907`; the pull request and mandatory
-  native CI evidence are pending. The change must not be auto-merged.
+- Status: **Awaiting Cesc review in PR #184** on
+  `fix/bound-editor-source-reads-r61-20260907` for issue #183. Mandatory native
+  CI evidence is pending; the pull request must not be auto-merged.
 - User outcome: selecting an unexpectedly large, symbolic-link or non-regular
   source candidate cannot block the embedded editor or allocate unbounded
   memory.
