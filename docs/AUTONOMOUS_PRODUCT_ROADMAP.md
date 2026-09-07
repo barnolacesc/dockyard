@@ -31,9 +31,9 @@ respectively.
 
 ### R60 — Cap detailed launch-log growth
 
-- Status: **In implementation for issue #181** on
-  `fix/cap-launch-log-growth-r60-20260907`; the result must stop at a tested PR
-  for Cesc review and must not be auto-merged.
+- Status: **Awaiting Cesc review in PR #182** on
+  `fix/cap-launch-log-growth-r60-20260907` for issue #181. Native CI is
+  pending; the PR must remain open and must not be auto-merged.
 - User outcome: opt-in per-workstream launch diagnostics cannot grow without
   bound across repeated Coding Agent, run and setup launches.
 - Success signal: after every successful write, each launch log is at or below
@@ -61,6 +61,12 @@ respectively.
 - Required evidence: focused `LaunchLoggerTests`, localization resource/key
   checks, XcodeGen/native build, full XCTest, `git diff --check`, added-line
   secret scan and configured CodeQL.
+- Evidence so far: localization resource/key tests and checkers pass with 10
+  declared resources, 418 app keys and 15 privacy keys across all five locales;
+  bundled-helper, appcast and release-seeding script tests pass;
+  `git diff --check` and the added-line secret scan pass. The Linux host has no
+  Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is
+  the mandatory native build/test evidence.
 
 ### Independent Ready queue while R60 and older PRs await review
 
