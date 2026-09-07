@@ -1,11 +1,14 @@
 // ABOUTME: FileNode tree model with lazy directory loading (children loaded on expand).
 // ABOUTME: DirectoryWatcher uses FSEventStream for real-time recursive file system monitoring.
 
+import Darwin
 import Foundation
 
 // MARK: - Workspace File Access
 
 enum WorkspaceFileAccess {
+    static let maximumEditorFileBytes = 1_048_576
+
     /// Resolves a workspace-relative path after proving that its canonical
     /// destination remains below the canonical workspace root.
     static func resolvedURL(for relativePath: String, rootPath: String) -> URL? {
@@ -32,6 +35,52 @@ enum WorkspaceFileAccess {
             .resolvingSymlinksInPath()
     }
 
+    /// Reads an editor source file through descriptors rooted in the canonical
+    /// workspace. Every path component is opened without following symlinks,
+    /// and the opened file is proven regular and bounded before decoding.
+    static func readEditorContent(at relativePath: String, rootPath: String) throws -> String {
+        guard let components = validatedRelativePathComponents(relativePath) else {
+            throw CocoaError(.fileReadNoPermission)
+        }
+
+        let descriptor = try openEditorFile(
+            components: components,
+            rootURL: canonicalRootURL(for: rootPath)
+        )
+        defer { close(descriptor) }
+
+        var metadata = stat()
+        guard fstat(descriptor, &metadata) == 0,
+              (metadata.st_mode & S_IFMT) == S_IFREG,
+              metadata.st_size >= 0
+        else {
+            throw CocoaError(.fileReadUnknown)
+        }
+        guard metadata.st_size <= off_t(maximumEditorFileBytes) else {
+            throw CocoaError(.fileReadTooLarge)
+        }
+
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: false)
+        var data = Data()
+        data.reserveCapacity(Int(metadata.st_size))
+
+        while data.count <= maximumEditorFileBytes {
+            let remaining = maximumEditorFileBytes + 1 - data.count
+            let chunkSize = min(64 * 1024, remaining)
+            guard chunkSize > 0 else { break }
+            guard let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty else { break }
+            data.append(chunk)
+        }
+
+        guard data.count <= maximumEditorFileBytes else {
+            throw CocoaError(.fileReadTooLarge)
+        }
+        guard let content = String(data: data, encoding: .utf8) else {
+            throw CocoaError(.fileReadInapplicableStringEncoding)
+        }
+        return content
+    }
+
     /// Writes editor content only after resolving a workspace-relative path
     /// through the same containment boundary used for editor reads.
     static func writeEditorContent(
@@ -44,6 +93,58 @@ enum WorkspaceFileAccess {
         }
 
         try content.write(to: destinationURL, atomically: true, encoding: .utf8)
+    }
+
+    private static func validatedRelativePathComponents(_ relativePath: String) -> [String]? {
+        guard !relativePath.isEmpty,
+              !(relativePath as NSString).isAbsolutePath
+        else { return nil }
+
+        let components = (relativePath as NSString).pathComponents
+        guard !components.isEmpty,
+              !components.contains("."),
+              !components.contains("..")
+        else { return nil }
+        return components
+    }
+
+    private static func openEditorFile(components: [String], rootURL: URL) throws -> Int32 {
+        var currentDescriptor = open(rootURL.path, O_RDONLY | O_CLOEXEC | O_DIRECTORY)
+        guard currentDescriptor >= 0 else {
+            throw readError(for: errno)
+        }
+
+        for (index, component) in components.enumerated() {
+            let isFinalComponent = index == components.count - 1
+            let flags = isFinalComponent
+                ? O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK
+                : O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_DIRECTORY
+            let nextDescriptor = component.withCString {
+                openat(currentDescriptor, $0, flags)
+            }
+
+            guard nextDescriptor >= 0 else {
+                let openError = errno
+                close(currentDescriptor)
+                throw readError(for: openError)
+            }
+
+            close(currentDescriptor)
+            currentDescriptor = nextDescriptor
+        }
+
+        return currentDescriptor
+    }
+
+    private static func readError(for errorNumber: Int32) -> CocoaError {
+        switch errorNumber {
+        case ENOENT, ENOTDIR:
+            return CocoaError(.fileReadNoSuchFile)
+        case EACCES, EPERM, ELOOP:
+            return CocoaError(.fileReadNoPermission)
+        default:
+            return CocoaError(.fileReadUnknown)
+        }
     }
 
     private static func isDescendant(_ candidateURL: URL, of rootURL: URL) -> Bool {
