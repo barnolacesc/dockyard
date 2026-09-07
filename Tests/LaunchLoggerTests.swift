@@ -317,7 +317,9 @@ final class LaunchLoggerTests: XCTestCase {
     }
 
     private func completeLines(in data: Data) -> [Data] {
-        data.split(separator: 0x0A, omittingEmptySubsequences: true).map(Data.init)
+        String(decoding: data, as: UTF8.self)
+            .split(separator: "\n", omittingEmptySubsequences: true)
+            .map { Data($0.utf8) }
     }
 
     private func permissions(of url: URL) throws -> Int {
