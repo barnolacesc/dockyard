@@ -32,8 +32,8 @@ agent-status work respectively.
 ### R61 — Bound editor source-file reads
 
 - Status: **Awaiting Cesc review in PR #184** on
-  `fix/bound-editor-source-reads-r61-20260907` for issue #183. Mandatory native
-  CI evidence is pending; the pull request must not be auto-merged.
+  `fix/bound-editor-source-reads-r61-20260907` for issue #183. Native CI is
+  green at the implementation head; the pull request must not be auto-merged.
 - User outcome: selecting an unexpectedly large, symbolic-link or non-regular
   source candidate cannot block the embedded editor or allocate unbounded
   memory.
@@ -69,7 +69,12 @@ agent-status work respectively.
   helper, localization, appcast and release-seeding script tests pass;
   `git diff --check` and the added-line secret scan pass. The Linux host has no
   Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is
-  the mandatory native build/test evidence.
+  the mandatory native build/test evidence. At implementation head `3e6db69`,
+  macOS CI run `34134754727` passed localization checks, XcodeGen, the native
+  build, bundled-helper verification and the full XCTest suite including
+  `WorkspaceFileAccessTests`. CodeQL run `34134754728` passed its configured
+  Actions and JavaScript analyses; Swift analysis was skipped by the repository
+  workflow. The final roadmap-evidence head must also remain green.
 
 ### Independent Ready queue while R61 and older PRs await review
 
