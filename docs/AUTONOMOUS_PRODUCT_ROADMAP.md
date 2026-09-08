@@ -32,8 +32,8 @@ agent-status work respectively.
 ### R63 — Bound Codex usage-probe I/O
 
 - Status: **Awaiting Cesc review in PR #186** on
-  `fix/bound-codex-usage-probe-io-r63-20260908` for issue #185. Native CI is
-  pending, and the pull request must not be auto-merged.
+  `fix/bound-codex-usage-probe-io-r63-20260908` for issue #185. Native
+  implementation CI is green, and the pull request must not be auto-merged.
 - User outcome: a noisy or malformed `codex app-server` cannot grow Dockyard
   memory or block on an undrained pipe while the sidebar refreshes usage
   limits.
@@ -73,7 +73,13 @@ agent-status work respectively.
   five locales. Bundled-helper, appcast-generation and release-seeding script
   tests, `git diff --check` and the added-line secret scan pass. The Linux host
   has no Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub
-  macOS CI is the mandatory native build/test evidence.
+  macOS CI is the mandatory native build/test evidence. At implementation head
+  `67c9783`, macOS CI run `34201412918` passed localization checks, XcodeGen,
+  the native build, bundled-helper verification and the full XCTest suite
+  including `CodexUsageProbeTests`. CodeQL run `34201412930` passed its
+  configured Actions and JavaScript analyses; Swift analysis was skipped by
+  the repository workflow. The final roadmap-evidence head must also remain
+  green.
 
 ### Independent Ready queue while R63 and older PRs await review
 
