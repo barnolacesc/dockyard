@@ -166,6 +166,7 @@ struct ContentView: View {
     @StateObject private var appEnvironment = AppEnvironment()
     @StateObject private var activityTracker = WorkstreamActivityTracker()
     @StateObject private var agentStateStore = AgentStateStore.shared
+    @StateObject private var agentActivityStore = AgentActivityStore.shared
     @StateObject private var claudeUsageStore = ClaudeUsageStore.shared
     @StateObject private var codexUsageStore = CodexUsageStore.shared
     @State private var saveWork: DispatchWorkItem?
@@ -218,7 +219,7 @@ struct ContentView: View {
             let found = projects.first(where: { $0.workstreams.contains(where: { $0.id == wsID }) })
             if found == nil { logger.warning("[Dockyard] activeProject: workstream \(wsID, privacy: .public) not found in any project") }
             return found
-        case .settings, .help:
+        case .attention, .settings, .help:
             return nil
         }
     }
@@ -252,7 +253,14 @@ struct ContentView: View {
 
     @ViewBuilder
     private var detailView: some View {
-        if selection == .settings {
+        if selection == .attention {
+            AttentionView(
+                projects: projects,
+                onSelectWorkstream: { selection = .workstream($0) }
+            )
+            .navigationTitle("Attention")
+            .navigationSubtitle(AppConstants.appName)
+        } else if selection == .settings {
             SettingsView()
                 .navigationTitle("Settings")
                 .navigationSubtitle(AppConstants.appName)
@@ -525,6 +533,7 @@ struct ContentView: View {
             .environmentObject(appEnvironment)
             .environmentObject(activityTracker)
             .environmentObject(agentStateStore)
+            .environmentObject(agentActivityStore)
             .environmentObject(claudeUsageStore)
             .environmentObject(codexUsageStore)
     }

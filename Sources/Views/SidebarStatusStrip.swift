@@ -14,7 +14,7 @@ struct SidebarStatusStrip: View {
     var onNextUsageProvider: () -> Void = {}
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 4) {
             SidebarUsageMeter(
                 style: .expanded,
                 selectedProvider: selectedUsageProvider,
@@ -25,8 +25,8 @@ struct SidebarStatusStrip: View {
             countsLine
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
         .tourAnchor(.sidebarStatusStrip)
     }
 
@@ -61,14 +61,14 @@ struct SidebarStatusStrip: View {
 
     static func formatTokens(_ n: Int) -> String {
         if n >= 1_000_000 { return String(format: "%.1fM", Double(n) / 1_000_000) }
-        if n >= 1_000 { return "\(n / 1000)k" }
+        if n >= 1000 { return "\(n / 1000)k" }
         return "\(n)"
     }
 
     static func formatDuration(_ seconds: TimeInterval) -> String {
         let total = Int(seconds)
-        let days = total / 86_400
-        let hours = (total % 86_400) / 3600
+        let days = total / 86400
+        let hours = (total % 86400) / 3600
         let minutes = (total % 3600) / 60
         if days > 0 { return "\(days)d \(hours)h" }
         if hours > 0 { return "\(hours)h \(minutes)m" }
@@ -92,7 +92,9 @@ struct SidebarUsageMeter: View {
     @EnvironmentObject private var codexUsageStore: CodexUsageStore
     @AppStorage("dockyard.claudePlanTier") private var planTierRaw = ClaudePlanTier.none.rawValue
 
-    private var planTier: ClaudePlanTier { ClaudePlanTier(rawValue: planTierRaw) ?? .none }
+    private var planTier: ClaudePlanTier {
+        ClaudePlanTier(rawValue: planTierRaw) ?? .none
+    }
 
     /// Lime green for the weekly bar, to contrast with the orange 5-hour bar.
     private static let weeklyTint = Color(red: 0.62, green: 0.80, blue: 0.30)
@@ -143,7 +145,6 @@ struct SidebarUsageMeter: View {
             .help(usageTooltip)
     }
 
-    @ViewBuilder
     private var placeholderRow: some View {
         HStack(spacing: 6) {
             if isRefreshingSelectedProvider {

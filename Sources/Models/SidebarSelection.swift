@@ -9,6 +9,7 @@ private let logger = Logger(subsystem: "dockyard", category: "sidebar-selection"
 enum SidebarSelection: Hashable, Codable {
     case project(UUID)
     case workstream(UUID)
+    case attention
     case settings
     case help
 

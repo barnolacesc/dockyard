@@ -205,7 +205,7 @@ enum WorkspaceTabSnapshotStore {
 
         let intValue: Int? = nil
 
-        init?(intValue: Int) {
+        init?(intValue _: Int) {
             return nil
         }
     }
@@ -614,7 +614,7 @@ struct TerminalContainerView: View {
             }
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
         .background(.bar)
         .tourAnchor(.workspaceTabBar)
     }
@@ -1073,7 +1073,6 @@ struct TerminalContainerView: View {
         }
     }
 
-
     private enum SplitTargetType {
         case agent, terminal, browser
     }
@@ -1501,6 +1500,7 @@ struct TerminalContainerView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+
     private func runSetupInNewTerminal() {
         guard let setupScript = scriptConfig.setup, !setupScript.isEmpty else { return }
         guard ScriptTrustStore.isTrusted(projectDirectory: projectDirectory, config: scriptConfig) else {
@@ -1584,8 +1584,8 @@ private struct WorkspaceTabButton: View {
                         .accessibilityLabel("Close tab")
                 }
             }
-            .padding(.horizontal, DesignSpacing.lg)
-            .padding(.vertical, DesignSpacing.sm)
+            .padding(.horizontal, DesignSpacing.md)
+            .padding(.vertical, DesignSpacing.xs)
             .frame(minHeight: 40)
             .background(isActive ? Color.accentColor.opacity(0.15) : (isHovering ? Color.primary.opacity(0.05) : .clear))
             .clipShape(RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous))
@@ -2248,7 +2248,7 @@ final class TerminalSurfaceCache: ObservableObject {
         surfaces[id] = view
         surfaceParams[id] = SurfaceParams(workingDirectory: workingDirectory, command: command, initialInput: initialInput, environmentVars: environmentVars, waitAfterCommand: waitAfterCommand)
         if view.surface == nil {
-            logger.error("Surface creation failed for \(id, privacy: .public) command=\((command ?? "<shell>"), privacy: .public)")
+            logger.error("Surface creation failed for \(id, privacy: .public) command=\(command ?? "<shell>", privacy: .public)")
             failedSurfaces[id] = command ?? "(default shell)"
             objectWillChange.send()
         } else {

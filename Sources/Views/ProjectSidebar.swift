@@ -17,7 +17,7 @@ func expandedProjectIDs(afterSelecting selection: SidebarSelection?, current: Se
         if let projectID = projectIDByWorkstreamID[workstreamID] {
             expanded.insert(projectID)
         }
-    case .settings, .help:
+    case .attention, .settings, .help:
         break
     }
     return expanded
@@ -273,6 +273,7 @@ struct ProjectSidebar: View {
                     {
                         let workstream = projects[pIdx].workstreams[wIdx]
                         let agentState = agentStateStore.agentState(for: workstream.id)
+                        let activeSubagents = agentStateStore.activeSubagents(for: workstream.id)
                         let isChromeActive = agentStateStore.isChromeActive(for: workstream.id)
                         let isPathValid = appEnv.isPathValid(workstream.worktreePath)
                         let statusStyle = WorkstreamStatusStyle(agentState: agentState, isPathValid: isPathValid)
@@ -283,6 +284,7 @@ struct ProjectSidebar: View {
                             branchName: branch,
                             worktreePath: workstream.worktreePath,
                             agentState: agentState,
+                            activeSubagents: activeSubagents,
                             isChromeActive: isChromeActive,
                             isPathValid: isPathValid,
                             isSelected: selection == .workstream(workstream.id),
@@ -451,10 +453,27 @@ struct ProjectSidebar: View {
                 Divider()
                     .padding(.horizontal, 8)
             }
-            HStack(alignment: .center, spacing: 6) {
+            HStack(alignment: .center, spacing: 4) {
+                Menu {
+                    Button("Add Existing Directory…") { openDirectoryPicker() }
+                    Button("Create New Project…") { presentNewProjectSheet() }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .medium))
+                        .frame(minWidth: 40, minHeight: 40)
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .accessibilityLabel("Add project")
+                .shortcutHint(ShortcutHint(command: "N", commandShift: "N"))
+                .tourAnchor(.newProjectButton)
+
                 Text(AppConstants.displayVersion)
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundStyle(.tertiary)
+
+                Spacer(minLength: 0)
 
                 if appUpdater.isChecking {
                     ProgressView()
@@ -490,37 +509,7 @@ struct ProjectSidebar: View {
                     .foregroundStyle(.tertiary)
                     .help("Check for updates")
                 }
-            }
-            .padding(.bottom, 4)
 
-            // Credit
-            HStack(spacing: 0) {
-                Text("built by ")
-                    .foregroundStyle(.tertiary)
-                Link("barnolacesc", destination: URL(string: "https://github.com/barnolacesc")!)
-                    .foregroundStyle(.secondary)
-            }
-            .font(.system(size: 10))
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-
-            HStack {
-                Menu {
-                    Button("Add Existing Directory…") { openDirectoryPicker() }
-                    Button("Create New Project…") { presentNewProjectSheet() }
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 32, height: 32)
-                }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .fixedSize()
-                .accessibilityLabel("Add project")
-                .shortcutHint(ShortcutHint(command: "N", commandShift: "N"))
-                .tourAnchor(.newProjectButton)
-                Spacer()
                 SidebarBottomButton(icon: "questionmark.circle") {
                     NotificationCenter.default.post(name: .openHelp, object: nil)
                 }
@@ -708,6 +697,14 @@ struct ProjectSidebar: View {
                 .padding(.top, 6)
                 .padding(.bottom, 2)
 
+                SidebarAttentionRow(
+                    unreadCount: agentActivityStore.unreadCount,
+                    isSelected: selection == .attention,
+                    action: { selection = .attention }
+                )
+                .padding(.horizontal, 8)
+                .padding(.bottom, 4)
+
                 ScrollViewReader { scrollProxy in
                     List(selection: $selection) {
                         projectRows()
@@ -832,6 +829,7 @@ struct ProjectSidebar: View {
     @EnvironmentObject private var appEnv: AppEnvironment
     @EnvironmentObject private var activityTracker: WorkstreamActivityTracker
     @EnvironmentObject private var agentStateStore: AgentStateStore
+    @EnvironmentObject private var agentActivityStore: AgentActivityStore
 
     private func renameWorkstream() {
         guard let wsID = workstreamToRename,
@@ -1326,6 +1324,7 @@ private struct WorkstreamRow: View {
     var branchName: String?
     var worktreePath: String?
     var agentState: AgentState? = nil
+    var activeSubagents: [AgentSubagentSnapshot] = []
     var isChromeActive: Bool = false
     var isPathValid: Bool = false
     var isSelected: Bool = false
@@ -1414,8 +1413,14 @@ private struct WorkstreamRow: View {
                 .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
             }
 
-            rowContent
-                .padding(.leading, isSelected ? 6 : 0)
+            VStack(alignment: .leading, spacing: 2) {
+                rowContent
+                if isSelected, agentState != nil || !activeSubagents.isEmpty {
+                    agentFleet
+                }
+            }
+            .padding(.leading, isSelected ? 6 : 0)
+            .padding(.vertical, isSelected ? 4 : 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
@@ -1487,7 +1492,6 @@ private struct WorkstreamRow: View {
         }
     }
 
-    @ViewBuilder
     private func stageMenuButton(_ option: WorkstreamStage, titleKey: LocalizedStringKey, onSetStage: @escaping (WorkstreamStage) -> Void) -> some View {
         Button {
             onSetStage(option)
@@ -1558,6 +1562,63 @@ private struct WorkstreamRow: View {
             SidebarIconButton(icon: "xmark", action: onRemove)
                 .accessibilityLabel("Remove workstream")
                 .opacity(isHovering ? 1 : 0)
+        }
+    }
+
+    private var agentFleet: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            if let agentState {
+                agentLine(
+                    systemImage: "sparkles",
+                    title: NSLocalizedString("Coding Agent", comment: "Main agent label in selected workstream"),
+                    state: agentState
+                )
+            }
+            ForEach(activeSubagents.prefix(4), id: \.agentID) { subagent in
+                agentLine(
+                    systemImage: "point.3.connected.trianglepath.dotted",
+                    title: subagent.agentType,
+                    state: .working
+                )
+            }
+            if activeSubagents.count > 4 {
+                Text(
+                    String(
+                        format: NSLocalizedString("%d more agents", comment: "Additional active subagents in selected workstream"),
+                        activeSubagents.count - 4
+                    )
+                )
+                .font(.system(size: 9))
+                .foregroundStyle(.secondary)
+                .padding(.leading, 16)
+            }
+        }
+        .padding(.leading, 16)
+        .padding(.bottom, 3)
+    }
+
+    private func agentLine(systemImage: String, title: String, state: AgentState) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: systemImage)
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(state == .waiting ? DesignColor.statusWarning : DesignColor.statusSuccess)
+                .frame(width: 11)
+            Text(title)
+                .font(.system(size: 10))
+                .lineLimit(1)
+            Spacer(minLength: 4)
+            Text(agentStateLabel(state))
+                .font(.system(size: 9))
+                .foregroundStyle(.secondary)
+        }
+        .foregroundStyle(isSelected ? Color(nsColor: .selectedControlTextColor).opacity(0.82) : Color.primary.opacity(0.82))
+    }
+
+    private func agentStateLabel(_ state: AgentState) -> LocalizedStringKey {
+        switch state {
+        case .working: "Working"
+        case .waiting: "Waiting"
+        case .idle: "Ready"
         }
     }
 }
