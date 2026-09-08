@@ -44,13 +44,13 @@ final class AppUpdaterTests: XCTestCase {
     func testSuccessfulCountPreservesGitCommandAndWorkingDirectory() {
         let process = UpdateCheckProcessDouble(output: Data("  42\n".utf8))
 
-        let count = UpdateCheckCommandRunner.commitsAhead(at: "/tmp/dockyard source") {
+        let count = UpdateCheckCommandRunner.commitsAhead(at: "/tmp/dockyard source", from: "123b4d0") {
             executableURL,
             arguments,
             workingDirectoryURL,
             maximumOutputBytes in
             XCTAssertEqual(executableURL.path, "/usr/bin/git")
-            XCTAssertEqual(arguments, ["rev-list", "--count", "HEAD..origin/main"])
+            XCTAssertEqual(arguments, ["rev-list", "--count", "123b4d0..origin/main"])
             XCTAssertEqual(workingDirectoryURL.path, "/tmp/dockyard source")
             XCTAssertEqual(maximumOutputBytes, 64 * 1024)
             return process
@@ -59,6 +59,17 @@ final class AppUpdaterTests: XCTestCase {
         XCTAssertEqual(count, 42)
         XCTAssertEqual(process.runCallCount, 1)
         XCTAssertEqual(process.waitCallCount, 1)
+    }
+
+    func testInvalidEmbeddedCommitFallsBackToHead() {
+        let process = UpdateCheckProcessDouble(output: Data("0\n".utf8))
+
+        let count = UpdateCheckCommandRunner.commitsAhead(at: "/tmp", from: "unknown") { _, arguments, _, _ in
+            XCTAssertEqual(arguments, ["rev-list", "--count", "HEAD..origin/main"])
+            return process
+        }
+
+        XCTAssertEqual(count, 0)
     }
 
     func testCollectorRetainsExactlyTheCapAcrossChunks() {
@@ -89,38 +100,38 @@ final class AppUpdaterTests: XCTestCase {
             output: Data("1".utf8),
             outputExceededLimit: true
         )
-        XCTAssertNil(UpdateCheckCommandRunner.commitsAhead(at: "/tmp") { _, _, _, _ in overflow })
+        XCTAssertNil(UpdateCheckCommandRunner.commitsAhead(at: "/tmp", from: "123b4d0") { _, _, _, _ in overflow })
 
         let incomplete = UpdateCheckProcessDouble(
             output: Data("1".utf8),
             didFinishOutput: false
         )
-        XCTAssertNil(UpdateCheckCommandRunner.commitsAhead(at: "/tmp") { _, _, _, _ in incomplete })
+        XCTAssertNil(UpdateCheckCommandRunner.commitsAhead(at: "/tmp", from: "123b4d0") { _, _, _, _ in incomplete })
 
         let failed = UpdateCheckProcessDouble(
             output: Data("1".utf8),
             terminationStatus: 1
         )
-        XCTAssertNil(UpdateCheckCommandRunner.commitsAhead(at: "/tmp") { _, _, _, _ in failed })
+        XCTAssertNil(UpdateCheckCommandRunner.commitsAhead(at: "/tmp", from: "123b4d0") { _, _, _, _ in failed })
     }
 
     func testFailsClosedOnMalformedInvalidAndNegativeOutput() {
         for output in [Data("many".utf8), Data([0xFF]), Data("-1".utf8)] {
             let process = UpdateCheckProcessDouble(output: output)
-            XCTAssertNil(UpdateCheckCommandRunner.commitsAhead(at: "/tmp") { _, _, _, _ in process })
+            XCTAssertNil(UpdateCheckCommandRunner.commitsAhead(at: "/tmp", from: "123b4d0") { _, _, _, _ in process })
         }
     }
 
     func testFailsClosedOnFactoryAndLaunchFailureWithoutWaiting() {
         XCTAssertNil(
-            UpdateCheckCommandRunner.commitsAhead(at: "/tmp") { _, _, _, _ in
+            UpdateCheckCommandRunner.commitsAhead(at: "/tmp", from: "123b4d0") { _, _, _, _ in
                 throw UpdateCheckTestError.launch
             }
         )
 
         let process = UpdateCheckProcessDouble()
         process.runError = UpdateCheckTestError.launch
-        XCTAssertNil(UpdateCheckCommandRunner.commitsAhead(at: "/tmp") { _, _, _, _ in process })
+        XCTAssertNil(UpdateCheckCommandRunner.commitsAhead(at: "/tmp", from: "123b4d0") { _, _, _, _ in process })
         XCTAssertEqual(process.runCallCount, 1)
         XCTAssertEqual(process.waitCallCount, 0)
     }
