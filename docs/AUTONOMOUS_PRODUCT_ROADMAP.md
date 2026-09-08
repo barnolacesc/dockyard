@@ -11,94 +11,100 @@ The first **Current autonomous queue** is canonical. Dated **Live
 reconciliation** and superseded queue sections are retained as an audit trail
 and can contain stale statuses.
 
-## Current autonomous queue — 2026-09-07 09:30 CEST
+## Current autonomous queue — 2026-09-07 16:30 CEST
 
-`origin/main` is `08ec8b3`; its latest macOS CI, CodeQL and Release workflows
-are green. PRs #170, #172, #174, #176, #178 and #180 are clean, green at their
-heads and **awaiting Cesc review**. PRs #117, #126, #140, #146, #148, #152,
-#154, #156, #158, #160, #162, #164, #166 and #168 are also green at their
-heads but conflict with current `main`; they remain awaiting review and are not
-modified or stacked on here. Release-please PR #63 remains approval-gated and
-must not be merged or published autonomously. The latest published release is
-v0.2.1.
+`origin/main` is `08ec8b3`; its latest macOS CI, scheduled CodeQL and Release
+workflows are green. PRs #170, #172, #174, #176, #178, #180 and #182 are clean,
+green at their heads and **awaiting Cesc review**. PRs #117, #126, #140, #146,
+#148, #152, #154, #156, #158, #160, #162, #164, #166 and #168 are green at
+their heads but conflict with current `main`; they remain awaiting review and
+are not modified or stacked on here. Release-please PR #63 remains
+approval-gated and must not be merged or published autonomously. The latest
+published release remains v0.2.1.
 
-GitHub Projects v2 remains unavailable to the automation token because it
-lacks `read:project`; no Project item or status is inferred. Current issues,
-`TODO.md`, code and every open PR path were reconciled before issue #181 was
-created for this run. Product issues #41, #43 and #54 still require native
-profiling, approval-gated update work and non-duplicative agent-status work
-respectively.
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
+`repo` and `workflow` but lacks `read:project`. No Project item or status is
+inferred. Current issues, `TODO.md`, code and every open PR path were reconciled
+before issue #183 was created for this run. Product issues #41, #43 and #54
+still require native profiling, approval-gated update work and non-duplicative
+agent-status work respectively.
 
-### R60 — Cap detailed launch-log growth
+### R61 — Bound editor source-file reads
 
-- Status: **Awaiting Cesc review in PR #182** on
-  `fix/cap-launch-log-growth-r60-20260907` for issue #181. Native CI is green
-  at the implementation head; the PR must remain open and must not be
-  auto-merged.
-- User outcome: opt-in per-workstream launch diagnostics cannot grow without
-  bound across repeated Coding Agent, run and setup launches.
-- Success signal: after every successful write, each launch log is at or below
-  1 MiB and retains the newest complete JSONL entries in chronological order.
-- macOS impact: native cache-file diagnostics only; no visible UI,
-  accessibility, localization or shortcut change.
-- Persistence/security impact: bounds an opt-in cache file and its tail reads
-  while preserving private `0700` directory and `0600` file permissions. The
-  logging default, JSON schema, captured fields, commands, worktrees,
-  entitlements and release behavior are unchanged.
-- Scope: `LaunchLogger`, focused `LaunchLoggerTests` and roadmap evidence.
-- Dependencies: none. No open PR owns the implementation or test paths, so the
-  code changes can merge in either order with every pending implementation PR.
-- Risk: low, reversible diagnostic-retention change. Full GitHub macOS CI is
-  mandatory.
+- Status: **Awaiting Cesc review in PR #184** on
+  `fix/bound-editor-source-reads-r61-20260907` for issue #183. Native CI is
+  green at the implementation head; the pull request must not be auto-merged.
+- User outcome: selecting an unexpectedly large, symbolic-link or non-regular
+  source candidate cannot block the embedded editor or allocate unbounded
+  memory.
+- Success signal: regular UTF-8 source files at or below 1 MiB open normally;
+  oversized, symbolic-link and non-regular candidates reach the editor's
+  existing error state.
+- macOS impact: native embedded-editor file loading only; no visible string,
+  layout, accessibility, localization or shortcut behavior changes.
+- Persistence/security impact: each relative path component is opened beneath
+  the canonical worktree through `openat` without following symlinks. Type,
+  size and bounded reads apply to the opened descriptor. Save paths, Monaco
+  resources, file-tree enumeration, commands, worktree mutation, entitlements
+  and release behavior are unchanged.
+- Scope: `WorkspaceFileAccess`, the `EditorView` load path, focused
+  `WorkspaceFileAccessTests` and roadmap evidence.
+- Dependencies: none. No open PR owns these implementation or test paths, so
+  the code can merge in either order with every pending implementation PR.
+- Risk: low, reversible read-side hardening. Full GitHub macOS CI is mandatory.
 - Acceptance criteria:
-  1. Under-limit appends and a result exactly at 1 MiB preserve all entries.
-  2. Overflow discards only the oldest records and retains complete newest
-     JSONL entries in chronological order.
-  3. An oversized existing file is compacted through a bounded tail read.
-  4. A newly encoded entry over 1 MiB is skipped rather than partially written.
-  5. Detailed-logging opt-in, per-workstream isolation, cleanup and private
-     permissions remain green.
+  1. A regular UTF-8 source file at the 1 MiB limit opens successfully.
+  2. A source file larger than 1 MiB is rejected before unbounded allocation.
+  3. Symbolic-link and non-regular candidates are rejected without blocking.
+  4. The canonical root may itself be a symlink while descendant traversal
+     remains descriptor-relative and no candidate symlink is followed.
+  5. The existing localized Cocoa error surface handles failures; no new
+     user-facing string is introduced.
   6. Focused XCTest and the full GitHub macOS build/test pass.
-- Required evidence: focused `LaunchLoggerTests`, localization resource/key
-  checks, XcodeGen/native build, full XCTest, `git diff --check`, added-line
-  secret scan and configured CodeQL.
-- Evidence so far: localization resource/key tests and checkers pass with 10
-  declared resources, 418 app keys and 15 privacy keys across all five locales;
-  bundled-helper, appcast and release-seeding script tests pass;
+- Required evidence: focused `WorkspaceFileAccessTests`, localization
+  resource/key checks, XcodeGen/native build, full XCTest, `git diff --check`,
+  added-line secret scan and configured CodeQL.
+- Evidence so far: localization resource/key checks pass with 10 declared
+  resources, 418 app keys and 15 privacy keys across all five locales. Bundled
+  helper, localization, appcast and release-seeding script tests pass;
   `git diff --check` and the added-line secret scan pass. The Linux host has no
   Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is
-  the mandatory native build/test evidence. At implementation head `2fde793`,
-  macOS CI run `34097416897` passed localization checks, XcodeGen, the native
+  the mandatory native build/test evidence. At implementation head `3e6db69`,
+  macOS CI run `34134754727` passed localization checks, XcodeGen, the native
   build, bundled-helper verification and the full XCTest suite including
-  `LaunchLoggerTests`. CodeQL run `34097416976` passed its configured Actions
-  and JavaScript analyses; Swift analysis was skipped by the repository's PR
+  `WorkspaceFileAccessTests`. CodeQL run `34134754728` passed its configured
+  Actions and JavaScript analyses; Swift analysis was skipped by the repository
   workflow. The final roadmap-evidence head must also remain green.
 
-### Independent Ready queue while R60 and older PRs await review
+### Independent Ready queue while R61 and older PRs await review
 
-- **R61 — Bound editor source-file reads.** User outcome: selecting an
-  unexpectedly large or non-regular source file cannot block the editor or
-  allocate unbounded memory. Success: bounded regular UTF-8 fixtures open while
-  oversized, symbolic-link and non-regular candidates reach the existing error
-  state. Scope: editor read helper and focused tests; no save path, Monaco
-  bundle, worktree containment, UI string, entitlement or command change. No
-  open PR owns these paths; full macOS CI is required.
-- **R62 — Bound expanded file-tree enumeration.** User outcome: expanding a
-  pathological directory cannot make the native editor sidebar allocate and
-  sort an unbounded entry list. Success: deterministic tests prove a fixed
-  per-directory ceiling and a localized truncation row without changing
-  workspace containment or following escaping symlinks. Scope: `FileNode`,
-  `FileTreeView`, focused tests and all five localizations; no file mutation,
-  watcher, command, worktree or entitlement change. Native visual,
-  accessibility and full macOS CI evidence are required.
 - **R63 — Bound Codex usage-probe I/O.** User outcome: a noisy or malformed
   `codex app-server` cannot grow Dockyard memory or block on an undrained pipe
   while the sidebar refreshes usage limits. Success: process-double and
   collector tests prove bounded stdout lines and stderr drainage while normal
   rate-limit parsing and the existing deadline remain intact. Scope:
-  `CodexUsageProbe` and focused tests; no command, JSON-RPC request, account,
-  UI, worktree, permission, entitlement or release change. This command-boundary
+  `CodexUsageProbe` and focused tests; no JSON-RPC request, account, UI,
+  worktree, permission, entitlement or release change. This command-boundary
   hardening must stop at a tested PR for Cesc review.
+- **R64 — Bound unified-log polling snapshots.** User outcome: opening the
+  native logs window after a diagnostic burst cannot materialize and sort an
+  unbounded poll result. Success: source/store tests prove a fixed entry ceiling
+  while the newest entries, bookmark advancement and filtering remain correct.
+  Scope: `LogSource`, `LogStore` and focused tests; no logging preference,
+  launch diagnostics, command, persistence, entitlement or UI string change.
+  No open PR owns these paths; full macOS CI is required.
+- **R65 — Bound legacy cache-migration enumeration.** User outcome: a malformed
+  legacy cache directory with an excessive number of entries cannot allocate
+  an unbounded array during startup cleanup. Success: deterministic fixtures
+  prove lazy enumeration stops at a fixed ceiling while empty-directory cleanup
+  and preservation of non-empty/conflicting legacy state remain unchanged.
+  Scope: `CacheMigration` and focused tests; no destination replacement, schema,
+  command, worktree or entitlement change. Persisted-data migration behavior is
+  approval-gated and must stop at a tested PR for Cesc review.
+
+R62 (bounded expanded file-tree enumeration) remains **dependent on R61
+merging** because both change `FileTree.swift`; it is not Ready while this PR is
+open and must not be stacked or duplicated.
 
 ## Superseded autonomous queue — 2026-08-10 16:30 CEST
 
