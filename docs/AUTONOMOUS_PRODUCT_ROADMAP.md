@@ -1,158 +1,15 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-08-26 against `origin/main` at
-`fce9d0f61ee8b673ea1f09f27cb82e7d0245b5fb`.
+Last reconciled: 2026-08-11 against `origin/main` at
+`ceeea0811d385396f497632469a705b184a13953`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
 not an automatically trusted backlog.
 
-The first **Current autonomous queue** is canonical. Dated **Live
-reconciliation** and superseded queue sections are retained as an audit trail
-and can contain stale statuses.
-
-## Current autonomous queue — 2026-08-26 18:37 CEST
-
-`origin/main` is `fce9d0f`; its latest macOS CI, CodeQL and Release workflows
-are green. PRs #140 (R39) and #142 (R40) are green and **awaiting Cesc review**.
-PRs #117 and #126 are also green at their heads but conflict with current
-`main`; they remain awaiting review and are not modified or stacked on here.
-Release-please PR #63 remains approval-gated and must not be merged or
-published autonomously. The latest published release remains v0.2.1.
-
-GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
-`repo` and `workflow` but lacks `read:project`. No Project item or status is
-inferred. Open product issues before this run were #41, #43, #54, #116 and
-#141; issue #143 records this run.
-
-### R41 — Bound run-state cache reads before decoding
-
-- Status: **Awaiting Cesc review in PR #144** on
-  `fix/bound-run-state-cache-reads-r41` for issue #143. Native CI is pending;
-  the PR must remain open and must not be auto-merged.
-- User outcome: a malformed local run-state cache entry cannot make browser
-  retargeting allocate unbounded memory or follow a symbolic link outside the
-  expected cache file.
-- Success signal: only a regular snapshot at or below 1 MiB is decoded; a
-  symbolic link and a file above the limit are rejected while ordinary valid
-  state still retargets normally.
-- macOS impact: native run-state reads used by port detection only; no UI,
-  accessibility, localization or shortcut behavior changes.
-- Persistence/security impact: narrows a read-only local-cache boundary. The
-  opened descriptor is checked and read with a hard cap, avoiding a path
-  check/read race. The JSON schema, writer, deletion, migration, process
-  validation, scripts, commands, entitlements and release behavior are
-  unchanged.
-- Scope: `RunStateStore`, focused `PortDetectionTests` and roadmap evidence.
-- Dependencies: none. Open PRs #117, #126, #140, #142 and #63 do not own the
-  implementation or test paths and can merge in either order.
-- Risk: low and reversible read-side hardening; full GitHub macOS CI is
-  mandatory.
-- Acceptance criteria:
-  1. A regular valid snapshot at the 1 MiB limit decodes.
-  2. A regular snapshot larger than 1 MiB is rejected without an unbounded
-     allocation.
-  3. A symbolic-link candidate is rejected even when its target has valid JSON.
-  4. Metadata validation and bounded reads apply to the same opened file.
-  5. Existing port/run-state tests and the full macOS suite remain green.
-- Required evidence: focused XCTest, localization scripts, XcodeGen/native
-  build, full XCTest, `git diff --check`, added-line secret scan and configured
-  CodeQL.
-- Evidence so far: localization resource/key tests and repository checks pass,
-  including 418 app keys and 15 privacy keys across all five locales;
-  `git diff --check` and the added-line secret scan pass. The Linux host has no
-  Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is
-  the mandatory native build/test evidence.
-
-### Independent Ready queue while R39–R41 await review
-
-- **R42 — Build a read-only GitHub issue task preview.** User outcome: issue
-  intake can show exactly what would be handed to an agent before any worktree
-  or prompt exists. Success signal: title, number, URL and bounded body text
-  normalize deterministically as untrusted input. Scope: pure model/parser and
-  tests; no GitHub mutation, credential, command, agent launch or worktree
-  creation. Dependencies: none. Risk: low; full macOS CI required.
-- **R43 — Bound startup tool-detection probes.** User outcome: a broken local
-  CLI cannot hang Dockyard startup or emit unbounded version/help output.
-  Success signal: process-double tests prove timeout, termination, output cap
-  and normal version detection. Scope: `ToolStatus` command runner and focused
-  tests only; no Coding Agent launch command or permission change.
-  Dependencies: none and disjoint from #140. Risk: medium command-boundary
-  change; stop at a tested PR for Cesc and require full macOS CI.
-- **R44 — Bound browser-state cache reads before decoding.** User outcome:
-  restoring or appending browser state cannot follow a cache symlink or read an
-  unbounded file. Success signal: bounded regular fixtures decode while
-  symlinked and oversized candidates fail closed. Scope: `BrowserBridge` and
-  focused tests; no WKWebView policy, JavaScript, environment variable, state
-  schema or write behavior change. Dependencies: none. Risk: low read-side
-  hardening; full macOS CI required.
-
-## Superseded autonomous queue — 2026-08-10 16:30 CEST
-
-`origin/main` is `ceeea08`; its macOS `build-and-test`, CodeQL and release
-automation checks are green. R16 / PR #113 is healthy and **awaiting Cesc
-review**; it changes `RunLauncher`, `WorkstreamEnvironment` and focused tests.
-Release-please PR #63 changes only version/changelog metadata, remains
-approval-gated and must not be merged or published autonomously. The latest
-published release remains v0.2.1.
-
-GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the automation token
-has `repo` and `workflow` but lacks `read:project`. No Project data or status is
-inferred. Open implementation issues at selection were #41, #43, #54 and #112;
-issue #114 records this run.
-
-### R17 — Protect tmux diagnostic state
-
-- Status: **Awaiting Cesc review in PR #115** on
-  `fix/private-tmux-diagnostics` for issue #114. The PR must not be
-  auto-merged.
-- User outcome: tmux diagnostic output is not left readable by other local
-  users after first creation or when an older permissive cache exists.
-- Success signal: constructing a tmux command creates or repairs the Dockyard
-  cache directory to `0700` and `tmux-stderr.log` to `0600` before shell
-  redirection, while preserving existing log bytes.
-- macOS impact: tmux command preparation only; no UI, accessibility,
-  localization or visual behavior changes.
-- Persistence/security impact: narrows local diagnostic-file permissions. Tmux
-  commands, session names, app-restart persistence, archive/purge cleanup,
-  entitlements and release behavior remain unchanged.
-- Scope: `TmuxSession`, focused `TmuxSessionTests` and roadmap evidence only.
-- Risk: low and reversible; full GitHub macOS CI is mandatory.
-- Acceptance criteria:
-  1. First use creates the cache directory as `0700` and stderr log as `0600`.
-  2. Existing `0755`/`0644` modes are repaired without replacing log content.
-  3. Diagnostic state exists before the generated command can use `2>>`.
-  4. Existing tmux command-composition and shell-parsing tests remain green.
-  5. Full GitHub macOS build/test passes.
-- Required evidence: focused XCTest, full `macos-15` CI, CodeQL as configured,
-  localization parity, diff and secret checks.
-- Native evidence: at implementation head `12200ab`, macOS CI run
-  `31399327020` passed localization parity, XcodeGen, the native build and the
-  full XCTest suite including `TmuxSessionTests`. CodeQL run `31399327146`
-  passed Actions and JavaScript analysis; Swift analysis was skipped by the
-  repository's PR workflow configuration. The final roadmap-only head must
-  also remain green.
-- Independence: PR #113 changes environment activation paths; PR #63 changes
-  release metadata. R17 changes tmux diagnostic setup and its tests, so the
-  implementations can merge in either order. Roadmap updates use this
-  top-level canonical queue to avoid conflicting dated audit-log appends.
-
-### Independent Ready queue while R16 and R17 await review
-
-- **R18 — Add the passive power-features tour:** expose existing shortcut
-  hints, usage meters, tmux persistence and archive semantics without launching
-  commands or changing persisted workstreams. One `TourFlow`, controller tests,
-  five localizations and native visual/accessibility evidence; source is the
-  remaining unchecked tour item in `TODO.md`.
-- **R19 — Contain close-tab editor saves:** resolve the unsaved-editor close
-  path through `WorkspaceFileAccess` before writing, matching ordinary saves
-  and rejecting absolute, traversal, same-prefix and escaping-symlink paths.
-  This file-write boundary is approval-gated; focused tests and full macOS CI
-  are required.
-- **R20 — Keep watcher-created state directories private:** create and repair
-  run-state and agent-state watcher directories as `0700` before attaching
-  filesystem observers. Scope is `PortDetector`, `AgentStateStore` and focused
-  tests; state schemas, writers and watcher recovery behavior remain unchanged.
+The final **Live reconciliation** section is canonical. Earlier dated sections
+are retained as an audit trail and can contain statuses superseded by a later
+reconciliation.
 
 ## Evidence and limits
 
@@ -276,73 +133,6 @@ issue #114 records this run.
 
 ## Next
 
-### R20 — Keep watcher-created state directories private
-
-- Status: **Awaiting Cesc review in PR #121** on
-  `fix/private-watcher-state-directories` for issue #120; do not auto-merge.
-  Required native implementation CI is green.
-- User outcome: Dockyard does not leave run-state or agent-state watcher
-  directories readable or traversable by other local users because of a
-  permissive process umask or an existing permissive directory.
-- Success signal: both watchers create and repair their state directories as
-  `0700` before attaching filesystem observers, including agent-state watcher
-  recovery, without replacing retained state files.
-- macOS impact: local filesystem watcher setup only; no UI, accessibility,
-  localization or visual behavior changes.
-- Persistence/security impact: narrows permissions on existing cache
-  directories without changing schemas, state writers, worktree behavior,
-  command execution, entitlements or cleanup.
-- Scope: `PortDetector`, `AgentStateStore`, focused watcher/state tests and
-  roadmap evidence only.
-- Dependencies: none. Open PRs #113, #115, #117 and #119 change environment
-  activation, tmux diagnostics, tour/sidebar content and editor writes;
-  release-please #63 changes release metadata. R20's implementation paths and
-  behavior are independent and can merge in either order.
-- Risk: low and reversible local permission hardening. Native CI is mandatory.
-- Acceptance criteria:
-  1. Missing run-state and agent-state directories are created as `0700`.
-  2. Existing `0755` directories are repaired to `0700` without replacing
-     retained files.
-  3. Agent-state directory replacement recovery re-establishes `0700` before
-     watching the replacement.
-  4. Existing run-state and agent-state observation behavior remains green.
-  5. Full GitHub macOS build/test passes.
-- Required evidence: focused XCTest, full `macos-15` CI, CodeQL as configured,
-  localization parity, diff and secret checks.
-- Evidence so far: localization parser tests and 418-key parity passed locally;
-  `git diff --check` and the added-line secret scan passed. The Linux host has
-  no Swift, Xcode or XcodeGen, so GitHub macOS CI is the mandatory native
-  build/test evidence. At head `9718872`, macOS CI run `31574879569` passed
-  localization parity, XcodeGen, the native build and the full XCTest suite;
-  CodeQL run `31574879598` passed its configured analyses. The final
-  roadmap-only head must also remain green. Roadmap head `f40847a` passed
-  localization parity and XcodeGen before the third-party `setup-bun` action
-  failed with a transient `TypeError: fetch failed` in run `31575222849`; no
-  repository build or test ran on that attempt. The automation token received
-  `403` when requesting a failed-job rerun, so a subsequent evidence-only head
-  is required rather than treating that infrastructure failure as product
-  evidence.
-- Sources: issue #120, `PortDetector`, `AgentStateStore`, and private-state
-  invariants already enforced by `FilePersistence`.
-
-### Independent Ready queue while R16–R20 await review
-
-GitHub Projects v2 remains unavailable: the token has `repo` and `workflow`
-but lacks `read:project`, and the API returned `INSUFFICIENT_SCOPES`. No
-Project item or status is inferred. `origin/main` is `ceeea08`; its latest
-push CI, CodeQL and Release workflows are green. The latest published release
-remains v0.2.1.
-
-- **R21 — Validate localized macOS privacy prompts in CI:** extend the
-  deterministic localization checker to verify `InfoPlist.strings` key parity
-  across all five locales. This is a read-only release-integrity guard; it must
-  not add usage descriptions, entitlements or privacy claims.
-- **R22 — Validate localization bundle membership in CI:** add a deterministic
-  manifest check proving `project.yml` includes `Localizable.strings` and
-  `InfoPlist.strings` for every supported locale. Scope is a standalone script,
-  focused Python tests and one CI invocation; it must not regenerate or edit
-  the Xcode project, localization values, usage descriptions or entitlements.
-
 ### R2 — Classify merged-PR worktrees without deleting them
 
 - Status: **Ready**.
@@ -418,63 +208,6 @@ remains v0.2.1.
   navigation and VoiceOver labels.
 - Required tests: tour/localization tests, full macOS CI and screenshots.
 - Sources: unchecked workspace-tabs tour in `TODO.md`.
-
-### R19 — Contain close-tab editor saves within the worktree
-
-- Status: **Awaiting Cesc review in PR #119** for issue #118 on
-  `fix/contain-close-tab-editor-saves`; do not auto-merge. Required native
-  implementation CI is green.
-- User outcome: choosing Save while closing a dirty editor tab cannot write
-  outside the selected worktree, including when restored or malformed editor
-  state contains an absolute path, traversal, same-prefix sibling or escaping
-  symlink.
-- Success signal: ordinary and close-tab saves share one
-  `WorkspaceFileAccess` writer; contained relative paths save successfully,
-  while unsafe paths raise a file-write permission error and leave external
-  bytes unchanged.
-- macOS impact: the existing native Save / Don't Save / Cancel close alert is
-  unchanged; only its Save destination resolution changes.
-- Persistence/security impact: narrows an editor file-write boundary. Save As
-  remains explicitly user-directed, and no persisted schema or cleanup
-  behavior changes.
-- Scope: `WorkspaceFileAccess`, ordinary editor save reuse, close-tab save and
-  focused tests. No command execution, worktree, entitlement, localization or
-  release changes.
-- Dependencies: none; implementation paths do not overlap open PRs #113, #115,
-  #117 or release-please #63.
-- Risk: medium because this is a file-write boundary; stop at a tested PR for
-  Cesc and do not auto-merge.
-- Acceptance criteria:
-  1. A contained relative path writes the requested bytes.
-  2. Absolute, traversal, same-prefix and escaping-symlink paths fail before
-     writing outside the worktree.
-  3. External files remain unchanged for every rejected case.
-  4. Existing editor and workspace file-access behavior remains green.
-  5. Full GitHub macOS build/test passes.
-- Evidence: localization parser tests and 418-key parity passed locally;
-  `git diff --check` and the added-line secret scan passed. At head `41e8f97`,
-  macOS CI run `31502647742` passed localization parity, XcodeGen, the native
-  build and full XCTest. CodeQL run `31502647712` passed its Actions and
-  JavaScript analyses; Swift analysis was skipped by the PR workflow. The
-  final roadmap-only head must also remain green. Local `prek`/SwiftFormat was
-  unavailable because those executables are not installed on the Linux host.
-- Sources: issue #118, `TerminalContainerView.confirmCloseEditor`,
-  `EditorView.saveFile` and `WorkspaceFileAccess`.
-
-### Independent Ready queue after R19
-
-GitHub Projects v2 remains unavailable: the token has `repo` and `workflow`
-but lacks `read:project`, and the API returned `INSUFFICIENT_SCOPES`. No
-Project item or status is inferred.
-
-- **R20 — Keep watcher-created state directories private:** create and repair
-  run-state and agent-state watcher directories as `0700` before attaching
-  filesystem observers. Scope is `PortDetector`, `AgentStateStore` and focused
-  tests; state schemas, writers and watcher recovery remain unchanged.
-- **R21 — Validate localized macOS privacy prompts in CI:** extend the
-  deterministic localization checker to verify `InfoPlist.strings` key parity
-  across all five locales. This is a read-only release-integrity guard; it must
-  not add usage descriptions, entitlements or privacy claims.
 
 ## Later
 
@@ -722,89 +455,78 @@ Project item or status is inferred.
   a fresh `origin/main` worktree. No release, merge or older-PR comment was
   performed.
 
-## Live reconciliation — 2026-08-16 09:30 CEST
+## Live reconciliation — 2026-08-11 09:30 CEST
 
-This section supersedes every earlier status. `origin/main` is `ceeea08`; its
-latest macOS CI, CodeQL and Release workflows succeeded. v0.2.1 remains the
-latest published release. GitHub Projects v2 was queried and returned
-`INSUFFICIENT_SCOPES`: the automation token has `repo` and `workflow` but not
-`read:project`, so no Project item or status is inferred.
+This section supersedes every earlier item status. `origin/main` is `ceeea08`;
+its latest push CI, CodeQL and release workflows are green. R15 / PR #110 and
+the reviewed documentation PR #111 are merged. R16 / PR #113 and R17 / PR
+#115 are healthy, mergeable, have successful macOS `build-and-test` checks and
+are **awaiting Cesc review**. They were left open without status comments.
+Release-please PR #63 remains approval-gated and must not be merged or
+published autonomously. The latest published release remains v0.2.1.
 
-Implementation PRs #113 (R16), #115 (R17), #117 (R18), #119 (R19), #121
-(R20), #123 (R21), #125 (R22), #128 (R23) and #131 (R34) are clean,
-Git-mergeable, green on macOS `build-and-test`, and **awaiting Cesc review**.
-Roadmap-only PR #126 is also clean and green. Their changed paths, behaviors
-and dependencies were compared before this run; none is modified, stacked on
-or duplicated here. Release-please PR #63 remains approval-gated and must not
-be merged or published autonomously.
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
+`repo` and `workflow`, but lacks `read:project`. No Project items or status are
+inferred. Open implementation issues at selection were #41, #43, #54, #112
+and #114; issue #116 records this run.
 
-### R35 — Refuse unregistered worktree purge targets
+### R18 — Add the passive power-features tour
 
-- Status: **Awaiting Cesc review in PR #133** for issue #132 on
-  `fix/refuse-unregistered-worktree-purge-r35`; the implementation head passed
-  macOS CI and the PR must not be auto-merged.
-- User outcome: purging malformed or stale persisted state cannot run teardown
-  against, force-remove, or recursively delete the main checkout or an
-  unrelated directory.
-- Success signal: only a removable Git-registered non-main worktree reaches
-  teardown/removal; a refused Git removal leaves its directory and branch
-  intact; branch deletion occurs only after successful removal.
-- macOS impact: no UI change. This is worktree cleanup behavior exercised by
-  the native app.
-- Persistence/security impact: treats persisted worktree paths as untrusted
-  and narrows a destructive filesystem and command-execution boundary.
-- Scope: `GitOperations`, `WorkstreamArchiver` and focused real-repository
-  tests. Preserve the explicit Purge UI, valid teardown, tmux cleanup and
-  metadata removal. No migration, entitlement, release or localization change.
+- Status: **Awaiting Cesc review in PR #117** on
+  `feat/power-features-tour-r18` for issue #116; do not auto-merge. Required
+  macOS implementation CI is green.
+- User outcome: users can discover keyboard hints, local Claude Code/Codex
+  usage meters, tmux restart persistence and non-destructive archive semantics
+  without the tour running a command or mutating a workstream.
+- Success signal: the What's New entry starts a stable six-step flow; every
+  step advances manually, has no `onEnter` action, and uses existing passive
+  spotlight anchors or a centered card.
+- macOS impact: native SwiftUI tour overlays and sidebar/workspace spotlight
+  anchors. Light/dark appearance and VoiceOver still require native review.
+- Persistence/security impact: none. The flow does not post workflow
+  notifications, execute commands, change settings, archive/purge anything or
+  write persisted workstream state.
+- Scope: one `TourFlow`, two passive anchors, catalog routing, What's New,
+  focused tests, all five app localizations, `TODO.md` and roadmap evidence.
+- Risk: low and reversible native onboarding UI; stop at a tested PR for Cesc.
 - Acceptance criteria:
-  1. Registered non-main worktrees resolve and retain existing force-removal.
-  2. Missing, main, unrelated, locked and stale/prunable paths are rejected
-     before teardown or filesystem deletion.
-  3. Git refusal preserves the candidate directory and branch.
-  4. The caller deletes a branch only after confirmed worktree removal.
-  5. Focused XCTest and full GitHub macOS build/test pass.
-- Risk: high-adjacency bounded hardening because purge is destructive. Never
-  auto-merge; Cesc must review and test the PR.
-- Native evidence: at implementation head `7666469`, macOS CI run
-  `31934526117` passed localization parity, XcodeGen, the native build and the
-  full XCTest suite including the new real-Git worktree tests. CodeQL run
-  `31934526124` passed Actions and JavaScript analysis; Swift analysis was
-  skipped by repository workflow configuration. The final roadmap-only head
-  must remain green.
-- Independence: the implementation paths and purge behavior do not overlap
-  the open R16–R23/R34 changes, roadmap-only #126 or release metadata #63.
+  1. Stable unique step IDs cover shortcuts, usage, tmux and remove-versus-purge.
+  2. All six steps are `.manual` with no action callbacks.
+  3. What's New resolves the flow by its stable ID.
+  4. English, Catalan, German, Spanish and Swedish contain every new key.
+  5. Full GitHub macOS build/test passes.
+  6. Cesc verifies light/dark spotlight placement and VoiceOver before merge.
+- Evidence: localization parser tests and 432-key parity passed locally;
+  `git diff --check`, static passive-flow checks and the diff secret scan
+  passed. At head `dc4f5f9`, macOS CI run `31470173354` passed localization
+  parity, XcodeGen, the native build and the full XCTest suite including
+  `PowerFeaturesFlowTests`. CodeQL run `31470173434` passed Actions and
+  JavaScript analysis; Swift analysis was skipped by repository PR workflow
+  configuration. The final evidence-only head must remain green. The Linux
+  host cannot provide light/dark or VoiceOver evidence.
+- Independence: PR #113 changes automatic environment activation; PR #115
+  changes tmux diagnostic file permissions; PR #63 changes release metadata.
+  R18 changes tour content, passive anchors, localizations and focused tests,
+  so its implementation can merge in any order with those PRs.
 
-### Independent Ready queue while R35 and older PRs await review
+### Independent Ready queue while R16–R18 await review
 
-- **R36 — Make Quick Action cancellation real:** retain the running `gh`
-  process and terminate it on Cancel so a user cannot see an idle UI while a
-  Close PR mutation continues in the background. Success: deterministic
-  process-double tests prove cancellation, completion and single terminal
-  state. Scope: `QuickActionRunner` and focused tests only; no new GitHub
-  operation or permission. Independent of every open implementation PR.
-- **R37 — Preserve setup-completion records through malformed entries:** decode
-  setup-completion IDs independently so one invalid persisted element cannot
-  erase all valid markers and unexpectedly rerun previously completed setup
-  scripts. Success: mixed valid/invalid fixtures preserve valid UUIDs while
-  invalid top-level data fails closed. Scope: `SetupStateStore` and focused
-  persistence tests; no script content, trust or launch change. Its storage
-  behavior is independent of PR #119's editor close-save path in the same view
-  file and can merge in either order.
-- **R38 — Keep dirty default checkouts on their current commit:** do not move a
-  local default-branch ref to `origin` when its checkout has staged, unstaged
-  or untracked work and cannot be safely reset. Success: temporary-remote tests
-  prove clean checkouts fast-forward while dirty checkout refs, index and files
-  remain unchanged. Scope: the later `updateDefaultBranch` block and focused
-  Git tests; it is behaviorally separate from R35's worktree-removal block and
-  can merge in either order.
+- **R19 — Contain close-tab editor saves:** resolve the unsaved-editor close
+  path through `WorkspaceFileAccess` before writing, matching ordinary saves
+  and rejecting absolute, traversal, same-prefix and escaping-symlink paths.
+  This file-write boundary is approval-gated; focused tests and full macOS CI
+  are required.
+- **R20 — Keep watcher-created state directories private:** create and repair
+  run-state and agent-state watcher directories as `0700` before attaching
+  filesystem observers. Scope is `PortDetector`, `AgentStateStore` and focused
+  tests; state schemas, writers and watcher recovery remain unchanged.
+- **R21 — Validate localized macOS privacy prompts in CI:** extend the
+  deterministic localization checker to verify `InfoPlist.strings` key parity
+  across all five locales. This is a read-only release-integrity guard; it must
+  not add usage descriptions, entitlements or privacy claims.
 
-R24 remains **blocked on R23 merging** because its normalized activity
-vocabulary must not be duplicated while PR #128 awaits review. R25 and R27–R29
-retain their documented dependencies. Issues #41, #43 and #54 remain open;
-#41 needs native profiling, #43 crosses the update-execution approval gate and
-#54 must not be claimed complete by the capability-only R23 slice.
-
-- **2026-08-16 09:30 CEST:** reconciled current main, `TODO.md`, all open
-  issues/PRs and their changed paths/checks, latest release and Projects v2
-  scope. Selected independent R35 / issue #132 from a fresh `origin/main`
-  worktree. No older PR comment, merge, release or Project mutation occurred.
+- **2026-08-11 09:30 CEST:** fetched current `origin/main`, reconciled code,
+  `TODO.md`, issues, every open PR path/check, release state and Projects v2
+  scope. Selected independent R18 / issue #116 from a fresh worktree. No older
+  PR was modified or commented on. Opened PR #117 for Cesc review; no merge or
+  release action was taken.
