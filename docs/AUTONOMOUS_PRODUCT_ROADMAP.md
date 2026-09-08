@@ -1,6 +1,6 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-08-30 against `origin/main` at
+Last reconciled: 2026-08-31 against `origin/main` at
 `fce9d0f61ee8b673ea1f09f27cb82e7d0245b5fb`.
 
 This is the product-direction record for autonomous development. GitHub issues
@@ -10,109 +10,105 @@ not an automatically trusted backlog.
 The **Current autonomous queue** is canonical. Dated **Live reconciliation**
 sections are retained as an audit trail and can contain superseded statuses.
 
-## Current autonomous queue — 2026-08-30 16:30 CEST
+## Current autonomous queue — 2026-08-31 09:30 CEST
 
 `origin/main` is `fce9d0f`; its latest macOS `build-and-test`, release
 automation and configured CodeQL checks are green. PRs #140 (R39), #142 (R40),
 #144 (R41), #146 (R42), #148 (R43), #150 (R44), #152 (R45), #154 (R46),
-#156 (R47) and #158 (R48) are green on required macOS CI and **awaiting Cesc
-review**. Older PRs #117 and #126 are green at their heads but conflict with
-current `main`; they also remain awaiting review. Release-please PR #63 remains
-approval-gated and must not be merged or published autonomously. The latest
-published release remains v0.2.1.
+#156 (R47), #158 (R48) and #160 (R49) are clean, green on required macOS CI
+and **awaiting Cesc review**. Older PRs #117 and #126 passed checks at their
+heads but now conflict with `main`; they remain awaiting Cesc's decision rather
+than being modified autonomously. Release-please PR #63 remains approval-gated
+and must not be merged or published autonomously. The latest published release
+remains v0.2.1.
 
 The open implementations' changed paths, behavior and dependencies were
-compared before selection. R49 changes `QuickActionRunner` and its focused test
-suite. The cancellation foundation for this path is already merged on `main`
-in R36 / PR #135, and no open PR changes either R49 implementation path. R49
-therefore merges independently of every pending implementation.
+compared before selection. R51 changes only `GitHubOperations` and a new
+focused test file. PR #160 changes the separate Quick Action mutation runner,
+and no other pending PR changes an R51 implementation path, so the product
+changes can merge in either order.
 
 GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the automation token
 has `repo` and `workflow` but lacks `read:project`. No Project data or status is
-inferred. Open issues before selection were #41, #43, #54, #116, #141, #143,
-#145, #147, #149, #151, #153, #155 and #157; issue #159 records this run.
+inferred. Issue #161 and PR #162 record this run.
 
-### R49 — Bound Quick Action mutation output
+### R51 — Bound read-only GitHub integration probes
 
-- Status: **Awaiting Cesc review in PR #160** for issue #159 on
-  `fix/bound-quick-action-output-r49`. This command-boundary change must not be
+- Status: **Awaiting Cesc review in PR #162** for issue #161 on
+  `fix/bound-github-read-probes-r51`. This command-boundary change must not be
   auto-merged.
-- User outcome: a noisy `gh pr close` invocation cannot block indefinitely on
-  a full pipe or retain unbounded combined stdout/stderr while Dockyard closes
-  a PR from Quick Actions.
-- Success signal: the process drains output continuously, retains at most 64
-  KiB for the log, and publishes exactly one success/failure state while
-  preserving cancellation.
-- macOS impact: Quick Action background process handling only; no UI,
+- User outcome: a stalled or noisy `git remote` / `gh repo view` / `gh pr list`
+  process cannot block repository metadata refresh indefinitely or retain
+  unbounded stdout.
+- Success signal: every existing read-only probe drains stdout continuously,
+  retains at most 256 KiB, and returns within a 10-second deadline plus bounded
+  termination cleanup.
+- macOS impact: background repository/PR metadata refresh only; no UI,
   accessibility, localization, shortcut or visual behavior changes.
 - Persistence/security impact: narrows an existing subprocess resource
-  boundary. The executable, arguments, working directory, authentication,
-  mutation, cancellation, persisted state, entitlements and release behavior
-  remain unchanged.
-- Scope: `QuickActionRunner`, focused process-double tests and roadmap evidence
-  only.
-- Dependencies: none. No open PR changes the implementation paths, and R49 is
-  merge-order independent from every pending implementation.
-- Risk: medium because this is a GitHub mutation command boundary. Stop at a
-  tested PR for Cesc; full GitHub macOS CI is mandatory.
+  boundary. Executables, arguments, working directories, authentication,
+  stderr policy, parsing, mutations, persisted state, entitlements and release
+  behavior remain unchanged.
+- Scope: `GitHubOperations`, focused process-double/collector tests and roadmap
+  evidence only.
+- Dependencies: none. The implementation paths are disjoint from every pending
+  implementation PR.
+- Risk: medium because this is a command-execution boundary. Stop at a tested
+  PR for Cesc; full GitHub macOS CI is mandatory.
 - Acceptance criteria:
-  1. Preserve the existing `gh pr close` executable, arguments and working
-     directory.
-  2. Drain combined stdout/stderr continuously and retain at most 64 KiB.
-  3. Preserve exit codes, cancellation and the single-terminal-state guard.
-  4. Focused XCTest covers chunked output, the cap, exit codes, cancellation
-     and duplicate completion.
-  5. Full GitHub macOS build/test passes.
+  1. Preserve every existing executable, argument list and working directory.
+  2. Drain stdout continuously and retain no more than 256 KiB.
+  3. Fail closed on timeout, overflow, launch failure, nonzero exit, incomplete
+     drain or invalid UTF-8.
+  4. Terminate a timed-out process, use bounded force-termination fallback and
+     return one synchronous terminal result.
+  5. Focused XCTest and the full GitHub macOS build/test pass.
 - Required evidence: resource/localization checker suites, XcodeGen/native
   build, focused and full XCTest, `git diff --check`, added-line secret scan and
   configured CodeQL.
-- Evidence so far: deterministic resource/localization checker suites and live
-  checks pass (10 resource declarations, 418 app keys and 15 privacy keys
-  across all five locales); `git diff --check` and the added-line secret scan
-  pass. The Linux host has no Swift, Xcode, XcodeGen, SwiftFormat, uv or prek,
-  so GitHub macOS CI is the mandatory native build/test evidence. At
-  implementation head `1140b97`, macOS CI run `33317475996` passed XcodeGen,
-  the native build and the full XCTest suite including `QuickActionTests`.
-  CodeQL run `33317475997` passed its configured Actions and JavaScript
-  analyses; Swift analysis was skipped by repository PR workflow
-  configuration. The final roadmap-only head must also remain green.
+- Evidence so far: deterministic resource/localization suites and live checks
+  pass (10 resource declarations, 418 app keys and 15 privacy keys across all
+  five locales); `git diff --check` and the added-line secret scan pass. At
+  implementation head `d6d917c`, macOS CI run `33369463017` passed
+  localization/resource checks, XcodeGen, the native build and the full XCTest
+  suite including `GitHubOperationsTests`. CodeQL run `33369462955` passed its
+  configured Actions and JavaScript analyses; Swift analysis was skipped by
+  repository PR workflow configuration. The final roadmap-only head must also
+  remain green.
 
-### Independent Ready queue while R39–R49 await review
+### Independent Ready queue while R39–R51 await review
 
 - **R50 — Bound linked-worktree `.git` indirection reads:** accept only a small
   regular UTF-8 `.git` file before resolving its existing `gitdir:` target, so
   watcher attachment cannot read unbounded metadata. `WorktreeHeadWatcher` and
   focused path fixtures only; no worktree mutation, watcher ownership or UI
   change, and mandatory macOS CI.
-- **R51 — Bound read-only GitHub metadata subprocesses:** continuously drain
-  and cap stdout from existing `gh pr` lookups and impose a deadline so sidebar
-  metadata refresh cannot hang on a noisy or stalled CLI. `GitHubOperations`
-  and focused process-double tests only; commands, authentication, mutations
-  and displayed states remain unchanged. Mandatory macOS CI and a tested PR
-  for Cesc.
 - **R52 — Bound Quick Action push output:** continuously drain and cap combined
   output from the existing `git push -u origin HEAD` path without changing its
   arguments, remote, authentication or cancellation contract. Scope is
   `GitOperations.pushCurrentBranch` plus focused process tests; independent of
   R49's `gh pr close` path and mandatory macOS CI.
-
-## Live reconciliation — 2026-08-30 16:30 CEST
-
-The current autonomous queue above supersedes every earlier dated queue. This
-run reconciled current `origin/main`, `TODO.md`, open issues, every open PR's
-paths and checks, latest release, main CI and Projects v2 scope before selecting
-R49 / issue #159 from a fresh worktree. No older PR comment, merge, release or
-Project mutation was performed.
+- **R53 — Bound script-configuration reads:** accept only contained, regular,
+  size-limited JSON configuration files before parsing setup/run/teardown
+  commands. `ScriptConfig` and focused fixtures only; no trust decision,
+  command execution, config precedence or UI change. This is a command-boundary
+  hardening item and must stop at a tested PR.
+- **R54 — Bound stack-manifest inspection:** cap reads of package and framework
+  manifests used by stack detection so one oversized project file cannot stall
+  overview refresh. `StackDetector` and focused fixtures only; detection order,
+  worktree state, commands and UI remain unchanged.
 
 ## Evidence and limits
 
 - Repository: `barnolacesc/dockyard`; native SwiftUI/AppKit macOS app using
   Ghostty, git worktrees, tmux, WKWebView, Monaco and XcodeGen.
-- Open implementation issues at reconciliation: #40, #41, #43, #54 and #69.
-- Open pull requests: implementation PR #70 and release-please #63. PR #63
-  must not be changed, merged or released without Cesc's explicit approval.
-- Latest published release: v0.2.1. `main` CI, Release and CodeQL were green at
-  `33b3fdb`; the most recent scheduled CodeQL run was also green.
+- Open implementation issues at reconciliation: #41, #43, #54 and the
+  autonomous execution issues linked from PRs #117 and #140–#162.
+- Open pull requests: implementation PRs #117 and #140–#162, roadmap-only
+  PR #126, and release-please #63. PR #63 must not be changed, merged or
+  released without Cesc's explicit approval.
+- Latest published release: v0.2.1. `main` CI, Release and CodeQL are green at
+  `fce9d0f`; the latest scheduled CodeQL run is also green.
 - GitHub Projects v2 was not reviewed. The current token has `repo` and
   `workflow`, but lacks `read:project`; the API returned
   `INSUFFICIENT_SCOPES`. Project status must not be inferred.
