@@ -97,6 +97,10 @@ struct DockyardConfigDraft: Equatable {
 }
 
 enum StackDetector {
+    /// Manifest inspection is best-effort. Keep project refresh responsive when
+    /// a repository contains a malformed or unexpectedly large metadata file.
+    static let maximumManifestBytes = 1_048_576
+
     /// Inspect `directory` and propose setup/run/teardown/expectedPort. A repo can
     /// match several stacks (e.g. Docker + Python); install steps are combined with `&&`.
     static func detect(at directory: String) -> DockyardConfigDraft {
@@ -298,19 +302,65 @@ private struct FileLookup {
 
     func exists(_ relativePath: String) -> Bool {
         guard let url = containedURL(relativePath) else { return false }
-        return FileManager.default.fileExists(atPath: url.path)
+        return isEligibleRegularFile(at: url)
     }
 
     func read(_ relativePath: String) -> String? {
-        guard let url = containedURL(relativePath) else { return nil }
-        return try? String(contentsOf: url, encoding: .utf8)
+        guard let url = containedURL(relativePath),
+              let data = readBoundedRegularFile(at: url)
+        else { return nil }
+        return String(data: data, encoding: .utf8)
     }
 
     func json(_ relativePath: String) -> [String: Any]? {
         guard let url = containedURL(relativePath),
-              let data = FileManager.default.contents(atPath: url.path)
+              let data = readBoundedRegularFile(at: url)
         else { return nil }
         return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+    }
+
+    private func isEligibleRegularFile(at url: URL) -> Bool {
+        let descriptor = open(url.path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK)
+        guard descriptor >= 0 else { return false }
+        defer { close(descriptor) }
+
+        var metadata = stat()
+        return fstat(descriptor, &metadata) == 0
+            && (metadata.st_mode & S_IFMT) == S_IFREG
+            && metadata.st_size >= 0
+            && metadata.st_size <= off_t(StackDetector.maximumManifestBytes)
+    }
+
+    private func readBoundedRegularFile(at url: URL) -> Data? {
+        let descriptor = open(url.path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK)
+        guard descriptor >= 0 else { return nil }
+        defer { close(descriptor) }
+
+        var metadata = stat()
+        guard fstat(descriptor, &metadata) == 0,
+              (metadata.st_mode & S_IFMT) == S_IFREG,
+              metadata.st_size >= 0,
+              metadata.st_size <= off_t(StackDetector.maximumManifestBytes)
+        else { return nil }
+
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: false)
+        var data = Data()
+        data.reserveCapacity(Int(metadata.st_size))
+
+        do {
+            while data.count <= StackDetector.maximumManifestBytes {
+                let remaining = StackDetector.maximumManifestBytes + 1 - data.count
+                let chunkSize = min(64 * 1024, remaining)
+                guard chunkSize > 0 else { break }
+                guard let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty else { break }
+                data.append(chunk)
+            }
+        } catch {
+            return nil
+        }
+
+        guard data.count <= StackDetector.maximumManifestBytes else { return nil }
+        return data
     }
 
     private func containedURL(_ relativePath: String) -> URL? {
