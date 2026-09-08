@@ -63,26 +63,22 @@ final class SetupRunner: ObservableObject {
 
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
-                self.outputBuffer.append(data)
-
-                if self.outputBuffer.count > Self.maxLogBytes {
-                    let overage = self.outputBuffer.count - Self.maxLogBytes
-                    self.outputBuffer.removeFirst(overage)
-                }
-
-                self.logTail = String(decoding: self.outputBuffer, as: UTF8.self)
+                self.appendOutput(data)
             }
         }
 
         process.terminationHandler = { [weak self] terminatedProcess in
             let exitCode = terminatedProcess.terminationStatus
-            
+            var remainingOutput = Data()
+
             if let outputPipe = terminatedProcess.standardOutput as? Pipe {
                 outputPipe.fileHandleForReading.readabilityHandler = nil
+                remainingOutput = outputPipe.fileHandleForReading.readDataToEndOfFile()
             }
 
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
+                self.appendOutput(remainingOutput)
                 if exitCode == 0 {
                     self.state = .succeeded
                     SetupStateStore.markCompleted(for: workstreamID)
@@ -100,6 +96,16 @@ final class SetupRunner: ObservableObject {
             logTail = error.localizedDescription
             self.process = nil
         }
+    }
+
+    private func appendOutput(_ data: Data) {
+        guard !data.isEmpty else { return }
+
+        outputBuffer.append(data)
+        if outputBuffer.count > Self.maxLogBytes {
+            outputBuffer.removeFirst(outputBuffer.count - Self.maxLogBytes)
+        }
+        logTail = String(decoding: outputBuffer, as: UTF8.self)
     }
 
     /// Terminates the running process if any. State becomes .idle.
