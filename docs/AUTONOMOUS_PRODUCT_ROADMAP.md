@@ -10,84 +10,71 @@ not an automatically trusted backlog.
 The **Current autonomous queue** is canonical. Dated **Live reconciliation**
 sections are retained as an audit trail and can contain superseded statuses.
 
-## Current autonomous queue — 2026-09-01 09:30 CEST
+## Current autonomous queue — 2026-09-01 16:30 CEST
 
 `origin/main` is `fce9d0f`; its latest macOS `build-and-test`, release
 automation and configured CodeQL checks are green, including the 2026-08-31
 scheduled CodeQL run. PRs #140 (R39), #142 (R40), #144 (R41), #146 (R42),
 #148 (R43), #150 (R44), #152 (R45), #154 (R46), #156 (R47), #158 (R48),
-#160 (R49), #162 (R51) and #164 (R50) are green on required checks and
-**awaiting Cesc review**. Older PRs #117 and #126 passed checks at their heads
-but conflict with `main`; they remain awaiting Cesc's decision rather than
-being modified autonomously. Release-please PR #63 remains approval-gated and
-must not be merged or published autonomously. The latest published release
-remains v0.2.1.
+#160 (R49), #162 (R51), #164 (R50) and #166 (R52) are green on required
+checks and **awaiting Cesc review**. Older PRs #117 and #126 passed checks at
+their heads but conflict with `main`; they remain awaiting Cesc's decision.
+Release-please PR #63 remains approval-gated and must not be merged or
+published autonomously. The latest published release remains v0.2.1.
 
 The open implementations' changed paths, behavior and dependencies were
-compared before selection. R52 changes only `GitOperations.pushCurrentBranch`
-and focused `GitOperationsTests`. PR #160 changes the separate `gh pr close`
-runner, and PR #162 changes read-only GitHub metadata probes; no pending PR
-changes the push path, so the product implementations can merge in either
-order.
+compared before selection. R53 changes only `ScriptConfig`, focused
+`ScriptConfigTests` and this roadmap. No pending implementation PR changes the
+script-configuration loader, so the product implementations can merge in
+either order.
 
 GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the automation token
 has `repo` and `workflow` but lacks `read:project`. No Project data or status is
-inferred. Issue #165 records this run.
+inferred. Issue #167 records this run.
 
-### R52 — Bound Quick Action push output
+### R53 — Bound script-configuration reads
 
-- Status: **Awaiting Cesc review in PR #166** on
-  `fix/bound-push-output-r52` for issue #165; required native implementation CI
-  is green. The command-boundary change must not be auto-merged.
-- User outcome: a noisy Git remote cannot block Dockyard's Push Quick Action by
-  filling the combined stdout/stderr pipe, and Dockyard retains only bounded
-  push output in the existing action log.
-- Success signal: the existing `git -C <worktree> push -u origin HEAD` process
-  is drained concurrently to EOF while at most 64 KiB is retained, with its
-  exit status published only after the reader completes.
-- macOS impact: Quick Action push execution only; no UI, accessibility,
+- Status: **Awaiting Cesc review in PR #168** on
+  `fix/bound-script-config-reads-r53` for issue #167. The command-boundary
+  change must not be auto-merged.
+- User outcome: repository-owned setup/run/teardown configuration cannot stall
+  Dockyard or trigger an unbounded allocation before JSON parsing.
+- Success signal: every supported config source resolves inside its project,
+  is a regular file and yields at most 256 KiB before parsing; oversized and
+  non-regular candidates return the existing load-error result without
+  executing content.
+- macOS impact: script-configuration loading only; no UI, accessibility,
   localization, shortcut or visual behavior changes.
-- Persistence/security impact: bounds one existing command-output path. The
-  executable, arguments, remote, authentication, cancellation contract,
-  worktree state, credentials, entitlements and release behavior are
-  unchanged.
-- Scope: `GitOperations.pushCurrentBranch`, a bounded output collector,
-  deterministic process doubles, a real pipe-drain fixture and roadmap
-  evidence only.
+- Persistence/security impact: narrows one existing command-configuration read
+  boundary. Config precedence and schemas, script fingerprints and approval,
+  setup/run/teardown execution, worktrees, entitlements and release behavior
+  are unchanged.
+- Scope: `ScriptConfig`, focused `ScriptConfigTests` and roadmap evidence only.
 - Dependencies: none; implementation paths are disjoint from every pending PR.
 - Risk: medium command-boundary hardening, reversible by reverting the feature
   commit. Full GitHub macOS CI is mandatory.
 - Acceptance criteria:
-  1. Combined stdout/stderr is drained while the push runs.
-  2. Retained output never exceeds 64 KiB when chunks cross the cap.
-  3. Completion waits for the reader and preserves zero/nonzero exit status.
-  4. Launch failure retains the existing failure result shape.
-  5. The executable resolution and arguments remain unchanged.
-  6. Focused XCTest and full GitHub macOS build/test pass.
+  1. A contained regular config at the 256 KiB boundary parses normally.
+  2. A config exceeding the cap returns a load error before JSON parsing.
+  3. A directory or other non-regular candidate returns a load error.
+  4. Existing contained-symlink, escaping-symlink, precedence and teardown
+     trust tests remain green.
+  5. Focused XCTest and full GitHub macOS build/test pass.
 - Required evidence: resource/localization checker suites, XcodeGen/native
   build, focused and full XCTest, `git diff --check`, added-line secret scan and
   configured CodeQL.
-- Evidence so far: resource/localization checker suites pass (10 resource
+- Evidence so far: localization parser/resource suites pass (10 resource
   declarations, 418 app keys and 15 privacy keys across all five locales), and
   `git diff --check` passes. The Linux runner has no Swift, Xcode, XcodeGen or
   SwiftFormat, so GitHub `macos-15` CI is mandatory native evidence. At head
-  `d7aed8b`, the native build and R52 tests passed, but the full suite failed in
-  unrelated existing test `SetupRunnerTests.test_captures_output_to_log_tail`;
-  its other setup-runner tests passed. The automation token received `403 Must
-  have admin rights` when requesting a failed-job rerun. At evidence-only head
-  `2f5af71`, macOS CI run `33483979883` passed resource/localization checks,
-  XcodeGen, the native build and all 488 XCTest cases. CodeQL run `33483979918`
-  passed its configured Actions and JavaScript analyses; Swift analysis was
-  skipped by repository PR workflow configuration. The final roadmap-only head
-  must also remain green.
+  `c87db8d`, macOS CI run `33521246667` passed resource/localization checks,
+  XcodeGen, the native build and the full XCTest suite including
+  `ScriptConfigTests`. CodeQL run `33521246882` passed its configured Actions
+  and JavaScript analyses; Swift analysis was skipped by the repository's PR
+  workflow configuration. The final roadmap-only head must also remain green.
 
-### Independent Ready queue while R39–R52 await review
+### Independent Ready queue while R39–R53 await review
 
-- **R53 — Bound script-configuration reads:** accept only contained, regular,
-  size-limited JSON configuration files before parsing setup/run/teardown
-  commands. `ScriptConfig` and focused fixtures only; no trust decision,
-  command execution, config precedence or UI change. This command-boundary
-  hardening must stop at a tested PR.
 - **R54 — Bound stack-manifest inspection:** cap reads of package and framework
   manifests used by stack detection so one oversized project file cannot stall
   overview refresh. `StackDetector` and focused fixtures only; detection order,
@@ -96,6 +83,10 @@ inferred. Issue #165 records this run.
   size-limited UTF-8 `.dockyard-state/description` files before updating the
   cached task label. `AppEnvironment` and focused fixtures only; no description
   writer, branch watcher ownership, persisted schema or UI string change.
+- **R56 — Bound project-document previews:** accept only contained, regular,
+  size-limited README, CLAUDE and AGENTS documents before Markdown rendering.
+  `DocFile` and focused fixtures only; editor reads, document contents,
+  navigation, localization and UI layout remain unchanged.
 
 ## Evidence and limits
 
@@ -103,10 +94,11 @@ inferred. Issue #165 records this run.
   Ghostty, git worktrees, tmux, WKWebView, Monaco and XcodeGen.
 - Open product issues not paired with the current autonomous review queue are
   #41, #43, #54 and #116. Issues #141, #143, #145, #147, #149, #151, #153,
-  #155, #157, #159, #161, #163 and #165 are execution records for R40–R52.
-- Open pull requests: implementation PRs #117 and #140–#164, roadmap-only PR
-  #126, and release-please #63. PR #63 must not be changed, merged or released
-  without Cesc's explicit approval.
+  #155, #157, #159, #161, #163, #165 and #167 are execution records for
+  R40–R53.
+- Open pull requests at selection: implementation PRs #117 and #140–#166,
+  roadmap-only PR #126, and release-please #63. PR #63 must not be changed,
+  merged or released without Cesc's explicit approval.
 - Latest published release: v0.2.1. `main` CI, Release and CodeQL are green at
   `fce9d0f`; the 2026-08-31 scheduled CodeQL run is also green.
 - GitHub Projects v2 was not reviewed. The current token has `repo` and
