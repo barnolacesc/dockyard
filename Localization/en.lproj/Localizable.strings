@@ -555,3 +555,15 @@
 "%d unread" = "%d unread";
 "Agent Attention" = "Agent Attention";
 "A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams.";
+"Project Color" = "Project Color";
+"No Color" = "No Color";
+"Red" = "Red";
+"Orange" = "Orange";
+"Yellow" = "Yellow";
+"Green" = "Green";
+"Mint" = "Mint";
+"Blue" = "Blue";
+"Purple" = "Purple";
+"Pink" = "Pink";
+"Project Colors" = "Project Colors";
+"Assign colors from a project's shortcut menu to make busy sidebars easier to scan." = "Assign colors from a project's shortcut menu to make busy sidebars easier to scan.";

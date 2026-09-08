@@ -555,3 +555,15 @@
 "%d unread" = "%d sense llegir";
 "Agent Attention" = "Atenció dels agents";
 "A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "Una safata focalitzada recull les actualitzacions dels agents de codi en espera, completades i inactives de tots els fluxos de treball.";
+"Project Color" = "Color del projecte";
+"No Color" = "Sense color";
+"Red" = "Vermell";
+"Orange" = "Taronja";
+"Yellow" = "Groc";
+"Green" = "Verd";
+"Mint" = "Menta";
+"Blue" = "Blau";
+"Purple" = "Lila";
+"Pink" = "Rosa";
+"Project Colors" = "Colors dels projectes";
+"Assign colors from a project's shortcut menu to make busy sidebars easier to scan." = "Assigna colors des del menú contextual d'un projecte per explorar més fàcilment les barres laterals plenes.";

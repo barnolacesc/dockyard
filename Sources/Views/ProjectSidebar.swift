@@ -260,6 +260,11 @@ struct ProjectSidebar: View {
                 onAdd: { logger.warning("[Dockyard] onAdd button tapped for project \(project.name, privacy: .public)"); addWorkstream(for: project.id) },
                 onAddWithPermissions: { addWorkstream(for: project.id, bypassPermissions: true) },
                 onAddWithoutPermissions: { addWorkstream(for: project.id, bypassPermissions: false) },
+                onSetColor: { color in
+                    guard let index = cachedProjectIndex[project.id], projects.indices.contains(index) else { return }
+                    projects[index].color = color
+                    onProjectsChanged()
+                },
                 onDelete: { projectToDelete = project.id }
             )
             .tag(SidebarSelection.project(project.id))
@@ -1031,6 +1036,7 @@ private struct ProjectHeaderRow: View {
     let onAdd: () -> Void
     let onAddWithPermissions: () -> Void
     let onAddWithoutPermissions: () -> Void
+    let onSetColor: (ProjectColor?) -> Void
     let onDelete: () -> Void
 
     @State private var isHovering = false
@@ -1058,6 +1064,16 @@ private struct ProjectHeaderRow: View {
                 }
             }
             .frame(width: 22)
+
+            Circle()
+                .fill(project.color?.swiftUIColor ?? Color.clear)
+                .frame(width: 7, height: 7)
+                .overlay {
+                    if project.color != nil {
+                        Circle().stroke(Color.primary.opacity(0.14), lineWidth: 0.5)
+                    }
+                }
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 4) {
@@ -1133,6 +1149,27 @@ private struct ProjectHeaderRow: View {
                 copyTextToPasteboard(project.directory)
             } label: {
                 Label("Copy project path", systemImage: "doc.on.doc")
+            }
+            Divider()
+            Menu("Project Color") {
+                Button {
+                    onSetColor(nil)
+                } label: {
+                    Label("No Color", systemImage: project.color == nil ? "checkmark.circle.fill" : "circle")
+                }
+                Divider()
+                ForEach(ProjectColor.allCases) { color in
+                    Button {
+                        onSetColor(color)
+                    } label: {
+                        Label {
+                            Text(color.localizedName)
+                        } icon: {
+                            Image(systemName: project.color == color ? "checkmark.circle.fill" : "circle.fill")
+                                .foregroundStyle(color.swiftUIColor)
+                        }
+                    }
+                }
             }
         }
     }

@@ -9,6 +9,11 @@ enum WhatsNewCatalog {
     static let releases: [WhatsNewRelease] = [
         WhatsNewRelease(version: "0.3.0", entries: [
             WhatsNewEntry(
+                symbol: "paintpalette.fill",
+                titleKey: "Project Colors",
+                bodyKey: "Assign colors from a project's shortcut menu to make busy sidebars easier to scan."
+            ),
+            WhatsNewEntry(
                 symbol: "bell.badge.fill",
                 titleKey: "Agent Attention",
                 bodyKey: "A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams."
