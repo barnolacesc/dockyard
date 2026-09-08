@@ -68,6 +68,12 @@ non-duplicative agent-status work respectively.
   tests, `git diff --check` and the added-line secret scan pass. The Linux
   automation host has no Swift, Xcode, XcodeGen, prek or SwiftFormat
   executable, so GitHub macOS CI is the mandatory native build/test evidence.
+  At implementation-and-roadmap head `f62a46e`, macOS CI run `34240052035`
+  passed localization checks, XcodeGen, the native build, bundled-helper
+  verification and the full XCTest suite including `LogStoreTests`. CodeQL run
+  `34240052033` passed its configured Actions and JavaScript analyses; Swift
+  analysis was skipped by repository workflow configuration. The final
+  evidence-only head must also remain green.
 
 ### Independent Ready queue while R64 and older PRs await review
 
