@@ -10,78 +10,75 @@ not an automatically trusted backlog.
 The **Current autonomous queue** is canonical. Dated **Live reconciliation**
 sections are retained as an audit trail and can contain superseded statuses.
 
-## Current autonomous queue — 2026-08-30 09:30 CEST
+## Current autonomous queue — 2026-08-30 16:30 CEST
 
 `origin/main` is `fce9d0f`; its latest macOS `build-and-test`, release
 automation and configured CodeQL checks are green. PRs #140 (R39), #142 (R40),
-#144 (R41), #146 (R42), #148 (R43), #150 (R44), #152 (R45), #154 (R46) and
-#156 (R47) are clean, green on macOS CI and **awaiting Cesc review**. Older PRs
-#117 and #126 are green at their heads but conflict with current `main`; they
-remain awaiting review. Release-please PR #63 remains approval-gated and must
-not be merged or published autonomously. The latest published release is
-v0.2.1.
+#144 (R41), #146 (R42), #148 (R43), #150 (R44), #152 (R45), #154 (R46),
+#156 (R47) and #158 (R48) are green on required macOS CI and **awaiting Cesc
+review**. Older PRs #117 and #126 are green at their heads but conflict with
+current `main`; they also remain awaiting review. Release-please PR #63 remains
+approval-gated and must not be merged or published autonomously. The latest
+published release remains v0.2.1.
 
-The open implementations' changed paths, behaviors and dependencies were
-compared before selection. R48 changes `ClaudeUsageProbe.swift` plus a new
-focused test file. PR #152 changes the separate local-transcript parser in
-`ClaudeUsage.swift`; no open PR changes the probe subprocess path, so R48 can
-merge in either order with every pending implementation.
+The open implementations' changed paths, behavior and dependencies were
+compared before selection. R49 changes `QuickActionRunner` and its focused test
+suite. The cancellation foundation for this path is already merged on `main`
+in R36 / PR #135, and no open PR changes either R49 implementation path. R49
+therefore merges independently of every pending implementation.
 
 GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the automation token
 has `repo` and `workflow` but lacks `read:project`. No Project data or status is
-inferred. Open product issues before selection were #41, #43, #54, #116, #141,
-#143, #145, #147, #149, #151, #153 and #155; issue #157 records this run.
+inferred. Open issues before selection were #41, #43, #54, #116, #141, #143,
+#145, #147, #149, #151, #153, #155 and #157; issue #159 records this run.
 
-### R48 — Bound the Claude usage probe subprocess
+### R49 — Bound Quick Action mutation output
 
-- Status: **Awaiting Cesc review in PR #158** for issue #157 on
-  `fix/bound-claude-usage-probe-r48`; the PR must not be auto-merged.
-- User outcome: a stalled or noisy `claude -p /usage` probe cannot hang a
-  background usage refresh indefinitely or retain unbounded stdout.
-- Success signal: successful bounded JSON still parses, stdout is continuously
-  drained while at most 64 KiB is retained, and an eight-second deadline
-  terminates a stalled probe with one terminal outcome.
-- macOS impact: background Claude usage refresh only; no UI, accessibility,
-  localization, shortcut or visual behavior changes.
+- Status: **Awaiting Cesc review in PR #160** for issue #159 on
+  `fix/bound-quick-action-output-r49`. This command-boundary change must not be
+  auto-merged.
+- User outcome: a noisy `gh pr close` invocation cannot block indefinitely on
+  a full pipe or retain unbounded combined stdout/stderr while Dockyard closes
+  a PR from Quick Actions.
+- Success signal: the process drains output continuously, retains at most 64
+  KiB for the log, and publishes exactly one success/failure state while
+  preserving cancellation.
+- macOS impact: Quick Action background process handling only; no UI,
+  accessibility, localization, shortcut or visual behavior changes.
 - Persistence/security impact: narrows an existing subprocess resource
-  boundary. The probe command, login shell, home working directory and parser
-  remain unchanged; no worktree, tmux, script approval, bypass, entitlement,
-  persisted schema, privacy claim or release behavior changes.
-- Scope: `ClaudeUsageProbe`, a focused process abstraction/collector and one
-  new XCTest file only.
-- Dependencies: none. PR #152 hardens local transcript files in a different
-  source file and test suite; every open implementation is merge-order
-  independent from this probe.
-- Risk: medium because subprocess lifetime handling is a command boundary.
-  Stop at a tested PR for Cesc; full GitHub macOS CI is mandatory.
+  boundary. The executable, arguments, working directory, authentication,
+  mutation, cancellation, persisted state, entitlements and release behavior
+  remain unchanged.
+- Scope: `QuickActionRunner`, focused process-double tests and roadmap evidence
+  only.
+- Dependencies: none. No open PR changes the implementation paths, and R49 is
+  merge-order independent from every pending implementation.
+- Risk: medium because this is a GitHub mutation command boundary. Stop at a
+  tested PR for Cesc; full GitHub macOS CI is mandatory.
 - Acceptance criteria:
-  1. A successful in-budget probe preserves the existing command and parses
-     the existing JSON envelope.
-  2. Stdout is drained continuously and retained bytes never exceed 64 KiB.
-  3. A probe exceeding eight seconds is terminated and returns no report.
-  4. Launch failure and nonzero exit return no report.
-  5. Completion and timeout can resolve the operation only once.
-  6. Focused XCTest and the full GitHub macOS build/test pass.
+  1. Preserve the existing `gh pr close` executable, arguments and working
+     directory.
+  2. Drain combined stdout/stderr continuously and retain at most 64 KiB.
+  3. Preserve exit codes, cancellation and the single-terminal-state guard.
+  4. Focused XCTest covers chunked output, the cap, exit codes, cancellation
+     and duplicate completion.
+  5. Full GitHub macOS build/test passes.
 - Required evidence: resource/localization checker suites, XcodeGen/native
   build, focused and full XCTest, `git diff --check`, added-line secret scan and
   configured CodeQL.
-- Evidence: deterministic resource/localization checker suites and live checks
-  pass (10 resource declarations, 418 app keys and 15 privacy keys across all
-  five locales); `git diff --check` and the added-line secret scan pass. The
-  Linux host has no Swift, Xcode, XcodeGen, SwiftFormat, uv or prek. At
-  implementation head `5f77de9`, macOS CI run `33299803122` passed XcodeGen,
-  the native build and the full XCTest suite including
-  `ClaudeUsageProbeProcessTests`. CodeQL run `33299803147` passed its configured
-  Actions and JavaScript analyses; Swift analysis was skipped by repository
-  workflow configuration. The final roadmap-only head must also remain green.
+- Evidence so far: deterministic resource/localization checker suites and live
+  checks pass (10 resource declarations, 418 app keys and 15 privacy keys
+  across all five locales); `git diff --check` and the added-line secret scan
+  pass. The Linux host has no Swift, Xcode, XcodeGen, SwiftFormat, uv or prek,
+  so GitHub macOS CI is the mandatory native build/test evidence. At
+  implementation head `1140b97`, macOS CI run `33317475996` passed XcodeGen,
+  the native build and the full XCTest suite including `QuickActionTests`.
+  CodeQL run `33317475997` passed its configured Actions and JavaScript
+  analyses; Swift analysis was skipped by repository PR workflow
+  configuration. The final roadmap-only head must also remain green.
 
-### Independent Ready queue while R39–R48 await review
+### Independent Ready queue while R39–R49 await review
 
-- **R49 — Bound Quick Action mutation output:** cap and continuously drain the
-  existing `gh pr close` output without changing its arguments, permissions or
-  cancellation semantics. `QuickActionRunner` and focused process-double tests
-  only; medium command-boundary risk, mandatory macOS CI and a tested PR for
-  Cesc.
 - **R50 — Bound linked-worktree `.git` indirection reads:** accept only a small
   regular UTF-8 `.git` file before resolving its existing `gitdir:` target, so
   watcher attachment cannot read unbounded metadata. `WorktreeHeadWatcher` and
@@ -93,13 +90,18 @@ inferred. Open product issues before selection were #41, #43, #54, #116, #141,
   and focused process-double tests only; commands, authentication, mutations
   and displayed states remain unchanged. Mandatory macOS CI and a tested PR
   for Cesc.
+- **R52 — Bound Quick Action push output:** continuously drain and cap combined
+  output from the existing `git push -u origin HEAD` path without changing its
+  arguments, remote, authentication or cancellation contract. Scope is
+  `GitOperations.pushCurrentBranch` plus focused process tests; independent of
+  R49's `gh pr close` path and mandatory macOS CI.
 
-## Live reconciliation — 2026-08-30 09:30 CEST
+## Live reconciliation — 2026-08-30 16:30 CEST
 
 The current autonomous queue above supersedes every earlier dated queue. This
 run reconciled current `origin/main`, `TODO.md`, open issues, every open PR's
 paths and checks, latest release, main CI and Projects v2 scope before selecting
-R48 / issue #157 from a fresh worktree. No older PR comment, merge, release or
+R49 / issue #159 from a fresh worktree. No older PR comment, merge, release or
 Project mutation was performed.
 
 ## Evidence and limits

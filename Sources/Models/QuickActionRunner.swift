@@ -89,6 +89,27 @@ struct QuickActionProcessResult: Sendable {
     let exitCode: Int32
 }
 
+private final class QuickActionOutputCollector: @unchecked Sendable {
+    private let lock = NSLock()
+    private let maximumOutputBytes: Int
+    private var output = Data()
+
+    init(maximumOutputBytes: Int) {
+        self.maximumOutputBytes = max(0, maximumOutputBytes)
+    }
+
+    func ingest(_ chunk: Data) {
+        lock.withLock {
+            guard output.count < maximumOutputBytes else { return }
+            output.append(chunk.prefix(maximumOutputBytes - output.count))
+        }
+    }
+
+    var string: String {
+        lock.withLock { String(decoding: output, as: UTF8.self) }
+    }
+}
+
 protocol QuickActionProcess: AnyObject, Sendable {
     func terminate()
 }
@@ -97,25 +118,28 @@ typealias QuickActionProcessFactory = @MainActor (
     _ executableURL: URL,
     _ arguments: [String],
     _ workingDirectoryURL: URL,
-    _ completion: @escaping @Sendable (QuickActionProcessResult) -> Void
+    _ outputHandler: @escaping @Sendable (Data) -> Void,
+    _ completion: @escaping @Sendable (Int32) -> Void
 ) throws -> any QuickActionProcess
 
 private final class FoundationQuickActionProcess: QuickActionProcess, @unchecked Sendable {
     private let process: Process
     private let pipe: Pipe
-    private let completion: @Sendable (QuickActionProcessResult) -> Void
+    private let readerFinished = DispatchSemaphore(value: 0)
+    private let outputHandler: @Sendable (Data) -> Void
 
     init(
         executableURL: URL,
         arguments: [String],
         workingDirectoryURL: URL,
-        completion: @escaping @Sendable (QuickActionProcessResult) -> Void
+        outputHandler: @escaping @Sendable (Data) -> Void,
+        completion: @escaping @Sendable (Int32) -> Void
     ) throws {
         let process = Process()
         let pipe = Pipe()
         self.process = process
         self.pipe = pipe
-        self.completion = completion
+        self.outputHandler = outputHandler
 
         process.executableURL = executableURL
         process.arguments = arguments
@@ -124,13 +148,8 @@ private final class FoundationQuickActionProcess: QuickActionProcess, @unchecked
         process.standardError = pipe
         process.terminationHandler = { [weak self] terminatedProcess in
             guard let self else { return }
-            let data = self.pipe.fileHandleForReading.readDataToEndOfFile()
-            self.completion(
-                QuickActionProcessResult(
-                    output: String(data: data, encoding: .utf8) ?? "",
-                    exitCode: terminatedProcess.terminationStatus
-                )
-            )
+            self.readerFinished.wait()
+            completion(terminatedProcess.terminationStatus)
         }
 
         do {
@@ -138,6 +157,18 @@ private final class FoundationQuickActionProcess: QuickActionProcess, @unchecked
         } catch {
             process.terminationHandler = nil
             throw error
+        }
+
+        startOutputReader()
+    }
+
+    private func startOutputReader() {
+        DispatchQueue.global(qos: .utility).async { [self] in
+            defer { readerFinished.signal() }
+            let handle = pipe.fileHandleForReading
+            while let chunk = try? handle.read(upToCount: 16 * 1024), !chunk.isEmpty {
+                outputHandler(chunk)
+            }
         }
     }
 
@@ -150,22 +181,30 @@ private final class FoundationQuickActionProcess: QuickActionProcess, @unchecked
 
 @MainActor
 final class QuickActionRunner: ObservableObject {
+    static let maximumOutputBytes = 64 * 1024
+
     @Published var state: QuickActionState = .idle
     @Published var log: [QuickActionLogEntry] = []
     var onSuccess: ((QuickAction) -> Void)?
     private let processFactory: QuickActionProcessFactory
+    private let maximumOutputBytes: Int
     private var runningProcess: (any QuickActionProcess)?
     private var activeOperationID: UUID?
     private var dismissWork: DispatchWorkItem?
 
-    init(processFactory: @escaping QuickActionProcessFactory = { executableURL, arguments, workingDirectoryURL, completion in
-        try FoundationQuickActionProcess(
-            executableURL: executableURL,
-            arguments: arguments,
-            workingDirectoryURL: workingDirectoryURL,
-            completion: completion
-        )
-    }) {
+    init(
+        maximumOutputBytes: Int = QuickActionRunner.maximumOutputBytes,
+        processFactory: @escaping QuickActionProcessFactory = { executableURL, arguments, workingDirectoryURL, outputHandler, completion in
+            try FoundationQuickActionProcess(
+                executableURL: executableURL,
+                arguments: arguments,
+                workingDirectoryURL: workingDirectoryURL,
+                outputHandler: outputHandler,
+                completion: completion
+            )
+        }
+    ) {
+        self.maximumOutputBytes = max(0, maximumOutputBytes)
         self.processFactory = processFactory
     }
 
@@ -225,15 +264,23 @@ final class QuickActionRunner: ObservableObject {
 
         let operationID = UUID()
         activeOperationID = operationID
+        let outputCollector = QuickActionOutputCollector(maximumOutputBytes: maximumOutputBytes)
 
         do {
             runningProcess = try processFactory(
                 URL(fileURLWithPath: ghPath),
                 ["pr", "close", branchName, "--comment", "Closed from Dockyard"],
-                URL(fileURLWithPath: workingDirectory)
-            ) { [weak self] result in
+                URL(fileURLWithPath: workingDirectory),
+                { outputCollector.ingest($0) }
+            ) { [weak self] exitCode in
                 Task { @MainActor [weak self] in
-                    self?.finishClosePR(operationID: operationID, result: result)
+                    self?.finishClosePR(
+                        operationID: operationID,
+                        result: QuickActionProcessResult(
+                            output: outputCollector.string,
+                            exitCode: exitCode
+                        )
+                    )
                 }
             }
         } catch {
