@@ -406,7 +406,6 @@ struct ProjectSidebar: View {
                     onToggle: toggleRecent
                 )
                 .padding(.horizontal, 8)
-                .padding(.top, 4)
                 if showRecent {
                     ForEach(recents, id: \.workstream.id) { entry in
                         RecentRow(
@@ -415,11 +414,9 @@ struct ProjectSidebar: View {
                             onSelect: { selection = .workstream(entry.workstream.id) }
                         )
                         .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
                     }
                 }
             }
-            .padding(.bottom, 2)
         }
     }
 
@@ -694,8 +691,7 @@ struct ProjectSidebar: View {
                     Spacer()
                 }
                 .padding(.horizontal, 8)
-                .padding(.top, 6)
-                .padding(.bottom, 2)
+                .padding(.top, 2)
 
                 SidebarAttentionRow(
                     unreadCount: agentActivityStore.unreadCount,
@@ -703,7 +699,6 @@ struct ProjectSidebar: View {
                     action: { selection = .attention }
                 )
                 .padding(.horizontal, 8)
-                .padding(.bottom, 4)
 
                 ScrollViewReader { scrollProxy in
                     List(selection: $selection) {
@@ -1110,7 +1105,6 @@ private struct ProjectHeaderRow: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(minHeight: 40)
-        .padding(.vertical, 1)
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
         .hoverHighlight(radius: DesignRadius.md)
@@ -1420,7 +1414,6 @@ private struct WorkstreamRow: View {
                 }
             }
             .padding(.leading, isSelected ? 6 : 0)
-            .padding(.vertical, isSelected ? 4 : 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
