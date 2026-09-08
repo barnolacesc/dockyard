@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-08-26 against `origin/main` at
-`fce9d0f61ee8b673ea1f09f27cb82e7d0245b5fb`.
+Last reconciled: 2026-09-04 against `origin/main` at
+`08ec8b33781b5ea406a1dcf5eeaa071954c1ebd6`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -11,7 +11,96 @@ The first **Current autonomous queue** is canonical. Dated **Live
 reconciliation** and superseded queue sections are retained as an audit trail
 and can contain stale statuses.
 
-## Current autonomous queue — 2026-08-26 18:37 CEST
+## Current autonomous queue — 2026-09-04 16:30 CEST
+
+`origin/main` is `08ec8b3`; its latest macOS CI, CodeQL and Release workflows
+are green. PRs #170, #172, #174 and #176 are clean, green at their heads and
+**awaiting Cesc review**. PRs #117, #126, #140, #146, #148, #152, #154, #156,
+#158, #160, #162, #164, #166 and #168 are also green at their heads but now
+conflict with current `main`; they remain awaiting review and are not modified
+or stacked on here. Release-please PR #63 remains approval-gated and must not
+be merged or published autonomously. The latest published release is v0.2.1.
+
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
+`repo` and `workflow` but lacks `read:project`. No Project item or status is
+inferred. Current open issues were reconciled with `TODO.md`, code and every
+open PR path before issue #177 was created for this run. Product issues #41,
+#43 and #54 still require native profiling, approval-gated update work, and
+non-duplicative agent-status work respectively.
+
+### R58 — Bound cached tmux configuration reads
+
+- Status: **Awaiting Cesc review in PR #178** on
+  `fix/bound-tmux-config-read-r58-20260904` for issue #177. Native
+  implementation CI is green; the PR must remain open and must not be
+  auto-merged.
+- User outcome: an oversized or non-regular cached `tmux.conf` cannot make
+  Dockyard allocate unbounded memory or block while preparing a persistent
+  terminal session.
+- Success signal: only a regular UTF-8 cache file at or below 64 KiB can use
+  the existing no-rewrite fast path; oversized, symbolic-link, directory, FIFO,
+  invalid UTF-8 and concurrently growing candidates are treated as stale.
+- macOS impact: tmux configuration preparation only; no UI, accessibility,
+  localization, shortcut or visual behavior changes.
+- Persistence/security impact: narrows one read-only cache boundary. Generated
+  tmux configuration, commands, session naming, restart persistence,
+  diagnostic permissions, worktree cleanup, entitlements and release behavior
+  are unchanged.
+- Scope: `TmuxSession`, focused `TmuxSessionTests` and roadmap evidence.
+- Dependencies: none. No open PR owns the implementation or test paths, so the
+  code changes can merge in either order with every pending implementation PR.
+- Risk: low, reversible cache-read hardening. Native macOS CI is mandatory.
+- Acceptance criteria:
+  1. A regular UTF-8 candidate at the 64 KiB limit is read successfully.
+  2. An oversized, growing, symbolic-link, directory, FIFO or invalid UTF-8
+     candidate is rejected without blocking or retaining more than 64 KiB.
+  3. An exact generated-config match preserves the existing no-rewrite path;
+     stale regular content is replaced through the existing atomic write path.
+  4. Existing tmux command, diagnostic permission and shell-parsing tests stay
+     green.
+  5. Focused XCTest and the full GitHub macOS build/test pass.
+- Required evidence: focused `TmuxSessionTests`, localization resource/key
+  checks, XcodeGen/native build, full XCTest, `git diff --check`, added-line
+  secret scan and configured CodeQL.
+- Evidence so far: localization resource/key tests and checkers pass with 10
+  declared resources, 418 app keys and 15 privacy keys across all five locales;
+  bundled-helper, appcast and release-seeding script tests pass;
+  `git diff --check` and the added-line secret scan pass. The Linux host has no
+  Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is
+  mandatory native build/test evidence. At implementation/PR-link head
+  `4aa4817`, macOS CI run `33885374623` passed localization checks, XcodeGen,
+  the native build, bundled-helper verification and the full XCTest suite
+  including `TmuxSessionTests`. CodeQL run `33885374595` passed its configured
+  Actions and JavaScript analyses; Swift analysis was skipped by the
+  repository's PR workflow. The final roadmap-evidence head must also remain
+  green.
+
+### Independent Ready queue while R58 and older PRs await review
+
+- **R59 — Bound Monaco bundle-resource responses.** User outcome: a malformed
+  or unexpectedly large bundled editor resource cannot make the custom
+  WKWebView scheme allocate unbounded memory. Success: regular resources within
+  a fixed cap retain current MIME/response behavior while oversized and
+  non-regular candidates fail through the existing scheme error path. Scope:
+  `MonacoResourceSchemeHandler` and focused tests; no source-file saves,
+  JavaScript policy, entitlement, localization or bundle-generation change.
+  No open PR owns these paths; full macOS CI is required.
+- **R60 — Cap detailed launch-log growth.** User outcome: opt-in per-workstream
+  launch diagnostics cannot grow a cache file without bound over repeated
+  agent/run/setup launches. Success: deterministic tests prove a byte ceiling
+  while preserving complete recent JSONL entries and private `0600`
+  permissions. Scope: `LaunchLogger` and focused tests; no logging default,
+  command, environment capture, UI, worktree, entitlement or release change.
+  This retention change must stop at a tested PR for Cesc review.
+- **R61 — Bound editor source-file reads.** User outcome: selecting an
+  unexpectedly large or non-regular source file cannot block the editor or
+  allocate unbounded memory. Success: bounded regular UTF-8 fixtures open while
+  oversized, symbolic-link and non-regular candidates reach the existing error
+  state. Scope: editor read helper and focused tests; no save path, Monaco
+  bundle, worktree containment, UI string, entitlement or command change. No
+  open PR owns these paths; full macOS CI is required.
+
+## Superseded autonomous queue — 2026-08-26 18:37 CEST
 
 `origin/main` is `fce9d0f`; its latest macOS CI, CodeQL and Release workflows
 are green. PRs #140 (R39) and #142 (R40) are green and **awaiting Cesc review**.
