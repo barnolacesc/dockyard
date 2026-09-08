@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.3](https://github.com/barnolacesc/dockyard/compare/v0.2.2...v0.2.3) (2026-09-08)
+
+
+### Features
+
+* **ui:** add agent attention workspace ([dfb1ef0](https://github.com/barnolacesc/dockyard/commit/dfb1ef0c716ad045cf4e515ceaf041ba3065a24a))
+* **ui:** add agent attention workspace ([bc3f0cd](https://github.com/barnolacesc/dockyard/commit/bc3f0cdae0368180af39928ee2f6531caec6c4d3))
+
+
+### Bug Fixes
+
+* **ui:** tighten sidebar row spacing ([8691129](https://github.com/barnolacesc/dockyard/commit/869112909da629f1291b68b4c3afac82af716896))
+* **ui:** tighten sidebar row spacing ([ccec6d7](https://github.com/barnolacesc/dockyard/commit/ccec6d7fdc75d8532efc796122095dc5c39843c0))
+
 ## [0.2.2](https://github.com/barnolacesc/dockyard/compare/v0.2.1...v0.2.2) (2026-09-08)
 
 
