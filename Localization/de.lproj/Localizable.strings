@@ -526,3 +526,15 @@
 "%d unread" = "%d ungelesen";
 "Agent Attention" = "Agent-Aufmerksamkeit";
 "A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "Ein fokussierter Eingang sammelt wartende, abgeschlossene und inaktive Coding-Agent-Updates aus allen Workstreams.";
+"Project Color" = "Projektfarbe";
+"No Color" = "Keine Farbe";
+"Red" = "Rot";
+"Orange" = "Orange";
+"Yellow" = "Gelb";
+"Green" = "Grün";
+"Mint" = "Mint";
+"Blue" = "Blau";
+"Purple" = "Lila";
+"Pink" = "Rosa";
+"Project Colors" = "Projektfarben";
+"Assign colors from a project's shortcut menu to make busy sidebars easier to scan." = "Weisen Sie Farben über das Kontextmenü eines Projekts zu, damit umfangreiche Seitenleisten leichter zu überblicken sind.";

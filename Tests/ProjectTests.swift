@@ -17,6 +17,27 @@ final class ProjectTests: XCTestCase {
         let project = Project(name: "myapp", directory: "/Users/test/myapp")
         XCTAssertEqual(project.name, "myapp")
         XCTAssertEqual(project.directory, "/Users/test/myapp")
+        XCTAssertNil(project.color)
+    }
+
+    func testProjectColorRoundTrips() throws {
+        let project = Project(name: "myapp", directory: "/Users/test/myapp", color: .purple)
+        let data = try JSONEncoder().encode(project)
+        let decoded = try JSONDecoder().decode(Project.self, from: data)
+
+        XCTAssertEqual(decoded.color, .purple)
+    }
+
+    func testProjectWithoutPersistedColorStillDecodes() throws {
+        let id = UUID()
+        let json = """
+        {"id":"\(id.uuidString)","name":"myapp","directory":"/tmp/myapp","workstreams":[],"lastAccessedAt":0}
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        let decoded = try decoder.decode(Project.self, from: Data(json.utf8))
+
+        XCTAssertNil(decoded.color)
     }
 
     func testUniqueIDs() {
@@ -196,8 +217,8 @@ final class ProjectTests: XCTestCase {
             ],
             at: 1
         )
-        testDefaults.set(
-            try JSONSerialization.data(withJSONObject: records),
+        try testDefaults.set(
+            JSONSerialization.data(withJSONObject: records),
             forKey: "dockyard.projects"
         )
 

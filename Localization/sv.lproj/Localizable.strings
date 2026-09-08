@@ -555,3 +555,15 @@
 "%d unread" = "%d olästa";
 "Agent Attention" = "Agentuppmärksamhet";
 "A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "En fokuserad inkorg samlar väntande, slutförda och inaktiva uppdateringar från kodningsagenter i alla arbetsflöden.";
+"Project Color" = "Projektfärg";
+"No Color" = "Ingen färg";
+"Red" = "Röd";
+"Orange" = "Orange";
+"Yellow" = "Gul";
+"Green" = "Grön";
+"Mint" = "Mint";
+"Blue" = "Blå";
+"Purple" = "Lila";
+"Pink" = "Rosa";
+"Project Colors" = "Projektfärger";
+"Assign colors from a project's shortcut menu to make busy sidebars easier to scan." = "Tilldela färger från ett projekts snabbmeny så att välfyllda sidofält blir enklare att överblicka.";

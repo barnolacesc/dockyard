@@ -124,6 +124,7 @@ struct SidebarRail: View {
                             tooltip: projectDirectoryName(project),
                             isSelected: isSelectedProject,
                             status: projectStatus,
+                            projectColor: project.color,
                             onSelect: { selection = .project(project.id) }
                         )
 
@@ -312,6 +313,7 @@ private struct RailProjectTile: View {
     let tooltip: String
     let isSelected: Bool
     let status: SidebarRailStatus
+    let projectColor: ProjectColor?
     let onSelect: () -> Void
 
     var body: some View {
@@ -321,6 +323,7 @@ private struct RailProjectTile: View {
             isSelected: isSelected,
             isWorkstream: false,
             status: status,
+            tint: projectColor?.swiftUIColor,
             onSelect: onSelect
         )
     }
@@ -340,6 +343,7 @@ private struct RailWorkstreamTile: View {
             isSelected: isSelected,
             isWorkstream: true,
             status: status,
+            tint: nil,
             onSelect: onSelect
         )
     }
@@ -351,6 +355,7 @@ private struct RailTile: View {
     let isSelected: Bool
     let isWorkstream: Bool
     let status: SidebarRailStatus
+    let tint: Color?
     let onSelect: () -> Void
 
     private var tileShape: RoundedRectangle {
@@ -359,12 +364,18 @@ private struct RailTile: View {
 
     private var foreground: Color {
         if isWorkstream, isSelected { return .accentColor }
+        if let tint { return tint }
         return isSelected ? .primary : .secondary
     }
 
     private var background: Color {
         if isWorkstream, isSelected { return Color.accentColor.opacity(0.18) }
+        if let tint { return tint.opacity(isSelected ? 0.22 : 0.10) }
         return isSelected ? Color.primary.opacity(0.08) : Color.clear
+    }
+
+    private var outline: Color {
+        tint ?? Color.accentColor
     }
 
     var body: some View {
@@ -380,7 +391,7 @@ private struct RailTile: View {
                     .background(background, in: tileShape)
                     .overlay {
                         if isSelected {
-                            tileShape.stroke(Color.accentColor, lineWidth: 1.5)
+                            tileShape.stroke(outline, lineWidth: 1.5)
                         }
                     }
 

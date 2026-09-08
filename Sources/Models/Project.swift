@@ -3,6 +3,21 @@
 
 import Foundation
 
+enum ProjectColor: String, Codable, CaseIterable, Identifiable {
+    case red
+    case orange
+    case yellow
+    case green
+    case mint
+    case blue
+    case purple
+    case pink
+
+    var id: String {
+        rawValue
+    }
+}
+
 enum WorkstreamStage: String, Codable, CaseIterable {
     case auto
     case working
@@ -111,13 +126,15 @@ struct Project: Identifiable, Hashable, Codable {
     var directory: String
     var workstreams: [Workstream]
     var lastAccessedAt: Date
+    var color: ProjectColor?
 
-    init(name: String, directory: String, id: UUID = UUID(), workstreams: [Workstream] = [], lastAccessedAt: Date = Date()) {
+    init(name: String, directory: String, id: UUID = UUID(), workstreams: [Workstream] = [], lastAccessedAt: Date = Date(), color: ProjectColor? = nil) {
         self.id = id
         self.name = name
         self.directory = directory
         self.workstreams = workstreams
         self.lastAccessedAt = lastAccessedAt
+        self.color = color
     }
 
     static func == (lhs: Project, rhs: Project) -> Bool {
