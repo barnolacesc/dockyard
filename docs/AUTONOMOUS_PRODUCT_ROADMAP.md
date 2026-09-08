@@ -1,6 +1,6 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-09-02 against `origin/main` at
+Last reconciled: 2026-09-03 against `origin/main` at
 `08ec8b3f7a6105be759b6bf3721f19d646a05d0b`.
 
 This is the product-direction record for autonomous development. GitHub issues
@@ -11,60 +11,76 @@ The first **Current autonomous queue** is canonical. Dated **Live
 reconciliation** and superseded queue sections are retained as an audit trail
 and can contain stale statuses.
 
-## Current autonomous queue — 2026-09-02 16:30 CEST
+## Current autonomous queue — 2026-09-03 09:30 CEST
 
-`origin/main` is `08ec8b3`. The scheduled run reconciled `TODO.md`, code,
-open issues and all open PR changed paths. PRs #117, #126, #140, #146, #148,
-#152, #154, #156, #158, #160, #162, #164, #166 and #168 are **awaiting Cesc
-review**; they are not modified, stacked on or duplicated. Release-please PR
-#63 remains approval-gated and must not be merged or published autonomously.
+`origin/main` is `08ec8b3`; its latest macOS CI, CodeQL and Release workflows
+are green. PR #170 (R54) is clean, green and **awaiting Cesc review**. PRs #117,
+#126, #140, #146, #148, #152, #154, #156, #158, #160, #162, #164, #166 and
+#168 passed native CI at their current heads but now conflict with `main`; they
+remain awaiting review and are not modified, stacked on or duplicated here.
+Release-please PR #63 remains approval-gated and must not be merged or
+published autonomously. The latest published release remains v0.2.1.
 
 GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
 `repo` and `workflow` but lacks `read:project`. No Project item or status is
-inferred. Current product issues include #41, #43, #54 and #116; issue #169
-records the selected bounded implementation.
+inferred. `TODO.md` still contains the passive power-features tour, external
+coordination and release-integrity follow-ups; none overlaps the selected
+read-only metadata hardening. Issue #171 records this run.
 
-### R54 — Bound stack-manifest inspection
+### R55 — Bound project description metadata reads
 
-- Status: **Awaiting Cesc review in PR #170** for issue #169 on
-  `fix/bound-stack-manifest-inspection-r54-20260902`. It must remain open and
-  must not be auto-merged; GitHub macOS CI is the required native evidence.
-- User outcome: an oversized or non-regular project manifest cannot stall or
-  force unbounded allocation during stack detection and project overview
-  refresh.
-- Success signal: regular UTF-8/JSON manifests at the 1 MiB limit remain
-  detectable; oversized and non-regular candidates are ignored before parsing.
-- Scope: `StackDetector`, focused `StackDetectorTests` and roadmap evidence.
-  Detection order, commands, worktree state, UI, localization, entitlements and
-  releases remain unchanged.
-- Dependencies: none. The changed paths are disjoint from every open PR above,
-  so either change can merge first.
-- Risk: low, reversible read-side hardening. Required evidence is focused
-  XCTest, the full GitHub macOS build/test, diff and secret checks.
+- Status: **Awaiting Cesc review in PR #172** on
+  `fix/bound-project-description-reads-r55-20260903` for issue #171. The PR
+  must remain open and must not be auto-merged; GitHub macOS CI is the required
+  native evidence.
+- User outcome: an oversized or non-regular worktree description cannot freeze
+  refresh or force unbounded allocation while Dockyard discovers repository
+  metadata.
+- Success signal: ordinary UTF-8 descriptions and a regular description at the
+  64 KiB limit remain available; oversized, symbolic-link, directory and
+  invalid UTF-8 candidates fail closed.
+- macOS impact: background worktree metadata refresh only; no UI,
+  accessibility, localization or shortcut behavior changes.
+- Persistence/security impact: narrows a read-only repository-metadata
+  boundary. The opened descriptor is checked and read with a hard cap. Cache
+  semantics, worktree state, commands, scripts, entitlements and releases are
+  unchanged.
+- Scope: `Environment`, focused `EnvironmentDescriptionTests` and roadmap
+  evidence.
+- Dependencies: none. The source and test paths are disjoint from every open
+  implementation PR, so changes can merge in either order.
+- Risk: low and reversible read-side hardening; full GitHub macOS CI is
+  mandatory.
 - Acceptance criteria:
-  1. A contained regular manifest at exactly 1 MiB remains detectable.
-  2. A larger manifest is ignored before text or JSON parsing.
-  3. A non-regular candidate is ignored without blocking.
-  4. Existing contained- and escaping-symlink behavior remains covered.
-  5. The native macOS suite passes in GitHub CI.
+  1. A regular UTF-8 description at exactly 64 KiB remains readable.
+  2. A larger description is rejected before unbounded allocation.
+  3. Symbolic links and other non-regular candidates are rejected without
+     blocking.
+  4. Invalid UTF-8 and whitespace-only content preserve the empty result.
+  5. Incremental and full metadata refresh use the same bounded reader.
+  6. Focused XCTest and the full GitHub macOS build/test pass.
+- Required evidence: focused XCTest, localization resource/key checks,
+  XcodeGen/native build, full XCTest, `git diff --check`, added-line secret scan
+  and configured CodeQL.
+- Evidence so far: localization resource/key tests and repository checks pass,
+  including 418 app keys and 15 privacy keys across all five locales;
+  `git diff --check` and the added-line secret scan pass. The Linux host has no
+  Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is
+  the mandatory native build/test evidence. At implementation head `250457c`,
+  macOS CI run `33729247645` passed localization parity, XcodeGen, the native
+  build, bundled-helper verification and the full XCTest suite including
+  `EnvironmentDescriptionTests`. CodeQL run `33729247661` passed its configured
+  analyses. The final roadmap-only head must also remain green.
 
 ### Independent Ready queue
 
-- **R55 — Bound project description metadata reads.** User outcome: an
-  oversized or non-regular project description cannot freeze refresh while
-  Dockyard discovers repository metadata. Success: boundary fixtures remain
-  available, invalid candidates fail closed, and normal description discovery
-  remains unchanged. Scope: `Environment` and focused model tests only; no
-  commands, persisted schema, UI strings or worktree mutation. Risk: low;
-  full macOS CI required. Source: current raw description reads in
-  `Environment.swift`.
 - **R56 — Bound workstream document-preview reads.** User outcome: opening a
   workstream overview remains responsive when a README or project document is
   unexpectedly large or non-regular. Success: bounded regular previews render
   while invalid candidates show the existing empty/error state. Scope:
   `WorkstreamInfoView` and focused tests, preserving preview paths and all five
   locales. Risk: low native UI behavior; full macOS CI and proportional visual
-  evidence required. Source: current document-preview read path.
+  evidence required.
 - **R57 — Bound update-check subprocess output.** User outcome: a malformed
   update helper cannot retain unbounded stdout while Dockyard checks for an
   update. Success: process-double tests prove output cap, normal parsing and
@@ -72,6 +88,13 @@ records the selected bounded implementation.
   Sparkle, entitlement or update-install behavior change. Risk: command
   boundary; stop at a tested PR for Cesc review. Source: issue #43 and the
   current `readDataToEndOfFile` path.
+- **R58 — Bound cached tmux configuration reads.** User outcome: startup cannot
+  allocate unbounded memory while comparing an unexpected cached tmux config.
+  Success: a bounded regular cache file preserves the existing no-rewrite fast
+  path while oversized and non-regular candidates are treated as stale. Scope:
+  `TmuxSession` and focused tests only; no tmux command, persistence, cleanup,
+  permission, localization or entitlement change. Risk: low; full macOS CI
+  required.
 
 ## Superseded autonomous queue — 2026-08-10 16:30 CEST
 
