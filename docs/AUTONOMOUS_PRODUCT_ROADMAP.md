@@ -1,6 +1,6 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-09-05 against `origin/main` at
+Last reconciled: 2026-09-07 against `origin/main` at
 `08ec8b33781b5ea406a1dcf5eeaa071954c1ebd6`.
 
 This is the product-direction record for autonomous development. GitHub issues
@@ -11,79 +11,71 @@ The first **Current autonomous queue** is canonical. Dated **Live
 reconciliation** and superseded queue sections are retained as an audit trail
 and can contain stale statuses.
 
-## Current autonomous queue — 2026-09-05 09:30 CEST
+## Current autonomous queue — 2026-09-07 09:30 CEST
 
 `origin/main` is `08ec8b3`; its latest macOS CI, CodeQL and Release workflows
-are green. PRs #170, #172, #174, #176 and #178 are clean, green at their heads
-and **awaiting Cesc review**. PRs #117, #126, #140, #146, #148, #152, #154,
-#156, #158, #160, #162, #164, #166 and #168 are also green at their heads but
-conflict with current `main`; they remain awaiting review and are not modified
-or stacked on here. Release-please PR #63 remains approval-gated and must not
-be merged or published autonomously. The latest published release is v0.2.1.
+are green. PRs #170, #172, #174, #176, #178 and #180 are clean, green at their
+heads and **awaiting Cesc review**. PRs #117, #126, #140, #146, #148, #152,
+#154, #156, #158, #160, #162, #164, #166 and #168 are also green at their
+heads but conflict with current `main`; they remain awaiting review and are not
+modified or stacked on here. Release-please PR #63 remains approval-gated and
+must not be merged or published autonomously. The latest published release is
+v0.2.1.
 
-GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
-`repo` and `workflow` but lacks `read:project`. No Project item or status is
-inferred. Current open issues were reconciled with `TODO.md`, code and every
-open PR path before issue #179 was created for this run. Product issues #41,
-#43 and #54 still require native profiling, approval-gated update work and
-non-duplicative agent-status work respectively.
+GitHub Projects v2 remains unavailable to the automation token because it
+lacks `read:project`; no Project item or status is inferred. Current issues,
+`TODO.md`, code and every open PR path were reconciled before issue #181 was
+created for this run. Product issues #41, #43 and #54 still require native
+profiling, approval-gated update work and non-duplicative agent-status work
+respectively.
 
-### R59 — Bound Monaco bundle-resource responses
+### R60 — Cap detailed launch-log growth
 
-- Status: **Awaiting Cesc review in PR #180** on
-  `fix/bound-monaco-resource-responses-r59-20260905` for issue #179. Native CI
-  is green at the implementation/PR-link head; the PR must remain open and
-  must not be auto-merged.
-- User outcome: a malformed, unexpectedly large or non-regular bundled editor
-  resource cannot make Dockyard allocate unbounded memory or block the custom
-  WKWebView scheme.
-- Success signal: only a regular resource at or below 16 MiB receives the
-  existing successful HTTP response; oversized, concurrently growing,
-  symbolic-link, directory and FIFO candidates fail through the existing
-  scheme error path.
-- macOS impact: Monaco bundle-resource delivery inside the native editor only;
-  no visible UI, accessibility, localization, shortcut or navigation change.
-- Persistence/security impact: narrows a read-only app-bundle boundary. The
-  same opened descriptor is checked and read with a hard cap. Source-file
-  saves, worktrees, JavaScript policy, commands, entitlements, signing, updates
-  and release behavior are unchanged.
-- Scope: `MonacoResourceSchemeHandler`, focused tests and roadmap evidence.
+- Status: **Awaiting Cesc review in PR #182** on
+  `fix/cap-launch-log-growth-r60-20260907` for issue #181. Native CI is green
+  at the implementation head; the PR must remain open and must not be
+  auto-merged.
+- User outcome: opt-in per-workstream launch diagnostics cannot grow without
+  bound across repeated Coding Agent, run and setup launches.
+- Success signal: after every successful write, each launch log is at or below
+  1 MiB and retains the newest complete JSONL entries in chronological order.
+- macOS impact: native cache-file diagnostics only; no visible UI,
+  accessibility, localization or shortcut change.
+- Persistence/security impact: bounds an opt-in cache file and its tail reads
+  while preserving private `0700` directory and `0600` file permissions. The
+  logging default, JSON schema, captured fields, commands, worktrees,
+  entitlements and release behavior are unchanged.
+- Scope: `LaunchLogger`, focused `LaunchLoggerTests` and roadmap evidence.
 - Dependencies: none. No open PR owns the implementation or test paths, so the
   code changes can merge in either order with every pending implementation PR.
-- Risk: low, reversible read-side hardening. Native macOS CI is mandatory.
+- Risk: low, reversible diagnostic-retention change. Full GitHub macOS CI is
+  mandatory.
 - Acceptance criteria:
-  1. A regular resource at the byte ceiling preserves data, MIME type,
-     content-length and completion behavior.
-  2. Initial overflow and growth after metadata validation are rejected after
-     reading at most the ceiling plus one detection byte.
-  3. Symbolic-link, directory and FIFO candidates fail without blocking.
-  4. Existing path-containment behavior remains green.
-  5. Focused XCTest and the full GitHub macOS build/test pass.
-- Required evidence: focused `MonacoResourceSchemeHandlerTests`, localization
-  resource/key checks, XcodeGen/native build, full XCTest, `git diff --check`,
-  added-line secret scan and configured CodeQL.
+  1. Under-limit appends and a result exactly at 1 MiB preserve all entries.
+  2. Overflow discards only the oldest records and retains complete newest
+     JSONL entries in chronological order.
+  3. An oversized existing file is compacted through a bounded tail read.
+  4. A newly encoded entry over 1 MiB is skipped rather than partially written.
+  5. Detailed-logging opt-in, per-workstream isolation, cleanup and private
+     permissions remain green.
+  6. Focused XCTest and the full GitHub macOS build/test pass.
+- Required evidence: focused `LaunchLoggerTests`, localization resource/key
+  checks, XcodeGen/native build, full XCTest, `git diff --check`, added-line
+  secret scan and configured CodeQL.
 - Evidence so far: localization resource/key tests and checkers pass with 10
   declared resources, 418 app keys and 15 privacy keys across all five locales;
   bundled-helper, appcast and release-seeding script tests pass;
   `git diff --check` and the added-line secret scan pass. The Linux host has no
   Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is
-  the mandatory native build/test evidence. At implementation/PR-link head
-  `1b7da71`, macOS CI run `33953228744` passed localization checks, XcodeGen,
-  the native build, bundled-helper verification and the full XCTest suite
-  including `MonacoResourceSchemeHandlerTests`. CodeQL run `33953228752`
-  passed its configured Actions and JavaScript analyses; Swift analysis was
-  skipped by the repository's PR workflow. The final roadmap-evidence head
-  must also remain green.
+  the mandatory native build/test evidence. At implementation head `2fde793`,
+  macOS CI run `34097416897` passed localization checks, XcodeGen, the native
+  build, bundled-helper verification and the full XCTest suite including
+  `LaunchLoggerTests`. CodeQL run `34097416976` passed its configured Actions
+  and JavaScript analyses; Swift analysis was skipped by the repository's PR
+  workflow. The final roadmap-evidence head must also remain green.
 
-### Independent Ready queue while R59 and older PRs await review
+### Independent Ready queue while R60 and older PRs await review
 
-- **R60 — Cap detailed launch-log growth.** User outcome: opt-in per-workstream
-  launch diagnostics cannot grow a cache file without bound over repeated
-  agent, run and setup launches. Success: deterministic tests prove a byte
-  ceiling while preserving complete recent JSONL entries and private `0600`
-  permissions. Scope: `LaunchLogger` and focused tests; no logging default,
-  command, environment capture, UI, worktree, entitlement or release change.
-  This retention change must stop at a tested PR for Cesc review.
 - **R61 — Bound editor source-file reads.** User outcome: selecting an
   unexpectedly large or non-regular source file cannot block the editor or
   allocate unbounded memory. Success: bounded regular UTF-8 fixtures open while
@@ -99,6 +91,14 @@ non-duplicative agent-status work respectively.
   `FileTreeView`, focused tests and all five localizations; no file mutation,
   watcher, command, worktree or entitlement change. Native visual,
   accessibility and full macOS CI evidence are required.
+- **R63 — Bound Codex usage-probe I/O.** User outcome: a noisy or malformed
+  `codex app-server` cannot grow Dockyard memory or block on an undrained pipe
+  while the sidebar refreshes usage limits. Success: process-double and
+  collector tests prove bounded stdout lines and stderr drainage while normal
+  rate-limit parsing and the existing deadline remain intact. Scope:
+  `CodexUsageProbe` and focused tests; no command, JSON-RPC request, account,
+  UI, worktree, permission, entitlement or release change. This command-boundary
+  hardening must stop at a tested PR for Cesc review.
 
 ## Superseded autonomous queue — 2026-08-10 16:30 CEST
 
