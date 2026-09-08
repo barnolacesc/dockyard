@@ -10,79 +10,72 @@ not an automatically trusted backlog.
 The **Current autonomous queue** is canonical. Dated **Live reconciliation**
 sections are retained as an audit trail and can contain superseded statuses.
 
-## Current autonomous queue — 2026-08-31 09:30 CEST
+## Current autonomous queue — 2026-08-31 16:30 CEST
 
 `origin/main` is `fce9d0f`; its latest macOS `build-and-test`, release
 automation and configured CodeQL checks are green. PRs #140 (R39), #142 (R40),
 #144 (R41), #146 (R42), #148 (R43), #150 (R44), #152 (R45), #154 (R46),
-#156 (R47), #158 (R48) and #160 (R49) are clean, green on required macOS CI
-and **awaiting Cesc review**. Older PRs #117 and #126 passed checks at their
-heads but now conflict with `main`; they remain awaiting Cesc's decision rather
-than being modified autonomously. Release-please PR #63 remains approval-gated
-and must not be merged or published autonomously. The latest published release
-remains v0.2.1.
+#156 (R47), #158 (R48), #160 (R49) and #162 (R51) are clean, green on
+required macOS CI and **awaiting Cesc review**. Older PRs #117 and #126 passed
+checks at their heads but now conflict with `main`; they remain awaiting Cesc's
+decision rather than being modified autonomously. Release-please PR #63 remains
+approval-gated and must not be merged or published autonomously. The latest
+published release remains v0.2.1.
 
 The open implementations' changed paths, behavior and dependencies were
-compared before selection. R51 changes only `GitHubOperations` and a new
-focused test file. PR #160 changes the separate Quick Action mutation runner,
-and no other pending PR changes an R51 implementation path, so the product
-changes can merge in either order.
+compared before selection. R50 changes only `WorktreeHeadWatcher` and its
+focused tests. No pending implementation PR changes those paths or watcher
+resolution behavior, so the product changes can merge in either order.
 
 GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the automation token
 has `repo` and `workflow` but lacks `read:project`. No Project data or status is
-inferred. Issue #161 and PR #162 record this run.
+inferred. Issue #163 records this run.
 
-### R51 — Bound read-only GitHub integration probes
+### R50 — Bound linked-worktree `.git` indirection reads
 
-- Status: **Awaiting Cesc review in PR #162** for issue #161 on
-  `fix/bound-github-read-probes-r51`. This command-boundary change must not be
-  auto-merged.
-- User outcome: a stalled or noisy `git remote` / `gh repo view` / `gh pr list`
-  process cannot block repository metadata refresh indefinitely or retain
-  unbounded stdout.
-- Success signal: every existing read-only probe drains stdout continuously,
-  retains at most 256 KiB, and returns within a 10-second deadline plus bounded
-  termination cleanup.
-- macOS impact: background repository/PR metadata refresh only; no UI,
-  accessibility, localization, shortcut or visual behavior changes.
-- Persistence/security impact: narrows an existing subprocess resource
-  boundary. Executables, arguments, working directories, authentication,
-  stderr policy, parsing, mutations, persisted state, entitlements and release
-  behavior remain unchanged.
-- Scope: `GitHubOperations`, focused process-double/collector tests and roadmap
-  evidence only.
+- Status: **Awaiting Cesc review in PR #164** for issue #163 on
+  `fix/bound-worktree-gitfile-r50`; the PR must not be auto-merged and native
+  evidence is pending.
+- User outcome: Dockyard cannot read an unbounded or non-regular linked-worktree
+  `.git` indirection file while preparing branch-name observation.
+- Success signal: watcher resolution accepts a normal `.git` directory or at
+  most 16 KiB of regular UTF-8 `gitdir:` metadata pointing to an existing
+  directory, and rejects symlinks, special files, oversized/invalid data and
+  missing/non-directory targets.
+- macOS impact: branch-name watcher attachment only; no UI, accessibility,
+  localization, shortcut or visual behavior changes.
+- Persistence/security impact: narrows a read-only filesystem boundary. No
+  worktree mutation, watcher ownership, persisted state, command execution,
+  entitlement or release behavior changes.
+- Scope: `WorktreeHeadWatcher`, focused path fixtures and roadmap evidence only.
 - Dependencies: none. The implementation paths are disjoint from every pending
   implementation PR.
-- Risk: medium because this is a command-execution boundary. Stop at a tested
-  PR for Cesc; full GitHub macOS CI is mandatory.
+- Risk: low and reversible read-side hardening; full GitHub macOS CI is
+  mandatory.
 - Acceptance criteria:
-  1. Preserve every existing executable, argument list and working directory.
-  2. Drain stdout continuously and retain no more than 256 KiB.
-  3. Fail closed on timeout, overflow, launch failure, nonzero exit, incomplete
-     drain or invalid UTF-8.
-  4. Terminate a timed-out process, use bounded force-termination fallback and
-     return one synchronous terminal result.
-  5. Focused XCTest and the full GitHub macOS build/test pass.
+  1. Normal repository `.git` directories still resolve.
+  2. Absolute and relative linked-worktree pointers resolve only when their
+     target exists as a directory.
+  3. Symlink and other non-regular `.git` entries are rejected.
+  4. Files larger than 16 KiB or containing invalid UTF-8 are rejected without
+     an unbounded read.
+  5. Existing watcher replacement, stop and sync behavior remains green.
+  6. Focused XCTest and full GitHub macOS build/test pass.
 - Required evidence: resource/localization checker suites, XcodeGen/native
   build, focused and full XCTest, `git diff --check`, added-line secret scan and
   configured CodeQL.
-- Evidence so far: deterministic resource/localization suites and live checks
-  pass (10 resource declarations, 418 app keys and 15 privacy keys across all
-  five locales); `git diff --check` and the added-line secret scan pass. At
-  implementation head `d6d917c`, macOS CI run `33369463017` passed
-  localization/resource checks, XcodeGen, the native build and the full XCTest
-  suite including `GitHubOperationsTests`. CodeQL run `33369462955` passed its
-  configured Actions and JavaScript analyses; Swift analysis was skipped by
-  repository PR workflow configuration. The final roadmap-only head must also
-  remain green.
+- Evidence so far: deterministic resource/localization suites pass (10 resource
+  declarations, 418 app keys and 15 privacy keys across all five locales);
+  `git diff --check` and the added-line secret scan pass. The Linux runner has
+  no Swift, Xcode, XcodeGen or SwiftFormat. At implementation head `a69b334`,
+  macOS CI run `33404715337` passed localization/resource checks, XcodeGen, the
+  native build and the full XCTest suite including `WorktreeHeadWatcherTests`.
+  CodeQL run `33404715453` passed its configured Actions and JavaScript
+  analyses; Swift analysis was skipped by repository PR workflow
+  configuration. The final roadmap-only head must also remain green.
 
-### Independent Ready queue while R39–R51 await review
+### Independent Ready queue while R39–R51 and R50 await review
 
-- **R50 — Bound linked-worktree `.git` indirection reads:** accept only a small
-  regular UTF-8 `.git` file before resolving its existing `gitdir:` target, so
-  watcher attachment cannot read unbounded metadata. `WorktreeHeadWatcher` and
-  focused path fixtures only; no worktree mutation, watcher ownership or UI
-  change, and mandatory macOS CI.
 - **R52 — Bound Quick Action push output:** continuously drain and cap combined
   output from the existing `git push -u origin HEAD` path without changing its
   arguments, remote, authentication or cancellation contract. Scope is
@@ -102,11 +95,12 @@ inferred. Issue #161 and PR #162 record this run.
 
 - Repository: `barnolacesc/dockyard`; native SwiftUI/AppKit macOS app using
   Ghostty, git worktrees, tmux, WKWebView, Monaco and XcodeGen.
-- Open implementation issues at reconciliation: #41, #43, #54 and the
-  autonomous execution issues linked from PRs #117 and #140–#162.
-- Open pull requests: implementation PRs #117 and #140–#162, roadmap-only
-  PR #126, and release-please #63. PR #63 must not be changed, merged or
-  released without Cesc's explicit approval.
+- Open implementation issues at reconciliation: #41, #43, #54, #116 and the
+  autonomous execution issues linked from PRs #140–#162; issue #163 records
+  this run.
+- Open pull requests: implementation PRs #117 and #140–#162, roadmap-only PR
+  #126, and release-please #63. PR #63 must not be changed, merged or released
+  without Cesc's explicit approval.
 - Latest published release: v0.2.1. `main` CI, Release and CodeQL are green at
   `fce9d0f`; the latest scheduled CodeQL run is also green.
 - GitHub Projects v2 was not reviewed. The current token has `repo` and
