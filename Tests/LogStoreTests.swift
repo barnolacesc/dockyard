@@ -9,15 +9,17 @@ private final class FakeLogSource: LogSource, @unchecked Sendable {
     private let lock = NSLock()
     private var batches: [[LogLine]]
     private(set) var bookmarks: [Date?] = []
+    private(set) var limits: [Int] = []
 
     init(batches: [[LogLine]]) {
         self.batches = batches
     }
 
-    func entries(since bookmark: Date?) throws -> [LogLine] {
+    func entries(since bookmark: Date?, limit: Int) throws -> [LogLine] {
         lock.lock()
         defer { lock.unlock() }
         bookmarks.append(bookmark)
+        limits.append(limit)
         return batches.isEmpty ? [] : batches.removeFirst()
     }
 }
@@ -37,17 +39,63 @@ final class LogStoreTests: XCTestCase {
         XCTAssertEqual(source.bookmarks.count, 2)
         XCTAssertNil(source.bookmarks[0])
         XCTAssertEqual(source.bookmarks[1], first.date)
+        XCTAssertEqual(source.limits, [5000, 5000])
     }
 
     func testRefreshKeepsNewestLinesAtCapacity() async {
         let lines = (1 ... 4).map {
             makeLine(second: $0, category: "app", level: .info, message: "Line \($0)")
         }
-        let store = LogStore(source: FakeLogSource(batches: [lines]), maxLines: 3)
+        let source = FakeLogSource(batches: [lines])
+        let store = LogStore(source: source, maxLines: 3)
 
         await store.refresh()
 
         XCTAssertEqual(store.lines, Array(lines.suffix(3)))
+        XCTAssertEqual(source.limits, [3])
+    }
+
+    func testRefreshAdvancesBookmarkAcrossAnOverCapacitySourceBatch() async {
+        let lines = (1 ... 5).map {
+            makeLine(second: $0, category: "app", level: .info, message: "Line \($0)")
+        }
+        let later = makeLine(second: 6, category: "app", level: .info, message: "Later")
+        let source = FakeLogSource(batches: [lines, [lines.last!, later]])
+        let store = LogStore(source: source, maxLines: 3)
+
+        await store.refresh()
+        await store.refresh()
+
+        XCTAssertEqual(store.lines, Array(lines.suffix(2)) + [later])
+        XCTAssertEqual(source.bookmarks[1], lines.last?.date)
+        XCTAssertEqual(source.limits, [3, 3])
+    }
+
+    func testBoundedTailKeepsNewestValuesInSourceOrder() {
+        var tail = BoundedLogTail<Int>(limit: 3)
+
+        for value in 1 ... 10 {
+            tail.append(value)
+            XCTAssertLessThanOrEqual(tail.count, 3)
+        }
+
+        XCTAssertEqual(tail.values, [8, 9, 10])
+    }
+
+    func testBoundedTailPreservesAnExactCapacitySnapshot() {
+        var tail = BoundedLogTail<Int>(limit: 3)
+
+        [1, 2, 3].forEach { tail.append($0) }
+
+        XCTAssertEqual(tail.values, [1, 2, 3])
+    }
+
+    func testProductionSourceCapsRequestedPollCapacity() {
+        XCTAssertEqual(OSLogStoreSource.effectiveLimit(for: 25), 25)
+        XCTAssertEqual(
+            OSLogStoreSource.effectiveLimit(for: OSLogStoreSource.maximumEntriesPerPoll + 1),
+            OSLogStoreSource.maximumEntriesPerPoll
+        )
     }
 
     func testFilteringAppliesSearchCategoryAndMinimumLevel() async {

@@ -11,85 +11,72 @@ The first **Current autonomous queue** is canonical. Dated **Live
 reconciliation** and superseded queue sections are retained as an audit trail
 and can contain stale statuses.
 
-## Current autonomous queue — 2026-09-08 09:30 CEST
+## Current autonomous queue — 2026-09-08 16:30 CEST
 
 `origin/main` is `08ec8b3`; its latest macOS CI, scheduled CodeQL and Release
-workflows are green. PRs #170, #172, #174, #176, #178, #180, #182 and #184 are
-clean, green at their heads and **awaiting Cesc review**. PRs #117, #126, #140,
-#146, #148, #152, #154, #156, #158, #160, #162, #164, #166 and #168 are green
-at their heads but conflict with current `main`; they remain awaiting review
-and are not modified or stacked on here. Release-please PR #63 remains
-approval-gated and must not be merged or published autonomously. The latest
-published release remains v0.2.1.
+workflows are green. PRs #170, #172, #174, #176, #178, #180, #182, #184 and
+#186 are green at their heads and **awaiting Cesc review**. PRs #117, #126,
+#140, #146, #148, #152, #154, #156, #158, #160, #162, #164, #166 and #168
+are also green at their heads but conflict with current `main`; they remain
+awaiting review and are not modified or stacked on here. Release-please PR #63
+remains approval-gated and must not be merged or published autonomously. The
+latest published release remains v0.2.1.
 
 GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
 `repo` and `workflow` but lacks `read:project`. No Project item or status is
-inferred. Current issues, `TODO.md`, code and every open PR path were reconciled
-before issue #185 was created for this run. Product issues #41, #43 and #54
-still require native profiling, approval-gated update work and non-duplicative
-agent-status work respectively.
+inferred. Current issues, `TODO.md`, code and every open PR path were
+reconciled before issue #187 was created for this run. Product issues #41,
+#43 and #54 still require native profiling, approval-gated update work and
+non-duplicative agent-status work respectively.
 
-### R63 — Bound Codex usage-probe I/O
+### R64 — Bound unified-log polling snapshots
 
-- Status: **Awaiting Cesc review in PR #186** on
-  `fix/bound-codex-usage-probe-io-r63-20260908` for issue #185. Native
-  implementation CI is green, and the pull request must not be auto-merged.
-- User outcome: a noisy or malformed `codex app-server` cannot grow Dockyard
-  memory or block on an undrained pipe while the sidebar refreshes usage
-  limits.
-- Success signal: stdout retains at most one 64 KiB response line while stderr
-  is continuously drained and discarded; an oversized line is skipped through
-  its newline so a later bounded rate-limit response can still resolve.
-- macOS impact: the existing background Codex usage refresh only; no visible
-  string, layout, accessibility, localization or shortcut behavior changes.
-- Persistence/security impact: narrows subprocess-output handling for
-  untrusted CLI output. The login-shell command, JSON-RPC requests, account
-  behavior, deadline, worktrees, permissions, entitlements and release flow
-  are unchanged.
-- Scope: `CodexUsageProbe`, focused `CodexUsageProbeTests` and roadmap
-  evidence.
+- Status: **Awaiting Cesc review in PR #188** on
+  `fix/bound-unified-log-snapshots-r64-20260908` for issue #187. The pull
+  request must remain open and must not be auto-merged.
+- User outcome: opening the native logs window after a diagnostic burst cannot
+  materialize or sort an unbounded unified-log poll result.
+- Success signal: the production source retains at most 5,000 matching entries,
+  respects a smaller visible-history capacity, and returns the newest retained
+  tail in source order while bookmark advancement and filters remain correct.
+- macOS impact: the existing native unified-log window only; no visible string,
+  layout, accessibility, localization or shortcut behavior changes.
+- Persistence/security impact: bounds transient diagnostic data from the
+  current process. Logging preferences, launch diagnostics, commands,
+  persisted state, entitlements and release behavior are unchanged.
+- Scope: `LogSource`, `LogStore`, focused `LogStoreTests` and roadmap evidence.
 - Dependencies: none. No open PR owns these implementation or test paths, so
   the code can merge in either order with every pending implementation PR.
-- Risk: medium command-boundary hardening. Stop at a tested PR for Cesc; full
-  GitHub macOS CI is mandatory.
+- Risk: low, reversible diagnostic-memory hardening. Full GitHub macOS CI is
+  mandatory.
 - Acceptance criteria:
-  1. The login-shell executable, `codex app-server` arguments, home working
-     directory, initialize request, rate-limit request and eight-second default
-     deadline remain unchanged.
-  2. Stdout and stderr are drained concurrently while the process runs; stderr
-     bytes are not retained.
-  3. A stdout line at the 64 KiB limit can parse, while a larger line never
-     leaves more than the fixed bound retained.
-  4. Oversized noise is discarded through its newline and a later valid
-     response still resolves.
-  5. The first valid rate-limit response resolves once; launch failure and
-     timeout fail closed, and timeout still terminates the process.
-  6. Focused XCTest and the full GitHub macOS build/test pass.
-- Required evidence: focused `CodexUsageProbeTests`, localization resource/key
-  checks, XcodeGen/native build, full XCTest, `git diff --check`, added-line
-  secret scan and configured CodeQL.
+  1. Production polling retains at most 5,000 matching entries and honors a
+     smaller requested capacity.
+  2. A burst beyond the ceiling keeps the newest entries in chronological
+     source order without retaining the entire matching sequence.
+  3. `LogStore` passes its capacity to the source, appends only fresh entries,
+     advances the bookmark to the newest fetched timestamp and keeps visible
+     history bounded.
+  4. Existing search, category and minimum-level filters remain green.
+  5. Focused XCTest and the full GitHub macOS build/test pass.
+- Required evidence: focused `LogStoreTests`, localization resource/key checks,
+  XcodeGen/native build, full XCTest, `git diff --check`, added-line secret scan
+  and configured CodeQL.
 - Evidence so far: localization resource/key tests and repository checks pass,
   including 10 declared resources, 418 app keys and 15 privacy keys across all
-  five locales. Bundled-helper, appcast-generation and release-seeding script
-  tests, `git diff --check` and the added-line secret scan pass. The Linux host
-  has no Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub
-  macOS CI is the mandatory native build/test evidence. At implementation head
-  `67c9783`, macOS CI run `34201412918` passed localization checks, XcodeGen,
-  the native build, bundled-helper verification and the full XCTest suite
-  including `CodexUsageProbeTests`. CodeQL run `34201412930` passed its
-  configured Actions and JavaScript analyses; Swift analysis was skipped by
-  the repository workflow. The final roadmap-evidence head must also remain
-  green.
+  five locales. Bundled-helper, appcast-generation and appcast-seeding script
+  tests, `git diff --check` and the added-line secret scan pass. The Linux
+  automation host has no Swift, Xcode, XcodeGen, prek or SwiftFormat
+  executable, so GitHub macOS CI is the mandatory native build/test evidence.
+  At implementation-and-roadmap head `f62a46e`, macOS CI run `34240052035`
+  passed localization checks, XcodeGen, the native build, bundled-helper
+  verification and the full XCTest suite including `LogStoreTests`. CodeQL run
+  `34240052033` passed its configured Actions and JavaScript analyses; Swift
+  analysis was skipped by repository workflow configuration. The final
+  evidence-only head must also remain green.
 
-### Independent Ready queue while R63 and older PRs await review
+### Independent Ready queue while R64 and older PRs await review
 
-- **R64 — Bound unified-log polling snapshots.** User outcome: opening the
-  native logs window after a diagnostic burst cannot materialize and sort an
-  unbounded poll result. Success: source/store tests prove a fixed entry
-  ceiling while the newest entries, bookmark advancement and filtering remain
-  correct. Scope: `LogSource`, `LogStore` and focused tests; no logging
-  preference, launch diagnostics, command, persistence, entitlement or UI
-  string change. No open PR owns these paths; full macOS CI is required.
 - **R65 — Bound legacy cache-migration enumeration.** User outcome: a malformed
   legacy cache directory with an excessive number of entries cannot allocate
   an unbounded array during startup cleanup. Success: deterministic fixtures
@@ -99,13 +86,19 @@ agent-status work respectively.
   replacement, schema, command, worktree or entitlement change. Persisted-data
   migration behavior is approval-gated and must stop at a tested PR for Cesc.
 - **R66 — Bound persisted project snapshot decoding.** User outcome: an
-  unexpectedly large `dockyard.projects` defaults payload cannot stall or
-  allocate unbounded decoder state during launch. Success: fixtures prove
-  bounded valid snapshots still restore while oversized or malformed data
-  fails through the existing empty-state path without deleting stored bytes.
-  Scope: `ProjectStore` read validation and focused tests; no schema, migration,
-  project mutation, UI, localization, command, worktree or entitlement change.
-  No open PR owns these paths; full macOS CI is required.
+  unexpectedly large `dockyard.projects` defaults payload cannot feed an
+  unbounded decoder during launch. Success: bounded valid snapshots still
+  restore while oversized or malformed data follows the existing empty-state
+  path without deleting stored bytes. Scope: `ProjectStore` and focused tests;
+  no schema, migration, project mutation, UI, localization, command, worktree
+  or entitlement change. Full macOS CI is required.
+- **R67 — Bound persisted workspace-tab snapshot decoding.** User outcome: an
+  unexpectedly large restored tab payload cannot feed an unbounded decoder
+  while opening a workstream. Success: bounded valid tabs still restore while
+  oversized or malformed data follows the existing default-tab path without
+  deleting stored bytes. Scope: workspace-tab restoration and focused tests;
+  no schema, migration, tab mutation, UI string, command, worktree or
+  entitlement change. Full macOS CI is required.
 
 R62 (bounded expanded file-tree enumeration) remains **dependent on R61 / PR
 #184 merging** because both change `FileTree.swift`; it is not Ready while that
