@@ -1,5 +1,5 @@
 // ABOUTME: Tests for LaunchLogger per-workstream debug log file writing.
-// ABOUTME: Validates log entry serialization, gating on detailedLogging, append behavior, and cleanup.
+// ABOUTME: Validates serialization, opt-in gating, bounded retention, permissions, and cleanup.
 
 @testable import Dockyard
 import XCTest
@@ -142,6 +142,85 @@ final class LaunchLoggerTests: XCTestCase {
         }
     }
 
+    func testLogCanReachMaximumSizeWithoutDiscardingCompleteEntries() throws {
+        let entry = makeEntry(event: "boundary-entry")
+        let encodedEntry = try encodedLine(for: entry)
+        let existingLine = jsonLine(
+            marker: "boundary-existing",
+            byteCount: LaunchLogger.maximumLogFileSize - encodedEntry.count
+        )
+        XCTAssertEqual(existingLine.count + encodedEntry.count, LaunchLogger.maximumLogFileSize)
+
+        try seedLog(with: existingLine)
+        LaunchLogger.log(entry)
+
+        let contents = try Data(contentsOf: LaunchLogger.logFileURL(for: testWorkstreamID))
+        XCTAssertEqual(contents.count, LaunchLogger.maximumLogFileSize)
+        XCTAssertTrue(contents.starts(with: existingLine))
+        XCTAssertTrue(contents.suffix(encodedEntry.count).elementsEqual(encodedEntry))
+    }
+
+    func testLogTrimsOldestCompleteEntriesAtMaximumSize() throws {
+        let oldestLine = jsonLine(marker: "discard-oldest", byteCount: 900_000)
+        let recentLine = jsonLine(marker: "preserve-recent", byteCount: 160_000)
+        try seedLog(with: oldestLine + recentLine)
+
+        let entry = makeEntry(event: "newest-entry")
+        LaunchLogger.log(entry)
+
+        let contents = try Data(contentsOf: LaunchLogger.logFileURL(for: testWorkstreamID))
+        let lines = completeLines(in: contents)
+        XCTAssertLessThanOrEqual(contents.count, LaunchLogger.maximumLogFileSize)
+        XCTAssertEqual(lines.count, 2)
+        XCTAssertNotNil(lines[0].range(of: Data("preserve-recent".utf8)))
+        XCTAssertNotNil(lines[1].range(of: Data("\"event\":\"newest-entry\"".utf8)))
+        XCTAssertNil(contents.range(of: Data("discard-oldest".utf8)))
+    }
+
+    func testLogCompactsOversizedExistingFileFromBoundedTail() throws {
+        let oversizedOldLine = jsonLine(
+            marker: "discard-oversized-old",
+            byteCount: LaunchLogger.maximumLogFileSize * 2
+        )
+        let recentLine = jsonLine(marker: "preserve-oversized-recent", byteCount: 4_096)
+        try seedLog(with: oversizedOldLine + recentLine)
+
+        LaunchLogger.log(makeEntry(event: "after-oversized-existing"))
+
+        let contents = try Data(contentsOf: LaunchLogger.logFileURL(for: testWorkstreamID))
+        let lines = completeLines(in: contents)
+        XCTAssertLessThanOrEqual(contents.count, LaunchLogger.maximumLogFileSize)
+        XCTAssertEqual(lines.count, 2)
+        XCTAssertNotNil(lines[0].range(of: Data("preserve-oversized-recent".utf8)))
+        XCTAssertNotNil(lines[1].range(of: Data("\"event\":\"after-oversized-existing\"".utf8)))
+        XCTAssertNil(contents.range(of: Data("discard-oversized-old".utf8)))
+    }
+
+    func testLogDoesNotWritePartialOversizedEntry() throws {
+        let existingLine = jsonLine(marker: "existing-remains", byteCount: 256)
+        try seedLog(with: existingLine)
+        let oversizedEntry = makeEntry(
+            event: "oversized-entry",
+            finalCommand: String(repeating: "x", count: LaunchLogger.maximumLogFileSize)
+        )
+
+        LaunchLogger.log(oversizedEntry)
+
+        let contents = try Data(contentsOf: LaunchLogger.logFileURL(for: testWorkstreamID))
+        XCTAssertEqual(contents, existingLine)
+    }
+
+    func testCompactionKeepsPrivateFilePermissions() throws {
+        let oldestLine = jsonLine(marker: "discard-permissions", byteCount: 900_000)
+        let recentLine = jsonLine(marker: "preserve-permissions", byteCount: 160_000)
+        try seedLog(with: oldestLine + recentLine, permissions: 0o644)
+
+        LaunchLogger.log(makeEntry(event: "permissions-entry"))
+
+        XCTAssertEqual(try permissions(of: LaunchLogger.logsDirectoryURL), 0o700)
+        XCTAssertEqual(try permissions(of: LaunchLogger.logFileURL(for: testWorkstreamID)), 0o600)
+    }
+
     // MARK: - Separate files per workstream
 
     func testSeparateFilesPerWorkstream() throws {
@@ -198,11 +277,14 @@ final class LaunchLoggerTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeEntry(event: String) -> LaunchLogEntry {
+    private func makeEntry(
+        event: String,
+        finalCommand: String = "/bin/zsh -lic 'claude --resume abc'"
+    ) -> LaunchLogEntry {
         LaunchLogEntry(
             workstreamID: testWorkstreamID,
             event: event,
-            finalCommand: "/bin/zsh -lic 'claude --resume abc'",
+            finalCommand: finalCommand,
             intermediateCommands: ["claude --resume abc"],
             environmentVariables: ["DY_PROJECT": "test"],
             workingDirectory: "/tmp/test",
@@ -210,6 +292,34 @@ final class LaunchLoggerTests: XCTestCase {
             settings: LaunchLogEntry.Settings(tmuxMode: false, bypassPermissions: false, agentTeams: false, autoRenameBranch: false, allowOutsideWorktree: false),
             shell: "/bin/zsh"
         )
+    }
+
+    private func encodedLine(for entry: LaunchLogEntry) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        var data = try encoder.encode(entry)
+        data.append(0x0A)
+        return data
+    }
+
+    private func jsonLine(marker: String, byteCount: Int) -> Data {
+        let prefix = Data("{\"marker\":\"\(marker)\",\"padding\":\"".utf8)
+        let suffix = Data("\"}\n".utf8)
+        precondition(byteCount >= prefix.count + suffix.count)
+        return prefix + Data(repeating: 0x61, count: byteCount - prefix.count - suffix.count) + suffix
+    }
+
+    private func seedLog(with data: Data, permissions: Int = 0o600) throws {
+        try FileManager.default.createDirectory(at: testLogsDir, withIntermediateDirectories: true)
+        let fileURL = LaunchLogger.logFileURL(for: testWorkstreamID)
+        try data.write(to: fileURL)
+        try FileManager.default.setAttributes([.posixPermissions: permissions], ofItemAtPath: fileURL.path)
+    }
+
+    private func completeLines(in data: Data) -> [Data] {
+        String(decoding: data, as: UTF8.self)
+            .split(separator: "\n", omittingEmptySubsequences: true)
+            .map { Data($0.utf8) }
     }
 
     private func permissions(of url: URL) throws -> Int {

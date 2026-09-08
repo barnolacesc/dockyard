@@ -179,6 +179,52 @@ final class StackDetectorTests: XCTestCase {
         XCTAssertEqual(draft.teardown, "docker compose down")
     }
 
+    // MARK: - Manifest read boundaries
+
+    func testBoundarySizedPackageManifestIsDetected() throws {
+        let object: [String: Any] = [
+            "name": "app",
+            "scripts": ["dev": "vite"],
+            "devDependencies": ["vite": "5"],
+        ]
+        var data = try JSONSerialization.data(withJSONObject: object)
+        data.append(Data(repeating: 0x20, count: StackDetector.maximumManifestBytes - data.count))
+        XCTAssertEqual(data.count, StackDetector.maximumManifestBytes)
+        try data.write(to: tmpDir.appendingPathComponent("package.json"))
+
+        let draft = StackDetector.detect(at: tmpDir.path)
+
+        XCTAssertEqual(draft.setup, "npm install")
+        XCTAssertEqual(draft.run, "npm run dev")
+        XCTAssertEqual(draft.expectedPort, 5173)
+    }
+
+    func testOversizedPackageManifestIsIgnored() throws {
+        let object: [String: Any] = [
+            "name": "app",
+            "scripts": ["dev": "vite"],
+        ]
+        var data = try JSONSerialization.data(withJSONObject: object)
+        data.append(Data(repeating: 0x20, count: StackDetector.maximumManifestBytes - data.count + 1))
+        XCTAssertEqual(data.count, StackDetector.maximumManifestBytes + 1)
+        try data.write(to: tmpDir.appendingPathComponent("package.json"))
+
+        let draft = StackDetector.detect(at: tmpDir.path)
+
+        XCTAssertTrue(draft.isEmpty)
+    }
+
+    func testNonRegularPackageManifestIsIgnored() throws {
+        try FileManager.default.createDirectory(
+            at: tmpDir.appendingPathComponent("package.json"),
+            withIntermediateDirectories: true
+        )
+
+        let draft = StackDetector.detect(at: tmpDir.path)
+
+        XCTAssertTrue(draft.isEmpty)
+    }
+
     // MARK: - Makefile
 
     func testMakefilePrefersTargets() {

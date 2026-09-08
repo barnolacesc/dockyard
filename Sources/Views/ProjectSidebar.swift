@@ -1422,6 +1422,7 @@ private struct WorkstreamRow: View {
         .help(taskDescription ?? "")
         .onHover { isHovering = $0 }
         .hoverHighlight(radius: DesignRadius.md)
+        .tourAnchor(.selectedWorkstreamRow, enabled: isSelected)
         .contextMenu {
             if let worktreePath {
                 Button {

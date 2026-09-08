@@ -199,16 +199,17 @@ struct EditorView: View {
 
     private func loadFile() {
         guard let relativePath = currentFilePath else { return }
-        guard let url = WorkspaceFileAccess.resolvedURL(
-            for: relativePath,
-            rootPath: workingDirectory
-        ) else {
-            loadError = CocoaError(.fileReadNoPermission).localizedDescription
-            return
-        }
-
         do {
-            let content = try String(contentsOf: url, encoding: .utf8)
+            let content = try WorkspaceFileAccess.readEditorContent(
+                at: relativePath,
+                rootPath: workingDirectory
+            )
+            guard let url = WorkspaceFileAccess.resolvedURL(
+                for: relativePath,
+                rootPath: workingDirectory
+            ) else {
+                throw CocoaError(.fileReadNoPermission)
+            }
             let fileName = (relativePath as NSString).lastPathComponent
             let langId = Self.monacoLanguageId(for: fileName)
             bridge.openFile(modelId: modelId, text: content, languageId: langId, filePath: url.path)

@@ -1,9 +1,11 @@
 // ABOUTME: Tmux session naming and command wrapping for persistent sessions.
 // ABOUTME: Sessions survive app restarts but not system restarts.
 
+import Darwin
 import Foundation
 
 enum TmuxSession {
+    static let maximumConfigBytes = 64 * 1024
     private static let privateDirectoryPermissions = 0o700
     private static let privateFilePermissions = 0o600
 
@@ -47,15 +49,54 @@ enum TmuxSession {
 
     /// Path to the minimal tmux config that makes tmux invisible.
     private static func configPath(in cacheDirectory: URL) -> String {
-        let path = cacheDirectory.appendingPathComponent("tmux.conf")
+        let url = cacheDirectory.appendingPathComponent("tmux.conf")
         // Write config if missing or outdated
         let fm = FileManager.default
         try? fm.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
-        if let existing = try? String(contentsOfFile: path.path, encoding: .utf8), existing == configContents {
-            return path.path
+        if readCachedConfig(at: url) == configContents {
+            return url.path
         }
-        try? configContents.write(toFile: path.path, atomically: true, encoding: .utf8)
-        return path.path
+        try? configContents.write(to: url, atomically: true, encoding: .utf8)
+        return url.path
+    }
+
+    static func readCachedConfig(
+        at url: URL,
+        afterMetadataRead: () -> Void = {}
+    ) -> String? {
+        let descriptor = open(url.path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK)
+        guard descriptor >= 0 else { return nil }
+        defer { close(descriptor) }
+
+        var metadata = stat()
+        guard fstat(descriptor, &metadata) == 0,
+              (metadata.st_mode & S_IFMT) == S_IFREG,
+              metadata.st_size >= 0,
+              metadata.st_size <= off_t(maximumConfigBytes)
+        else {
+            return nil
+        }
+
+        afterMetadataRead()
+
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: false)
+        var data = Data()
+        data.reserveCapacity(Int(metadata.st_size))
+
+        do {
+            while data.count <= maximumConfigBytes {
+                let remaining = maximumConfigBytes + 1 - data.count
+                let chunkSize = min(64 * 1024, remaining)
+                guard chunkSize > 0 else { break }
+                guard let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty else { break }
+                data.append(chunk)
+            }
+        } catch {
+            return nil
+        }
+
+        guard data.count <= maximumConfigBytes else { return nil }
+        return String(data: data, encoding: .utf8)
     }
 
     /// Wrap a command to run inside a tmux session.

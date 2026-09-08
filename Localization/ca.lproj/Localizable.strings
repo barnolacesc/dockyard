@@ -520,3 +520,19 @@
 "Keep working your way" = "Continua treballant a la teva manera";
 "The tour is complete. Press ⌘/ whenever you want the full keyboard shortcut reference." = "La visita s'ha completat. Prem ⌘/ quan vulguis consultar la referència completa de dreceres de teclat.";
 "Claude in Chrome is active" = "Claude a Chrome esta actiu";
+
+// Tour — Power Features
+"Power Features" = "Funcions avançades";
+"Discover Dockyard's keyboard-first tools, usage meters, tmux persistence, and safe workstream cleanup in a passive tour." = "Descobreix les eines de Dockyard pensades per al teclat, els mesuradors d'ús, la persistència amb tmux i la neteja segura de workstreams en una visita passiva.";
+"Work faster without losing context" = "Treballa més de pressa sense perdre el context";
+"This passive tour highlights Dockyard's power features. It will not run commands, change settings, or modify your workstreams." = "Aquesta visita passiva destaca les funcions avançades de Dockyard. No executarà ordres, no canviarà la configuració ni modificarà els teus workstreams.";
+"Hold Command for shortcut hints" = "Mantén premuda la tecla Ordre per veure les dreceres";
+"Hold ⌘ to reveal available shortcuts on visible controls. Nothing runs until you choose a command." = "Mantén premuda ⌘ per mostrar les dreceres disponibles als controls visibles. No s'executa res fins que triïs una ordre.";
+"Track local agent usage" = "Controla l'ús local dels agents";
+"The sidebar meter shows locally available Claude Code or Codex usage. Use its arrows to switch providers, or click the meter to refresh." = "El mesurador de la barra lateral mostra l'ús disponible localment de Claude Code o Codex. Fes servir les fletxes per canviar de proveïdor o fes clic al mesurador per actualitzar.";
+"Resume Coding Agent sessions" = "Reprèn les sessions de l'agent de programació";
+"When tmux mode is enabled, Dockyard reconnects to this workstream's Coding Agent session after you quit and reopen the app." = "Quan el mode tmux està activat, Dockyard es torna a connectar a la sessió de l'agent de programació d'aquest workstream després de tancar i tornar a obrir l'app.";
+"Remove without deleting work" = "Elimina sense esborrar la feina";
+"Remove is Dockyard's archive action: it stops terminals and hides the workstream while keeping its worktree and branch. Purge is the separate destructive action." = "Elimina és l'acció d'arxivament de Dockyard: atura els terminals i amaga el workstream, però en conserva el worktree i la branca. Purga és l'acció destructiva separada.";
+"Power features, on your terms" = "Funcions avançades, a la teva manera";
+"Press ⌘/ for the complete shortcut reference. Settings lets you choose shortcut hints, tmux mode, and usage options." = "Prem ⌘/ per consultar la referència completa de dreceres. A Configuració pots triar els indicadors de dreceres, el mode tmux i les opcions d'ús.";

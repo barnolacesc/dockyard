@@ -520,3 +520,19 @@
 "Keep working your way" = "Fortsätt arbeta på ditt sätt";
 "The tour is complete. Press ⌘/ whenever you want the full keyboard shortcut reference." = "Rundturen är klar. Tryck ⌘/ när du vill se den fullständiga referensen för kortkommandon.";
 "Claude in Chrome is active" = "Claude i Chrome är aktiv";
+
+// Tour — Power Features
+"Power Features" = "Avancerade funktioner";
+"Discover Dockyard's keyboard-first tools, usage meters, tmux persistence, and safe workstream cleanup in a passive tour." = "Upptäck Dockyards tangentbordsfokuserade verktyg, användningsmätare, tmux-beständighet och säker rensning av workstreams i en passiv rundtur.";
+"Work faster without losing context" = "Arbeta snabbare utan att tappa sammanhanget";
+"This passive tour highlights Dockyard's power features. It will not run commands, change settings, or modify your workstreams." = "Den här passiva rundturen visar Dockyards avancerade funktioner. Den kör inga kommandon, ändrar inga inställningar och modifierar inga workstreams.";
+"Hold Command for shortcut hints" = "Håll ned Kommando för kortkommandoledtrådar";
+"Hold ⌘ to reveal available shortcuts on visible controls. Nothing runs until you choose a command." = "Håll ned ⌘ för att visa tillgängliga kortkommandon på synliga reglage. Inget körs förrän du väljer ett kommando.";
+"Track local agent usage" = "Följ lokal agentanvändning";
+"The sidebar meter shows locally available Claude Code or Codex usage. Use its arrows to switch providers, or click the meter to refresh." = "Mätaren i sidofältet visar lokalt tillgänglig användning för Claude Code eller Codex. Använd pilarna för att byta leverantör eller klicka på mätaren för att uppdatera.";
+"Resume Coding Agent sessions" = "Återuppta kodagentsessioner";
+"When tmux mode is enabled, Dockyard reconnects to this workstream's Coding Agent session after you quit and reopen the app." = "När tmux-läget är aktiverat ansluter Dockyard igen till denna workstreams kodagentsession när du har avslutat och öppnat appen på nytt.";
+"Remove without deleting work" = "Ta bort utan att radera arbetet";
+"Remove is Dockyard's archive action: it stops terminals and hides the workstream while keeping its worktree and branch. Purge is the separate destructive action." = "Ta bort är Dockyards arkiveringsåtgärd: den stoppar terminaler och döljer workstreamen men behåller dess worktree och gren. Rensa är den separata destruktiva åtgärden.";
+"Power features, on your terms" = "Avancerade funktioner på dina villkor";
+"Press ⌘/ for the complete shortcut reference. Settings lets you choose shortcut hints, tmux mode, and usage options." = "Tryck ⌘/ för den fullständiga kortkommandoreferensen. I Inställningar kan du välja kortkommandoledtrådar, tmux-läge och användningsalternativ.";

@@ -35,6 +35,13 @@ final class WorkspaceFileAccessTests: XCTestCase {
         )
 
         XCTAssertEqual(resolved, file.standardizedFileURL.resolvingSymlinksInPath())
+        XCTAssertEqual(
+            try WorkspaceFileAccess.readEditorContent(
+                at: "Sources/App.swift",
+                rootPath: linkedWorkspace.path
+            ),
+            "content"
+        )
     }
 
     func testRejectsAbsoluteTraversalAndPrefixSiblingPaths() throws {
@@ -61,6 +68,18 @@ final class WorkspaceFileAccessTests: XCTestCase {
             )
         )
         XCTAssertNil(WorkspaceFileAccess.resolvedURL(for: ".", rootPath: workspace.path))
+
+        for path in [secret.path, "../workspace-backup/secret.txt", "."] {
+            XCTAssertThrowsError(
+                try WorkspaceFileAccess.readEditorContent(
+                    at: path,
+                    rootPath: workspace.path
+                ),
+                "Expected read rejection for \(path)"
+            ) { error in
+                XCTAssertEqual((error as? CocoaError)?.code, .fileReadNoPermission)
+            }
+        }
     }
 
     func testRejectsFileAndDirectorySymlinksOutsideWorkspace() throws {
@@ -99,6 +118,69 @@ final class WorkspaceFileAccessTests: XCTestCase {
         )
 
         XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "new")
+    }
+
+    func testReadsRegularUTF8EditorContentAtMaximumSize() throws {
+        let file = workspace.appendingPathComponent("large.swift")
+        let data = Data(repeating: 0x61, count: WorkspaceFileAccess.maximumEditorFileBytes)
+        try data.write(to: file)
+
+        let content = try WorkspaceFileAccess.readEditorContent(
+            at: "large.swift",
+            rootPath: workspace.path
+        )
+
+        XCTAssertEqual(content.utf8.count, WorkspaceFileAccess.maximumEditorFileBytes)
+        XCTAssertEqual(content.first, "a")
+        XCTAssertEqual(content.last, "a")
+    }
+
+    func testRejectsOversizedEditorContent() throws {
+        let file = workspace.appendingPathComponent("oversized.swift")
+        let data = Data(
+            repeating: 0x61,
+            count: WorkspaceFileAccess.maximumEditorFileBytes + 1
+        )
+        try data.write(to: file)
+
+        XCTAssertThrowsError(
+            try WorkspaceFileAccess.readEditorContent(
+                at: "oversized.swift",
+                rootPath: workspace.path
+            )
+        ) { error in
+            XCTAssertEqual((error as? CocoaError)?.code, .fileReadTooLarge)
+        }
+    }
+
+    func testRejectsSymbolicLinkEditorContent() throws {
+        let target = workspace.appendingPathComponent("target.swift")
+        let link = workspace.appendingPathComponent("linked.swift")
+        try "content".write(to: target, atomically: true, encoding: .utf8)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+
+        XCTAssertThrowsError(
+            try WorkspaceFileAccess.readEditorContent(
+                at: "linked.swift",
+                rootPath: workspace.path
+            )
+        ) { error in
+            XCTAssertEqual((error as? CocoaError)?.code, .fileReadNoPermission)
+        }
+    }
+
+    func testRejectsNonRegularEditorContent() throws {
+        let directory = workspace.appendingPathComponent("Sources", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        XCTAssertThrowsError(
+            try WorkspaceFileAccess.readEditorContent(
+                at: "Sources",
+                rootPath: workspace.path
+            )
+        ) { error in
+            XCTAssertEqual((error as? CocoaError)?.code, .fileReadUnknown)
+        }
     }
 
     func testRejectsUnsafeEditorWritePathsWithoutChangingOutsideFiles() throws {

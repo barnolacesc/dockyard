@@ -1,6 +1,7 @@
 // ABOUTME: Detects installed tools, apps, and git repo status.
 // ABOUTME: Shared across the app as an environment object with async background updates.
 
+import Darwin
 import OSLog
 import SwiftUI
 
@@ -25,6 +26,59 @@ struct WorktreeState {
     var branchCreatedDate: Date? = nil
     var worktreeCreatedDate: Date? = nil
     var baseBranch: String = "main"
+}
+
+enum TaskDescriptionReader {
+    static let maximumDescriptionBytes = 64 * 1024
+
+    static func read(for worktreePath: String) -> String? {
+        let descriptionURL = URL(fileURLWithPath: worktreePath)
+            .appendingPathComponent(".dockyard-state/description")
+        return read(from: descriptionURL)
+    }
+
+    static func read(from descriptionURL: URL) -> String? {
+        let descriptor = open(
+            descriptionURL.path,
+            O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK
+        )
+        guard descriptor >= 0 else { return nil }
+        defer { close(descriptor) }
+
+        var metadata = stat()
+        guard fstat(descriptor, &metadata) == 0,
+              (metadata.st_mode & S_IFMT) == S_IFREG,
+              metadata.st_size >= 0,
+              metadata.st_size <= off_t(maximumDescriptionBytes)
+        else {
+            return nil
+        }
+
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: false)
+        var data = Data()
+        data.reserveCapacity(Int(metadata.st_size))
+
+        do {
+            while data.count <= maximumDescriptionBytes {
+                let remaining = maximumDescriptionBytes + 1 - data.count
+                let chunkSize = min(64 * 1024, remaining)
+                guard chunkSize > 0 else { break }
+                guard let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty else { break }
+                data.append(chunk)
+            }
+        } catch {
+            return nil
+        }
+
+        guard data.count <= maximumDescriptionBytes,
+              let text = String(data: data, encoding: .utf8)
+        else {
+            return nil
+        }
+
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
 }
 
 @MainActor
@@ -270,14 +324,7 @@ final class AppEnvironment: ObservableObject {
         let path = worktreePath
         let (branch, description): (String?, String?) = await Task.detached {
             let branch = GitOperations.currentBranch(at: path)
-            var description: String?
-            let descURL = URL(fileURLWithPath: path).appendingPathComponent(".dockyard-state/description")
-            if let data = try? Data(contentsOf: descURL),
-               let text = String(data: data, encoding: .utf8)
-            {
-                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !trimmed.isEmpty { description = trimmed }
-            }
+            let description = TaskDescriptionReader.read(for: path)
             return (branch, description)
         }.value
 
@@ -327,15 +374,8 @@ final class AppEnvironment: ObservableObject {
                     results[path] = valid
                     if valid {
                         validPaths.append(path)
-                        let descURL = URL(fileURLWithPath: path)
-                            .appendingPathComponent(".dockyard-state/description")
-                        if let data = try? Data(contentsOf: descURL),
-                           let text = String(data: data, encoding: .utf8)
-                        {
-                            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                            if !trimmed.isEmpty {
-                                descriptionResults[path] = trimmed
-                            }
+                        if let description = TaskDescriptionReader.read(for: path) {
+                            descriptionResults[path] = description
                         }
                     }
                 }

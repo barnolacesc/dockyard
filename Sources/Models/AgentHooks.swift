@@ -65,6 +65,18 @@ enum AgentHooks {
                         "command": "\(quotedHelper) --workstream-id \(id) --state idle --chrome-active false",
                     ]],
                 ]],
+                "SubagentStart": [[
+                    "hooks": [[
+                        "type": "command",
+                        "command": "\(quotedHelper) --workstream-id \(id) --subagent-event start",
+                    ]],
+                ]],
+                "SubagentStop": [[
+                    "hooks": [[
+                        "type": "command",
+                        "command": "\(quotedHelper) --workstream-id \(id) --subagent-event stop",
+                    ]],
+                ]],
                 "PreToolUse": [[
                     "matcher": "mcp__claude-in-chrome__.*",
                     "hooks": [[

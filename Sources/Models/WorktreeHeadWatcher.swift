@@ -1,6 +1,7 @@
 // ABOUTME: Watches each worktree's git HEAD directory for changes (e.g. `git branch -m`)
 // ABOUTME: and fires a callback so the UI can resync branch names instantly, not on a poll.
 
+import Darwin
 import Foundation
 
 /// Watches the per-worktree git directory (the directory containing `HEAD`) for every
@@ -9,6 +10,8 @@ import Foundation
 /// the app can refresh its branch name immediately rather than waiting for the periodic
 /// poll. Mirrors the directory-watching pattern used by `AgentStateStore`.
 final class WorktreeHeadWatcher: @unchecked Sendable {
+    static let maximumGitFileBytes = 16 * 1024
+
     private struct Watch {
         let id: UUID
         let source: DispatchSourceFileSystemObject
@@ -166,21 +169,80 @@ final class WorktreeHeadWatcher: @unchecked Sendable {
     /// normal repository it is the `.git` directory itself. Returns nil for non-git paths.
     static func headDirectory(forWorktree path: String) -> String? {
         let gitEntry = URL(fileURLWithPath: path).appendingPathComponent(".git")
-        var isDir: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: gitEntry.path, isDirectory: &isDir) else {
-            return nil
-        }
-        if isDir.boolValue {
+        var entryMetadata = stat()
+        guard lstat(gitEntry.path, &entryMetadata) == 0 else { return nil }
+
+        let entryType = entryMetadata.st_mode & S_IFMT
+        if entryType == S_IFDIR {
             return gitEntry.path
         }
-        guard let contents = try? String(contentsOf: gitEntry, encoding: .utf8) else { return nil }
+        guard entryType == S_IFREG,
+              let contents = readBoundedGitFile(at: gitEntry)
+        else {
+            return nil
+        }
+
         for rawLine in contents.split(whereSeparator: { $0 == "\n" || $0 == "\r" }) {
             let line = rawLine.trimmingCharacters(in: .whitespaces)
             if line.hasPrefix("gitdir:") {
                 let dir = line.dropFirst("gitdir:".count).trimmingCharacters(in: .whitespaces)
-                return dir.isEmpty ? nil : dir
+                guard !dir.isEmpty else { return nil }
+
+                let target: URL
+                if NSString(string: dir).isAbsolutePath {
+                    target = URL(fileURLWithPath: dir, isDirectory: true)
+                } else {
+                    target = gitEntry.deletingLastPathComponent()
+                        .appendingPathComponent(dir, isDirectory: true)
+                }
+                let resolvedTarget = target.standardizedFileURL
+                var isDirectory: ObjCBool = false
+                guard FileManager.default.fileExists(
+                    atPath: resolvedTarget.path,
+                    isDirectory: &isDirectory
+                ), isDirectory.boolValue else {
+                    return nil
+                }
+                return resolvedTarget.path
             }
         }
         return nil
+    }
+
+    private static func readBoundedGitFile(at url: URL) -> String? {
+        let descriptor = open(url.path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK)
+        guard descriptor >= 0 else { return nil }
+        defer { close(descriptor) }
+
+        var metadata = stat()
+        guard fstat(descriptor, &metadata) == 0,
+              (metadata.st_mode & S_IFMT) == S_IFREG,
+              metadata.st_size >= 0,
+              metadata.st_size <= off_t(maximumGitFileBytes)
+        else {
+            return nil
+        }
+
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: false)
+        var data = Data()
+        data.reserveCapacity(Int(metadata.st_size))
+
+        do {
+            while data.count <= maximumGitFileBytes {
+                let remaining = maximumGitFileBytes + 1 - data.count
+                guard remaining > 0,
+                      let chunk = try handle.read(upToCount: remaining),
+                      !chunk.isEmpty
+                else {
+                    break
+                }
+                data.append(chunk)
+            }
+        } catch {
+            return nil
+        }
+
+        guard data.count <= maximumGitFileBytes else { return nil }
+        return String(data: data, encoding: .utf8)
     }
 }

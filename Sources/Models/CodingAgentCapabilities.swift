@@ -14,7 +14,7 @@ enum CodingAgentStateReportingStrategy: Equatable {
 }
 
 struct CodingAgentCapabilities: Equatable {
-    static let contractVersion = 1
+    static let contractVersion = 2
 
     let commandStrategy: CodingAgentCommandStrategy
     let stateReportingStrategy: CodingAgentStateReportingStrategy
@@ -40,7 +40,7 @@ extension CodingCLI {
                 supportsCLISessionResume: true,
                 supportsDockyardTmuxPersistence: true,
                 reportsMainAgentState: true,
-                reportsSubagentState: false,
+                reportsSubagentState: true,
                 supportsDangerousPermissionBypass: true,
                 supportsLivePermissionControl: true,
                 supportsAutoRenameBranch: true,

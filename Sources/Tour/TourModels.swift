@@ -18,6 +18,8 @@ extension Notification.Name {
 enum TourAnchorID: String, CaseIterable {
     case newProjectButton
     case newWorkstreamButton
+    case selectedWorkstreamRow
+    case sidebarStatusStrip
     case workspaceTabBar
     case agentPicker
     case agentTab

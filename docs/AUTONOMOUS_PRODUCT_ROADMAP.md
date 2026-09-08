@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-08-26 against `origin/main` at
-`fce9d0f61ee8b673ea1f09f27cb82e7d0245b5fb`.
+Last reconciled: 2026-09-08 against `origin/main` at
+`08ec8b33781b5ea406a1dcf5eeaa071954c1ebd6`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -11,81 +11,98 @@ The first **Current autonomous queue** is canonical. Dated **Live
 reconciliation** and superseded queue sections are retained as an audit trail
 and can contain stale statuses.
 
-## Current autonomous queue — 2026-08-26 18:37 CEST
+## Current autonomous queue — 2026-09-08 16:30 CEST
 
-`origin/main` is `fce9d0f`; its latest macOS CI, CodeQL and Release workflows
-are green. PRs #140 (R39) and #142 (R40) are green and **awaiting Cesc review**.
-PRs #117 and #126 are also green at their heads but conflict with current
-`main`; they remain awaiting review and are not modified or stacked on here.
-Release-please PR #63 remains approval-gated and must not be merged or
-published autonomously. The latest published release remains v0.2.1.
+`origin/main` is `08ec8b3`; its latest macOS CI, scheduled CodeQL and Release
+workflows are green. PRs #170, #172, #174, #176, #178, #180, #182, #184 and
+#186 are green at their heads and **awaiting Cesc review**. PRs #117, #126,
+#140, #146, #148, #152, #154, #156, #158, #160, #162, #164, #166 and #168
+are also green at their heads but conflict with current `main`; they remain
+awaiting review and are not modified or stacked on here. Release-please PR #63
+remains approval-gated and must not be merged or published autonomously. The
+latest published release remains v0.2.1.
 
 GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
 `repo` and `workflow` but lacks `read:project`. No Project item or status is
-inferred. Open product issues before this run were #41, #43, #54, #116 and
-#141; issue #143 records this run.
+inferred. Current issues, `TODO.md`, code and every open PR path were
+reconciled before issue #187 was created for this run. Product issues #41,
+#43 and #54 still require native profiling, approval-gated update work and
+non-duplicative agent-status work respectively.
 
-### R41 — Bound run-state cache reads before decoding
+### R64 — Bound unified-log polling snapshots
 
-- Status: **Awaiting Cesc review in PR #144** on
-  `fix/bound-run-state-cache-reads-r41` for issue #143. Native CI is pending;
-  the PR must remain open and must not be auto-merged.
-- User outcome: a malformed local run-state cache entry cannot make browser
-  retargeting allocate unbounded memory or follow a symbolic link outside the
-  expected cache file.
-- Success signal: only a regular snapshot at or below 1 MiB is decoded; a
-  symbolic link and a file above the limit are rejected while ordinary valid
-  state still retargets normally.
-- macOS impact: native run-state reads used by port detection only; no UI,
-  accessibility, localization or shortcut behavior changes.
-- Persistence/security impact: narrows a read-only local-cache boundary. The
-  opened descriptor is checked and read with a hard cap, avoiding a path
-  check/read race. The JSON schema, writer, deletion, migration, process
-  validation, scripts, commands, entitlements and release behavior are
-  unchanged.
-- Scope: `RunStateStore`, focused `PortDetectionTests` and roadmap evidence.
-- Dependencies: none. Open PRs #117, #126, #140, #142 and #63 do not own the
-  implementation or test paths and can merge in either order.
-- Risk: low and reversible read-side hardening; full GitHub macOS CI is
+- Status: **Awaiting Cesc review in PR #188** on
+  `fix/bound-unified-log-snapshots-r64-20260908` for issue #187. The pull
+  request must remain open and must not be auto-merged.
+- User outcome: opening the native logs window after a diagnostic burst cannot
+  materialize or sort an unbounded unified-log poll result.
+- Success signal: the production source retains at most 5,000 matching entries,
+  respects a smaller visible-history capacity, and returns the newest retained
+  tail in source order while bookmark advancement and filters remain correct.
+- macOS impact: the existing native unified-log window only; no visible string,
+  layout, accessibility, localization or shortcut behavior changes.
+- Persistence/security impact: bounds transient diagnostic data from the
+  current process. Logging preferences, launch diagnostics, commands,
+  persisted state, entitlements and release behavior are unchanged.
+- Scope: `LogSource`, `LogStore`, focused `LogStoreTests` and roadmap evidence.
+- Dependencies: none. No open PR owns these implementation or test paths, so
+  the code can merge in either order with every pending implementation PR.
+- Risk: low, reversible diagnostic-memory hardening. Full GitHub macOS CI is
   mandatory.
 - Acceptance criteria:
-  1. A regular valid snapshot at the 1 MiB limit decodes.
-  2. A regular snapshot larger than 1 MiB is rejected without an unbounded
-     allocation.
-  3. A symbolic-link candidate is rejected even when its target has valid JSON.
-  4. Metadata validation and bounded reads apply to the same opened file.
-  5. Existing port/run-state tests and the full macOS suite remain green.
-- Required evidence: focused XCTest, localization scripts, XcodeGen/native
-  build, full XCTest, `git diff --check`, added-line secret scan and configured
-  CodeQL.
+  1. Production polling retains at most 5,000 matching entries and honors a
+     smaller requested capacity.
+  2. A burst beyond the ceiling keeps the newest entries in chronological
+     source order without retaining the entire matching sequence.
+  3. `LogStore` passes its capacity to the source, appends only fresh entries,
+     advances the bookmark to the newest fetched timestamp and keeps visible
+     history bounded.
+  4. Existing search, category and minimum-level filters remain green.
+  5. Focused XCTest and the full GitHub macOS build/test pass.
+- Required evidence: focused `LogStoreTests`, localization resource/key checks,
+  XcodeGen/native build, full XCTest, `git diff --check`, added-line secret scan
+  and configured CodeQL.
 - Evidence so far: localization resource/key tests and repository checks pass,
-  including 418 app keys and 15 privacy keys across all five locales;
-  `git diff --check` and the added-line secret scan pass. The Linux host has no
-  Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub macOS CI is
-  the mandatory native build/test evidence.
+  including 10 declared resources, 418 app keys and 15 privacy keys across all
+  five locales. Bundled-helper, appcast-generation and appcast-seeding script
+  tests, `git diff --check` and the added-line secret scan pass. The Linux
+  automation host has no Swift, Xcode, XcodeGen, prek or SwiftFormat
+  executable, so GitHub macOS CI is the mandatory native build/test evidence.
+  At implementation-and-roadmap head `f62a46e`, macOS CI run `34240052035`
+  passed localization checks, XcodeGen, the native build, bundled-helper
+  verification and the full XCTest suite including `LogStoreTests`. CodeQL run
+  `34240052033` passed its configured Actions and JavaScript analyses; Swift
+  analysis was skipped by repository workflow configuration. The final
+  evidence-only head must also remain green.
 
-### Independent Ready queue while R39–R41 await review
+### Independent Ready queue while R64 and older PRs await review
 
-- **R42 — Build a read-only GitHub issue task preview.** User outcome: issue
-  intake can show exactly what would be handed to an agent before any worktree
-  or prompt exists. Success signal: title, number, URL and bounded body text
-  normalize deterministically as untrusted input. Scope: pure model/parser and
-  tests; no GitHub mutation, credential, command, agent launch or worktree
-  creation. Dependencies: none. Risk: low; full macOS CI required.
-- **R43 — Bound startup tool-detection probes.** User outcome: a broken local
-  CLI cannot hang Dockyard startup or emit unbounded version/help output.
-  Success signal: process-double tests prove timeout, termination, output cap
-  and normal version detection. Scope: `ToolStatus` command runner and focused
-  tests only; no Coding Agent launch command or permission change.
-  Dependencies: none and disjoint from #140. Risk: medium command-boundary
-  change; stop at a tested PR for Cesc and require full macOS CI.
-- **R44 — Bound browser-state cache reads before decoding.** User outcome:
-  restoring or appending browser state cannot follow a cache symlink or read an
-  unbounded file. Success signal: bounded regular fixtures decode while
-  symlinked and oversized candidates fail closed. Scope: `BrowserBridge` and
-  focused tests; no WKWebView policy, JavaScript, environment variable, state
-  schema or write behavior change. Dependencies: none. Risk: low read-side
-  hardening; full macOS CI required.
+- **R65 — Bound legacy cache-migration enumeration.** User outcome: a malformed
+  legacy cache directory with an excessive number of entries cannot allocate
+  an unbounded array during startup cleanup. Success: deterministic fixtures
+  prove lazy enumeration stops at a fixed ceiling while empty-directory
+  cleanup and preservation of non-empty/conflicting legacy state remain
+  unchanged. Scope: `CacheMigration` and focused tests; no destination
+  replacement, schema, command, worktree or entitlement change. Persisted-data
+  migration behavior is approval-gated and must stop at a tested PR for Cesc.
+- **R66 — Bound persisted project snapshot decoding.** User outcome: an
+  unexpectedly large `dockyard.projects` defaults payload cannot feed an
+  unbounded decoder during launch. Success: bounded valid snapshots still
+  restore while oversized or malformed data follows the existing empty-state
+  path without deleting stored bytes. Scope: `ProjectStore` and focused tests;
+  no schema, migration, project mutation, UI, localization, command, worktree
+  or entitlement change. Full macOS CI is required.
+- **R67 — Bound persisted workspace-tab snapshot decoding.** User outcome: an
+  unexpectedly large restored tab payload cannot feed an unbounded decoder
+  while opening a workstream. Success: bounded valid tabs still restore while
+  oversized or malformed data follows the existing default-tab path without
+  deleting stored bytes. Scope: workspace-tab restoration and focused tests;
+  no schema, migration, tab mutation, UI string, command, worktree or
+  entitlement change. Full macOS CI is required.
+
+R62 (bounded expanded file-tree enumeration) remains **dependent on R61 / PR
+#184 merging** because both change `FileTree.swift`; it is not Ready while that
+PR is open and must not be stacked or duplicated.
 
 ## Superseded autonomous queue — 2026-08-10 16:30 CEST
 

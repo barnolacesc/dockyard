@@ -49,6 +49,8 @@ enum TourFlowCatalog {
             GettingStartedFlow.make()
         case WorkspaceTabsFlow.id:
             WorkspaceTabsFlow.make()
+        case PowerFeaturesFlow.id:
+            PowerFeaturesFlow.make()
         default:
             nil
         }
