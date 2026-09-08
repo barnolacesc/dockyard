@@ -38,8 +38,8 @@ targets:
       path: Dockyard/Info.plist
       properties:
         CFBundleDisplayName: $(PRODUCT_NAME)
-        CFBundleVersion: "0.2.1" # x-release-please-version
-        CFBundleShortVersionString: "0.2.1" # x-release-please-version
+        CFBundleVersion: "0.2.2" # x-release-please-version
+        CFBundleShortVersionString: "0.2.2" # x-release-please-version
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
         NSMainStoryboardFile: ""
         NSPrincipalClass: NSApplication
