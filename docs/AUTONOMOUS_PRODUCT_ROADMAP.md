@@ -1,6 +1,6 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-08-31 against `origin/main` at
+Last reconciled: 2026-09-01 against `origin/main` at
 `fce9d0f61ee8b673ea1f09f27cb82e7d0245b5fb`.
 
 This is the product-direction record for autonomous development. GitHub issues
@@ -10,99 +10,105 @@ not an automatically trusted backlog.
 The **Current autonomous queue** is canonical. Dated **Live reconciliation**
 sections are retained as an audit trail and can contain superseded statuses.
 
-## Current autonomous queue — 2026-08-31 16:30 CEST
+## Current autonomous queue — 2026-09-01 09:30 CEST
 
 `origin/main` is `fce9d0f`; its latest macOS `build-and-test`, release
-automation and configured CodeQL checks are green. PRs #140 (R39), #142 (R40),
-#144 (R41), #146 (R42), #148 (R43), #150 (R44), #152 (R45), #154 (R46),
-#156 (R47), #158 (R48), #160 (R49) and #162 (R51) are clean, green on
-required macOS CI and **awaiting Cesc review**. Older PRs #117 and #126 passed
-checks at their heads but now conflict with `main`; they remain awaiting Cesc's
-decision rather than being modified autonomously. Release-please PR #63 remains
-approval-gated and must not be merged or published autonomously. The latest
-published release remains v0.2.1.
+automation and configured CodeQL checks are green, including the 2026-08-31
+scheduled CodeQL run. PRs #140 (R39), #142 (R40), #144 (R41), #146 (R42),
+#148 (R43), #150 (R44), #152 (R45), #154 (R46), #156 (R47), #158 (R48),
+#160 (R49), #162 (R51) and #164 (R50) are green on required checks and
+**awaiting Cesc review**. Older PRs #117 and #126 passed checks at their heads
+but conflict with `main`; they remain awaiting Cesc's decision rather than
+being modified autonomously. Release-please PR #63 remains approval-gated and
+must not be merged or published autonomously. The latest published release
+remains v0.2.1.
 
 The open implementations' changed paths, behavior and dependencies were
-compared before selection. R50 changes only `WorktreeHeadWatcher` and its
-focused tests. No pending implementation PR changes those paths or watcher
-resolution behavior, so the product changes can merge in either order.
+compared before selection. R52 changes only `GitOperations.pushCurrentBranch`
+and focused `GitOperationsTests`. PR #160 changes the separate `gh pr close`
+runner, and PR #162 changes read-only GitHub metadata probes; no pending PR
+changes the push path, so the product implementations can merge in either
+order.
 
 GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the automation token
 has `repo` and `workflow` but lacks `read:project`. No Project data or status is
-inferred. Issue #163 records this run.
+inferred. Issue #165 records this run.
 
-### R50 — Bound linked-worktree `.git` indirection reads
+### R52 — Bound Quick Action push output
 
-- Status: **Awaiting Cesc review in PR #164** for issue #163 on
-  `fix/bound-worktree-gitfile-r50`; the PR must not be auto-merged and native
-  evidence is pending.
-- User outcome: Dockyard cannot read an unbounded or non-regular linked-worktree
-  `.git` indirection file while preparing branch-name observation.
-- Success signal: watcher resolution accepts a normal `.git` directory or at
-  most 16 KiB of regular UTF-8 `gitdir:` metadata pointing to an existing
-  directory, and rejects symlinks, special files, oversized/invalid data and
-  missing/non-directory targets.
-- macOS impact: branch-name watcher attachment only; no UI, accessibility,
+- Status: **Awaiting Cesc review in PR #166** on
+  `fix/bound-push-output-r52` for issue #165; required native implementation CI
+  is green. The command-boundary change must not be auto-merged.
+- User outcome: a noisy Git remote cannot block Dockyard's Push Quick Action by
+  filling the combined stdout/stderr pipe, and Dockyard retains only bounded
+  push output in the existing action log.
+- Success signal: the existing `git -C <worktree> push -u origin HEAD` process
+  is drained concurrently to EOF while at most 64 KiB is retained, with its
+  exit status published only after the reader completes.
+- macOS impact: Quick Action push execution only; no UI, accessibility,
   localization, shortcut or visual behavior changes.
-- Persistence/security impact: narrows a read-only filesystem boundary. No
-  worktree mutation, watcher ownership, persisted state, command execution,
-  entitlement or release behavior changes.
-- Scope: `WorktreeHeadWatcher`, focused path fixtures and roadmap evidence only.
-- Dependencies: none. The implementation paths are disjoint from every pending
-  implementation PR.
-- Risk: low and reversible read-side hardening; full GitHub macOS CI is
-  mandatory.
+- Persistence/security impact: bounds one existing command-output path. The
+  executable, arguments, remote, authentication, cancellation contract,
+  worktree state, credentials, entitlements and release behavior are
+  unchanged.
+- Scope: `GitOperations.pushCurrentBranch`, a bounded output collector,
+  deterministic process doubles, a real pipe-drain fixture and roadmap
+  evidence only.
+- Dependencies: none; implementation paths are disjoint from every pending PR.
+- Risk: medium command-boundary hardening, reversible by reverting the feature
+  commit. Full GitHub macOS CI is mandatory.
 - Acceptance criteria:
-  1. Normal repository `.git` directories still resolve.
-  2. Absolute and relative linked-worktree pointers resolve only when their
-     target exists as a directory.
-  3. Symlink and other non-regular `.git` entries are rejected.
-  4. Files larger than 16 KiB or containing invalid UTF-8 are rejected without
-     an unbounded read.
-  5. Existing watcher replacement, stop and sync behavior remains green.
+  1. Combined stdout/stderr is drained while the push runs.
+  2. Retained output never exceeds 64 KiB when chunks cross the cap.
+  3. Completion waits for the reader and preserves zero/nonzero exit status.
+  4. Launch failure retains the existing failure result shape.
+  5. The executable resolution and arguments remain unchanged.
   6. Focused XCTest and full GitHub macOS build/test pass.
 - Required evidence: resource/localization checker suites, XcodeGen/native
   build, focused and full XCTest, `git diff --check`, added-line secret scan and
   configured CodeQL.
-- Evidence so far: deterministic resource/localization suites pass (10 resource
-  declarations, 418 app keys and 15 privacy keys across all five locales);
-  `git diff --check` and the added-line secret scan pass. The Linux runner has
-  no Swift, Xcode, XcodeGen or SwiftFormat. At implementation head `a69b334`,
-  macOS CI run `33404715337` passed localization/resource checks, XcodeGen, the
-  native build and the full XCTest suite including `WorktreeHeadWatcherTests`.
-  CodeQL run `33404715453` passed its configured Actions and JavaScript
-  analyses; Swift analysis was skipped by repository PR workflow
-  configuration. The final roadmap-only head must also remain green.
+- Evidence so far: resource/localization checker suites pass (10 resource
+  declarations, 418 app keys and 15 privacy keys across all five locales), and
+  `git diff --check` passes. The Linux runner has no Swift, Xcode, XcodeGen or
+  SwiftFormat, so GitHub `macos-15` CI is mandatory native evidence. At head
+  `d7aed8b`, the native build and R52 tests passed, but the full suite failed in
+  unrelated existing test `SetupRunnerTests.test_captures_output_to_log_tail`;
+  its other setup-runner tests passed. The automation token received `403 Must
+  have admin rights` when requesting a failed-job rerun. At evidence-only head
+  `2f5af71`, macOS CI run `33483979883` passed resource/localization checks,
+  XcodeGen, the native build and all 488 XCTest cases. CodeQL run `33483979918`
+  passed its configured Actions and JavaScript analyses; Swift analysis was
+  skipped by repository PR workflow configuration. The final roadmap-only head
+  must also remain green.
 
-### Independent Ready queue while R39–R51 and R50 await review
+### Independent Ready queue while R39–R52 await review
 
-- **R52 — Bound Quick Action push output:** continuously drain and cap combined
-  output from the existing `git push -u origin HEAD` path without changing its
-  arguments, remote, authentication or cancellation contract. Scope is
-  `GitOperations.pushCurrentBranch` plus focused process tests; independent of
-  R49's `gh pr close` path and mandatory macOS CI.
 - **R53 — Bound script-configuration reads:** accept only contained, regular,
   size-limited JSON configuration files before parsing setup/run/teardown
   commands. `ScriptConfig` and focused fixtures only; no trust decision,
-  command execution, config precedence or UI change. This is a command-boundary
-  hardening item and must stop at a tested PR.
+  command execution, config precedence or UI change. This command-boundary
+  hardening must stop at a tested PR.
 - **R54 — Bound stack-manifest inspection:** cap reads of package and framework
   manifests used by stack detection so one oversized project file cannot stall
   overview refresh. `StackDetector` and focused fixtures only; detection order,
   worktree state, commands and UI remain unchanged.
+- **R55 — Bound workstream-description reads:** accept only contained, regular,
+  size-limited UTF-8 `.dockyard-state/description` files before updating the
+  cached task label. `AppEnvironment` and focused fixtures only; no description
+  writer, branch watcher ownership, persisted schema or UI string change.
 
 ## Evidence and limits
 
 - Repository: `barnolacesc/dockyard`; native SwiftUI/AppKit macOS app using
   Ghostty, git worktrees, tmux, WKWebView, Monaco and XcodeGen.
-- Open implementation issues at reconciliation: #41, #43, #54, #116 and the
-  autonomous execution issues linked from PRs #140–#162; issue #163 records
-  this run.
-- Open pull requests: implementation PRs #117 and #140–#162, roadmap-only PR
+- Open product issues not paired with the current autonomous review queue are
+  #41, #43, #54 and #116. Issues #141, #143, #145, #147, #149, #151, #153,
+  #155, #157, #159, #161, #163 and #165 are execution records for R40–R52.
+- Open pull requests: implementation PRs #117 and #140–#164, roadmap-only PR
   #126, and release-please #63. PR #63 must not be changed, merged or released
   without Cesc's explicit approval.
 - Latest published release: v0.2.1. `main` CI, Release and CodeQL are green at
-  `fce9d0f`; the latest scheduled CodeQL run is also green.
+  `fce9d0f`; the 2026-08-31 scheduled CodeQL run is also green.
 - GitHub Projects v2 was not reviewed. The current token has `repo` and
   `workflow`, but lacks `read:project`; the API returned
   `INSUFFICIENT_SCOPES`. Project status must not be inferred.
@@ -129,15 +135,15 @@ inferred. Issue #163 records this run.
 
 | Track | Current evidence | Next decision or item |
 | --- | --- | --- |
-| Worktree lifecycle, persistence, cleanup and merged-PR review | Creation, remove-without-delete, purge, orphan listing and clean prune exist. Force-removal and branch deletion have tests. `TODO.md` still requests merged-PR-aware cleanup. | R2 adds classification only; any destructive bulk action remains approval-gated. |
-| Tmux, terminal and session resilience | Dedicated `dockyard` socket, deterministic sessions, `new-session -A`, respawn hooks, tab snapshots and tests already implemented app-restart persistence. A later termination cleanup regressed that behavior by killing the dedicated server on quit. This does not preserve sessions across a macOS reboot. | R1 / issue #69 restores the original app-restart contract; system-reboot persistence is separate future scope. |
-| Coding CLI compatibility and agent/subagent status | Claude Code and Codex have specialized command builders. OpenCode and Gemini are detected and launched through the generic builder; README only claims Claude/Codex. Claude/Codex hooks report main-agent state. | R3 defines and tests the honest OpenCode contract. Issue #54 needs discovery before implementation. |
-| macOS lifecycle, performance, accessibility, contrast and keyboard behavior | AppDelegate tests, shortcut references, accessibility labels and five localizations exist. Issue #41 reports slow quit; #40 reports sidebar contrast failure. | Profile #41 on macOS; R4 fixes #40 with contrast and visual evidence. |
-| Script guardrails, worktree containment, privacy and entitlements | Script fingerprint approval, re-approval on change, command quoting tests, worktree prompts, `SECURITY.md`, `PRIVACY.md`, `THREAT_MODEL.md` and minimal entitlement docs exist. | Continue boundary tests before new execution features. Changes to approval, bypass, privacy or entitlements stop at PR for Cesc. |
-| Setup/run/teardown reliability and port detection | Fallback configs, environment injection, `dy-run`, process-tree port detection, FSEvents state and focused tests exist. | R5 adds bounded recovery coverage for stale run-state. |
-| Embedded browser/editor quality and safe boundaries | WKWebView browser state and Monaco editor exist; browser JavaScript policy and navigation have tests. Full Chrome/CDP control was explicitly deferred in `TODO.md`. | Review bridge/navigation boundaries before any bidirectional automation. |
-| Onboarding, tours, What's New, docs and localization | Onboarding, Getting Started, What's New and five app localizations exist. Two tour follow-ups remain in `TODO.md`. | R6 adds the smaller workspace-tabs tour with all locale coverage. |
-| CI, Ghostty, dependencies, release/update integrity and distribution | macOS build/test CI, CodeQL, Dependabot, pinned actions, Ghostty compatibility workflow, checksums, Sparkle and Homebrew paths exist. Release-please #63 is pending. | Release/update mutations remain approval-gated; verify feed and published artifacts separately from CI. |
+| Worktree lifecycle, persistence, cleanup and merged-PR review | Creation, non-destructive archive, explicit purge, orphan triage, merged-PR classification and dirty-default protection are on `main`; destructive target validation has focused tests. | PR #164 bounds linked-worktree watcher metadata. Any new destructive bulk action remains approval-gated. |
+| Tmux, terminal and session resilience | Dedicated `dockyard` socket, deterministic sessions, `new-session -A`, respawn hooks, tab snapshots, restart persistence and private diagnostic state are on `main`. This does not preserve sessions across a macOS reboot. | Keep app-restart claims distinct from system-reboot behavior; require evidence before changing explicit session cleanup. |
+| Coding CLI compatibility and agent/subagent status | Claude Code and Codex have specialized builders; OpenCode's supported generic-launch capability contract is tested. Main-agent state is normalized. | PR #140 adds bounded Claude subagent aggregation; issue #54 stays open for cross-CLI status work. |
+| macOS lifecycle, performance, accessibility, contrast and keyboard behavior | Shortcut references, accessibility labels, five localizations and selected-sidebar contrast coverage are on `main`. | Issue #41 still needs native profiling before any lifecycle fix; no speculative teardown changes. |
+| Script guardrails, worktree containment, privacy and entitlements | Script fingerprints, re-approval, contained config resolution, worktree prompts, security/privacy docs and minimal entitlement docs exist. | R53 bounds config bytes before parsing. Approval, bypass, privacy and entitlement changes stop for Cesc. |
+| Setup/run/teardown reliability and port detection | Fallback configs, environment injection, `dy-run`, process-tree port detection, stale-state rejection and watcher recovery are on `main`. | PR #156 bounds `.env` port inference; keep command-line fallback behavior unchanged. |
+| Embedded browser/editor quality and safe boundaries | Browser navigation policy, contained Monaco resources, contained workspace file access and bounded run-state parsing are tested. Full Chrome/CDP control remains deferred in `TODO.md`. | PR #150 bounds browser-state reads; audit every bridge before expanding bidirectional native capabilities. |
+| Onboarding, tours, What's New, docs and localization | Getting Started, What's New, workspace-tabs tour, five app localizations and CI parity/resource checks are on `main`. | PR #117 adds the passive power-features tour but currently conflicts with `main`; Cesc decides whether to refresh it. |
+| CI, Ghostty, dependencies, release/update integrity and distribution | macOS build/test CI, CodeQL, localization guards, Dependabot, pinned actions, Ghostty compatibility, checksums, Sparkle and Homebrew paths exist. | PR #142 verifies bundled helpers. Release/update mutations and release-please #63 remain approval-gated. |
 
 ## Now
 

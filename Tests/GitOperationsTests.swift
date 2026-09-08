@@ -4,6 +4,28 @@
 @testable import Dockyard
 import XCTest
 
+private enum GitPushProcessDoubleError: Error {
+    case launchFailed
+}
+
+private final class GitPushProcessDouble: GitPushProcess, @unchecked Sendable {
+    private(set) var runCallCount = 0
+    var result: GitPushProcessResult
+    var error: Error?
+
+    init(output: Data = Data(), terminationStatus: Int32 = 0) {
+        result = GitPushProcessResult(output: output, terminationStatus: terminationStatus)
+    }
+
+    func run() throws -> GitPushProcessResult {
+        runCallCount += 1
+        if let error {
+            throw error
+        }
+        return result
+    }
+}
+
 final class GitOperationsTests: XCTestCase {
     private var tempDir: URL!
 
@@ -297,6 +319,81 @@ final class GitOperationsTests: XCTestCase {
         git(["worktree", "add", "-b", "dy/my-feature", worktreeDir.path], in: repoDir)
 
         XCTAssertEqual(GitOperations.currentBranch(at: worktreeDir.path), "dy/my-feature")
+    }
+
+    // MARK: - pushCurrentBranch
+
+    func testPushCurrentBranchPreservesCommandAndReturnsCapturedOutput() {
+        let process = GitPushProcessDouble(output: Data("pushed\n".utf8))
+
+        let result = GitOperations.pushCurrentBranch(
+            at: "/tmp/worktree",
+            gitExecutableURL: URL(fileURLWithPath: "/usr/bin/git")
+        ) { executableURL, arguments, maximumOutputBytes in
+            XCTAssertEqual(executableURL.path, "/usr/bin/git")
+            XCTAssertEqual(arguments, ["-C", "/tmp/worktree", "push", "-u", "origin", "HEAD"])
+            XCTAssertEqual(maximumOutputBytes, GitOperations.maximumPushOutputBytes)
+            return process
+        }
+
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.output, "pushed\n")
+        XCTAssertEqual(process.runCallCount, 1)
+    }
+
+    func testPushCurrentBranchPreservesNonzeroExitStatus() {
+        let process = GitPushProcessDouble(
+            output: Data("remote rejected\n".utf8),
+            terminationStatus: 1
+        )
+
+        let result = GitOperations.pushCurrentBranch(
+            at: "/tmp/worktree",
+            gitExecutableURL: URL(fileURLWithPath: "/usr/bin/git")
+        ) { _, _, _ in process }
+
+        XCTAssertFalse(result.success)
+        XCTAssertEqual(result.output, "remote rejected\n")
+    }
+
+    func testPushCurrentBranchReturnsFailureWhenProcessCannotLaunch() {
+        let process = GitPushProcessDouble()
+        process.error = GitPushProcessDoubleError.launchFailed
+
+        let result = GitOperations.pushCurrentBranch(
+            at: "/tmp/worktree",
+            gitExecutableURL: URL(fileURLWithPath: "/usr/bin/git")
+        ) { _, _, _ in process }
+
+        XCTAssertFalse(result.success)
+        XCTAssertFalse(result.output.isEmpty)
+    }
+
+    func testGitPushOutputCollectorCapsChunkedOutput() {
+        let collector = GitPushOutputCollector(maximumOutputBytes: 64 * 1024)
+
+        collector.ingest(Data(repeating: 0x41, count: 40 * 1024))
+        collector.ingest(Data(repeating: 0x42, count: 40 * 1024))
+        collector.ingest(Data(repeating: 0x43, count: 8 * 1024))
+
+        let output = collector.snapshot
+        XCTAssertEqual(output.count, 64 * 1024)
+        XCTAssertEqual(output.prefix(40 * 1024), Data(repeating: 0x41, count: 40 * 1024))
+        XCTAssertEqual(output.suffix(24 * 1024), Data(repeating: 0x42, count: 24 * 1024))
+    }
+
+    func testFoundationGitPushProcessDrainsBeforeReturningAndCapsOutput() throws {
+        let process = FoundationGitPushProcess(
+            executableURL: URL(fileURLWithPath: "/bin/sh"),
+            arguments: ["-c", "/usr/bin/yes x | /usr/bin/head -c 131072; exit 7"],
+            maximumOutputBytes: 64 * 1024
+        )
+
+        let result = try process.run()
+
+        XCTAssertEqual(result.terminationStatus, 7)
+        XCTAssertEqual(result.output.count, 64 * 1024)
+        XCTAssertTrue(result.output.allSatisfy { $0 == 0x78 || $0 == 0x0A })
     }
 
     // MARK: - deleteLocalBranch
