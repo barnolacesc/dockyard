@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.4](https://github.com/barnolacesc/dockyard/compare/v0.2.3...v0.2.4) (2026-09-08)
+
+
+### Features
+
+* **sidebar:** add persistent project colors ([bbd4a54](https://github.com/barnolacesc/dockyard/commit/bbd4a5430df7785cb0c8cb1e4959eabbc46a5562))
+* **sidebar:** add persistent project colors ([35e78f6](https://github.com/barnolacesc/dockyard/commit/35e78f69d0c7623a0dbefd7c8324324e0df7d740))
+
+
+### Bug Fixes
+
+* **updater:** detect stale running builds ([f2a5a00](https://github.com/barnolacesc/dockyard/commit/f2a5a0074f8d2aa2570e29c5669a4669f7e2cb7c))
+* **updater:** detect stale running builds ([cdcc6ae](https://github.com/barnolacesc/dockyard/commit/cdcc6aea4ecb9b89ec85e061bb1f9f645fa9958b))
+
 ## [0.2.3](https://github.com/barnolacesc/dockyard/compare/v0.2.2...v0.2.3) (2026-09-08)
 
 
