@@ -1,14 +1,14 @@
-// ABOUTME: Checks the local repository for updates against origin/main.
+// ABOUTME: Checks the running app's embedded commit for updates against origin/main.
 // ABOUTME: Provides a function to launch Terminal and pull/rebuild the app.
 
+import AppKit
 import Combine
 import Foundation
 import OSLog
-import AppKit
 
 private let logger = Logger(subsystem: "dockyard", category: "appUpdater")
 
-struct UpdateCheckProcessResult: Sendable {
+struct UpdateCheckProcessResult {
     let output: Data
     let terminationStatus: Int32
     let outputExceededLimit: Bool
@@ -123,10 +123,14 @@ enum UpdateCheckCommandRunner {
 
     static func commitsAhead(
         at path: String,
+        from appCommit: String,
         processFactory: UpdateCheckProcessFactory = defaultUpdateCheckProcessFactory
     ) -> Int? {
         let executableURL = URL(fileURLWithPath: "/usr/bin/git")
-        let arguments = ["rev-list", "--count", "HEAD..origin/main"]
+        let revision = appCommit.range(of: "^[0-9a-fA-F]{7,40}$", options: .regularExpression) == nil
+            ? "HEAD"
+            : appCommit
+        let arguments = ["rev-list", "--count", "\(revision)..origin/main"]
         let workingDirectoryURL = URL(fileURLWithPath: path)
 
         let process: any UpdateCheckProcess
@@ -147,7 +151,7 @@ enum UpdateCheckCommandRunner {
               result.didFinishOutput,
               !result.outputExceededLimit,
               let output = String(data: result.output, encoding: .utf8)?
-                .trimmingCharacters(in: .whitespacesAndNewlines),
+              .trimmingCharacters(in: .whitespacesAndNewlines),
               let count = Int(output),
               count >= 0
         else {
@@ -192,7 +196,7 @@ final class AppUpdater: ObservableObject {
 
         Task.detached {
             let path = AppCommit.sourcePath
-            
+
             // 1. Fetch from origin main
             let fetchProcess = Process()
             fetchProcess.executableURL = URL(fileURLWithPath: "/usr/bin/git")
@@ -202,12 +206,12 @@ final class AppUpdater: ObservableObject {
             fetchProcess.waitUntilExit()
 
             // 2. Count commits
-            let count = UpdateCheckCommandRunner.commitsAhead(at: path)
+            let count = UpdateCheckCommandRunner.commitsAhead(at: path, from: AppCommit.hash)
             await MainActor.run {
                 self.isChecking = false
                 if let count {
                     self.commitsAhead = count
-                    if count > 0 && !self.hasPromptedThisSession {
+                    if count > 0, !self.hasPromptedThisSession {
                         self.hasPromptedThisSession = true
                         self.shouldPromptUpdate = true
                     }
