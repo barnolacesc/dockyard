@@ -7,76 +7,98 @@ This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
 not an automatically trusted backlog.
 
-The newest dated **Live reconciliation** section is canonical. Earlier queue
-and reconciliation sections are retained as an audit trail and can contain
-superseded statuses.
+The **Current autonomous queue** is canonical. Dated **Live reconciliation**
+sections are retained as an audit trail and can contain superseded statuses.
 
-## Current autonomous queue — 2026-08-10 16:30 CEST
+## Current autonomous queue — 2026-08-29 16:30 CEST
 
-`origin/main` is `ceeea08`; its macOS `build-and-test`, CodeQL and release
-automation checks are green. R16 / PR #113 is healthy and **awaiting Cesc
-review**; it changes `RunLauncher`, `WorkstreamEnvironment` and focused tests.
-Release-please PR #63 changes only version/changelog metadata, remains
-approval-gated and must not be merged or published autonomously. The latest
-published release remains v0.2.1.
+`origin/main` is `fce9d0f`; its latest macOS `build-and-test`, release
+automation and configured CodeQL checks are green. PRs #140 (R39), #142 (R40),
+#144 (R41), #146 (R42), #148 (R43), #150 (R44), #152 (R45) and #154 (R46)
+are clean, green on macOS CI and **awaiting Cesc review**. Older PRs #117 and
+#126 are green at their heads but conflict with current `main`; they remain
+awaiting review. Release-please PR #63 remains approval-gated and must not be
+merged or published autonomously. The latest published release is v0.2.1.
 
-GitHub Projects v2 returned `INSUFFICIENT_SCOPES` because the automation token
-has `repo` and `workflow` but lacks `read:project`. No Project data or status is
-inferred. Open implementation issues at selection were #41, #43, #54 and #112;
-issue #114 records this run.
+The open implementations' changed paths, behaviors and dependencies were
+compared before selection. R47's `RunLauncher` port-inference behavior and new
+focused test file do not modify or duplicate them; PR #144 adds separate
+run-state fixtures to `PortDetectionTests`, so R47 deliberately uses a new test
+file and can merge in either order.
 
-### R17 — Protect tmux diagnostic state
+GitHub Projects v2 remains unavailable because the automation token lacks
+`read:project`; no Project item or status is inferred. Open product issues
+before selection were #41, #43, #54, #116, #141, #143, #145, #147, #149,
+#151 and #153; issue #155 records this run.
 
-- Status: **Awaiting Cesc review in PR #115** on
-  `fix/private-tmux-diagnostics` for issue #114. The PR must not be
+### R47 — Contain and bound `.env` port inference
+
+- Status: **Awaiting Cesc review in PR #156** on
+  `fix/contain-env-port-inference-r47` for issue #155. The PR must not be
   auto-merged.
-- User outcome: tmux diagnostic output is not left readable by other local
-  users after first creation or when an older permissive cache exists.
-- Success signal: constructing a tmux command creates or repairs the Dockyard
-  cache directory to `0700` and `tmux-stderr.log` to `0600` before shell
-  redirection, while preserving existing log bytes.
-- macOS impact: tmux command preparation only; no UI, accessibility,
-  localization or visual behavior changes.
-- Persistence/security impact: narrows local diagnostic-file permissions. Tmux
-  commands, session names, app-restart persistence, archive/purge cleanup,
-  entitlements and release behavior remain unchanged.
-- Scope: `TmuxSession`, focused `TmuxSessionTests` and roadmap evidence only.
-- Risk: low and reversible; full GitHub macOS CI is mandatory.
+- User outcome: embedded-browser port inference cannot follow an escaping
+  `.env` symlink or read an unbounded environment file.
+- Success signal: contained bounded `.env` fixtures retain `PORT` inference,
+  while escaping symlinks, non-regular and oversized candidates are ignored
+  and command-line port inference still works.
+- macOS impact: expected-port selection for the existing Environment run
+  action only; no UI, accessibility, localization or shortcut change.
+- Persistence/security impact: narrows a read-side filesystem boundary. It
+  does not export environment data or change run commands, script approval,
+  worktrees, persisted schemas, entitlements, privacy claims or releases.
+- Scope: `RunLauncher.inferExpectedPort`, a 64 KiB regular-file cap, one new
+  focused XCTest file and roadmap evidence only.
+- Dependencies: none. Production code and tests are merge-order independent of
+  every open PR as reconciled above.
+- Risk: low, bounded and reversible; full GitHub macOS CI is mandatory.
 - Acceptance criteria:
-  1. First use creates the cache directory as `0700` and stderr log as `0600`.
-  2. Existing `0755`/`0644` modes are repaired without replacing log content.
-  3. Diagnostic state exists before the generated command can use `2>>`.
-  4. Existing tmux command-composition and shell-parsing tests remain green.
-  5. Full GitHub macOS build/test passes.
-- Required evidence: focused XCTest, full `macos-15` CI, CodeQL as configured,
-  localization parity, diff and secret checks.
-- Native evidence: at implementation head `12200ab`, macOS CI run
-  `31399327020` passed localization parity, XcodeGen, the native build and the
-  full XCTest suite including `TmuxSessionTests`. CodeQL run `31399327146`
-  passed Actions and JavaScript analysis; Swift analysis was skipped by the
-  repository's PR workflow configuration. The final roadmap-only head must
+  1. A contained regular `.env` of at most 64 KiB still infers `PORT`.
+  2. An escaping symlink, a non-regular candidate or an oversized file is
+     ignored without blocking.
+  3. The opened file is verified as regular and the read itself remains capped
+     if the file changes between metadata resolution and reading.
+  4. Existing command-line `--port`, `-p` and `PORT=` inference remains the
+     fallback when `.env` is absent or refused.
+  5. Focused XCTest and the full GitHub macOS build/test pass.
+- Required evidence: resource/localization checker suites, XcodeGen/native
+  build, focused and full XCTest, `git diff --check`, added-line secret scan and
+  configured CodeQL.
+- Evidence so far: deterministic resource/localization checker suites and live
+  checks pass (10 resource declarations, 418 app keys and 15 privacy keys
+  across all five locales); `git diff --check` and the added-line secret scan
+  pass. The Linux runner has no Swift, Xcode, XcodeGen, SwiftFormat or prek. At
+  head `37c027f`, macOS CI run `33258275692` passed localization/resource
+  checks, XcodeGen, the native build and the full XCTest suite including
+  `RunLauncherPortInferenceTests`. CodeQL run `33258275694` passed its
+  configured Actions and JavaScript analyses; Swift analysis was skipped by
+  the repository's PR workflow configuration. The final roadmap-only head must
   also remain green.
-- Independence: PR #113 changes environment activation paths; PR #63 changes
-  release metadata. R17 changes tmux diagnostic setup and its tests, so the
-  implementations can merge in either order. Roadmap updates use this
-  top-level canonical queue to avoid conflicting dated audit-log appends.
 
-### Independent Ready queue while R16 and R17 await review
+### Independent Ready queue while R39–R47 await review
 
-- **R18 — Add the passive power-features tour:** expose existing shortcut
-  hints, usage meters, tmux persistence and archive semantics without launching
-  commands or changing persisted workstreams. One `TourFlow`, controller tests,
-  five localizations and native visual/accessibility evidence; source is the
-  remaining unchecked tour item in `TODO.md`.
-- **R19 — Contain close-tab editor saves:** resolve the unsaved-editor close
-  path through `WorkspaceFileAccess` before writing, matching ordinary saves
-  and rejecting absolute, traversal, same-prefix and escaping-symlink paths.
-  This file-write boundary is approval-gated; focused tests and full macOS CI
-  are required.
-- **R20 — Keep watcher-created state directories private:** create and repair
-  run-state and agent-state watcher directories as `0700` before attaching
-  filesystem observers. Scope is `PortDetector`, `AgentStateStore` and focused
-  tests; state schemas, writers and watcher recovery behavior remain unchanged.
+- **R48 — Bound the Claude usage probe subprocess:** impose a deadline and
+  fixed stdout cap on the existing `claude -p /usage` probe while preserving
+  bounded parsing and one terminal completion state. `ClaudeUsageProbe` and a
+  new focused process-double test file only; medium command-boundary risk,
+  mandatory macOS CI and a tested PR for Cesc.
+- **R49 — Bound Quick Action mutation output:** cap and continuously drain the
+  existing `gh pr close` output without changing its arguments, permissions or
+  cancellation semantics. `QuickActionRunner` and focused process-double tests
+  only; medium command-boundary risk, mandatory macOS CI and a tested PR for
+  Cesc.
+- **R50 — Bound linked-worktree `.git` indirection reads:** accept only a small
+  regular UTF-8 `.git` file before resolving its existing `gitdir:` target, so
+  watcher attachment cannot read unbounded metadata. `WorktreeHeadWatcher` and
+  focused path fixtures only; no worktree mutation, watcher ownership or UI
+  change, and mandatory macOS CI.
+
+## Live reconciliation — 2026-08-29 16:30 CEST
+
+The current autonomous queue above supersedes every earlier dated queue. This
+run reconciled current `origin/main`, `TODO.md`, open issues, every open PR's
+paths and checks, latest release, main CI and Projects v2 scope before selecting
+R47 / issue #155 from a fresh worktree. No older PR comment, merge, release or
+Project mutation was performed.
 
 ## Evidence and limits
 
@@ -732,120 +754,3 @@ retain their documented dependencies. Issues #41, #43 and #54 remain open;
   issues/PRs and their changed paths/checks, latest release and Projects v2
   scope. Selected independent R35 / issue #132 from a fresh `origin/main`
   worktree. No older PR comment, merge, release or Project mutation occurred.
-
-## Live reconciliation — 2026-08-29 09:30 CEST
-
-This section supersedes every earlier queue and item status. `origin/main` is
-`fce9d0f`; its latest macOS `build-and-test`, release automation and configured
-CodeQL checks are green. PRs #140 (R39), #142 (R40), #144 (R41), #146 (R42),
-#148 (R43), #150 (R44) and #152 (R45) are clean, green on macOS CI and
-**awaiting Cesc review**. Older PRs #117 and #126 are green at their heads but
-conflict with current `main`; they also remain awaiting review. Their changed
-paths, behaviors and dependencies were compared before selecting R46; none is
-modified, stacked on or duplicated by this run. Release-please PR #63 remains
-approval-gated and must not be merged or published autonomously. The latest
-published release remains v0.2.1.
-
-GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
-`repo` and `workflow` but lacks `read:project`. No Project data or status is
-inferred. Open product issues before selection were #41, #43, #54, #116, #141,
-#143, #145, #147, #149 and #151; issue #153 records this run.
-
-### R46 — Bound login-shell PATH discovery
-
-- Status: **Awaiting Cesc review in PR #154** on
-  `fix/bound-login-shell-path-r46` for issue #153. Stop at this tested PR
-  because the implementation changes a command-execution boundary; never
-  auto-merge it.
-- User outcome: a stalled or noisy login-shell startup file cannot
-  indefinitely delay Dockyard command-line tool discovery or accumulate
-  unbounded captured output.
-- Success signal: deterministic process-double tests prove the three-second
-  deadline, graceful and forced termination, the 64 KiB stdout cap, successful
-  PATH parsing and cached failure behavior.
-- macOS impact: startup command-line tool discovery only; no UI,
-  accessibility, localization or shortcut change.
-- Persistence/security impact: narrows an existing read-only subprocess
-  boundary. It does not change PATH precedence, Coding Agent commands,
-  permissions, persisted data, entitlements, worktrees or releases.
-- Scope: `CommandLineTools.loginShellPath`, its cache, focused
-  `CommandLineToolsTests` and roadmap evidence only.
-- Dependencies: none. Its source/test behavior is disjoint from every open
-  implementation PR and can merge in either order.
-- Risk: medium command-boundary risk; never auto-merge. Full macOS CI is
-  mandatory.
-- Acceptance criteria:
-  1. Start the same login shell with the existing `-lic printenv PATH`
-     arguments and cap captured stdout at 64 KiB while draining the pipe.
-  2. Wait no longer than three seconds, send termination, then force-terminate
-     after a bounded grace period when needed.
-  3. Preserve successful UTF-8 PATH parsing and existing fallback precedence.
-  4. Reject non-zero, oversized, empty and invalid output.
-  5. Cache failure as well as success so repeated tool lookups do not respawn a
-     broken shell.
-  6. Focused XCTest and full GitHub macOS build/test pass.
-- Required evidence: focused XCTest, resource/localization checker suites,
-  XcodeGen/native build, full XCTest, `git diff --check`, added-line secret scan
-  and configured CodeQL.
-- Evidence so far: deterministic resource/localization checker suites and live
-  checks pass (10 resource declarations, 418 app keys and 15 privacy keys
-  across all five locales); `git diff --check` and the added-line secret scan
-  pass. The Linux runner has no Swift, Xcode, XcodeGen, SwiftFormat or prek, so
-  GitHub macOS CI is mandatory native evidence. At implementation head
-  `e429bac`, macOS CI run `33241395850` passed resource/localization checks,
-  XcodeGen, the native build and the full XCTest suite including the new
-  `CommandLineToolsTests` process fixtures. CodeQL run `33241395822` passed its
-  configured Actions and JavaScript analyses; Swift analysis was skipped by
-  repository workflow configuration. The final roadmap-only head must also
-  remain green.
-
-### Independent Ready queue while R39–R46 await review
-
-#### R47 — Contain and bound `.env` port inference
-
-- Status: **Ready**; no issue or implementation branch exists.
-- User outcome: embedded-browser port inference cannot follow an escaping
-  `.env` symlink or read an unbounded environment file.
-- Success signal: contained bounded `.env` fixtures retain `PORT` inference,
-  while escaping symlinks, non-regular and oversized candidates are ignored
-  and command-line port inference still works.
-- Scope and impact: `RunLauncher.inferExpectedPort` and focused port-detection
-  tests only; read-side inference with no environment export, run command,
-  script approval, worktree, UI, localization or entitlement change.
-- Dependencies/risk/tests: none and disjoint from every open PR; low risk.
-  Reuse the existing project-containment boundary, cap the read before parsing
-  and pass focused plus full macOS CI.
-
-#### R48 — Bound the Claude usage probe subprocess
-
-- Status: **Ready**; no issue or implementation branch exists.
-- User outcome: a stalled or noisy `claude -p /usage` invocation cannot leave
-  the usage refresh blocked or accumulate unbounded output.
-- Success signal: process-double fixtures prove deadline termination, a fixed
-  stdout cap, successful bounded parsing and one terminal completion state.
-- Scope and impact: `ClaudeUsageProbe` and focused probe tests only; preserve
-  the existing command, parsed report and fallback behavior. No new command,
-  account request, usage claim, UI, persistence, localization or entitlement.
-- Dependencies/risk/tests: none; disjoint from R45/R46 and all open PRs. Medium
-  command-boundary risk; stop at a tested PR for Cesc after focused and full
-  macOS CI.
-
-#### R49 — Bound Quick Action mutation output
-
-- Status: **Ready**; no issue or implementation branch exists.
-- User outcome: a noisy `gh pr close` process cannot accumulate unbounded
-  output or deadlock while a Quick Action mutation completes or is cancelled.
-- Success signal: process-double tests prove a fixed output cap, continued pipe
-  draining, deterministic completion and preserved cancellation behavior.
-- Scope and impact: `QuickActionRunner`'s existing Close PR process and focused
-  tests only; no new GitHub mutation, permission, command argument, UI,
-  localization or persisted state.
-- Dependencies/risk/tests: none; R36 is already merged and no open PR changes
-  this path. Medium command-boundary risk; stop at a tested PR for Cesc after
-  focused and full macOS CI.
-
-- **2026-08-29 09:30 CEST:** reconciled current `origin/main`, `TODO.md`, open
-  issues, every open PR path/behavior/check, latest release, main CI and
-  Projects v2 scope. Selected independent R46 / issue #153 from a fresh
-  `origin/main` worktree. No older PR comment, merge, release or Project
-  mutation occurred.

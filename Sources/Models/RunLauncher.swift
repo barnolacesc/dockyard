@@ -1,6 +1,7 @@
 // ABOUTME: Resolves the bundled dy-run helper and builds wrapped run-script commands.
 // ABOUTME: Keeps Environment tab command assembly small and consistent across tmux modes.
 
+import Darwin
 import Foundation
 import os
 
@@ -65,6 +66,8 @@ enum ProjectEnvironmentAccess {
 }
 
 enum RunLauncher {
+    static let maximumEnvironmentFileBytes = 64 * 1024
+
     static func executableURL(bundle: Bundle = .main) -> URL? {
         let helperURL = bundle.bundleURL.appendingPathComponent("Contents/Helpers/dy-run")
         if FileManager.default.isExecutableFile(atPath: helperURL.path) {
@@ -94,8 +97,7 @@ static func wrapWithVenv(_ script: String, projectDirectory: String) -> String {
 }
 
 static func inferExpectedPort(runCommand: String, projectDirectory: String) -> Int? {
-    let envURL = URL(fileURLWithPath: projectDirectory).appendingPathComponent(".env")
-    if let envString = try? String(contentsOf: envURL, encoding: .utf8) {
+    if let envString = boundedEnvironmentContents(projectDirectory: projectDirectory) {
         let lines = envString.components(separatedBy: .newlines)
         for line in lines {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
@@ -125,6 +127,28 @@ static func inferExpectedPort(runCommand: String, projectDirectory: String) -> I
     }
 
     return nil
+}
+
+private static func boundedEnvironmentContents(projectDirectory: String) -> String? {
+    guard let envURL = ProjectEnvironmentAccess.containedFileURL(
+        ".env",
+        projectDirectory: projectDirectory
+    ) else { return nil }
+
+    let descriptor = open(envURL.path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK)
+    guard descriptor >= 0 else { return nil }
+    let fileHandle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
+    defer { try? fileHandle.close() }
+
+    var fileStatus = stat()
+    guard fstat(descriptor, &fileStatus) == 0,
+          (fileStatus.st_mode & S_IFMT) == S_IFREG,
+          fileStatus.st_size <= off_t(maximumEnvironmentFileBytes),
+          let data = try? fileHandle.read(upToCount: maximumEnvironmentFileBytes + 1),
+          data.count <= maximumEnvironmentFileBytes
+    else { return nil }
+
+    return String(data: data, encoding: .utf8)
 }
 }
 
