@@ -2,6 +2,7 @@
 // ABOUTME: Prevents README, CLAUDE, and AGENTS symlinks from reading outside a project.
 
 @testable import Dockyard
+import Darwin
 import XCTest
 
 final class DocFileTests: XCTestCase {
@@ -90,6 +91,45 @@ final class DocFileTests: XCTestCase {
             .write(to: project.appendingPathComponent("AGENTS.md"))
 
         XCTAssertTrue(DocFile.loadFrom(directory: project.path).isEmpty)
+    }
+
+    func testLoadsRegularDocumentAtMaximumPreviewSize() throws {
+        let project = try makeDirectory(named: "project")
+        let content = String(repeating: "a", count: DocFile.maximumPreviewBytes)
+        try writeDocument(content, to: project.appendingPathComponent("README.md"))
+
+        let documents = DocFile.loadFrom(directory: project.path)
+
+        XCTAssertEqual(documents.map(\.name), ["README.md"])
+        XCTAssertEqual(documents.first?.content.utf8.count, DocFile.maximumPreviewBytes)
+    }
+
+    func testRejectsDocumentAboveMaximumPreviewSize() throws {
+        let project = try makeDirectory(named: "project")
+        let content = String(repeating: "a", count: DocFile.maximumPreviewBytes + 1)
+        try writeDocument(content, to: project.appendingPathComponent("README.md"))
+
+        XCTAssertTrue(DocFile.loadFrom(directory: project.path).isEmpty)
+    }
+
+    func testRejectsDirectoryAtStandardDocumentPath() throws {
+        let project = try makeDirectory(named: "project")
+        try FileManager.default.createDirectory(
+            at: project.appendingPathComponent("README.md", isDirectory: true),
+            withIntermediateDirectories: false
+        )
+
+        XCTAssertTrue(DocFile.loadFrom(directory: project.path).isEmpty)
+    }
+
+    func testRejectsFIFOAtStandardDocumentPathWithoutBlocking() throws {
+        let project = try makeDirectory(named: "project")
+        let fifo = project.appendingPathComponent("README.md")
+        XCTAssertEqual(mkfifo(fifo.path, S_IRUSR | S_IWUSR), 0)
+
+        let documents = DocFile.loadFrom(directory: project.path)
+
+        XCTAssertTrue(documents.isEmpty)
     }
 
     private func makeDirectory(named relativePath: String) throws -> URL {
