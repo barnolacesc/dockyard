@@ -1,14 +1,15 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-08-10 against `origin/main` at
-`ceeea0811d385396f497632469a705b184a13953`.
+Last reconciled: 2026-08-29 against `origin/main` at
+`fce9d0f61ee8b673ea1f09f27cb82e7d0245b5fb`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
 not an automatically trusted backlog.
 
-The **Current autonomous queue** is canonical. Dated **Live reconciliation**
-sections are retained as an audit trail and can contain superseded statuses.
+The newest dated **Live reconciliation** section is canonical. Earlier queue
+and reconciliation sections are retained as an audit trail and can contain
+superseded statuses.
 
 ## Current autonomous queue — 2026-08-10 16:30 CEST
 
@@ -732,81 +733,73 @@ retain their documented dependencies. Issues #41, #43 and #54 remain open;
   scope. Selected independent R35 / issue #132 from a fresh `origin/main`
   worktree. No older PR comment, merge, release or Project mutation occurred.
 
-## Live reconciliation — 2026-08-28 16:30 CEST
+## Live reconciliation — 2026-08-29 09:30 CEST
 
 This section supersedes every earlier queue and item status. `origin/main` is
-`fce9d0f`; its macOS `build-and-test`, release automation and configured CodeQL
-checks are green. PRs #140 (R39), #142 (R40), #144 (R41), #146 (R42), #148
-(R43) and #150 (R44) are clean, green on macOS CI and **awaiting Cesc review**.
-Older PRs #117 and #126 are green at their heads but conflict with current
-`main`; they also remain awaiting review. Their changed paths, behaviors and
-dependencies were compared before selecting R45; none is modified, stacked on
-or duplicated by this run. Release-please PR #63 remains approval-gated and
-must not be merged or published autonomously. The latest published release
-remains v0.2.1.
+`fce9d0f`; its latest macOS `build-and-test`, release automation and configured
+CodeQL checks are green. PRs #140 (R39), #142 (R40), #144 (R41), #146 (R42),
+#148 (R43), #150 (R44) and #152 (R45) are clean, green on macOS CI and
+**awaiting Cesc review**. Older PRs #117 and #126 are green at their heads but
+conflict with current `main`; they also remain awaiting review. Their changed
+paths, behaviors and dependencies were compared before selecting R46; none is
+modified, stacked on or duplicated by this run. Release-please PR #63 remains
+approval-gated and must not be merged or published autonomously. The latest
+published release remains v0.2.1.
 
 GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
 `repo` and `workflow` but lacks `read:project`. No Project data or status is
 inferred. Open product issues before selection were #41, #43, #54, #116, #141,
-#143, #145, #147 and #149; issue #151 records this run.
+#143, #145, #147, #149 and #151; issue #153 records this run.
 
-### R45 — Bound Claude transcript parsing for the usage meter
+### R46 — Bound login-shell PATH discovery
 
-- Status: **Awaiting Cesc review in PR #152** on
-  `fix/bound-claude-transcript-parsing-r45` for issue #151. Required native
-  implementation CI is green and the PR must not be auto-merged.
-- User outcome: one oversized, malformed, symlinked or non-regular recent
-  Claude transcript cannot cause an unbounded in-memory read while Dockyard
-  refreshes its local usage estimate.
-- Success signal: valid recent usage is preserved, while transcript candidates
-  over 16 MiB are rejected and individual JSONL lines over 1 MiB are skipped
-  without losing a later valid record.
-- macOS impact: background usage-meter estimation only; no visible UI,
-  accessibility, localization, shortcut or account behavior changes.
-- Persistence/security impact: narrows a read-only local transcript boundary.
-  It does not mutate transcripts, access an account, add telemetry, change plan
-  estimates, execute commands, alter entitlements or affect worktrees/releases.
-- Scope: `ClaudeUsageParser`, focused `ClaudeUsageTests` and roadmap evidence
-  only.
+- Status: **Awaiting Cesc review in PR #154** on
+  `fix/bound-login-shell-path-r46` for issue #153. Stop at this tested PR
+  because the implementation changes a command-execution boundary; never
+  auto-merge it.
+- User outcome: a stalled or noisy login-shell startup file cannot
+  indefinitely delay Dockyard command-line tool discovery or accumulate
+  unbounded captured output.
+- Success signal: deterministic process-double tests prove the three-second
+  deadline, graceful and forced termination, the 64 KiB stdout cap, successful
+  PATH parsing and cached failure behavior.
+- macOS impact: startup command-line tool discovery only; no UI,
+  accessibility, localization or shortcut change.
+- Persistence/security impact: narrows an existing read-only subprocess
+  boundary. It does not change PATH precedence, Coding Agent commands,
+  permissions, persisted data, entitlements, worktrees or releases.
+- Scope: `CommandLineTools.loginShellPath`, its cache, focused
+  `CommandLineToolsTests` and roadmap evidence only.
 - Dependencies: none. Its source/test behavior is disjoint from every open
   implementation PR and can merge in either order.
-- Risk: low and reversible read-side hardening; full macOS CI is mandatory.
+- Risk: medium command-boundary risk; never auto-merge. Full macOS CI is
+  mandatory.
 - Acceptance criteria:
-  1. Open and inspect the same descriptor without following symbolic links.
-  2. Accept only recent regular JSONL candidates at or below 16 MiB.
-  3. Stream candidates in 64 KiB chunks rather than loading each file whole.
-  4. Bound a pending line to 1 MiB and resume after an oversized line.
-  5. Preserve valid timestamp/token decoding and rolling-window aggregation.
-  6. Full GitHub macOS build/test passes.
+  1. Start the same login shell with the existing `-lic printenv PATH`
+     arguments and cap captured stdout at 64 KiB while draining the pipe.
+  2. Wait no longer than three seconds, send termination, then force-terminate
+     after a bounded grace period when needed.
+  3. Preserve successful UTF-8 PATH parsing and existing fallback precedence.
+  4. Reject non-zero, oversized, empty and invalid output.
+  5. Cache failure as well as success so repeated tool lookups do not respawn a
+     broken shell.
+  6. Focused XCTest and full GitHub macOS build/test pass.
 - Required evidence: focused XCTest, resource/localization checker suites,
   XcodeGen/native build, full XCTest, `git diff --check`, added-line secret scan
   and configured CodeQL.
 - Evidence so far: deterministic resource/localization checker suites and live
   checks pass (10 resource declarations, 418 app keys and 15 privacy keys
-  across all five locales); `git diff --check` passes. The Linux runner has no
-  Swift, Xcode, XcodeGen, SwiftFormat or prek, so GitHub macOS CI is mandatory
-  native evidence. At implementation head `f4debee`, macOS CI run
-  `33181284231` passed resource/localization checks, XcodeGen, the native build
-  and the full XCTest suite including the new Claude usage fixtures. CodeQL run
-  `33181284128` passed its configured Actions and JavaScript analyses; Swift
-  analysis was skipped by repository workflow configuration. The final
-  roadmap-only head must also remain green.
+  across all five locales); `git diff --check` and the added-line secret scan
+  pass. The Linux runner has no Swift, Xcode, XcodeGen, SwiftFormat or prek, so
+  GitHub macOS CI is mandatory native evidence. At implementation head
+  `e429bac`, macOS CI run `33241395850` passed resource/localization checks,
+  XcodeGen, the native build and the full XCTest suite including the new
+  `CommandLineToolsTests` process fixtures. CodeQL run `33241395822` passed its
+  configured Actions and JavaScript analyses; Swift analysis was skipped by
+  repository workflow configuration. The final roadmap-only head must also
+  remain green.
 
-### Independent Ready queue while R39–R45 await review
-
-#### R46 — Bound login-shell PATH discovery
-
-- Status: **Ready**; no issue or implementation branch exists.
-- User outcome: a stalled or noisy login-shell startup file cannot indefinitely
-  delay Dockyard's command-line tool discovery.
-- Success signal: deterministic process-double tests prove timeout,
-  termination, output cap, successful PATH parsing and cached failure behavior.
-- Scope and impact: `CommandLineTools.loginShellPath`, its private cache and
-  focused tests only; no PATH precedence, Coding Agent command, permission,
-  persistence, UI or localization change.
-- Dependencies/risk/tests: none; source/test paths are disjoint from R43 and
-  every other open implementation PR. Medium command-boundary risk; stop at a
-  tested PR for Cesc after focused and full macOS CI.
+### Independent Ready queue while R39–R46 await review
 
 #### R47 — Contain and bound `.env` port inference
 
@@ -837,8 +830,22 @@ inferred. Open product issues before selection were #41, #43, #54, #116, #141,
   command-boundary risk; stop at a tested PR for Cesc after focused and full
   macOS CI.
 
-- **2026-08-28 16:30 CEST:** reconciled current `origin/main`, `TODO.md`, open
+#### R49 — Bound Quick Action mutation output
+
+- Status: **Ready**; no issue or implementation branch exists.
+- User outcome: a noisy `gh pr close` process cannot accumulate unbounded
+  output or deadlock while a Quick Action mutation completes or is cancelled.
+- Success signal: process-double tests prove a fixed output cap, continued pipe
+  draining, deterministic completion and preserved cancellation behavior.
+- Scope and impact: `QuickActionRunner`'s existing Close PR process and focused
+  tests only; no new GitHub mutation, permission, command argument, UI,
+  localization or persisted state.
+- Dependencies/risk/tests: none; R36 is already merged and no open PR changes
+  this path. Medium command-boundary risk; stop at a tested PR for Cesc after
+  focused and full macOS CI.
+
+- **2026-08-29 09:30 CEST:** reconciled current `origin/main`, `TODO.md`, open
   issues, every open PR path/behavior/check, latest release, main CI and
-  Projects v2 scope. Selected independent R45 / issue #151 from a fresh
+  Projects v2 scope. Selected independent R46 / issue #153 from a fresh
   `origin/main` worktree. No older PR comment, merge, release or Project
   mutation occurred.
