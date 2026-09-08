@@ -60,21 +60,22 @@ final class LogStore: ObservableObject {
     func refresh() async {
         guard let source else { return }
         let currentBookmark = bookmark
+        let currentLimit = maxLines
 
         do {
             let fetched = try await Task.detached(priority: .utility) {
-                try source.entries(since: currentBookmark)
+                try source.entries(since: currentBookmark, limit: currentLimit)
             }.value
             guard !Task.isCancelled else { return }
 
-            let freshLines = fetched
+            let freshLines = fetched.suffix(maxLines)
                 .filter { line in
                     guard let currentBookmark else { return true }
                     return line.date > currentBookmark
                 }
                 .sorted { $0.date < $1.date }
 
-            if let latestDate = fetched.map(\.date).max() {
+            if let latestDate = fetched.lazy.map(\.date).max() {
                 bookmark = max(bookmark ?? latestDate, latestDate)
             }
 
