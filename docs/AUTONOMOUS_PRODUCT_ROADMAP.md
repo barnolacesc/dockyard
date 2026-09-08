@@ -31,9 +31,9 @@ non-duplicative agent-status work respectively.
 
 ### R64 — Bound unified-log polling snapshots
 
-- Status: **In implementation** on
+- Status: **Awaiting Cesc review in PR #188** on
   `fix/bound-unified-log-snapshots-r64-20260908` for issue #187. The pull
-  request must remain open for Cesc review and must not be auto-merged.
+  request must remain open and must not be auto-merged.
 - User outcome: opening the native logs window after a diagnostic burst cannot
   materialize or sort an unbounded unified-log poll result.
 - Success signal: the production source retains at most 5,000 matching entries,
@@ -62,9 +62,12 @@ non-duplicative agent-status work respectively.
 - Required evidence: focused `LogStoreTests`, localization resource/key checks,
   XcodeGen/native build, full XCTest, `git diff --check`, added-line secret scan
   and configured CodeQL.
-- Evidence so far: the Linux automation host has no Swift, Xcode, XcodeGen,
-  prek or SwiftFormat executable, so GitHub macOS CI is the mandatory native
-  build/test evidence.
+- Evidence so far: localization resource/key tests and repository checks pass,
+  including 10 declared resources, 418 app keys and 15 privacy keys across all
+  five locales. Bundled-helper, appcast-generation and appcast-seeding script
+  tests, `git diff --check` and the added-line secret scan pass. The Linux
+  automation host has no Swift, Xcode, XcodeGen, prek or SwiftFormat
+  executable, so GitHub macOS CI is the mandatory native build/test evidence.
 
 ### Independent Ready queue while R64 and older PRs await review
 
