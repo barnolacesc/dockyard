@@ -2,6 +2,7 @@
 // ABOUTME: One WKWebView per workstream; models (one per open file) swap via editor.setModel().
 
 import Cocoa
+import Darwin
 import SwiftUI
 import WebKit
 
@@ -13,10 +14,21 @@ import WebKit
 /// through a custom scheme, all requests — JS modules, CSS, JSON, WASM, worker
 /// fetches — go through this handler and work reliably.
 final class MonacoResourceSchemeHandler: NSObject, WKURLSchemeHandler {
-    private let baseURL: URL
+    static let maximumResourceBytes = 16 * 1024 * 1024
 
-    init(baseURL: URL) {
+    private let baseURL: URL
+    private let maximumResourceBytes: Int
+
+    private enum ResourceReadError: Error {
+        case invalidCandidate
+    }
+
+    init(
+        baseURL: URL,
+        maximumResourceBytes: Int = MonacoResourceSchemeHandler.maximumResourceBytes
+    ) {
         self.baseURL = baseURL
+        self.maximumResourceBytes = maximumResourceBytes
     }
 
     func webView(_: WKWebView, start urlSchemeTask: any WKURLSchemeTask) {
@@ -35,7 +47,10 @@ final class MonacoResourceSchemeHandler: NSObject, WKURLSchemeHandler {
             return
         }
 
-        guard let data = try? Data(contentsOf: fileURL) else {
+        guard let data = try? Self.readResourceData(
+            at: fileURL,
+            maximumBytes: maximumResourceBytes
+        ) else {
             urlSchemeTask.didFailWithError(URLError(.fileDoesNotExist))
             return
         }
@@ -66,6 +81,57 @@ final class MonacoResourceSchemeHandler: NSObject, WKURLSchemeHandler {
 
         return resourceComponents.count > baseComponents.count
             && resourceComponents.starts(with: baseComponents)
+    }
+
+    /// Reads a regular resource through one descriptor with a hard byte ceiling.
+    /// The extra detection byte rejects files that grow after the metadata check.
+    static func readResourceData(
+        at resourceURL: URL,
+        maximumBytes: Int = MonacoResourceSchemeHandler.maximumResourceBytes,
+        afterMetadataRead: () -> Void = {}
+    ) throws -> Data {
+        guard maximumBytes >= 0, maximumBytes < Int.max else {
+            throw ResourceReadError.invalidCandidate
+        }
+
+        let descriptor = open(
+            resourceURL.path,
+            O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK
+        )
+        guard descriptor >= 0 else { throw ResourceReadError.invalidCandidate }
+        defer { close(descriptor) }
+
+        var metadata = stat()
+        guard fstat(descriptor, &metadata) == 0,
+              (metadata.st_mode & S_IFMT) == S_IFREG,
+              metadata.st_size >= 0,
+              metadata.st_size <= off_t(maximumBytes)
+        else {
+            throw ResourceReadError.invalidCandidate
+        }
+
+        afterMetadataRead()
+
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: false)
+        var data = Data()
+        data.reserveCapacity(Int(metadata.st_size))
+
+        do {
+            while data.count <= maximumBytes {
+                let remaining = maximumBytes + 1 - data.count
+                let chunkSize = min(64 * 1024, remaining)
+                guard chunkSize > 0 else { break }
+                guard let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty else { break }
+                data.append(chunk)
+            }
+        } catch {
+            throw ResourceReadError.invalidCandidate
+        }
+
+        guard data.count <= maximumBytes else {
+            throw ResourceReadError.invalidCandidate
+        }
+        return data
     }
 
     private static func mimeType(for ext: String) -> String {
