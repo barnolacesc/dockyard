@@ -30,8 +30,8 @@ final class AgentStateTests: XCTestCase {
         XCTAssertEqual(decoded.updatedAt.timeIntervalSince1970, 1_715_961_131, accuracy: 0.001)
     }
 
-    func testFileURLContainsLowercaseUUID() {
-        let id = UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC")!
+    func testFileURLContainsLowercaseUUID() throws {
+        let id = try XCTUnwrap(UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC"))
         let url = AgentStateFiles.fileURL(for: id)
         XCTAssertTrue(url.path.hasSuffix("agent-state/aabbccdd-1122-3344-5566-778899aabbcc.json"))
     }
@@ -46,7 +46,7 @@ final class AgentStateTests: XCTestCase {
         XCTAssertFalse(snapshot.chromeActive)
     }
 
-    func testSubagentHookInputDecodesOnlyBoundedLifecycleFields() throws {
+    func testSubagentHookInputDecodesOnlyBoundedLifecycleFields() {
         let data = Data(#"{"hook_event_name":"SubagentStart","agent_id":"agent-123","agent_type":"Explore","last_assistant_message":"ignored"}"#.utf8)
 
         XCTAssertEqual(
@@ -61,7 +61,7 @@ final class AgentStateTests: XCTestCase {
     }
 
     func testSubagentFileNameDoesNotExposeUntrustedAgentIDAsAPath() throws {
-        let workstreamID = UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC")!
+        let workstreamID = try XCTUnwrap(UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC"))
         let directory = URL(fileURLWithPath: "/tmp/agent-state", isDirectory: true)
         let url = try XCTUnwrap(AgentSubagentFiles.fileURL(
             for: workstreamID,
@@ -161,7 +161,7 @@ final class AgentStateStoreTests: XCTestCase {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
         let data = try encoder.encode(snapshot)
-        
+
         let fileURL = tempDir.appendingPathComponent("\(id.uuidString.lowercased()).json")
         try data.write(to: fileURL, options: .atomic)
     }
@@ -272,6 +272,7 @@ final class AgentStateStoreTests: XCTestCase {
 
         XCTAssertEqual(store.agentState(for: id), .working)
         XCTAssertEqual(store.activeSubagentCount(for: id), 2)
+        XCTAssertEqual(store.activeSubagents(for: id).map(\.agentID), ["agent-one", "agent-two"])
     }
 
     func testWaitingMainAgentRemainsActionableWhileSubagentRuns() throws {

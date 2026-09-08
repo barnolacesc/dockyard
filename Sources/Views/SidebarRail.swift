@@ -76,6 +76,7 @@ struct SidebarRail: View {
 
     @EnvironmentObject private var appEnv: AppEnvironment
     @EnvironmentObject private var agentStateStore: AgentStateStore
+    @EnvironmentObject private var agentActivityStore: AgentActivityStore
     @EnvironmentObject private var activityTracker: WorkstreamActivityTracker
     @EnvironmentObject private var usageStore: ClaudeUsageStore
     @EnvironmentObject private var codexUsageStore: CodexUsageStore
@@ -90,7 +91,7 @@ struct SidebarRail: View {
             return id
         case let .workstream(workstreamID):
             return projects.first { $0.workstreams.contains { $0.id == workstreamID } }?.id
-        case .settings, .help, nil:
+        case .attention, .settings, .help, nil:
             return nil
         }
     }
@@ -151,10 +152,34 @@ struct SidebarRail: View {
                 selectedProvider: selectedUsageProvider,
                 availableProviders: availableUsageProviders
             )
-                .padding(.horizontal, 8)
-                .padding(.bottom, selectedUsageStoreHasData ? 10 : 0)
+            .padding(.horizontal, 8)
+            .padding(.bottom, selectedUsageStoreHasData ? 10 : 0)
 
             VStack(spacing: 8) {
+                Button {
+                    selection = .attention
+                } label: {
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: selection == .attention ? "bell.fill" : "bell")
+                            .font(.system(size: 15, weight: .medium))
+                            .frame(minWidth: 40, minHeight: 40)
+                        if agentActivityStore.unreadCount > 0 {
+                            Text("\(agentActivityStore.unreadCount)")
+                                .font(.system(size: 9, weight: .bold, design: .rounded))
+                                .tabularNumbers()
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(DesignColor.statusWarning, in: Capsule())
+                                .offset(x: 4, y: -2)
+                        }
+                    }
+                    .foregroundStyle(selection == .attention ? Color.accentColor : Color.secondary)
+                }
+                .pressable()
+                .help(NSLocalizedString("Attention", comment: "Collapsed sidebar attention button tooltip"))
+                .accessibilityLabel("Attention")
+
                 updateButton
 
                 Menu {
