@@ -4,6 +4,14 @@
 import Foundation
 
 enum CacheMigration {
+    static let defaultDirectoryEntryInspectionLimit = 1_024
+
+    enum DirectoryContents: Equatable {
+        case empty
+        case nonEmpty
+        case inspectionLimitReached
+    }
+
     static func migrateIfNeeded() {
         migrateIfNeeded(
             from: AppConstants.configDirectory,
@@ -14,7 +22,8 @@ enum CacheMigration {
     static func migrateIfNeeded(
         from oldBase: URL,
         to newBase: URL,
-        fileManager fm: FileManager = .default
+        fileManager fm: FileManager = .default,
+        directoryEntryInspectionLimit: Int = defaultDirectoryEntryInspectionLimit
     ) {
         try? fm.createDirectory(at: newBase, withIntermediateDirectories: true)
 
@@ -29,7 +38,11 @@ enum CacheMigration {
         moveIfExists(from: oldTmux, to: newTmux, fileManager: fm)
 
         // Remove old config directory if empty
-        removeDirectoryIfEmpty(oldBase, fileManager: fm)
+        removeDirectoryIfEmpty(
+            oldBase,
+            fileManager: fm,
+            maximumEntriesToInspect: directoryEntryInspectionLimit
+        )
     }
 
     private static func moveIfExists(from source: URL, to destination: URL, fileManager fm: FileManager) {
@@ -40,11 +53,50 @@ enum CacheMigration {
         try? fm.moveItem(at: source, to: destination)
     }
 
-    private static func removeDirectoryIfEmpty(_ url: URL, fileManager fm: FileManager) {
-        guard let contents = try? fm.contentsOfDirectory(atPath: url.path) else { return }
-        let visible = contents.filter { !$0.hasPrefix(".") }
-        if visible.isEmpty {
-            try? fm.removeItem(at: url)
+    private static func removeDirectoryIfEmpty(
+        _ url: URL,
+        fileManager fm: FileManager,
+        maximumEntriesToInspect: Int
+    ) {
+        var enumerationFailed = false
+        guard let enumerator = fm.enumerator(
+            at: url,
+            includingPropertiesForKeys: nil,
+            options: [.skipsSubdirectoryDescendants],
+            errorHandler: { _, _ in
+                enumerationFailed = true
+                return false
+            }
+        ) else { return }
+
+        let contents = classifyDirectoryContents(
+            maximumEntriesToInspect: maximumEntriesToInspect
+        ) {
+            guard let entry = enumerator.nextObject() else { return nil }
+            guard let entryURL = entry as? URL else {
+                enumerationFailed = true
+                return nil
+            }
+            return entryURL.lastPathComponent
         }
+
+        guard !enumerationFailed, contents == .empty else { return }
+        try? fm.removeItem(at: url)
+    }
+
+    static func classifyDirectoryContents(
+        maximumEntriesToInspect: Int,
+        nextEntry: () -> String?
+    ) -> DirectoryContents {
+        guard maximumEntriesToInspect > 0 else { return .inspectionLimitReached }
+
+        for _ in 0 ..< maximumEntriesToInspect {
+            guard let entry = nextEntry() else { return .empty }
+            if !entry.hasPrefix(".") {
+                return .nonEmpty
+            }
+        }
+
+        return .inspectionLimitReached
     }
 }
