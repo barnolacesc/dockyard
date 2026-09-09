@@ -845,7 +845,7 @@ were reconciled before issue #198 was created for this run.
 
 - Status: **Awaiting Cesc review in PR #199** on
   `fix/bound-cache-migration-enumeration-r65-20260909` for issue #198. Native
-  CI is pending; the PR must remain open and must not be auto-merged.
+  CI is green; the PR must remain open and must not be auto-merged.
 - User outcome: an excessive legacy cache directory cannot materialize an
   unbounded entry array during startup cleanup.
 - Success signal: Dockyard lazily inspects at most 1,024 direct entries and
@@ -876,8 +876,12 @@ were reconciled before issue #198 was created for this run.
 - Evidence so far: localization checks pass with 10 declared resources, 463
   app keys and 15 privacy keys across all five locales. Repository Python
   tests, `git diff --check` and the added-line secret scan pass. The Linux host
-  has no Swift, Xcode, XcodeGen, prek or SwiftFormat, so PR #199's GitHub macOS
-  CI is the mandatory native evidence.
+  has no Swift, Xcode, XcodeGen, prek or SwiftFormat. At
+  implementation-and-roadmap head `eddfa9e`, macOS CI run `34365451551` passed
+  localization checks, XcodeGen, the native build, bundled-helper verification
+  and the full XCTest suite. CodeQL run `34365451587` passed its configured
+  Actions and JavaScript analyses; Swift analysis was skipped by the repository
+  workflow. The final evidence-only head must also remain green.
 
 ### Independent Ready queue while R65 and R68 await review
 
