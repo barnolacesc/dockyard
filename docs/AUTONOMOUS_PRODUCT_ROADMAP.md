@@ -825,3 +825,74 @@ retain their documented dependencies. Issues #41, #43 and #54 remain open;
   issues/PRs and their changed paths/checks, latest release and Projects v2
   scope. Selected independent R35 / issue #132 from a fresh `origin/main`
   worktree. No older PR comment, merge, release or Project mutation occurred.
+
+## Live reconciliation — 2026-09-09 16:30 CEST
+
+This append-only update is authoritative for R65 and intentionally avoids PR
+#197's current queue rewrite, so either implementation can merge first without
+stacking code. `origin/main` is `c825f36`; CI run `34281701704`,
+CodeQL run `34281701666` and Release run `34281701733` are green at that head.
+The latest published release is v0.2.4. PR #197 is green, clean and **awaiting
+Cesc review**; it owns worktree creation, sidebar UI, localizations, What's New
+and `GitOperationsTests`, none of which is modified here.
+
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the token has `repo` and
+`workflow` but lacks `read:project`. No Project item or status is inferred.
+Open issues, `TODO.md`, current code and PR #197's changed paths and behavior
+were reconciled before issue #198 was created for this run.
+
+### R65 — Bound legacy cache-migration enumeration
+
+- Status: **Awaiting Cesc review in PR #199** on
+  `fix/bound-cache-migration-enumeration-r65-20260909` for issue #198. Native
+  CI is pending; the PR must remain open and must not be auto-merged.
+- User outcome: an excessive legacy cache directory cannot materialize an
+  unbounded entry array during startup cleanup.
+- Success signal: Dockyard lazily inspects at most 1,024 direct entries and
+  preserves the legacy directory if the ceiling or an enumeration error is
+  reached, while ordinary empty-directory cleanup still completes.
+- macOS impact: launch-time cache migration only; no UI, accessibility,
+  localization, shortcut or visual behavior changes.
+- Persistence/security impact: narrows a legacy read/enumeration boundary and
+  fails toward retaining data. The cache destinations, move/conflict behavior,
+  schemas, commands, worktrees, entitlements, privacy and releases are
+  unchanged.
+- Scope: `CacheMigration`, focused `CacheMigrationTests` and this roadmap
+  evidence.
+- Dependencies: none. PR #197 owns disjoint implementation and test paths, and
+  this record is appended outside its roadmap hunk so either PR can merge
+  first.
+- Risk: low and reversible code, but persisted-data migration behavior is
+  approval-gated. Stop at the tested PR for Cesc.
+- Acceptance criteria:
+  1. Production cleanup uses a lazy, shallow enumerator with a fixed limit.
+  2. Empty and small hidden-only legacy directories retain existing cleanup.
+  3. Visible, conflicting, over-limit or unreadable legacy state is preserved.
+  4. The classifier consumes no more entries after reaching its limit.
+  5. Focused XCTest and the full GitHub macOS build/test pass.
+- Required evidence: focused `CacheMigrationTests`, localization resource/key
+  checks, XcodeGen/native build, full XCTest, `git diff --check`, added-line
+  secret scan and configured CodeQL.
+- Evidence so far: localization checks pass with 10 declared resources, 463
+  app keys and 15 privacy keys across all five locales. Repository Python
+  tests, `git diff --check` and the added-line secret scan pass. The Linux host
+  has no Swift, Xcode, XcodeGen, prek or SwiftFormat, so PR #199's GitHub macOS
+  CI is the mandatory native evidence.
+
+### Independent Ready queue while R65 and R68 await review
+
+- **R66 — Bound persisted project snapshot decoding.** User outcome: an
+  unexpectedly large `dockyard.projects` defaults payload cannot feed an
+  unbounded decoder during launch. Success: bounded valid snapshots restore;
+  oversized or malformed data follows the existing empty-state path without
+  deleting stored bytes. Scope: `ProjectStore` and focused tests only.
+- **R67 — Bound persisted workspace-tab snapshot decoding.** User outcome: an
+  unexpectedly large restored tab payload cannot feed an unbounded decoder.
+  Success: bounded valid tabs restore; oversized or malformed data follows the
+  existing default-tab path without deleting stored bytes. Scope: workspace
+  tab restoration and focused tests only.
+- **R69 — Bound expanded file-tree enumeration.** User outcome: expanding a
+  directory with excessive entries cannot allocate or sort an unbounded
+  snapshot. Success: deterministic fixtures prove a fixed ceiling, stable
+  ordering and unchanged containment/symlink behavior. Scope: `FileTree` and
+  focused tests only.
