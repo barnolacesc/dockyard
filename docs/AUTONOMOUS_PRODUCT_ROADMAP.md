@@ -56,8 +56,8 @@ documentation.
 
 ### R68 — Branch a workstream from an existing workstream
 
-- Status: **In implementation for issue #196** on
-  `feat/select-workstream-base-r68-20260909`; stop at a tested PR for Cesc.
+- Status: **Awaiting Cesc review in PR #197** on
+  `feat/select-workstream-base-r68-20260909` for issue #196. Do not auto-merge.
 - User outcome: a user can start dependent work from an existing workstream's
   branch without manually creating a worktree or changing the main checkout.
 - Success signal: a native workstream context action creates a child workstream
@@ -84,8 +84,12 @@ documentation.
   5. All five localizations, focused XCTest and full macOS CI pass.
 - Required evidence: focused `GitOperationsTests`, localization parity,
   XcodeGen/native build, full XCTest, `git diff --check`, added-line secret scan
-  and configured CodeQL. Native interaction remains unverified until macOS CI
-  and Cesc's manual review.
+  and configured CodeQL. Local static evidence passes: 466 app keys and 15
+  privacy keys match across all five locales, all 10 localization resources are
+  declared, 38 repository script tests pass, `git diff --check` passes and the
+  added-line secret scan is clean. PR #197 checks are the authoritative native
+  build/XCTest evidence; context-menu interaction remains for Cesc's manual
+  macOS review.
 
 ### Independent Ready queue after R68
 
