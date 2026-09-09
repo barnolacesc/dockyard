@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-09-08 against `origin/main` at
-`08ec8b33781b5ea406a1dcf5eeaa071954c1ebd6`.
+Last reconciled: 2026-09-09 against `origin/main` at
+`c825f36afed82fa6d0f02d3ed99ac9f66993c4d7`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -11,71 +11,83 @@ The first **Current autonomous queue** is canonical. Dated **Live
 reconciliation** and superseded queue sections are retained as an audit trail
 and can contain stale statuses.
 
-## Current autonomous queue — 2026-09-08 16:30 CEST
+## Current autonomous queue — 2026-09-09 09:30 CEST
 
-`origin/main` is `08ec8b3`; its latest macOS CI, scheduled CodeQL and Release
-workflows are green. PRs #170, #172, #174, #176, #178, #180, #182, #184 and
-#186 are green at their heads and **awaiting Cesc review**. PRs #117, #126,
-#140, #146, #148, #152, #154, #156, #158, #160, #162, #164, #166 and #168
-are also green at their heads but conflict with current `main`; they remain
-awaiting review and are not modified or stacked on here. Release-please PR #63
-remains approval-gated and must not be merged or published autonomously. The
-latest published release remains v0.2.1.
+`origin/main` is `c825f36`; CI run `34281701704`, CodeQL run `34281701666`
+and Release run `34281701733` are green at that exact head. The latest published
+release is v0.2.4. GitHub reports no open pull requests, so there is no pending
+implementation path to overlap or stack on. The only pre-existing open product
+issues are #41, #43 and #54.
 
-GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
-`repo` and `workflow` but lacks `read:project`. No Project item or status is
-inferred. Current issues, `TODO.md`, code and every open PR path were
-reconciled before issue #187 was created for this run. Product issues #41,
-#43 and #54 still require native profiling, approval-gated update work and
-non-duplicative agent-status work respectively.
+GitHub Projects v2 again returned `INSUFFICIENT_SCOPES`: the automation token
+has `repo` and `workflow` but lacks `read:project`. No Project item or status is
+inferred. `TODO.md`, current code, issues and the empty open-PR set were
+reconciled before issue #196 was created for this discovery cycle.
 
-### R64 — Bound unified-log polling snapshots
+### Weekly competitive discovery — 2026-09-09
 
-- Status: **Awaiting Cesc review in PR #188** on
-  `fix/bound-unified-log-snapshots-r64-20260908` for issue #187. The pull
-  request must remain open and must not be auto-merged.
-- User outcome: opening the native logs window after a diagnostic burst cannot
-  materialize or sort an unbounded unified-log poll result.
-- Success signal: the production source retains at most 5,000 matching entries,
-  respects a smaller visible-history capacity, and returns the newest retained
-  tail in source order while bookmark advancement and filters remain correct.
-- macOS impact: the existing native unified-log window only; no visible string,
-  layout, accessibility, localization or shortcut behavior changes.
-- Persistence/security impact: bounds transient diagnostic data from the
-  current process. Logging preferences, launch diagnostics, commands,
-  persisted state, entitlements and release behavior are unchanged.
-- Scope: `LogSource`, `LogStore`, focused `LogStoreTests` and roadmap evidence.
-- Dependencies: none. No open PR owns these implementation or test paths, so
-  the code can merge in either order with every pending implementation PR.
-- Risk: low, reversible diagnostic-memory hardening. Full GitHub macOS CI is
-  mandatory.
+Public product evidence was accessed on 2026-09-09:
+
+- [Orca worktrees](https://www.onorca.dev/docs/model/worktrees) exposes an
+  explicit start-from ref, creates worktrees in the background and keeps
+  retry/cancel status visible. The base-ref practice fits Dockyard; adopting
+  its full lifecycle UI would overlap Dockyard's existing optimistic creation
+  and broaden cancellation/cleanup boundaries.
+- [Tegment worktrees](https://tegment.app/docs/worktrees) asks for a base branch
+  when creating a new branch. Its
+  [quick actions](https://tegment.app/docs/quick-actions) also distinguish
+  trusted ticket keys from untrusted issue descriptions. Ticket-to-agent
+  automation is rejected here because it would broaden issue ingestion,
+  prompt-injection and command-execution scope.
+- [VS Code agent harnesses](https://code.visualstudio.com/docs/agents/run/agent-harnesses)
+  make the base branch explicit for a new worktree and correctly state that a
+  worktree is code isolation, not an OS security boundary. Dockyard keeps its
+  stricter permission and worktree-containment controls rather than copying
+  VS Code's worktree-specific bypass default.
+- [Cursor background agents](https://docs.cursor.com/background-agent) provide
+  searchable remote sessions, status and follow-up steering. That remote clone,
+  retention and auto-command model conflicts with Dockyard's local-native
+  privacy and explicit execution boundaries, so it is not selected.
+
+No source code, assets, product text or distinctive trade dress is copied. The
+OpenClaw host had no Chromium executable, so fresh screenshots could not be
+captured; the evidence for this cycle is limited to the linked official textual
+documentation.
+
+### R68 — Branch a workstream from an existing workstream
+
+- Status: **In implementation for issue #196** on
+  `feat/select-workstream-base-r68-20260909`; stop at a tested PR for Cesc.
+- User outcome: a user can start dependent work from an existing workstream's
+  branch without manually creating a worktree or changing the main checkout.
+- Success signal: a native workstream context action creates a child workstream
+  whose initial `HEAD` equals the selected local branch commit, while the
+  ordinary plus action still starts from Dockyard's detected default branch.
+- macOS impact: one localized item in the existing native workstream context
+  menu and one What's New entry; no shortcut, layout or focus change.
+- Persistence/security impact: no schema or cleanup change. The selected branch
+  crosses the git worktree command boundary, so Dockyard accepts only a valid,
+  resolvable `refs/heads/` branch and passes its commit as a `Process` argument,
+  never shell text.
+- Scope: `GitOperations.createWorktree`, the existing sidebar context menu,
+  focused `GitOperationsTests`, five localizations, What's New and roadmap.
+- Dependencies: none; there were no open PRs at selection.
+- Risk: medium, reversible worktree-command change. Never auto-merge; full
+  GitHub macOS CI and Cesc review are mandatory.
 - Acceptance criteria:
-  1. Production polling retains at most 5,000 matching entries and honors a
-     smaller requested capacity.
-  2. A burst beyond the ceiling keeps the newest entries in chronological
-     source order without retaining the entire matching sequence.
-  3. `LogStore` passes its capacity to the source, appends only fresh entries,
-     advances the bookmark to the newest fetched timestamp and keeps visible
-     history bounded.
-  4. Existing search, category and minimum-level filters remain green.
-  5. Focused XCTest and the full GitHub macOS build/test pass.
-- Required evidence: focused `LogStoreTests`, localization resource/key checks,
+  1. The ordinary add action retains the latest-default-branch behavior.
+  2. An existing workstream branch can be selected as the new workstream base.
+  3. Unknown, option-like or non-local refs are rejected before directories or
+     worktrees are created.
+  4. Generated naming, permission mode, setup and environment behavior remain
+     unchanged.
+  5. All five localizations, focused XCTest and full macOS CI pass.
+- Required evidence: focused `GitOperationsTests`, localization parity,
   XcodeGen/native build, full XCTest, `git diff --check`, added-line secret scan
-  and configured CodeQL.
-- Evidence so far: localization resource/key tests and repository checks pass,
-  including 10 declared resources, 418 app keys and 15 privacy keys across all
-  five locales. Bundled-helper, appcast-generation and appcast-seeding script
-  tests, `git diff --check` and the added-line secret scan pass. The Linux
-  automation host has no Swift, Xcode, XcodeGen, prek or SwiftFormat
-  executable, so GitHub macOS CI is the mandatory native build/test evidence.
-  At implementation-and-roadmap head `f62a46e`, macOS CI run `34240052035`
-  passed localization checks, XcodeGen, the native build, bundled-helper
-  verification and the full XCTest suite including `LogStoreTests`. CodeQL run
-  `34240052033` passed its configured Actions and JavaScript analyses; Swift
-  analysis was skipped by repository workflow configuration. The final
-  evidence-only head must also remain green.
+  and configured CodeQL. Native interaction remains unverified until macOS CI
+  and Cesc's manual review.
 
-### Independent Ready queue while R64 and older PRs await review
+### Independent Ready queue after R68
 
 - **R65 — Bound legacy cache-migration enumeration.** User outcome: a malformed
   legacy cache directory with an excessive number of entries cannot allocate
@@ -99,10 +111,11 @@ non-duplicative agent-status work respectively.
   deleting stored bytes. Scope: workspace-tab restoration and focused tests;
   no schema, migration, tab mutation, UI string, command, worktree or
   entitlement change. Full macOS CI is required.
-
-R62 (bounded expanded file-tree enumeration) remains **dependent on R61 / PR
-#184 merging** because both change `FileTree.swift`; it is not Ready while that
-PR is open and must not be stacked or duplicated.
+- **R69 — Bound expanded file-tree enumeration.** User outcome: expanding a
+  directory with an excessive number of entries cannot allocate or sort an
+  unbounded snapshot. Success: deterministic fixtures prove a fixed ceiling,
+  stable ordering and unchanged containment/symlink behavior. The prior
+  dependency landed through PR #184, so this is now independent and Ready.
 
 ## Superseded autonomous queue — 2026-08-10 16:30 CEST
 

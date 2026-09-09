@@ -567,3 +567,6 @@
 "Pink" = "Rosa";
 "Project Colors" = "Projektfärger";
 "Assign colors from a project's shortcut menu to make busy sidebars easier to scan." = "Tilldela färger från ett projekts snabbmeny så att välfyllda sidofält blir enklare att överblicka.";
+"New workstream from this branch" = "Nytt arbetsflöde från den här grenen";
+"Branch from a Workstream" = "Förgrena från ett arbetsflöde";
+"Start a new workstream from any existing workstream branch while keeping the default one-click path." = "Starta ett nytt arbetsflöde från en befintlig arbetsflödesgren och behåll standardvägen med ett klick.";

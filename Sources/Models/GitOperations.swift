@@ -200,10 +200,19 @@ enum GitOperations {
         return "HEAD"
     }
 
-    /// Create a git worktree for a workstream, branching off the default branch.
+    /// Create a git worktree for a workstream, branching off the default branch
+    /// or an explicitly selected local branch.
     /// Returns the worktree path on success, nil on failure.
-    static func createWorktree(projectPath: String, projectName: String, workstreamName: String, branchPrefix: String = "dy", symlinkEnv: Bool = true) -> String? {
-        let worktreeDir = AppConstants.worktreesDirectory
+    static func createWorktree(
+        projectPath: String,
+        projectName: String,
+        workstreamName: String,
+        branchPrefix: String = "dy",
+        symlinkEnv: Bool = true,
+        baseBranch: String? = nil,
+        worktreesRoot: URL = AppConstants.worktreesDirectory
+    ) -> String? {
+        let worktreeDir = worktreesRoot
             .appendingPathComponent(sanitize(projectName))
             .appendingPathComponent(sanitize(workstreamName))
 
@@ -211,10 +220,18 @@ enum GitOperations {
             ? workstreamName
             : "\(branchPrefix)/\(workstreamName)"
 
-        // Fetch the default branch so worktrees start from the latest remote ref
-        fetchDefaultBranch(at: projectPath)
-
-        let baseBranch = defaultBranch(at: projectPath)
+        let baseRef: String
+        if let baseBranch {
+            guard let validatedCommit = validatedLocalBranchCommit(
+                baseBranch,
+                projectPath: projectPath
+            ) else { return nil }
+            baseRef = validatedCommit
+        } else {
+            // Preserve the one-click path: fetch and branch from the latest default ref.
+            fetchDefaultBranch(at: projectPath)
+            baseRef = defaultBranch(at: projectPath)
+        }
 
         // Create parent directories
         try? FileManager.default.createDirectory(
@@ -222,10 +239,13 @@ enum GitOperations {
             withIntermediateDirectories: true
         )
 
-        // Create worktree with new branch based off the default branch
-        let result = run(args: ["worktree", "add", "-b", branchName, worktreeDir.path, baseBranch], in: projectPath)
+        let result = run(
+            args: ["worktree", "add", "-b", branchName, worktreeDir.path, baseRef],
+            in: projectPath
+        )
 
         if result == nil {
+            guard baseBranch == nil else { return nil }
             // Branch might already exist, try without -b
             let fallback = run(args: ["worktree", "add", worktreeDir.path, branchName], in: projectPath)
             guard fallback != nil else { return nil }
@@ -238,6 +258,27 @@ enum GitOperations {
         addExcludeEntry(at: projectPath, pattern: ".dockyard-state/")
 
         return worktreeDir.path
+    }
+
+    /// Resolve an exact local branch name to a commit before it reaches the
+    /// worktree command. Full refs avoid option parsing and remote ambiguity.
+    private static func validatedLocalBranchCommit(
+        _ branch: String,
+        projectPath: String
+    ) -> String? {
+        guard !branch.isEmpty, !branch.hasPrefix("-") else { return nil }
+        let fullRef = "refs/heads/\(branch)"
+        guard run(args: ["check-ref-format", fullRef], in: projectPath) != nil
+        else { return nil }
+
+        guard let commit = run(
+            args: ["rev-parse", "--verify", "--quiet", "\(fullRef)^{commit}"],
+            in: projectPath
+        )?.trimmingCharacters(in: .whitespacesAndNewlines),
+            commit.range(of: "^[0-9a-fA-F]{40,64}$", options: .regularExpression) != nil
+        else { return nil }
+
+        return commit
     }
 
     /// Symlink .env and .env.local from main repo to worktree if they exist.

@@ -567,3 +567,6 @@
 "Pink" = "Rosa";
 "Project Colors" = "Colores de proyectos";
 "Assign colors from a project's shortcut menu to make busy sidebars easier to scan." = "Asigna colores desde el menú contextual de un proyecto para explorar más fácilmente las barras laterales llenas.";
+"New workstream from this branch" = "Nuevo flujo de trabajo desde esta rama";
+"Branch from a Workstream" = "Crear una rama desde un flujo de trabajo";
+"Start a new workstream from any existing workstream branch while keeping the default one-click path." = "Inicia un nuevo flujo de trabajo desde la rama de cualquier flujo existente sin cambiar la ruta predeterminada de un clic.";

@@ -567,3 +567,6 @@
 "Pink" = "Pink";
 "Project Colors" = "Project Colors";
 "Assign colors from a project's shortcut menu to make busy sidebars easier to scan." = "Assign colors from a project's shortcut menu to make busy sidebars easier to scan.";
+"New workstream from this branch" = "New workstream from this branch";
+"Branch from a Workstream" = "Branch from a Workstream";
+"Start a new workstream from any existing workstream branch while keeping the default one-click path." = "Start a new workstream from any existing workstream branch while keeping the default one-click path.";
