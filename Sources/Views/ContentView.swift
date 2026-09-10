@@ -916,6 +916,7 @@ struct ContentView: View {
 }
 
 enum ProjectStore {
+    static let maximumSnapshotBytes = 1_048_576
     private static let userDefaultsKey = "dockyard.projects"
 
     private struct PersistedProject: Decodable {
@@ -928,6 +929,7 @@ enum ProjectStore {
 
     static func load(defaults: UserDefaults = .standard) -> [Project] {
         guard let data = defaults.data(forKey: userDefaultsKey),
+              data.count <= maximumSnapshotBytes,
               let persistedProjects = try? JSONDecoder().decode([PersistedProject].self, from: data)
         else { return [] }
         return persistedProjects.compactMap(\.value)

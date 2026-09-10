@@ -205,6 +205,38 @@ final class ProjectTests: XCTestCase {
         XCTAssertEqual(projects, loaded)
     }
 
+    func testProjectStoreRestoresValidSnapshotAtByteLimit() throws {
+        let project = Project(name: "bounded", directory: "/bounded")
+        var data = try JSONEncoder().encode([project])
+        XCTAssertLessThan(data.count, ProjectStore.maximumSnapshotBytes)
+        data.append(
+            Data(
+                repeating: 0x20,
+                count: ProjectStore.maximumSnapshotBytes - data.count
+            )
+        )
+        testDefaults.set(data, forKey: "dockyard.projects")
+
+        XCTAssertEqual(ProjectStore.load(defaults: testDefaults), [project])
+        XCTAssertEqual(testDefaults.data(forKey: "dockyard.projects"), data)
+    }
+
+    func testProjectStoreRejectsOversizedSnapshotWithoutDeletingStoredBytes() throws {
+        let project = Project(name: "oversized", directory: "/oversized")
+        var data = try JSONEncoder().encode([project])
+        XCTAssertLessThan(data.count, ProjectStore.maximumSnapshotBytes)
+        data.append(
+            Data(
+                repeating: 0x20,
+                count: ProjectStore.maximumSnapshotBytes - data.count + 1
+            )
+        )
+        testDefaults.set(data, forKey: "dockyard.projects")
+
+        XCTAssertTrue(ProjectStore.load(defaults: testDefaults).isEmpty)
+        XCTAssertEqual(testDefaults.data(forKey: "dockyard.projects"), data)
+    }
+
     func testProjectStoreSkipsMalformedRecordWithoutHidingHealthyProjects() throws {
         let first = Project(name: "first", directory: "/first")
         let second = Project(name: "second", directory: "/second")
@@ -230,9 +262,11 @@ final class ProjectTests: XCTestCase {
     }
 
     func testProjectStoreRejectsInvalidTopLevelPayload() {
-        testDefaults.set(Data(#"{"unexpected":"object"}"#.utf8), forKey: "dockyard.projects")
+        let data = Data(#"{"unexpected":"object"}"#.utf8)
+        testDefaults.set(data, forKey: "dockyard.projects")
 
         XCTAssertTrue(ProjectStore.load(defaults: testDefaults).isEmpty)
+        XCTAssertEqual(testDefaults.data(forKey: "dockyard.projects"), data)
     }
 
     func testProjectDefaultsToNoWorkstreams() {
