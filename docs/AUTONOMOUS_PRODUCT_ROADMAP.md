@@ -28,8 +28,9 @@ non-duplicative agent-status work respectively.
 ### R66 — Bound persisted project snapshot decoding
 
 - Status: **Awaiting Cesc review in PR #201** on
-  `fix/bound-project-snapshot-decoding-r66-20260910` for issue #200. Native CI
-  is pending; the PR must remain open and must not be auto-merged.
+  `fix/bound-project-snapshot-decoding-r66-20260910` for issue #200. Required
+  native implementation CI is green; the PR must remain open and must not be
+  auto-merged.
 - User outcome: an unexpectedly large `dockyard.projects` defaults payload
   cannot feed an unbounded JSON decoder during launch.
 - Success signal: a valid snapshot at the 1 MiB ceiling restores, while an
@@ -62,7 +63,11 @@ non-duplicative agent-status work respectively.
   repository Python script tests, `git diff --check` and the added-line secret
   review pass. `./scripts/dev.sh test` cannot run on this Linux host because
   Ghostty macOS resources and Xcode are unavailable, so GitHub macOS CI remains
-  mandatory native evidence.
+  mandatory native evidence. At implementation-and-roadmap head `e6d8890`,
+  macOS CI run `34451225379` passed XcodeGen, the native build and the full
+  XCTest suite including `ProjectTests`; configured CodeQL run `34451225147`
+  passed Actions and JavaScript analysis while Swift analysis was skipped by
+  the PR workflow. The final evidence-only head must also remain green.
 
 ### Independent Ready queue while R65, R66 and R68 await review
 
