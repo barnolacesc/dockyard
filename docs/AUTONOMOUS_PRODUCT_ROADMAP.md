@@ -28,9 +28,10 @@ non-duplicative agent-status work respectively.
 
 ### R67 — Bound persisted workspace-tab snapshot restoration
 
-- Status: **In implementation** on
-  `fix/bound-workspace-tab-snapshot-decoding-r67-20260910` for issue #202. A
-  tested PR will be left open for Cesc review and will not be auto-merged.
+- Status: **Awaiting Cesc review in PR #203** on
+  `fix/bound-workspace-tab-snapshot-decoding-r67-20260910` for issue #202. The
+  pull request must remain open and must not be auto-merged; native CI is
+  pending at the current head.
 - User outcome: an unexpectedly large `dockyard.workspaceTabSnapshots`
   defaults payload cannot feed an unbounded JSON decoder while a workstream is
   opened.
