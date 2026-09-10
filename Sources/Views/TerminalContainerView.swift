@@ -145,10 +145,12 @@ struct WorkspaceTabSnapshot: Codable {
 }
 
 enum WorkspaceTabSnapshotStore {
+    static let maximumRestoreBytes = 1_048_576
     private static let userDefaultsKey = "dockyard.workspaceTabSnapshots"
 
     static func load(for workstreamID: UUID) -> WorkspaceTabSnapshot? {
         guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+              data.count <= maximumRestoreBytes,
               let saved = decodeSnapshots(from: data)
         else { return nil }
         return saved[workstreamID.uuidString]

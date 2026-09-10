@@ -95,6 +95,49 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         XCTAssertNil(decoded[invalidID.uuidString])
     }
 
+    func testLoadRestoresValidSnapshotAtByteLimit() throws {
+        let workstreamID = UUID()
+        let snapshot = makeSnapshot(activeTab: .agent)
+        var data = try JSONEncoder().encode([workstreamID.uuidString: snapshot])
+        XCTAssertLessThan(data.count, WorkspaceTabSnapshotStore.maximumRestoreBytes)
+        data.append(
+            Data(
+                repeating: 0x20,
+                count: WorkspaceTabSnapshotStore.maximumRestoreBytes - data.count
+            )
+        )
+        UserDefaults.standard.set(data, forKey: snapshotsKey)
+
+        XCTAssertEqual(WorkspaceTabSnapshotStore.load(for: workstreamID)?.activeTab, .agent)
+        XCTAssertEqual(UserDefaults.standard.data(forKey: snapshotsKey), data)
+    }
+
+    func testLoadRejectsOversizedSnapshotWithoutDeletingStoredBytes() throws {
+        let workstreamID = UUID()
+        let snapshot = makeSnapshot(activeTab: .agent)
+        var data = try JSONEncoder().encode([workstreamID.uuidString: snapshot])
+        XCTAssertLessThan(data.count, WorkspaceTabSnapshotStore.maximumRestoreBytes)
+        data.append(
+            Data(
+                repeating: 0x20,
+                count: WorkspaceTabSnapshotStore.maximumRestoreBytes - data.count + 1
+            )
+        )
+        UserDefaults.standard.set(data, forKey: snapshotsKey)
+
+        XCTAssertNil(WorkspaceTabSnapshotStore.load(for: workstreamID))
+        XCTAssertEqual(UserDefaults.standard.data(forKey: snapshotsKey), data)
+    }
+
+    func testLoadRejectsMalformedSnapshotWithoutDeletingStoredBytes() {
+        let workstreamID = UUID()
+        let data = Data(#"{"unexpected":"array"}"#.utf8)
+        UserDefaults.standard.set(data, forKey: snapshotsKey)
+
+        XCTAssertNil(WorkspaceTabSnapshotStore.load(for: workstreamID))
+        XCTAssertEqual(UserDefaults.standard.data(forKey: snapshotsKey), data)
+    }
+
     func testSavePreservesValidSnapshotWhenAnotherEntryIsMalformed() throws {
         let existingID = UUID()
         let malformedID = UUID()

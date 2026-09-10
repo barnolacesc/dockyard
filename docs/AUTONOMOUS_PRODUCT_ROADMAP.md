@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-09-08 against `origin/main` at
-`08ec8b33781b5ea406a1dcf5eeaa071954c1ebd6`.
+Last reconciled: 2026-09-10 against `origin/main` at
+`c825f36afed82fa6d0f02d3ed99ac9f66993c4d7`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -11,7 +11,92 @@ The first **Current autonomous queue** is canonical. Dated **Live
 reconciliation** and superseded queue sections are retained as an audit trail
 and can contain stale statuses.
 
-## Current autonomous queue — 2026-09-08 16:30 CEST
+## Current autonomous queue — 2026-09-10 16:30 CEST
+
+`origin/main` is `c825f36`; its macOS CI, CodeQL and Release workflows are
+green. PRs #197 (R68), #199 (R65) and #201 (R66) are green, mergeable and
+**awaiting Cesc review**. Their implementation paths and behavior were checked
+before selecting this run; they remain open and are not modified or stacked on
+here. The latest published release is v0.2.4; no release-please PR is open.
+
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
+`repo` and `workflow` but lacks `read:project`. No Project item or status is
+inferred. Current issues, `TODO.md`, code and every open PR path were
+reconciled before issue #202 was created for this run. Product issues #41,
+#43 and #54 still require native profiling, approval-gated update work and
+non-duplicative agent-status work respectively.
+
+### R67 — Bound persisted workspace-tab snapshot restoration
+
+- Status: **In implementation** on
+  `fix/bound-workspace-tab-snapshot-decoding-r67-20260910` for issue #202. A
+  tested PR will be left open for Cesc review and will not be auto-merged.
+- User outcome: an unexpectedly large `dockyard.workspaceTabSnapshots`
+  defaults payload cannot feed an unbounded JSON decoder while a workstream is
+  opened.
+- Success signal: a valid snapshot at the 1 MiB ceiling restores, while an
+  oversized or malformed payload follows the existing default-tab path and
+  its stored bytes remain untouched.
+- macOS impact: workspace restoration only; no visible UI, accessibility,
+  localization or shortcut behavior changes.
+- Persistence/security impact: adds a read-side restore ceiling. The snapshot
+  schema, encoding, save/remove behavior, tab state, commands, worktrees,
+  entitlements and release behavior are unchanged.
+- Scope: `WorkspaceTabSnapshotStore`, focused `WorkspaceTabSnapshotTests` and
+  roadmap evidence only.
+- Dependencies: none. PR #197 owns worktree creation, sidebar UI,
+  localizations, What's New and `GitOperationsTests`; PR #199 owns
+  `CacheMigration` and its tests; PR #201 owns `ProjectStore` and
+  `ProjectTests`. R67 owns none of those implementation paths, so all four can
+  merge in any order.
+- Risk: low and reversible read-side persistence hardening. Full GitHub macOS
+  CI is mandatory.
+- Acceptance criteria:
+  1. A valid workspace-tab snapshot exactly at the fixed byte ceiling restores.
+  2. A valid snapshot above the ceiling is rejected before decoding.
+  3. Malformed bounded data continues to return the existing nil/default path.
+  4. Rejected oversized and malformed payload bytes remain in UserDefaults.
+  5. Existing lossy per-workstream restore, save and remove tests remain green.
+  6. Full GitHub macOS build and XCTest pass.
+- Required evidence: focused `WorkspaceTabSnapshotTests`, localization
+  resource/key checks, XcodeGen/native build, full XCTest, repository script
+  tests, `git diff --check`, added-line secret scan and configured CodeQL.
+- Evidence so far: localization resource/key checks pass with 10 declared
+  resources, 463 app keys and 15 privacy keys across all five locales; all 38
+  repository Python script tests, `git diff --check` and the added-line secret
+  review pass. The Linux automation host has no Swift, Xcode, XcodeGen, prek or
+  SwiftFormat executable, so GitHub macOS CI remains mandatory native evidence.
+
+### Independent Ready queue while R65, R66, R67 and R68 await review
+
+- **R69 — Bound persisted sidebar-state decoding.** User outcome: malformed
+  selection or expanded-project defaults cannot feed an unbounded decoder at
+  launch. Success: fixtures at the byte ceiling restore while oversized values
+  fall back to the current nil/empty state without deleting stored bytes.
+  Scope: `SidebarSelection`, `SidebarState` and focused tests; no UI, schema,
+  project mutation, worktree or command change. Full macOS CI is required.
+- **R70 — Bound persisted Attention history decoding.** User outcome: an
+  unexpectedly large local Attention history cannot feed an unbounded decoder
+  before retention and event-count limits apply. Success: bounded valid
+  history still restores while oversized or malformed bytes use the existing
+  empty-history path and remain stored. Scope: `AgentActivityStore` and
+  focused tests; no event semantics, UI, localization, watcher, command or
+  worktree change. Full macOS CI is required.
+- **R71 — Bound coding-agent state snapshot reads.** User outcome: malformed
+  or unexpectedly large agent/subagent state files cannot allocate unbounded
+  memory before validation. Success: regular files at a fixed ceiling still
+  decode while oversized, symlinked and non-regular inputs are rejected
+  without mutation. Scope: `AgentStateFiles`, `AgentSubagentFiles`, app-side
+  state loading and focused tests; no status semantics, hooks, UI,
+  localization, command invocation or cleanup change. Full macOS CI is
+  required and issue #54 must be rechecked before selection to avoid overlap.
+
+R69, R70 and R71 own distinct source and test paths and are independent of all
+open implementation PRs. Each can merge in any order. R62 remains dependent
+on revalidation against the expanded file-tree work merged through integration
+PR #189 and is not Ready.
+
+## Superseded autonomous queue — 2026-09-08 16:30 CEST
 
 `origin/main` is `08ec8b3`; its latest macOS CI, scheduled CodeQL and Release
 workflows are green. PRs #170, #172, #174, #176, #178, #180, #182, #184 and
