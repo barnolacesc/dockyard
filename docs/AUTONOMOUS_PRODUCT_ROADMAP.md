@@ -30,8 +30,8 @@ non-duplicative agent-status work respectively.
 
 - Status: **Awaiting Cesc review in PR #203** on
   `fix/bound-workspace-tab-snapshot-decoding-r67-20260910` for issue #202. The
-  pull request must remain open and must not be auto-merged; native CI is
-  pending at the current head.
+  pull request must remain open and must not be auto-merged. Required native
+  implementation CI is green; the final evidence-only head must remain green.
 - User outcome: an unexpectedly large `dockyard.workspaceTabSnapshots`
   defaults payload cannot feed an unbounded JSON decoder while a workstream is
   opened.
@@ -66,7 +66,13 @@ non-duplicative agent-status work respectively.
   resources, 463 app keys and 15 privacy keys across all five locales; all 38
   repository Python script tests, `git diff --check` and the added-line secret
   review pass. The Linux automation host has no Swift, Xcode, XcodeGen, prek or
-  SwiftFormat executable, so GitHub macOS CI remains mandatory native evidence.
+  SwiftFormat executable, so GitHub macOS CI is the native evidence. At
+  implementation-and-review head `4f1dbb5`, macOS CI run `34490642567` passed
+  localization checks, XcodeGen, the native build, bundled-helper verification
+  and the full XCTest suite including `WorkspaceTabSnapshotTests`. Configured
+  CodeQL run `34490642638` passed Actions and JavaScript analysis while Swift
+  analysis was skipped by the PR workflow. The final evidence-only head must
+  also remain green.
 
 ### Independent Ready queue while R65, R66, R67 and R68 await review
 
