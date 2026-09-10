@@ -27,10 +27,9 @@ non-duplicative agent-status work respectively.
 
 ### R66 — Bound persisted project snapshot decoding
 
-- Status: **Implementation prepared** on
-  `fix/bound-project-snapshot-decoding-r66-20260910` for issue #200. A fresh PR
-  from current `origin/main` and green macOS CI are required; the PR must
-  remain open for Cesc review.
+- Status: **Awaiting Cesc review in PR #201** on
+  `fix/bound-project-snapshot-decoding-r66-20260910` for issue #200. Native CI
+  is pending; the PR must remain open and must not be auto-merged.
 - User outcome: an unexpectedly large `dockyard.projects` defaults payload
   cannot feed an unbounded JSON decoder during launch.
 - Success signal: a valid snapshot at the 1 MiB ceiling restores, while an
