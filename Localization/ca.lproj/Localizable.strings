@@ -546,6 +546,11 @@
 "Press ⌘/ for the complete shortcut reference. Settings lets you choose shortcut hints, tmux mode, and usage options." = "Prem ⌘/ per consultar la referència completa de dreceres. A Configuració pots triar els indicadors de dreceres, el mode tmux i les opcions d'ús.";
 "Attention" = "Atenció";
 "Agent started working" = "L'agent ha començat a treballar";
+"Agent is working" = "L'agent està treballant";
+"See the Coding Agents that are currently working or waiting for you." = "Consulta els agents de codi que estan treballant o esperant-te ara mateix.";
+"Current workspaces" = "Espais de treball actuals";
+"No active Coding Agents" = "No hi ha agents de codi actius";
+"Workstreams appear here while their Coding Agent is working or waiting for your input." = "Els fluxos de treball apareixen aquí mentre l'agent de codi està treballant o espera la teva intervenció.";
 "Agent needs your attention" = "L'agent necessita la teva atenció";
 "Coding Agent needs your attention in “%@”." = "L'agent de programació necessita la teva atenció a «%@».";
 "Agent finished a turn" = "L'agent ha acabat un torn";
@@ -562,6 +567,7 @@
 "Ready" = "A punt";
 "%d more agents" = "%d agents més";
 "%d unread" = "%d sense llegir";
+"%d need attention" = "%d requereixen atenció";
 "Agent Attention" = "Atenció dels agents";
 "A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "Una safata focalitzada recull les actualitzacions dels agents de codi de tots els fluxos de treball, amb notificacions del sistema quan un agent et necessita.";
 "Project Color" = "Color del projecte";

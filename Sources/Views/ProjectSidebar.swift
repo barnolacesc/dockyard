@@ -697,7 +697,7 @@ struct ProjectSidebar: View {
                 .padding(.top, 2)
 
                 SidebarAttentionRow(
-                    unreadCount: agentActivityStore.unreadCount,
+                    attentionCount: currentAttentionCount,
                     isSelected: selection == .attention,
                     action: { selection = .attention }
                 )
@@ -832,7 +832,13 @@ struct ProjectSidebar: View {
     @EnvironmentObject private var appEnv: AppEnvironment
     @EnvironmentObject private var activityTracker: WorkstreamActivityTracker
     @EnvironmentObject private var agentStateStore: AgentStateStore
-    @EnvironmentObject private var agentActivityStore: AgentActivityStore
+
+    private var currentAttentionCount: Int {
+        projects
+            .flatMap(\.workstreams)
+            .filter { agentStateStore.agentState(for: $0.id) == .waiting }
+            .count
+    }
 
     private func renameWorkstream() {
         guard let wsID = workstreamToRename,

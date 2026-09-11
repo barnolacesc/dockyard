@@ -19,7 +19,7 @@ struct UnreadCountBadge: View {
 }
 
 struct SidebarAttentionRow: View {
-    let unreadCount: Int
+    let attentionCount: Int
     let isSelected: Bool
     let action: () -> Void
 
@@ -39,8 +39,8 @@ struct SidebarAttentionRow: View {
 
                 Spacer()
 
-                if unreadCount > 0 {
-                    UnreadCountBadge(count: unreadCount)
+                if attentionCount > 0 {
+                    UnreadCountBadge(count: attentionCount)
                 }
             }
             .padding(.horizontal, 10)
@@ -57,26 +57,39 @@ struct SidebarAttentionRow: View {
         .animation(reduceMotion ? nil : DesignMotion.interaction, value: isHovering)
         .accessibilityLabel("Attention")
         .accessibilityValue(
-            unreadCount > 0
-                ? String(format: NSLocalizedString("%d unread", comment: "Unread agent activity count"), unreadCount)
+            attentionCount > 0
+                ? String(format: NSLocalizedString("%d need attention", comment: "Current agents waiting for attention count"), attentionCount)
                 : ""
         )
     }
+}
+
+private struct AttentionWorkstream: Identifiable {
+    let id: UUID
+    let state: AgentState
 }
 
 struct AttentionView: View {
     let projects: [Project]
     let onSelectWorkstream: (UUID) -> Void
 
-    @EnvironmentObject private var activityStore: AgentActivityStore
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @EnvironmentObject private var agentStateStore: AgentStateStore
 
-    private var unreadEvents: [AgentActivityEvent] {
-        activityStore.events.filter(\.isUnread)
-    }
-
-    private var readEvents: [AgentActivityEvent] {
-        activityStore.events.filter { !$0.isUnread }
+    private var currentWorkstreams: [AttentionWorkstream] {
+        projects
+            .flatMap(\.workstreams)
+            .compactMap { workstream in
+                guard let state = agentStateStore.agentState(for: workstream.id),
+                      state == .working || state == .waiting
+                else { return nil }
+                return AttentionWorkstream(id: workstream.id, state: state)
+            }
+            .sorted { lhs, rhs in
+                if lhs.state != rhs.state {
+                    return lhs.state == .waiting
+                }
+                return workstreamContext(for: lhs.id)?.workstreamName ?? "" < workstreamContext(for: rhs.id)?.workstreamName ?? ""
+            }
     }
 
     var body: some View {
@@ -84,15 +97,10 @@ struct AttentionView: View {
             LazyVStack(alignment: .leading, spacing: 24) {
                 header
 
-                if activityStore.events.isEmpty {
+                if currentWorkstreams.isEmpty {
                     emptyState
                 } else {
-                    if !unreadEvents.isEmpty {
-                        activitySection(title: "Needs attention", events: unreadEvents)
-                    }
-                    if !readEvents.isEmpty {
-                        activitySection(title: "Recent activity", events: readEvents)
-                    }
+                    workspaceSection
                 }
             }
             .frame(maxWidth: 760, alignment: .leading)
@@ -117,31 +125,21 @@ struct AttentionView: View {
                 HStack(spacing: 8) {
                     Text("Attention")
                         .font(.title2.weight(.semibold))
-                    if activityStore.unreadCount > 0 {
-                        UnreadCountBadge(count: activityStore.unreadCount)
+                    if attentionCount > 0 {
+                        UnreadCountBadge(count: attentionCount)
                     }
                 }
-                Text("See which Coding Agents need you and what changed while you were elsewhere.")
+                Text("See the Coding Agents that are currently working or waiting for you.")
                     .foregroundStyle(.secondary)
             }
 
             Spacer(minLength: 16)
 
-            if activityStore.unreadCount > 0 {
-                Button("Mark all as read") {
-                    if reduceMotion {
-                        activityStore.markAllRead()
-                    } else {
-                        withAnimation(DesignMotion.interaction) {
-                            activityStore.markAllRead()
-                        }
-                    }
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-                .pressable()
-            }
         }
+    }
+
+    private var attentionCount: Int {
+        currentWorkstreams.filter { $0.state == .waiting }.count
     }
 
     private var emptyState: some View {
@@ -149,9 +147,9 @@ struct AttentionView: View {
             Image(systemName: "checkmark.circle")
                 .font(.system(size: 34, weight: .light))
                 .foregroundStyle(DesignColor.statusSuccess)
-            Text("You're all caught up")
+            Text("No active Coding Agents")
                 .font(.headline)
-            Text("Coding Agent activity will appear here as workstreams start, finish, or wait for your input.")
+            Text("Workstreams appear here while their Coding Agent is working or waiting for your input.")
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 420)
@@ -160,21 +158,21 @@ struct AttentionView: View {
         .padding(.vertical, 72)
     }
 
-    private func activitySection(title: LocalizedStringKey, events: [AgentActivityEvent]) -> some View {
+    private var workspaceSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(title)
+                Text("Current workspaces")
                     .font(.headline)
                 Spacer()
-                Text("\(events.count)")
+                Text("\(currentWorkstreams.count)")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.tertiary)
             }
 
             VStack(spacing: 1) {
-                ForEach(events) { event in
-                    activityRow(event)
-                    if event.id != events.last?.id {
+                ForEach(currentWorkstreams) { workstream in
+                    workspaceRow(workstream)
+                    if workstream.id != currentWorkstreams.last?.id {
                         Divider().padding(.leading, 54)
                     }
                 }
@@ -187,24 +185,23 @@ struct AttentionView: View {
         }
     }
 
-    private func activityRow(_ event: AgentActivityEvent) -> some View {
-        let context = workstreamContext(for: event.workstreamID)
+    private func workspaceRow(_ workstream: AttentionWorkstream) -> some View {
+        let context = workstreamContext(for: workstream.id)
         return Button {
-            activityStore.markRead(event.id)
             if context != nil {
-                onSelectWorkstream(event.workstreamID)
+                onSelectWorkstream(workstream.id)
             }
         } label: {
             HStack(spacing: 14) {
-                Image(systemName: event.kind.systemImage)
+                Image(systemName: systemImage(for: workstream.state))
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(tint(for: event.kind))
+                    .foregroundStyle(tint(for: workstream.state))
                     .frame(width: 40, height: 40)
-                    .background(tint(for: event.kind).opacity(0.11), in: RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous))
+                    .background(tint(for: workstream.state).opacity(0.11), in: RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(LocalizedStringKey(event.kind.titleKey))
-                        .font(.body.weight(event.isUnread ? .semibold : .regular))
+                    Text(titleKey(for: workstream.state))
+                        .font(.body.weight(.semibold))
                         .foregroundStyle(.primary)
                     Text(context.map { "\($0.projectName) · \($0.workstreamName)" } ?? NSLocalizedString("Unknown workstream", comment: "Attention event with a removed workstream"))
                         .font(.caption)
@@ -213,11 +210,6 @@ struct AttentionView: View {
                 }
 
                 Spacer(minLength: 12)
-
-                Text(event.occurredAt, style: .relative)
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(1)
 
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
@@ -242,12 +234,27 @@ struct AttentionView: View {
         return nil
     }
 
-    private func tint(for kind: AgentActivityKind) -> Color {
-        switch kind {
-        case .started: DesignColor.statusSuccess
+    private func systemImage(for state: AgentState) -> String {
+        switch state {
+        case .working: "bolt.fill"
+        case .waiting: "questionmark.bubble.fill"
+        case .idle: "pause.circle.fill"
+        }
+    }
+
+    private func titleKey(for state: AgentState) -> LocalizedStringKey {
+        switch state {
+        case .working: "Agent is working"
+        case .waiting: "Agent needs your attention"
+        case .idle: "Agent became inactive"
+        }
+    }
+
+    private func tint(for state: AgentState) -> Color {
+        switch state {
+        case .working: DesignColor.statusSuccess
         case .waiting: DesignColor.statusWarning
-        case .completed: DesignColor.statusInfo
-        case .inactive: .secondary
+        case .idle: .secondary
         }
     }
 }

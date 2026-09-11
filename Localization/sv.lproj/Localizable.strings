@@ -546,6 +546,11 @@
 "Press ⌘/ for the complete shortcut reference. Settings lets you choose shortcut hints, tmux mode, and usage options." = "Tryck ⌘/ för den fullständiga kortkommandoreferensen. I Inställningar kan du välja kortkommandoledtrådar, tmux-läge och användningsalternativ.";
 "Attention" = "Uppmärksamhet";
 "Agent started working" = "Agenten började arbeta";
+"Agent is working" = "Agenten arbetar";
+"See the Coding Agents that are currently working or waiting for you." = "Se kodningsagenterna som just nu arbetar eller väntar på dig.";
+"Current workspaces" = "Aktuella arbetsytor";
+"No active Coding Agents" = "Inga aktiva kodningsagenter";
+"Workstreams appear here while their Coding Agent is working or waiting for your input." = "Arbetsflöden visas här medan deras kodningsagent arbetar eller väntar på din inmatning.";
 "Agent needs your attention" = "Agenten behöver din uppmärksamhet";
 "Coding Agent needs your attention in “%@”." = "Kodningsagenten behöver din uppmärksamhet i ”%@”.";
 "Agent finished a turn" = "Agenten avslutade en omgång";
@@ -562,6 +567,7 @@
 "Ready" = "Redo";
 "%d more agents" = "%d agenter till";
 "%d unread" = "%d olästa";
+"%d need attention" = "%d behöver uppmärksamhet";
 "Agent Attention" = "Agentuppmärksamhet";
 "A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "En fokuserad inkorg samlar uppdateringar från kodningsagenter i alla arbetsflöden, med systemnotiser när en agent behöver dig.";
 "Project Color" = "Projektfärg";

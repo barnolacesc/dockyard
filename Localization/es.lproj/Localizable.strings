@@ -546,6 +546,11 @@
 "Press ⌘/ for the complete shortcut reference. Settings lets you choose shortcut hints, tmux mode, and usage options." = "Pulsa ⌘/ para consultar la referencia completa de atajos. En Ajustes puedes elegir los indicadores de atajos, el modo tmux y las opciones de uso.";
 "Attention" = "Atención";
 "Agent started working" = "El agente ha empezado a trabajar";
+"Agent is working" = "El agente está trabajando";
+"See the Coding Agents that are currently working or waiting for you." = "Consulta los agentes de código que están trabajando o esperándote ahora mismo.";
+"Current workspaces" = "Espacios de trabajo actuales";
+"No active Coding Agents" = "No hay agentes de código activos";
+"Workstreams appear here while their Coding Agent is working or waiting for your input." = "Los flujos de trabajo aparecen aquí mientras su agente de código trabaja o espera tu respuesta.";
 "Agent needs your attention" = "El agente necesita tu atención";
 "Coding Agent needs your attention in “%@”." = "El agente de programación necesita tu atención en «%@».";
 "Agent finished a turn" = "El agente ha terminado un turno";
@@ -562,6 +567,7 @@
 "Ready" = "Listo";
 "%d more agents" = "%d agentes más";
 "%d unread" = "%d sin leer";
+"%d need attention" = "%d requieren atención";
 "Agent Attention" = "Atención de agentes";
 "A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "Una bandeja enfocada reúne las actualizaciones de agentes de código de todos los flujos de trabajo, con notificaciones del sistema cuando un agente te necesita.";
 "Project Color" = "Color del proyecto";

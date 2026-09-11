@@ -76,6 +76,7 @@ final class AgentAttentionNotifier {
 
     func start() {
         guard observer == nil else { return }
+        _ = AgentActivityStore.shared
         observer = NotificationCenter.default.addObserver(
             forName: .agentActivityEventsAdded,
             object: nil,

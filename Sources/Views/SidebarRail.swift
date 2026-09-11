@@ -76,7 +76,6 @@ struct SidebarRail: View {
 
     @EnvironmentObject private var appEnv: AppEnvironment
     @EnvironmentObject private var agentStateStore: AgentStateStore
-    @EnvironmentObject private var agentActivityStore: AgentActivityStore
     @EnvironmentObject private var activityTracker: WorkstreamActivityTracker
     @EnvironmentObject private var usageStore: ClaudeUsageStore
     @EnvironmentObject private var codexUsageStore: CodexUsageStore
@@ -98,6 +97,13 @@ struct SidebarRail: View {
 
     private var selectedWorkstreamID: UUID? {
         selection?.workstreamID
+    }
+
+    private var currentAttentionCount: Int {
+        projects
+            .flatMap(\.workstreams)
+            .filter { agentStateStore.agentState(for: $0.id) == .waiting }
+            .count
     }
 
     var body: some View {
@@ -164,8 +170,8 @@ struct SidebarRail: View {
                         Image(systemName: selection == .attention ? "bell.fill" : "bell")
                             .font(.system(size: 15, weight: .medium))
                             .frame(minWidth: 40, minHeight: 40)
-                        if agentActivityStore.unreadCount > 0 {
-                            UnreadCountBadge(count: agentActivityStore.unreadCount, compact: true)
+                        if currentAttentionCount > 0 {
+                            UnreadCountBadge(count: currentAttentionCount, compact: true)
                                 .offset(x: 4, y: -2)
                         }
                     }
