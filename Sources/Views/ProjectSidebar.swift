@@ -96,6 +96,7 @@ struct ProjectSidebar: View {
     @Binding var selection: SidebarSelection?
     let onProjectsChanged: () -> Void
     @ObservedObject var appUpdater: AppUpdater
+    var onOpenProjectTerminal: (UUID) -> Void = { _ in }
     var selectedUsageProvider: UsageMeterProvider = .claude
     var availableUsageProviders: [UsageMeterProvider] = [.claude]
     var onPreviousUsageProvider: () -> Void = {}
@@ -259,6 +260,7 @@ struct ProjectSidebar: View {
                 onAdd: { logger.warning("[Dockyard] onAdd button tapped for project \(project.name, privacy: .public)"); addWorkstream(for: project.id) },
                 onAddWithPermissions: { addWorkstream(for: project.id, bypassPermissions: true) },
                 onAddWithoutPermissions: { addWorkstream(for: project.id, bypassPermissions: false) },
+                onOpenTerminal: { onOpenProjectTerminal(project.id) },
                 onSetColor: { color in
                     guard let index = cachedProjectIndex[project.id], projects.indices.contains(index) else { return }
                     projects[index].color = color
@@ -1037,6 +1039,7 @@ private struct ProjectHeaderRow: View {
     let onAdd: () -> Void
     let onAddWithPermissions: () -> Void
     let onAddWithoutPermissions: () -> Void
+    let onOpenTerminal: () -> Void
     let onSetColor: (ProjectColor?) -> Void
     let onDelete: () -> Void
 
@@ -1115,6 +1118,9 @@ private struct ProjectHeaderRow: View {
                             }
                         }
                 }
+                SidebarIconButton(icon: "terminal", action: onOpenTerminal)
+                    .accessibilityLabel("Open project terminal")
+                    .help("Open project terminal")
                 SidebarIconButton(icon: "trash", action: onDelete)
                     .accessibilityLabel("Remove project")
             }

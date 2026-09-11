@@ -14,6 +14,11 @@ enum WhatsNewCatalog {
                 bodyKey: "Script reviews and source updates now appear as dismissible notices instead of interrupting your work."
             ),
             WhatsNewEntry(
+                symbol: "terminal",
+                titleKey: "Project Terminal",
+                bodyKey: "Open a persistent terminal at the project root directly from the project row."
+            ),
+            WhatsNewEntry(
                 symbol: "mic.fill",
                 titleKey: "Mac Dictation in Terminals",
                 bodyKey: "Press your Mac's Dictation key to speak in Agent and Terminal tabs, just like in standalone Ghostty."
