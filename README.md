@@ -78,13 +78,14 @@ that the CLI itself supports resume after that session exits.
 | Dockyard agent-status hooks | Yes | Yes | No | No |
 | Active subagent status | Aggregated | No | No | No |
 | Dangerous permission bypass | Yes | Yes | No | No |
-| Automatic branch rename | Yes | No | No | No |
+| Automatic branch rename | Yes | Yes | Yes | No |
 | Agent Teams | Yes | No | No | No |
 
-OpenCode support is intentionally generic: Dockyard starts the detected
-`opencode` executable directly and can keep that process alive through tmux,
-but it does not add OpenCode-specific resume, hook, permission-bypass, or
-branch-rename flags. Claude Code's documented lifecycle hooks let Dockyard keep
+OpenCode support uses its per-launch configuration to supply Dockyard's
+auto-rename instructions; it does not change the project's own OpenCode files.
+Dockyard otherwise starts the detected `opencode` executable directly and can
+keep that process alive through tmux, but it does not add OpenCode-specific
+resume, hook, or permission-bypass flags. Claude Code's documented lifecycle hooks let Dockyard keep
 the workstream status active while one or more subagents run. Individual
 subagent identities, transcripts, and status timelines are not shown, and no
 other CLI currently claims subagent reporting. Broader status work remains

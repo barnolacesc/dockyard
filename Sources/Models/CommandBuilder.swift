@@ -287,6 +287,7 @@ enum CodingCLICommandBuilder {
                 workingDirectory: workingDirectory,
                 bypassPermissions: bypassPermissions,
                 allowOutsideWorktree: allowOutsideWorktree,
+                autoRenameBranch: autoRenameBranch,
                 hookInvocation: hookInvocation
             )
         case .generic:
@@ -387,6 +388,7 @@ enum CodingCLICommandBuilder {
         workingDirectory: String,
         bypassPermissions: Bool,
         allowOutsideWorktree: Bool,
+        autoRenameBranch: Bool,
         hookInvocation: AgentHookInvocation?
     ) -> AgentLaunchCommand {
         var resume = CommandBuilder(cliPath)
@@ -398,6 +400,7 @@ enum CodingCLICommandBuilder {
             bypassPermissions: bypassPermissions,
             allowOutsideWorktree: allowOutsideWorktree
         )
+        applyCodexAutoRenameInstructions(to: &resume, enabled: autoRenameBranch)
         applyCodexHookOptions(to: &resume, hookInvocation: hookInvocation)
 
         var fresh = CommandBuilder(cliPath)
@@ -407,6 +410,7 @@ enum CodingCLICommandBuilder {
             bypassPermissions: bypassPermissions,
             allowOutsideWorktree: allowOutsideWorktree
         )
+        applyCodexAutoRenameInstructions(to: &fresh, enabled: autoRenameBranch)
         applyCodexHookOptions(to: &fresh, hookInvocation: hookInvocation)
 
         let finalCommand = CommandBuilder.withFallback(
@@ -482,5 +486,28 @@ enum CodingCLICommandBuilder {
         for flag in hookInvocation.commandFlags {
             command.flag(flag)
         }
+    }
+
+    /// Codex accepts a per-invocation TOML configuration override. This keeps
+    /// Dockyard's instructions scoped to its own agent session rather than
+    /// changing the user's global Codex configuration.
+    private static func applyCodexAutoRenameInstructions(to command: inout CommandBuilder, enabled: Bool) {
+        guard enabled else { return }
+        command.option("--config", "developer_instructions=\(tomlBasicString(SystemPrompts.autoRenameBranchPrompt))")
+    }
+
+    private static func tomlBasicString(_ value: String) -> String {
+        var escaped = ""
+        for scalar in value.unicodeScalars {
+            switch scalar {
+            case "\\": escaped.append("\\\\")
+            case "\"": escaped.append("\\\"")
+            case "\n": escaped.append("\\n")
+            case "\r": escaped.append("\\r")
+            case "\t": escaped.append("\\t")
+            default: escaped.append(String(scalar))
+            }
+        }
+        return "\"\(escaped)\""
     }
 }

@@ -5,8 +5,8 @@
 import XCTest
 
 final class CodingAgentCapabilitiesTests: XCTestCase {
-    func testContractVersionIsTwo() {
-        XCTAssertEqual(CodingAgentCapabilities.contractVersion, 2)
+    func testContractVersionIsThree() {
+        XCTAssertEqual(CodingAgentCapabilities.contractVersion, 3)
     }
 
     func testClaudeCapabilitiesMatchSpecializedAdapter() {
@@ -41,31 +41,20 @@ final class CodingAgentCapabilitiesTests: XCTestCase {
                 reportsSubagentState: false,
                 supportsDangerousPermissionBypass: true,
                 supportsLivePermissionControl: true,
-                supportsAutoRenameBranch: false,
+                supportsAutoRenameBranch: true,
                 supportsAgentTeams: false
             )
         )
     }
 
-    func testGenericCLICapabilitiesDoNotClaimSpecializedFeatures() {
-        for cli in [CodingCLI.opencode, .gemini] {
-            XCTAssertEqual(
-                cli.capabilities,
-                CodingAgentCapabilities(
-                    commandStrategy: .generic,
-                    stateReportingStrategy: .unavailable,
-                    supportsDirectLaunch: true,
-                    supportsCLISessionResume: false,
-                    supportsDockyardTmuxPersistence: true,
-                    reportsMainAgentState: false,
-                    reportsSubagentState: false,
-                    supportsDangerousPermissionBypass: false,
-                    supportsLivePermissionControl: false,
-                    supportsAutoRenameBranch: false,
-                    supportsAgentTeams: false
-                )
-            )
-        }
+    func testOpenCodeCapabilitiesIncludeAutoRenameInstructions() {
+        XCTAssertTrue(CodingCLI.opencode.supportsAutoRenameBranch)
+        XCTAssertEqual(CodingCLI.opencode.capabilities.commandStrategy, .generic)
+    }
+
+    func testGeminiCapabilitiesDoNotClaimAutoRename() {
+        XCTAssertFalse(CodingCLI.gemini.supportsAutoRenameBranch)
+        XCTAssertEqual(CodingCLI.gemini.capabilities.commandStrategy, .generic)
     }
 
     func testOnlyClaudeClaimsSubagentStatus() {
