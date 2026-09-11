@@ -3,6 +3,60 @@
 
 import SwiftUI
 
+struct ProjectRootTerminalView: View {
+    let project: Project
+    let onClose: () -> Void
+
+    @EnvironmentObject private var surfaceCache: TerminalSurfaceCache
+
+    private var surfaceID: UUID {
+        derivedUUID(from: project.id, salt: "project-root-terminal")
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Image(systemName: "terminal")
+                    .foregroundStyle(.secondary)
+                Text("Project Terminal")
+                    .font(.system(size: 12, weight: .medium))
+                Spacer()
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .semibold))
+                        .frame(minWidth: 40, minHeight: 40)
+                }
+                .buttonStyle(.plain)
+                .pressable()
+                .accessibilityLabel("Close project terminal")
+                .help("Close project terminal")
+            }
+            .padding(.leading, 12)
+            .padding(.trailing, 4)
+            .frame(height: 44)
+            .background(.bar)
+
+            Divider()
+
+            SingleTerminalView(
+                surfaceID: surfaceID,
+                workstreamID: project.id,
+                workingDirectory: project.directory
+            )
+        }
+        .onAppear {
+            surfaceCache.updateOcclusion(visibleSurfaceIDs: [surfaceID])
+        }
+        .onDisappear {
+            surfaceCache.updateOcclusion(visibleSurfaceIDs: [])
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .terminalTabExited)) { notification in
+            guard notification.object as? UUID == surfaceID else { return }
+            onClose()
+        }
+    }
+}
+
 struct ProjectOverviewView: View {
     @Binding var project: Project
     let onSelectWorkstream: (UUID) -> Void

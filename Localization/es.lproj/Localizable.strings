@@ -580,3 +580,7 @@
 "New workstream from this branch" = "Nuevo flujo de trabajo desde esta rama";
 "Branch from a Workstream" = "Crear una rama desde un flujo de trabajo";
 "Start a new workstream from any existing workstream branch while keeping the default one-click path." = "Inicia un nuevo flujo de trabajo desde la rama de cualquier flujo existente sin cambiar la ruta predeterminada de un clic.";
+"Project Terminal" = "Terminal del proyecto";
+"Open project terminal" = "Abrir terminal del proyecto";
+"Close project terminal" = "Cerrar terminal del proyecto";
+"Open a persistent terminal at the project root directly from the project row." = "Abre un terminal persistente en la raíz del proyecto directamente desde la fila del proyecto.";

@@ -181,6 +181,7 @@ struct ContentView: View {
     @State private var previousPreferredUsageProvider: UsageMeterProvider?
     @State private var whatsNewReleases: [WhatsNewRelease] = []
     @State private var showWhatsNew = false
+    @State private var projectTerminalProjectID: UUID?
     @AppStorage("dockyard.codingCLI") private var codingCLIRaw: String = ""
     @AppStorage(SidebarMode.storageKey) private var sidebarModeRaw = SidebarMode.expanded.rawValue
     @AppStorage(SidebarMode.lastVisibleStorageKey) private var lastVisibleSidebarModeRaw = SidebarMode.expanded.rawValue
@@ -342,13 +343,21 @@ struct ContentView: View {
         } else if let project = activeProject,
                   let projectIndex = projects.firstIndex(where: { $0.id == project.id })
         {
-            ProjectOverviewView(
-                project: $projectList.items[projectIndex],
-                onSelectWorkstream: { wsID in selection = .workstream(wsID) },
-                onRemoveWorkstream: { wsID in workstreamToRemove = wsID },
-                onPurgeWorkstream: { wsID in confirmPurge(wsID) },
-                onProjectChanged: { ProjectStore.save(projects) }
-            )
+            Group {
+                if projectTerminalProjectID == project.id {
+                    ProjectRootTerminalView(project: project) {
+                        projectTerminalProjectID = nil
+                    }
+                } else {
+                    ProjectOverviewView(
+                        project: $projectList.items[projectIndex],
+                        onSelectWorkstream: { wsID in selection = .workstream(wsID) },
+                        onRemoveWorkstream: { wsID in workstreamToRemove = wsID },
+                        onPurgeWorkstream: { wsID in confirmPurge(wsID) },
+                        onProjectChanged: { ProjectStore.save(projects) }
+                    )
+                }
+            }
             .navigationTitle(project.name)
             .navigationSubtitle(AppConstants.appName)
         } else {
@@ -708,6 +717,10 @@ struct ContentView: View {
             selection: $selection,
             onProjectsChanged: { ProjectStore.save(projects) },
             appUpdater: appUpdater,
+            onOpenProjectTerminal: { projectID in
+                projectTerminalProjectID = projectID
+                selection = .project(projectID)
+            },
             selectedUsageProvider: selectedUsageProvider,
             availableUsageProviders: availableUsageProviders,
             onPreviousUsageProvider: { cycleUsageProvider(direction: -1) },

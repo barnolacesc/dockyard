@@ -580,3 +580,7 @@
 "New workstream from this branch" = "New workstream from this branch";
 "Branch from a Workstream" = "Branch from a Workstream";
 "Start a new workstream from any existing workstream branch while keeping the default one-click path." = "Start a new workstream from any existing workstream branch while keeping the default one-click path.";
+"Project Terminal" = "Project Terminal";
+"Open project terminal" = "Open project terminal";
+"Close project terminal" = "Close project terminal";
+"Open a persistent terminal at the project root directly from the project row." = "Open a persistent terminal at the project root directly from the project row.";
