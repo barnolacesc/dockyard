@@ -538,7 +538,16 @@ final class TerminalView: NSView {
     }
 
     func selectedRange() -> NSRange {
-        NSRange(location: NSNotFound, length: 0)
+        guard let surface else { return NSRange() }
+
+        var selection = ghostty_text_s()
+        guard ghostty_surface_read_selection(surface, &selection) else {
+            // Dictation expects a valid insertion range even when the terminal
+            // has no selection. This matches Ghostty's native SurfaceView.
+            return NSRange()
+        }
+        defer { ghostty_surface_free_text(surface, &selection) }
+        return NSRange(location: Int(selection.offset_start), length: Int(selection.offset_len))
     }
 
     func markedRange() -> NSRange {
@@ -552,8 +561,18 @@ final class TerminalView: NSView {
         markedText.length > 0
     }
 
-    func attributedSubstring(forProposedRange _: NSRange, actualRange _: NSRangePointer?) -> NSAttributedString? {
-        nil
+    func attributedSubstring(forProposedRange range: NSRange, actualRange: NSRangePointer?) -> NSAttributedString? {
+        guard range.length > 0, let surface else { return nil }
+
+        var selection = ghostty_text_s()
+        guard ghostty_surface_read_selection(surface, &selection) else { return nil }
+        defer { ghostty_surface_free_text(surface, &selection) }
+
+        actualRange?.pointee = NSRange(
+            location: Int(selection.offset_start),
+            length: Int(selection.offset_len)
+        )
+        return NSAttributedString(string: String(cString: selection.text))
     }
 
     func validAttributesForMarkedText() -> [NSAttributedString.Key] {
@@ -561,7 +580,9 @@ final class TerminalView: NSView {
     }
 
     func firstRect(forCharacterRange range: NSRange, actualRange _: NSRangePointer?) -> NSRect {
-        guard let surface else { return .zero }
+        guard let surface else {
+            return NSRect(x: frame.origin.x, y: frame.origin.y, width: 0, height: 0)
+        }
         var x: Double = 0, y: Double = 0, width: Double = 0, height: Double = 0
         ghostty_surface_ime_point(surface, &x, &y, &width, &height)
 
@@ -574,7 +595,7 @@ final class TerminalView: NSView {
 
         // ghostty returns coordinates in top-left origin; AppKit windows are
         // bottom-left, so flip Y before converting to screen coordinates.
-        let viewRect = NSRect(x: x, y: frame.size.height - y, width: width, height: height)
+        let viewRect = NSRect(x: x, y: frame.size.height - y, width: width, height: max(height, 1))
         let winRect = convert(viewRect, to: nil)
         guard let window else { return winRect }
         return window.convertToScreen(winRect)

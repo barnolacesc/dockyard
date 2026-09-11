@@ -566,4 +566,6 @@
 "Purple" = "Morado";
 "Pink" = "Rosa";
 "Project Colors" = "Colores de proyectos";
+"Mac Dictation in Terminals" = "Dictado del Mac en terminales";
+"Press your Mac's Dictation key to speak in Agent and Terminal tabs, just like in standalone Ghostty." = "Pulsa la tecla de dictado del Mac para hablar en las pestañas Agente y Terminal, igual que en Ghostty independiente.";
 "Assign colors from a project's shortcut menu to make busy sidebars easier to scan." = "Asigna colores desde el menú contextual de un proyecto para explorar más fácilmente las barras laterales llenas.";
