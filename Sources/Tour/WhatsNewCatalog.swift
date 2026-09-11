@@ -14,6 +14,11 @@ enum WhatsNewCatalog {
                 bodyKey: "Press your Mac's Dictation key to speak in Agent and Terminal tabs, just like in standalone Ghostty."
             ),
             WhatsNewEntry(
+                symbol: "arrow.triangle.branch",
+                titleKey: "Branch from a Workstream",
+                bodyKey: "Start a new workstream from any existing workstream branch while keeping the default one-click path."
+            ),
+            WhatsNewEntry(
                 symbol: "paintpalette.fill",
                 titleKey: "Project Colors",
                 bodyKey: "Assign colors from a project's shortcut menu to make busy sidebars easier to scan."

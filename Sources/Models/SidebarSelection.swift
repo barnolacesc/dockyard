@@ -27,32 +27,41 @@ enum SidebarSelection: Hashable, Codable {
 
     private static let userDefaultsKey = "dockyard.selection"
 
-    static func loadSaved() -> SidebarSelection? {
-        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
-              let selection = try? JSONDecoder().decode(SidebarSelection.self, from: data)
-        else { return nil }
-        return selection
+    static func loadSaved(defaults: UserDefaults = .standard) -> SidebarSelection? {
+        SidebarPersistence.decode(SidebarSelection.self, forKey: userDefaultsKey, defaults: defaults)
     }
 
-    func save() {
+    func save(defaults: UserDefaults = .standard) {
         guard let data = try? JSONEncoder().encode(self) else { return }
-        UserDefaults.standard.set(data, forKey: Self.userDefaultsKey)
+        defaults.set(data, forKey: Self.userDefaultsKey)
     }
 }
 
 enum SidebarState {
     private static let userDefaultsKey = "dockyard.expandedProjects"
 
-    static func loadExpanded() -> Set<UUID> {
-        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
-              let ids = try? JSONDecoder().decode(Set<UUID>.self, from: data)
-        else { return [] }
-        return ids
+    static func loadExpanded(defaults: UserDefaults = .standard) -> Set<UUID> {
+        SidebarPersistence.decode(Set<UUID>.self, forKey: userDefaultsKey, defaults: defaults) ?? []
     }
 
-    static func saveExpanded(_ ids: Set<UUID>) {
+    static func saveExpanded(_ ids: Set<UUID>, defaults: UserDefaults = .standard) {
         guard let data = try? JSONEncoder().encode(ids) else { return }
-        UserDefaults.standard.set(data, forKey: userDefaultsKey)
+        defaults.set(data, forKey: userDefaultsKey)
+    }
+}
+
+enum SidebarPersistence {
+    static let maximumSnapshotBytes = 1_048_576
+
+    static func decode<Value: Decodable>(
+        _ type: Value.Type,
+        forKey key: String,
+        defaults: UserDefaults
+    ) -> Value? {
+        guard let data = defaults.data(forKey: key),
+              data.count <= maximumSnapshotBytes
+        else { return nil }
+        return try? JSONDecoder().decode(type, from: data)
     }
 }
 

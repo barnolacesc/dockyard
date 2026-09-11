@@ -256,6 +256,129 @@ final class GitOperationsTests: XCTestCase {
         XCTAssertTrue(branch.contains("origin"), "Expected origin-prefixed branch, got: \(branch)")
     }
 
+    // MARK: - createWorktree base branch
+
+    func testCreateWorktreeUsesExplicitValidatedLocalBaseBranch() throws {
+        let repoDir = makeRepository(named: "explicit-base")
+        XCTAssertTrue(git(["switch", "-c", "feature/parent"], in: repoDir))
+        try "from parent".write(
+            to: repoDir.appendingPathComponent("parent.txt"),
+            atomically: true,
+            encoding: .utf8
+        )
+        XCTAssertTrue(git(["add", "parent.txt"], in: repoDir))
+        XCTAssertTrue(git([
+            "-c", "user.email=test@test.com", "-c", "user.name=Test",
+            "commit", "-m", "parent change",
+        ], in: repoDir))
+        XCTAssertTrue(git(["switch", "main"], in: repoDir))
+
+        let worktreesRoot = tempDir.appendingPathComponent("explicit-base-worktrees")
+        let path = GitOperations.createWorktree(
+            projectPath: repoDir.path,
+            projectName: "project",
+            workstreamName: "child",
+            branchPrefix: "dy",
+            symlinkEnv: false,
+            baseBranch: "feature/parent",
+            worktreesRoot: worktreesRoot
+        )
+
+        let worktreePath = try XCTUnwrap(path)
+        XCTAssertTrue(
+            FileManager.default.fileExists(
+                atPath: URL(fileURLWithPath: worktreePath)
+                    .appendingPathComponent("parent.txt").path
+            )
+        )
+        XCTAssertEqual(
+            gitOutput(["rev-parse", "HEAD"], in: URL(fileURLWithPath: worktreePath)),
+            gitOutput(["rev-parse", "feature/parent"], in: repoDir)
+        )
+    }
+
+    func testCreateWorktreeWithoutExplicitBaseStillUsesDetectedDefaultBranch() throws {
+        let repoDir = makeRepository(named: "default-base")
+        let mainCommit = gitOutput(["rev-parse", "main"], in: repoDir)
+        let worktreesRoot = tempDir.appendingPathComponent("default-base-worktrees")
+
+        let path = GitOperations.createWorktree(
+            projectPath: repoDir.path,
+            projectName: "project",
+            workstreamName: "default-child",
+            branchPrefix: "dy",
+            symlinkEnv: false,
+            worktreesRoot: worktreesRoot
+        )
+
+        let worktreePath = try XCTUnwrap(path)
+        XCTAssertEqual(
+            gitOutput(["rev-parse", "HEAD"], in: URL(fileURLWithPath: worktreePath)),
+            mainCommit
+        )
+    }
+
+    func testCreateWorktreeRejectsUnknownOrNonLocalExplicitBaseBranch() throws {
+        let repoDir = makeRepository(named: "invalid-explicit-base")
+        let worktreesRoot = tempDir.appendingPathComponent("invalid-explicit-base-worktrees")
+        XCTAssertTrue(git(["update-ref", "refs/remotes/origin/feature/remote", "main"], in: repoDir))
+
+        XCTAssertNil(
+            GitOperations.createWorktree(
+                projectPath: repoDir.path,
+                projectName: "project",
+                workstreamName: "unknown",
+                symlinkEnv: false,
+                baseBranch: "feature/missing",
+                worktreesRoot: worktreesRoot
+            )
+        )
+        XCTAssertNil(
+            GitOperations.createWorktree(
+                projectPath: repoDir.path,
+                projectName: "project",
+                workstreamName: "remote-only",
+                symlinkEnv: false,
+                baseBranch: "origin/feature/remote",
+                worktreesRoot: worktreesRoot
+            )
+        )
+        XCTAssertNil(
+            GitOperations.createWorktree(
+                projectPath: repoDir.path,
+                projectName: "project",
+                workstreamName: "option-like",
+                symlinkEnv: false,
+                baseBranch: "--help",
+                worktreesRoot: worktreesRoot
+            )
+        )
+        XCTAssertFalse(FileManager.default.fileExists(atPath: worktreesRoot.path))
+    }
+
+    func testExplicitBaseDoesNotAttachAnExistingGeneratedBranchOnCollision() throws {
+        let repoDir = makeRepository(named: "explicit-base-collision")
+        XCTAssertTrue(git(["branch", "feature/parent"], in: repoDir))
+        XCTAssertTrue(git(["branch", "dy/child"], in: repoDir))
+        let worktreesRoot = tempDir.appendingPathComponent("explicit-base-collision-worktrees")
+
+        XCTAssertNil(
+            GitOperations.createWorktree(
+                projectPath: repoDir.path,
+                projectName: "project",
+                workstreamName: "child",
+                symlinkEnv: false,
+                baseBranch: "feature/parent",
+                worktreesRoot: worktreesRoot
+            )
+        )
+        XCTAssertFalse(
+            FileManager.default.fileExists(
+                atPath: worktreesRoot.appendingPathComponent("project/child").path
+            )
+        )
+    }
+
     // MARK: - fetchDefaultBranch
 
     func testFetchDefaultBranchDoesNotCrashWithoutRemote() throws {

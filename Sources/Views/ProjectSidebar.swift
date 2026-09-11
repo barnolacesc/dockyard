@@ -314,6 +314,9 @@ struct ProjectSidebar: View {
                                 else { return }
                                 projects[pi].workstreams[wi].stage = newStage
                                 onProjectsChanged()
+                            },
+                            onCreateFromBranch: { baseBranch in
+                                addWorkstream(for: project.id, baseBranch: baseBranch)
                             }
                         )
                         .tag(SidebarSelection.workstream(workstream.id))
@@ -759,7 +762,11 @@ struct ProjectSidebar: View {
     @AppStorage("dockyard.bypassPermissions") private var defaultBypass: Bool = false
     @AppStorage("dockyard.symlinkEnv") private var symlinkEnv: Bool = true
 
-    private func addWorkstream(for projectID: UUID, bypassPermissions: Bool? = nil) {
+    private func addWorkstream(
+        for projectID: UUID,
+        bypassPermissions: Bool? = nil,
+        baseBranch: String? = nil
+    ) {
         logger.warning("[Dockyard] addWorkstream called for projectID=\(projectID, privacy: .public)")
         guard let index = projects.firstIndex(where: { $0.id == projectID }) else {
             logger.warning("[Dockyard] addWorkstream: project not found")
@@ -802,7 +809,8 @@ struct ProjectSidebar: View {
                 projectName: projectName,
                 workstreamName: name,
                 branchPrefix: prefix,
-                symlinkEnv: symlink
+                symlinkEnv: symlink,
+                baseBranch: baseBranch
             )
             DispatchQueue.main.async {
                 if let worktreePath {
@@ -1371,6 +1379,7 @@ private struct WorkstreamRow: View {
     let onPurge: () -> Void
     var onRename: (() -> Void)? = nil
     var onSetStage: ((WorkstreamStage) -> Void)? = nil
+    var onCreateFromBranch: ((String) -> Void)? = nil
 
     @State private var isHovering = false
 
@@ -1479,6 +1488,14 @@ private struct WorkstreamRow: View {
                 }
             }
             if worktreePath != nil || githubURL != nil {
+                Divider()
+            }
+            if let branchName, let onCreateFromBranch {
+                Button {
+                    onCreateFromBranch(branchName)
+                } label: {
+                    Label("New workstream from this branch", systemImage: "arrow.triangle.branch")
+                }
                 Divider()
             }
             if let onSetStage {
