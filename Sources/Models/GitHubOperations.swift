@@ -262,6 +262,16 @@ enum GitHubOperations {
         )
     }
 
+    /// Fetch one issue as a bounded, validated task preview.
+    static func issueTaskPreview(ghPath: String, issue: String, at path: String) -> GitHubIssueTaskPreview? {
+        guard let json = runCommand(
+            ghPath,
+            args: ["issue", "view", issue, "--json", "number,title,url,body"],
+            in: path
+        ) else { return nil }
+        return GitHubIssueTaskPreview.parse(jsonData: Data(json.utf8))
+    }
+
     /// Fetch open PRs for this repo.
     static func openPRs(ghPath: String, at path: String, limit: Int = 5) -> [GitHubPR] {
         guard let json = runCommand(ghPath, args: ["pr", "list", "--json", "number,title,state,headRefName,url", "--limit", "\(limit)"], in: path) else { return [] }

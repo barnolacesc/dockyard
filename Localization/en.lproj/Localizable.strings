@@ -595,3 +595,15 @@
 "Open a persistent terminal at the project root directly from the project row." = "Open a persistent terminal at the project root directly from the project row.";
 "Update failed" = "Update failed";
 "The update could not be completed. See the log at %@ for details." = "The update could not be completed. See the log at %@ for details.";
+"New Workstream" = "New Workstream";
+"Workstream Name" = "Workstream Name";
+"Project Default" = "Project Default";
+"GitHub Issue" = "GitHub Issue";
+"Issue number or URL" = "Issue number or URL";
+"Load" = "Load";
+"No description" = "No description";
+"GitHub CLI is not available." = "GitHub CLI is not available.";
+"Could not load that issue from the current project." = "Could not load that issue from the current project.";
+"Install and authenticate the GitHub CLI to link an issue." = "Install and authenticate the GitHub CLI to link an issue.";
+"Create Workstreams Your Way" = "Create Workstreams Your Way";
+"Choose a workstream name and Coding Agent, or start directly from a GitHub issue with its task already loaded." = "Choose a workstream name and Coding Agent, or start directly from a GitHub issue with its task already loaded.";

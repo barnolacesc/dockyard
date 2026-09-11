@@ -595,3 +595,15 @@
 "Open a persistent terminal at the project root directly from the project row." = "Abre un terminal persistente en la raíz del proyecto directamente desde la fila del proyecto.";
 "Update failed" = "La actualización ha fallado";
 "The update could not be completed. See the log at %@ for details." = "No se ha podido completar la actualización. Consulta el registro en %@ para obtener más información.";
+"New Workstream" = "Nuevo flujo de trabajo";
+"Workstream Name" = "Nombre del flujo de trabajo";
+"Project Default" = "Predeterminado del proyecto";
+"GitHub Issue" = "Incidencia de GitHub";
+"Issue number or URL" = "Número o URL de la incidencia";
+"Load" = "Cargar";
+"No description" = "Sin descripción";
+"GitHub CLI is not available." = "GitHub CLI no está disponible.";
+"Could not load that issue from the current project." = "No se pudo cargar esa incidencia del proyecto actual.";
+"Install and authenticate the GitHub CLI to link an issue." = "Instala y autentica GitHub CLI para enlazar una incidencia.";
+"Create Workstreams Your Way" = "Crea flujos de trabajo a tu manera";
+"Choose a workstream name and Coding Agent, or start directly from a GitHub issue with its task already loaded." = "Elige un nombre y un agente de código, o empieza directamente desde una incidencia de GitHub con la tarea ya cargada.";

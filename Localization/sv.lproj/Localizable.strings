@@ -595,3 +595,15 @@
 "Open a persistent terminal at the project root directly from the project row." = "Öppna en beständig terminal i projektroten direkt från projektraden.";
 "Update failed" = "Uppdateringen misslyckades";
 "The update could not be completed. See the log at %@ for details." = "Uppdateringen kunde inte slutföras. Se loggen på %@ för mer information.";
+"New Workstream" = "Nytt arbetsflöde";
+"Workstream Name" = "Arbetsflödets namn";
+"Project Default" = "Projektstandard";
+"GitHub Issue" = "GitHub-ärende";
+"Issue number or URL" = "Ärendenummer eller URL";
+"Load" = "Läs in";
+"No description" = "Ingen beskrivning";
+"GitHub CLI is not available." = "GitHub CLI är inte tillgängligt.";
+"Could not load that issue from the current project." = "Det gick inte att läsa in ärendet från det aktuella projektet.";
+"Install and authenticate the GitHub CLI to link an issue." = "Installera och autentisera GitHub CLI för att länka ett ärende.";
+"Create Workstreams Your Way" = "Skapa arbetsflöden på ditt sätt";
+"Choose a workstream name and Coding Agent, or start directly from a GitHub issue with its task already loaded." = "Välj namn och kodningsagent, eller börja direkt från ett GitHub-ärende med uppgiften redan inläst.";

@@ -11,6 +11,7 @@ extension Notification.Name {
     static let workstreamCreated = Notification.Name("dockyard.workstreamCreated")
     static let workstreamWorktreeReady = Notification.Name("dockyard.workstreamWorktreeReady")
     static let workstreamCreationFailed = Notification.Name("dockyard.workstreamCreationFailed")
+    static let initialAgentPromptConsumed = Notification.Name("dockyard.initialAgentPromptConsumed")
     static let projectCreated = Notification.Name("dockyard.projectCreated")
     static let purgeWorkstream = Notification.Name("dockyard.purgeWorkstream")
     static let worktreeHeadChanged = Notification.Name("dockyard.worktreeHeadChanged")
@@ -319,6 +320,7 @@ struct ContentView: View {
                     projectDirectory: project.directory,
                     projectName: project.name,
                     workstreamName: workstream.name,
+                    initialAgentPrompt: workstream.initialAgentPrompt,
                     bypassPermissions: bypassPermissionsBinding,
                     workstreamCodingCLI: codingCLIBinding,
                     isActive: true,
@@ -678,6 +680,16 @@ struct ContentView: View {
                 }
                 ProjectStore.save(projects)
                 logger.warning("[Dockyard] workstreamCreationFailed: removed \(workstreamID, privacy: .public)")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .initialAgentPromptConsumed)) { notification in
+                guard let workstreamID = notification.object as? UUID else { return }
+                for pi in projects.indices {
+                    if let wi = projects[pi].workstreams.firstIndex(where: { $0.id == workstreamID }) {
+                        projects[pi].workstreams[wi].initialAgentPrompt = nil
+                        ProjectStore.save(projects)
+                        return
+                    }
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: .projectCreated)) { notification in
                 guard let project = notification.userInfo?["project"] as? Project else { return }
