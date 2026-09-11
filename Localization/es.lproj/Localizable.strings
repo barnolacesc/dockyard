@@ -166,7 +166,9 @@
 "Agent Teams is only available with Claude Code." = "Los equipos de agentes solo están disponibles con Claude Code.";
 "Auto-rename branch" = "Renombrar rama automáticamente";
 "The agent automatically renames the branch to match your current task, updating the tab name and sidebar description." = "El agente renombra automáticamente la rama para coincidir con tu tarea actual, actualizando el nombre de la pestaña y la descripción en la barra lateral.";
-"Auto-rename branch is only available with Claude Code." = "El renombrado automático de la rama solo está disponible con Claude Code.";
+"Auto-rename branch is only available with Claude Code, Codex, and OpenCode." = "El renombrado automático de la rama solo está disponible con Claude Code, Codex y OpenCode.";
+"Auto-Rename for More Agents" = "Renombrado automático para más agentes";
+"Codex and OpenCode now rename a new workstream branch from your first task, just like Claude Code." = "Ahora Codex y OpenCode renombran la rama de un workstream nuevo a partir de tu primera tarea, igual que Claude Code.";
 "External Browser" = "Navegador externo";
 
 /* Settings - Advanced */

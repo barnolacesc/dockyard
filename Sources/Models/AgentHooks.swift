@@ -14,8 +14,31 @@ enum AgentHooks {
         AppConstants.cacheDirectory.appendingPathComponent("claude-settings", isDirectory: true)
     }
 
+    static var openCodeSettingsDirectoryURL: URL {
+        AppConstants.cacheDirectory.appendingPathComponent("opencode-settings", isDirectory: true)
+    }
+
     static func settingsURL(for workstreamID: UUID) -> URL {
         settingsDirectoryURL.appendingPathComponent("\(workstreamID.uuidString.lowercased()).json")
+    }
+
+    /// Creates an OpenCode-only instruction file outside the worktree and
+    /// returns inline config content suitable for `OPENCODE_CONFIG_CONTENT`.
+    /// Inline configuration has the right precedence without modifying the
+    /// project's own OpenCode configuration or AGENTS.md.
+    static func openCodeAutoRenameConfiguration(workstreamID: UUID) throws -> String {
+        let directory = openCodeSettingsDirectoryURL
+            .appendingPathComponent(workstreamID.uuidString.lowercased(), isDirectory: true)
+        let instructionsURL = directory.appendingPathComponent("auto-rename.md")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try FilePersistence.writeAtomically(Data(SystemPrompts.autoRenameBranchPrompt.utf8), to: instructionsURL)
+
+        let config: [String: Any] = ["instructions": [instructionsURL.path]]
+        let data = try JSONSerialization.data(withJSONObject: config)
+        guard let content = String(data: data, encoding: .utf8) else {
+            throw CocoaError(.fileWriteInapplicableStringEncoding)
+        }
+        return content
     }
 
     /// Returns hook invocation data for the given CLI, or nil if the CLI does

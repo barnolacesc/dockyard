@@ -165,6 +165,9 @@
 "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams." = "Aktiviert experimentelle Multi-Agent-Koordination. Agenten können Teammitglieder erstellen, Aufgaben delegieren und workstream-übergreifend zusammenarbeiten.";
 "Auto-rename branch" = "Branch automatisch umbenennen";
 "The agent automatically renames the branch to match your current task, updating the tab name and sidebar description." = "Der Agent benennt den Branch automatisch passend zu deiner aktuellen Aufgabe um, wodurch der Tab-Name und die Beschreibung in der Seitenleiste aktualisiert werden.";
+"Auto-rename branch is only available with Claude Code, Codex, and OpenCode." = "Die automatische Umbenennung des Branches ist nur mit Claude Code, Codex und OpenCode verfügbar.";
+"Auto-Rename for More Agents" = "Automatisches Umbenennen für mehr Agents";
+"Codex and OpenCode now rename a new workstream branch from your first task, just like Claude Code." = "Codex und OpenCode benennen jetzt den Branch eines neuen Workstreams anhand deiner ersten Aufgabe um, genau wie Claude Code.";
 "External Browser" = "Externer Browser";
 
 /* Settings - Advanced */

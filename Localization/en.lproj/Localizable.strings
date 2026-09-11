@@ -166,7 +166,9 @@
 "Agent Teams is only available with Claude Code." = "Agent Teams is only available with Claude Code.";
 "Auto-rename branch" = "Auto-rename branch";
 "The agent automatically renames the branch to match your current task, updating the tab name and sidebar description." = "The agent automatically renames the branch to match your current task, updating the tab name and sidebar description.";
-"Auto-rename branch is only available with Claude Code." = "Auto-rename branch is only available with Claude Code.";
+"Auto-rename branch is only available with Claude Code, Codex, and OpenCode." = "Auto-rename branch is only available with Claude Code, Codex, and OpenCode.";
+"Auto-Rename for More Agents" = "Auto-Rename for More Agents";
+"Codex and OpenCode now rename a new workstream branch from your first task, just like Claude Code." = "Codex and OpenCode now rename a new workstream branch from your first task, just like Claude Code.";
 "External Browser" = "External Browser";
 
 /* Settings - Advanced */

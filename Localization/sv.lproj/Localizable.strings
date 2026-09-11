@@ -166,7 +166,9 @@
 "Agent Teams is only available with Claude Code." = "Agentteam är bara tillgängligt med Claude Code.";
 "Auto-rename branch" = "Byt namn på gren automatiskt";
 "The agent automatically renames the branch to match your current task, updating the tab name and sidebar description." = "Agenten byter automatiskt namn på grenen för att matcha din nuvarande uppgift, vilket uppdaterar fliknamnet och beskrivningen i sidofältet.";
-"Auto-rename branch is only available with Claude Code." = "Automatiskt namnbyte av gren är bara tillgängligt med Claude Code.";
+"Auto-rename branch is only available with Claude Code, Codex, and OpenCode." = "Automatiskt namnbyte av gren är bara tillgängligt med Claude Code, Codex och OpenCode.";
+"Auto-Rename for More Agents" = "Automatiskt namnbyte för fler agenter";
+"Codex and OpenCode now rename a new workstream branch from your first task, just like Claude Code." = "Codex och OpenCode byter nu namn på grenen för ett nytt arbetsflöde utifrån din första uppgift, precis som Claude Code.";
 "External Browser" = "Extern webbläsare";
 
 /* Settings - Advanced */

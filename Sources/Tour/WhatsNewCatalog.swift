@@ -9,6 +9,11 @@ enum WhatsNewCatalog {
     static let releases: [WhatsNewRelease] = [
         WhatsNewRelease(version: "0.2.5", entries: [
             WhatsNewEntry(
+                symbol: "arrow.triangle.branch",
+                titleKey: "Auto-Rename for More Agents",
+                bodyKey: "Codex and OpenCode now rename a new workstream branch from your first task, just like Claude Code."
+            ),
+            WhatsNewEntry(
                 symbol: "rectangle.bottomthird.inset.filled",
                 titleKey: "Passive Notices",
                 bodyKey: "Script reviews and source updates now appear as dismissible notices instead of interrupting your work."

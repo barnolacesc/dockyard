@@ -521,7 +521,7 @@ struct TerminalContainerView: View {
             bypassPermissions: bypassPermissions,
             allowOutsideWorktree: allowOutsideWorktree,
             autoRenameBranch: autoRenameBranch,
-            envVars: terminalEnvVars,
+            envVars: agentEnvironmentVars,
             supportsSessionName: appEnv.toolStatus.supportsSessionName(for: selectedCodingCLI),
             hookInvocation: hookInvocation
         )
@@ -531,7 +531,7 @@ struct TerminalContainerView: View {
             event: "agent-start",
             finalCommand: command.finalCommand,
             intermediateCommands: command.intermediateCommands,
-            environmentVariables: terminalEnvVars,
+            environmentVariables: agentEnvironmentVars,
             workingDirectory: workingDirectory,
             toolPaths: LaunchLogEntry.ToolPaths(
                 agentCLI: selectedCodingCLI.rawValue,
@@ -718,7 +718,7 @@ struct TerminalContainerView: View {
                     workingDirectory: workingDirectory,
                     command: agentCommand,
                     isFocused: true,
-                    environmentVars: envVars
+                    environmentVars: agentEnvironmentVars
                 )
             } else {
                 terminalLoadingView(message: "Preparing Coding Agent...")
@@ -1512,7 +1512,7 @@ struct TerminalContainerView: View {
                 app: app,
                 workingDirectory: workingDirectory,
                 command: cmd,
-                environmentVars: envVars
+                environmentVars: agentEnvironmentVars
             )
         }
     }
@@ -1522,6 +1522,21 @@ struct TerminalContainerView: View {
         var vars = envVars
         vars["TMUX"] = ""
         vars["TMUX_PANE"] = ""
+        return vars
+    }
+
+    /// Agent-only environment additions. OpenCode reads this inline config at
+    /// launch, so the rename instructions do not leak into ordinary terminals.
+    private var agentEnvironmentVars: [String: String] {
+        var vars = envVars
+        guard selectedCodingCLI == .opencode, autoRenameBranch else { return vars }
+
+        do {
+            vars["OPENCODE_CONFIG_CONTENT"] = try AgentHooks.openCodeAutoRenameConfiguration(workstreamID: workstreamID)
+        } catch {
+            // Starting OpenCode without this optional instruction is safer than
+            // preventing the Coding Agent from starting when cache I/O fails.
+        }
         return vars
     }
 

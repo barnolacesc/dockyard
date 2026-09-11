@@ -329,7 +329,7 @@ final class CommandBuilderTests: XCTestCase {
         let status = ToolStatus()
 
         XCTAssertFalse(CodingCLI.opencode.supportsAgentTeams)
-        XCTAssertFalse(CodingCLI.opencode.supportsAutoRenameBranch)
+        XCTAssertTrue(CodingCLI.opencode.supportsAutoRenameBranch)
         XCTAssertFalse(status.supportsSessionName(for: .opencode))
     }
 
@@ -345,7 +345,7 @@ final class CommandBuilderTests: XCTestCase {
             useTmux: false,
             bypassPermissions: true,
             allowOutsideWorktree: false,
-            autoRenameBranch: true,
+            autoRenameBranch: false,
             envVars: ["DY_WORKTREE_DIR": "/tmp/dockyard worktree"],
             supportsSessionName: false,
             hookInvocation: nil
@@ -411,7 +411,7 @@ final class CommandBuilderTests: XCTestCase {
             useTmux: false,
             bypassPermissions: true,
             allowOutsideWorktree: false,
-            autoRenameBranch: true,
+            autoRenameBranch: false,
             envVars: [:],
             supportsSessionName: false
         )
@@ -456,6 +456,29 @@ final class CommandBuilderTests: XCTestCase {
             command.intermediateCommands[1],
             "/usr/local/bin/codex -C /tmp/worktree --sandbox workspace-write --ask-for-approval on-request"
         )
+    }
+
+    func testBuildCodexAgentCommandAddsAutoRenameDeveloperInstructions() {
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .codex,
+            cliPath: "/usr/local/bin/codex",
+            workingDirectory: "/tmp/worktree",
+            projectName: "dockyard",
+            workstreamName: "rename-task",
+            workstreamID: UUID(),
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: false,
+            autoRenameBranch: true,
+            envVars: [:],
+            supportsSessionName: false
+        )
+
+        for builtCommand in command.intermediateCommands.prefix(2) {
+            XCTAssertTrue(builtCommand.contains("--config 'developer_instructions=\"You are working inside Dockyard"), "got: \(builtCommand)")
+            XCTAssertTrue(builtCommand.contains("git branch -m <new-name>"), "got: \(builtCommand)")
+        }
     }
 
     func testBuildCodexAgentCommandWithoutBypassCanAllowOutsideWorktreeWithPrompts() {
@@ -655,7 +678,7 @@ final class CommandBuilderTests: XCTestCase {
             useTmux: false,
             bypassPermissions: true,
             allowOutsideWorktree: false,
-            autoRenameBranch: true,
+            autoRenameBranch: false,
             envVars: [:],
             supportsSessionName: false,
             hookInvocation: hookInvocation
