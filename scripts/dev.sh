@@ -53,7 +53,7 @@ case "${1:-build}" in
     sleep 0.5
 
     # Try local dev build first, fall back to xcode default
-    if [ -f "$APP_PATH" ]; then
+    if [ -d "$APP_PATH" ]; then
         TARGET_APP="$APP_PATH"
     else
         LATEST_DERIVED=$(ls -td "$HOME/Library/Developer/Xcode/DerivedData"/Dockyard-*/Build/Products/Debug 2>/dev/null | head -n 1)
@@ -85,7 +85,7 @@ case "${1:-build}" in
     sleep 0.5
     
     # Try local dev build first, fall back to xcode default
-    if [ -f "$APP_PATH" ]; then
+    if [ -d "$APP_PATH" ]; then
         TARGET_APP="$APP_PATH"
     else
         LATEST_DERIVED=$(ls -td "$HOME/Library/Developer/Xcode/DerivedData"/Dockyard-*/Build/Products/Debug 2>/dev/null | head -n 1)
