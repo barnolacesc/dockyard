@@ -470,6 +470,8 @@
 "Review…" = "Granska…";
 "Don't remind me" = "Påminn mig inte igen";
 "Dismiss" = "Stäng";
+"Passive Notices" = "Passiva meddelanden";
+"Script reviews and source updates now appear as dismissible notices instead of interrupting your work." = "Skriptgranskningar och källkodsuppdateringar visas nu som avvisningsbara meddelanden i stället för att avbryta ditt arbete.";
 "Teardown" = "Nedmontering";
 "built by " = "byggd av ";
 

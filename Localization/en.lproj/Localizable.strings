@@ -470,6 +470,8 @@
 "Review…" = "Review…";
 "Don't remind me" = "Don't remind me";
 "Dismiss" = "Dismiss";
+"Passive Notices" = "Passive Notices";
+"Script reviews and source updates now appear as dismissible notices instead of interrupting your work." = "Script reviews and source updates now appear as dismissible notices instead of interrupting your work.";
 "Teardown" = "Teardown";
 "built by " = "built by ";
 

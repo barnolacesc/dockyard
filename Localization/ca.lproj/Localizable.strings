@@ -470,6 +470,8 @@
 "Review…" = "Revisa…";
 "Don't remind me" = "No m'ho recordis";
 "Dismiss" = "Descarta";
+"Passive Notices" = "Avisos passius";
+"Script reviews and source updates now appear as dismissible notices instead of interrupting your work." = "Les revisions de scripts i les actualitzacions del codi font ara apareixen com a avisos descartables en lloc d'interrompre la feina.";
 "Teardown" = "Desmuntatge";
 "built by " = "fet per ";
 

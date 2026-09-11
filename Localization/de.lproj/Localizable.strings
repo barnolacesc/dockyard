@@ -441,6 +441,8 @@
 "Review…" = "Überprüfen…";
 "Don't remind me" = "Nicht mehr erinnern";
 "Dismiss" = "Schließen";
+"Passive Notices" = "Passive Hinweise";
+"Script reviews and source updates now appear as dismissible notices instead of interrupting your work." = "Skriptprüfungen und Quellcode-Updates erscheinen jetzt als schließbare Hinweise, ohne deine Arbeit zu unterbrechen.";
 "Teardown" = "Abbau";
 "built by " = "entwickelt von ";
 
