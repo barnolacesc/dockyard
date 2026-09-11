@@ -31,8 +31,9 @@ non-duplicative agent-status work respectively.
 
 - Status: **Awaiting Cesc review in PR #205** on
   `fix/bound-sidebar-state-decoding-r69-20260911` for issue #204. The pull
-  request must remain open and must not be auto-merged. Required native CI is
-  pending and must be green at the final head.
+  request must remain open and must not be auto-merged. Required native
+  implementation CI is green; the final evidence-only head must also remain
+  green.
 - User outcome: unexpectedly large persisted sidebar selection and
   expanded-project payloads cannot feed an unbounded JSON decoder during app
   launch.
@@ -70,7 +71,12 @@ non-duplicative agent-status work respectively.
   privacy keys across all five locales. All 38 repository Python script tests,
   `git diff --check` and the added-line secret review pass. The Linux automation
   host has no Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub
-  macOS CI is the mandatory native build/test evidence.
+  macOS CI is the native evidence. At implementation-and-roadmap head
+  `052587e`, macOS CI run `34575623483` passed localization checks, XcodeGen,
+  the native build, bundled-helper verification and the full XCTest suite
+  including `SidebarStateTests`. Configured CodeQL run `34575623452` passed
+  Actions and JavaScript analysis while Swift analysis was skipped by the PR
+  workflow. The final evidence-only head must also remain green.
 
 ### Independent Ready queue while R65–R69 await review
 
