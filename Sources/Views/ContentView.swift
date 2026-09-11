@@ -604,6 +604,20 @@ struct ContentView: View {
                     selection = .project(project.id)
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .openAgentAttention)) { notification in
+                guard let payload = notification.object as? AgentAttentionPayload else { return }
+                guard projects.contains(where: {
+                    $0.workstreams.contains(where: { $0.id == payload.workstreamID })
+                }) else {
+                    selection = .attention
+                    return
+                }
+                selection = .workstream(payload.workstreamID)
+                agentActivityStore.markRead(payload.eventID)
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: .focusAgent, object: nil)
+                }
+            }
             .onReceive(NotificationCenter.default.publisher(for: .nextWorkstream)) { _ in
                 cycleWorkstream(direction: 1)
             }

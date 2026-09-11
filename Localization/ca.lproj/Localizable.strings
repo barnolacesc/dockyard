@@ -547,6 +547,7 @@
 "Attention" = "Atenció";
 "Agent started working" = "L'agent ha començat a treballar";
 "Agent needs your attention" = "L'agent necessita la teva atenció";
+"Coding Agent needs your attention in “%@”." = "L'agent de programació necessita la teva atenció a «%@».";
 "Agent finished a turn" = "L'agent ha acabat un torn";
 "Agent became inactive" = "L'agent ha quedat inactiu";
 "See which Coding Agents need you and what changed while you were elsewhere." = "Consulta quins agents de codi et necessiten i què ha canviat mentre eres fora.";
@@ -562,7 +563,7 @@
 "%d more agents" = "%d agents més";
 "%d unread" = "%d sense llegir";
 "Agent Attention" = "Atenció dels agents";
-"A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "Una safata focalitzada recull les actualitzacions dels agents de codi en espera, completades i inactives de tots els fluxos de treball.";
+"A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "Una safata focalitzada recull les actualitzacions dels agents de codi de tots els fluxos de treball, amb notificacions del sistema quan un agent et necessita.";
 "Project Color" = "Color del projecte";
 "No Color" = "Sense color";
 "Red" = "Vermell";

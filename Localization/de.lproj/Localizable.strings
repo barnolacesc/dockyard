@@ -518,6 +518,7 @@
 "Attention" = "Aufmerksamkeit";
 "Agent started working" = "Agent hat die Arbeit begonnen";
 "Agent needs your attention" = "Agent benötigt deine Aufmerksamkeit";
+"Coding Agent needs your attention in “%@”." = "Der Coding-Agent benötigt deine Aufmerksamkeit in „%@“.";
 "Agent finished a turn" = "Agent hat einen Durchgang abgeschlossen";
 "Agent became inactive" = "Agent ist inaktiv geworden";
 "See which Coding Agents need you and what changed while you were elsewhere." = "Sieh, welche Coding-Agents dich brauchen und was sich währenddessen geändert hat.";
@@ -533,7 +534,7 @@
 "%d more agents" = "%d weitere Agents";
 "%d unread" = "%d ungelesen";
 "Agent Attention" = "Agent-Aufmerksamkeit";
-"A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "Ein fokussierter Eingang sammelt wartende, abgeschlossene und inaktive Coding-Agent-Updates aus allen Workstreams.";
+"A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "Ein fokussierter Eingang sammelt Coding-Agent-Updates aus allen Workstreams und zeigt Systemmitteilungen, wenn ein Agent dich benötigt.";
 "Project Color" = "Projektfarbe";
 "No Color" = "Keine Farbe";
 "Red" = "Rot";

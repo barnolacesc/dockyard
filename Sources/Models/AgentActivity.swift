@@ -4,6 +4,10 @@
 import Combine
 import Foundation
 
+extension Notification.Name {
+    static let agentActivityEventsAdded = Notification.Name("dockyard.agentActivityEventsAdded")
+}
+
 enum AgentActivityKind: String, Codable, Equatable {
     case started
     case waiting
@@ -116,6 +120,7 @@ final class AgentActivityStore: ObservableObject {
                 .prefix(Self.maximumEvents)
         )
         persist()
+        NotificationCenter.default.post(name: .agentActivityEventsAdded, object: newEvents)
     }
 
     static func transitions(

@@ -547,6 +547,7 @@
 "Attention" = "Attention";
 "Agent started working" = "Agent started working";
 "Agent needs your attention" = "Agent needs your attention";
+"Coding Agent needs your attention in “%@”." = "Coding Agent needs your attention in “%@”.";
 "Agent finished a turn" = "Agent finished a turn";
 "Agent became inactive" = "Agent became inactive";
 "See which Coding Agents need you and what changed while you were elsewhere." = "See which Coding Agents need you and what changed while you were elsewhere.";
@@ -562,7 +563,7 @@
 "%d more agents" = "%d more agents";
 "%d unread" = "%d unread";
 "Agent Attention" = "Agent Attention";
-"A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams.";
+"A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "A focused inbox collects Coding Agent updates across workstreams, with system notifications when an agent needs you.";
 "Project Color" = "Project Color";
 "No Color" = "No Color";
 "Red" = "Red";

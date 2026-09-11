@@ -15,4 +15,8 @@ enum DesignColor {
     static let statusError = Color(light: .systemRed, dark: .systemRed)
     static let statusInfo = Color(light: .systemBlue, dark: .systemBlue)
     static let statusMerged = Color(light: .systemPurple, dark: .systemPurple)
+    static let badgeForeground = Color(
+        light: NSColor(calibratedWhite: 0.10, alpha: 1),
+        dark: NSColor(calibratedWhite: 0.08, alpha: 1)
+    )
 }

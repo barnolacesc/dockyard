@@ -3,6 +3,21 @@
 
 import SwiftUI
 
+struct UnreadCountBadge: View {
+    let count: Int
+    var compact = false
+
+    var body: some View {
+        Text("\(count)")
+            .font(.system(size: compact ? 9 : 10, weight: .bold, design: .rounded))
+            .tabularNumbers()
+            .foregroundStyle(DesignColor.badgeForeground)
+            .padding(.horizontal, compact ? 4 : 6)
+            .padding(.vertical, compact ? 1 : 2)
+            .background(DesignColor.statusWarning, in: Capsule())
+    }
+}
+
 struct SidebarAttentionRow: View {
     let unreadCount: Int
     let isSelected: Bool
@@ -25,13 +40,7 @@ struct SidebarAttentionRow: View {
                 Spacer()
 
                 if unreadCount > 0 {
-                    Text("\(unreadCount)")
-                        .font(.system(size: 9, weight: .bold, design: .rounded))
-                        .tabularNumbers()
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(DesignColor.statusWarning, in: Capsule())
+                    UnreadCountBadge(count: unreadCount)
                 }
             }
             .padding(.horizontal, 10)
@@ -109,12 +118,7 @@ struct AttentionView: View {
                     Text("Attention")
                         .font(.title2.weight(.semibold))
                     if activityStore.unreadCount > 0 {
-                        Text("\(activityStore.unreadCount)")
-                            .font(.caption.weight(.bold).monospacedDigit())
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(DesignColor.statusWarning, in: Capsule())
+                        UnreadCountBadge(count: activityStore.unreadCount)
                     }
                 }
                 Text("See which Coding Agents need you and what changed while you were elsewhere.")

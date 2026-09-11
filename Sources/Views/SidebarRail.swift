@@ -165,13 +165,7 @@ struct SidebarRail: View {
                             .font(.system(size: 15, weight: .medium))
                             .frame(minWidth: 40, minHeight: 40)
                         if agentActivityStore.unreadCount > 0 {
-                            Text("\(agentActivityStore.unreadCount)")
-                                .font(.system(size: 9, weight: .bold, design: .rounded))
-                                .tabularNumbers()
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(DesignColor.statusWarning, in: Capsule())
+                            UnreadCountBadge(count: agentActivityStore.unreadCount, compact: true)
                                 .offset(x: 4, y: -2)
                         }
                     }
@@ -236,13 +230,7 @@ struct SidebarRail: View {
                         .font(.system(size: 17, weight: .medium))
                         .foregroundStyle(Color.accentColor)
                         .frame(minWidth: 40, minHeight: 40)
-                    Text("\(appUpdater.commitsAhead)")
-                        .font(.system(size: 9, weight: .bold, design: .rounded))
-                        .tabularNumbers()
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 1)
-                        .background(DesignColor.statusWarning, in: Capsule())
+                    UnreadCountBadge(count: appUpdater.commitsAhead, compact: true)
                         .offset(x: 4, y: -2)
                 }
             }

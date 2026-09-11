@@ -789,6 +789,12 @@ struct TerminalContainerView: View {
                 }
             }
             .animation(reduceMotion ? nil : DesignMotion.interaction, value: showScriptApprovalNotice)
+            .onAppear { updateAgentNotificationVisibility() }
+            .onDisappear {
+                AgentAttentionNotifier.shared.setAgentVisible(false, for: workstreamID)
+            }
+            .onChange(of: isActive) { updateAgentNotificationVisibility() }
+            .onChange(of: activeTab) { updateAgentNotificationVisibility() }
             .onChange(of: tmuxMode) { rebuildAgentCommand() }
             .onChange(of: bypassPermissions) { rebuildAgentCommand() }
             .onChange(of: autoRenameBranch) { rebuildAgentCommand() }
@@ -855,6 +861,13 @@ struct TerminalContainerView: View {
                 guard isActive else { return }
                 splitOrientation = (splitOrientation == "vertical") ? "horizontal" : "vertical"
             }
+    }
+
+    private func updateAgentNotificationVisibility() {
+        AgentAttentionNotifier.shared.setAgentVisible(
+            isActive && activeTab == .agent,
+            for: workstreamID
+        )
     }
 
     private var mainLayout: some View {
