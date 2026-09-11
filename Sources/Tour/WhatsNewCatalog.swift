@@ -39,9 +39,9 @@ enum WhatsNewCatalog {
                 bodyKey: "Assign colors from a project's shortcut menu to make busy sidebars easier to scan."
             ),
             WhatsNewEntry(
-                symbol: "bell.badge.fill",
-                titleKey: "Agent Attention",
-                bodyKey: "A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams."
+                symbol: "rectangle.3.group.bubble.fill",
+                titleKey: "Dockyard Overview",
+                bodyKey: "See workstreams that need you, active Coding Agents, reviews, and ideas in one place."
             ),
             WhatsNewEntry(
                 symbol: "bolt.fill",
