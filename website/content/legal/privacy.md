@@ -1,4 +1,5 @@
 ---
+aliases: ["/de/legal/privacy/", "/es/legal/privacy/", "/sv/legal/privacy/"]
 title: Privacy Policy
 date: 2026-03-16
 translationKey: privacy

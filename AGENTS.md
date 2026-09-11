@@ -160,8 +160,8 @@ All user-facing strings MUST use localization. Never hardcode strings directly i
 - **SwiftUI Text/Button/Label**: Use string literals directly (e.g., `Text("Cancel")`). SwiftUI automatically treats these as `LocalizedStringKey`.
 - **AppKit APIs** (NSOpenPanel, NSAlert, etc.): Use `NSLocalizedString("string", comment: "")`.
 - **String interpolation with Images**: Split into `Text` concatenation. E.g., `(Text("Press ") + Text(Image(systemName: "command")) + Text(" N"))`.
-- **Every new user-facing string** must be added to all 5 locale files.
-- Current locales: English (en), Catalan (ca), German (de), Spanish (es), Swedish (sv).
+- **Every new user-facing string** must be added to both locale files.
+- Current locales: English (en) and Catalan (ca).
 
 ## Keyboard Shortcuts
 When adding, removing, or changing keyboard shortcuts:
@@ -204,7 +204,7 @@ When shipping a user-facing feature:
 1. Add a `WhatsNewEntry` to the release being cut in `Sources/Tour/WhatsNewCatalog.swift`
    (create the `WhatsNewRelease` block if it's the first entry for that version;
    the version string must match the release-please version).
-2. Localize the entry's title/body in all 5 locale files.
+2. Localize the entry's title/body in both locale files.
 3. If the feature is big enough to demonstrate (multi-step, new surface), add a
    `TourFlow` in `Sources/Tour/` (usually all-`.manual` steps) and set the
    entry's `tourFlowID`.

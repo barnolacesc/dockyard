@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Sequence
 
 
-SUPPORTED_LOCALES = ("en", "ca", "de", "es", "sv")
+SUPPORTED_LOCALES = ("en", "ca")
 LOCALIZATION_FILENAMES = ("InfoPlist.strings", "Localizable.strings")
 REQUIRED_LOCALIZATION_RESOURCES = tuple(
     f"Localization/{locale}.lproj/{filename}"

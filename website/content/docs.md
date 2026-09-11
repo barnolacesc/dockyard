@@ -1,4 +1,5 @@
 ---
+aliases: ["/de/docs/", "/es/docs/", "/sv/docs/"]
 title: Docs
 translationKey: docs
 hideInstall: true
@@ -263,7 +264,7 @@ Open with **⌘,** or click the gear icon.
 - **Branch prefix** — prefix for workstream branches (default: `ff`)
 - **Symlink .env files** — auto-symlink `.env` and `.env.local` to worktrees
 - **Theme** — System, Light, or Dark
-- **Language** — System default, English, Catalan, German, Spanish, or Swedish
+- **Language** — System default, English and Catalan
 - **Confirm before quitting** — asks before closing with active workstreams
 - **Launch at login** — starts Dockyard on boot
 

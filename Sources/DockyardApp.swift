@@ -196,6 +196,14 @@ struct DockyardApp: App {
     init() {
         guard !isRunningXCTest() else { return }
 
+        // Retired language overrides should return to the supported system default.
+        let defaults = UserDefaults.standard
+        if let language = defaults.string(forKey: "dockyard.languageOverride"),
+           ["de", "es", "sv"].contains(language) {
+            defaults.removeObject(forKey: "dockyard.languageOverride")
+            defaults.removeObject(forKey: "AppleLanguages")
+        }
+
         guard ghostty_init(UInt(CommandLine.argc), CommandLine.unsafeArgv) == GHOSTTY_SUCCESS else {
             let alert = NSAlert()
             alert.messageText = NSLocalizedString("Dockyard cannot start", comment: "")
