@@ -219,7 +219,7 @@ struct SidebarRail: View {
 
     @ViewBuilder
     private var updateButton: some View {
-        if appUpdater.isChecking {
+        if appUpdater.isChecking || appUpdater.isUpdating {
             ProgressView()
                 .controlSize(.small)
                 .frame(minWidth: 40, minHeight: 40)

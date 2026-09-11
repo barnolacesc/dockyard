@@ -1,5 +1,5 @@
 // ABOUTME: Checks the running app's embedded commit for updates against origin/main.
-// ABOUTME: Provides a function to launch Terminal and pull/rebuild the app.
+// ABOUTME: Pulls and rebuilds the app in the background without opening Terminal.
 
 import AppKit
 import Combine
@@ -165,6 +165,7 @@ enum UpdateCheckCommandRunner {
 final class AppUpdater: ObservableObject {
     @Published var commitsAhead: Int = 0
     @Published var isChecking: Bool = false
+    @Published private(set) var isUpdating = false
     /// Set once per session when an update is first detected, so the UI can surface a
     /// one-time prompt instead of silently showing a small button.
     @Published var shouldPromptUpdate: Bool = false
@@ -221,6 +222,9 @@ final class AppUpdater: ObservableObject {
     }
 
     func applyUpdate() {
+        guard !isUpdating else { return }
+        isUpdating = true
+        shouldPromptUpdate = false
         let path = AppCommit.sourcePath
         let isDebug = AppCommit.configuration == "Debug"
 
@@ -232,27 +236,55 @@ final class AppUpdater: ObservableObject {
         // Delegate the git reconciliation + build to a hardened, idempotent script so the
         // update survives divergent branches and dirty build artifacts. Fall back to the
         // inline pull only if the script is missing (older checkouts).
-        let scriptPath = "\(path)/scripts/self-update.sh"
-        let command: String
-        if FileManager.default.isExecutableFile(atPath: scriptPath) {
-            command = "cd '\(path)' && ./scripts/self-update.sh \(buildMode)"
-        } else {
-            command = "cd '\(path)' && git fetch origin main && git merge --ff-only origin/main && ./scripts/dev.sh \(buildMode)"
-        }
-
-        // Create an AppleScript to open Terminal and run the command.
-        let scriptSource = """
-        tell application "Terminal"
-            activate
-            do script "\(command)"
-        end tell
-        """
-
-        if let appleScript = NSAppleScript(source: scriptSource) {
-            var errorInfo: NSDictionary?
-            appleScript.executeAndReturnError(&errorInfo)
-            if let errorInfo = errorInfo {
-                logger.error("Failed to execute AppleScript for update: \(errorInfo.description, privacy: .public)")
+        let logURL = AppConstants.cacheDirectory.appendingPathComponent("self-update.log")
+        Task {
+            let succeeded = await Task.detached(priority: .utility) {
+                do {
+                    try FileManager.default.createDirectory(
+                        at: logURL.deletingLastPathComponent(), withIntermediateDirectories: true
+                    )
+                    FileManager.default.createFile(atPath: logURL.path, contents: nil)
+                    let log = try FileHandle(forWritingTo: logURL)
+                    defer { try? log.close() }
+                    let process = Process()
+                    // Ignore hangups so the rebuild can replace and relaunch its parent app.
+                    process.executableURL = URL(fileURLWithPath: "/usr/bin/nohup")
+                    process.arguments = ["/bin/sh", "-c", """
+                    if [ -x ./scripts/self-update.sh ]; then
+                        exec ./scripts/self-update.sh "$1"
+                    else
+                        git fetch origin main && git merge --ff-only origin/main && ./scripts/dev.sh "$1"
+                    fi
+                    """, "dockyard-update", buildMode]
+                    process.currentDirectoryURL = URL(fileURLWithPath: path)
+                    var environment = ProcessInfo.processInfo.environment
+                    let shell = CommandBuilder.resolvedUserShell(environment: environment)
+                    if let shellPath = CommandLineTools.loginShellPath(shell: shell) {
+                        environment["PATH"] = shellPath
+                    }
+                    environment["GIT_TERMINAL_PROMPT"] = "0"
+                    process.environment = environment
+                    process.standardInput = FileHandle.nullDevice
+                    process.standardOutput = log
+                    process.standardError = log
+                    try process.run()
+                    process.waitUntilExit()
+                    return process.terminationStatus == 0
+                } catch {
+                    logger.error("Failed to launch update: \(error.localizedDescription, privacy: .public)")
+                    return false
+                }
+            }.value
+            isUpdating = false
+            if !succeeded {
+                let alert = NSAlert()
+                alert.messageText = NSLocalizedString("Update failed", comment: "Source update failure title")
+                alert.informativeText = String(
+                    format: NSLocalizedString("The update could not be completed. See the log at %@ for details.", comment: "Source update failure log location"),
+                    logURL.path
+                )
+                alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
+                alert.runModal()
             }
         }
     }

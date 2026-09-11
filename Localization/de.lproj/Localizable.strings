@@ -556,3 +556,5 @@
 "Open project terminal" = "Projektterminal öffnen";
 "Close project terminal" = "Projektterminal schließen";
 "Open a persistent terminal at the project root directly from the project row." = "Öffne ein dauerhaftes Terminal im Projektstamm direkt über die Projektzeile.";
+"Update failed" = "Update fehlgeschlagen";
+"The update could not be completed. See the log at %@ for details." = "Das Update konnte nicht abgeschlossen werden. Weitere Informationen findest du im Protokoll unter %@.";

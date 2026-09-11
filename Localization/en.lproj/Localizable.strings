@@ -585,3 +585,5 @@
 "Open project terminal" = "Open project terminal";
 "Close project terminal" = "Close project terminal";
 "Open a persistent terminal at the project root directly from the project row." = "Open a persistent terminal at the project root directly from the project row.";
+"Update failed" = "Update failed";
+"The update could not be completed. See the log at %@ for details." = "The update could not be completed. See the log at %@ for details.";
