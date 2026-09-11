@@ -547,6 +547,7 @@
 "Attention" = "Uppmärksamhet";
 "Agent started working" = "Agenten började arbeta";
 "Agent needs your attention" = "Agenten behöver din uppmärksamhet";
+"Coding Agent needs your attention in “%@”." = "Kodningsagenten behöver din uppmärksamhet i ”%@”.";
 "Agent finished a turn" = "Agenten avslutade en omgång";
 "Agent became inactive" = "Agenten blev inaktiv";
 "See which Coding Agents need you and what changed while you were elsewhere." = "Se vilka kodningsagenter som behöver dig och vad som ändrades medan du var någon annanstans.";
@@ -562,7 +563,7 @@
 "%d more agents" = "%d agenter till";
 "%d unread" = "%d olästa";
 "Agent Attention" = "Agentuppmärksamhet";
-"A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "En fokuserad inkorg samlar väntande, slutförda och inaktiva uppdateringar från kodningsagenter i alla arbetsflöden.";
+"A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "En fokuserad inkorg samlar uppdateringar från kodningsagenter i alla arbetsflöden, med systemnotiser när en agent behöver dig.";
 "Project Color" = "Projektfärg";
 "No Color" = "Ingen färg";
 "Red" = "Röd";

@@ -36,6 +36,7 @@ extension Notification.Name {
     static let nextProject = Notification.Name("dockyard.nextProject")
     static let prevProject = Notification.Name("dockyard.prevProject")
     static let archiveWorkstream = Notification.Name("dockyard.archiveWorkstream")
+    static let openAgentAttention = Notification.Name("dockyard.openAgentAttention")
 }
 
 @MainActor
@@ -56,6 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         let center = UNUserNotificationCenter.current()
         center.delegate = self
         Self.requestNotificationAuthorization(using: center)
+        AgentAttentionNotifier.shared.start()
 
         // Contextual shortcuts via key monitor (avoids cluttering the menu bar)
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -125,6 +127,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
         completionHandler([.banner, .sound])
+    }
+
+    nonisolated func userNotificationCenter(
+        _: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        defer { completionHandler() }
+        guard response.actionIdentifier == UNNotificationDefaultActionIdentifier,
+              let payload = AgentAttentionPayload(
+                  notificationUserInfo: response.notification.request.content.userInfo
+              )
+        else { return }
+
+        Task { @MainActor in
+            NSApp.activate(ignoringOtherApps: true)
+            let window = NSApp.mainWindow ?? NSApp.windows.first(where: { $0.canBecomeKey })
+            window?.makeKeyAndOrderFront(nil)
+            NotificationCenter.default.post(name: .openAgentAttention, object: payload)
+        }
     }
 
     func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
