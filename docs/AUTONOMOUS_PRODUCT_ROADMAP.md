@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-09-08 against `origin/main` at
-`08ec8b33781b5ea406a1dcf5eeaa071954c1ebd6`.
+Last reconciled: 2026-09-10 against `origin/main` at
+`c825f36afed82fa6d0f02d3ed99ac9f66993c4d7`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -11,7 +11,93 @@ The first **Current autonomous queue** is canonical. Dated **Live
 reconciliation** and superseded queue sections are retained as an audit trail
 and can contain stale statuses.
 
-## Current autonomous queue — 2026-09-08 16:30 CEST
+## Current autonomous queue — 2026-09-10 09:30 CEST
+
+`origin/main` is `c825f36`; its macOS CI, CodeQL and Release workflows are
+green. PR #197 (R68) and PR #199 (R65) are green, mergeable and **awaiting
+Cesc review**. They remain open and are not modified or stacked on here. The
+latest published release is v0.2.4; no release-please PR is currently open.
+
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
+`repo` and `workflow` but lacks `read:project`. No Project item or status is
+inferred. Current issues, `TODO.md`, code and every open PR path were
+reconciled before issue #200 was created for this run. Product issues #41,
+#43 and #54 still require native profiling, approval-gated update work and
+non-duplicative agent-status work respectively.
+
+### R66 — Bound persisted project snapshot decoding
+
+- Status: **Awaiting Cesc review in PR #201** on
+  `fix/bound-project-snapshot-decoding-r66-20260910` for issue #200. Required
+  native implementation CI is green; the PR must remain open and must not be
+  auto-merged.
+- User outcome: an unexpectedly large `dockyard.projects` defaults payload
+  cannot feed an unbounded JSON decoder during launch.
+- Success signal: a valid snapshot at the 1 MiB ceiling restores, while an
+  oversized or malformed payload follows the existing empty-state path and
+  the stored bytes remain untouched.
+- macOS impact: app launch and project restoration only; no visible UI,
+  accessibility, localization or shortcut behavior changes.
+- Persistence/security impact: adds a read-side decode ceiling. The project
+  schema, lossy per-project recovery, writes, migrations, worktrees, commands,
+  entitlements and release behavior are unchanged.
+- Scope: `ProjectStore`, focused `ProjectTests` and roadmap evidence only.
+- Dependencies: none. PR #197 owns worktree creation, sidebar UI,
+  localizations, What's New and `GitOperationsTests`; PR #199 owns
+  `CacheMigration` and its tests. R66 owns none of those implementation paths,
+  so all three PRs can merge in any order.
+- Risk: low and reversible read-side hardening. Full GitHub macOS CI is
+  mandatory.
+- Acceptance criteria:
+  1. A valid project snapshot exactly at the fixed byte ceiling restores.
+  2. A valid project snapshot above the ceiling is rejected before decoding.
+  3. Malformed bounded data continues to return the existing empty state.
+  4. Rejected oversized and malformed payload bytes remain in UserDefaults.
+  5. Existing round-trip and lossy per-project restoration tests remain green.
+  6. Full GitHub macOS build and XCTest pass.
+- Required evidence: focused `ProjectTests`, localization resource/key checks,
+  XcodeGen/native build, full XCTest, repository script tests,
+  `git diff --check`, added-line secret scan and configured CodeQL.
+- Evidence so far: localization resource/key checks pass with 10 declared
+  resources, 463 app keys and 15 privacy keys across all five locales; all 38
+  repository Python script tests, `git diff --check` and the added-line secret
+  review pass. `./scripts/dev.sh test` cannot run on this Linux host because
+  Ghostty macOS resources and Xcode are unavailable, so GitHub macOS CI remains
+  mandatory native evidence. At implementation-and-roadmap head `e6d8890`,
+  macOS CI run `34451225379` passed XcodeGen, the native build and the full
+  XCTest suite including `ProjectTests`; configured CodeQL run `34451225147`
+  passed Actions and JavaScript analysis while Swift analysis was skipped by
+  the PR workflow. The final evidence-only head must also remain green.
+
+### Independent Ready queue while R65, R66 and R68 await review
+
+- **R67 — Bound persisted workspace-tab snapshot decoding.** User outcome: an
+  unexpectedly large restored tab payload cannot feed an unbounded decoder
+  while opening a workstream. Success: bounded valid tabs still restore while
+  oversized or malformed data follows the existing default-tab path without
+  deleting stored bytes. Scope: `WorkspaceTabSnapshotStore` and focused tests;
+  no schema, migration, tab mutation, UI string, command, worktree or
+  entitlement change. Full macOS CI is required.
+- **R69 — Bound persisted sidebar-state decoding.** User outcome: malformed
+  selection or expanded-project defaults cannot feed an unbounded decoder at
+  launch. Success: fixtures at the byte ceiling restore while oversized values
+  fall back to the current nil/empty state without deleting stored bytes.
+  Scope: `SidebarSelection`, `SidebarState` and focused tests; no UI, schema,
+  project mutation, worktree or command change. Full macOS CI is required.
+- **R70 — Bound persisted Attention history decoding.** User outcome: an
+  unexpectedly large local Attention history cannot feed an unbounded decoder
+  before retention and event-count limits apply. Success: bounded valid
+  history still restores while oversized or malformed bytes use the existing
+  empty-history path and remain stored. Scope: `AgentActivityStore` and focused
+  tests; no event semantics, UI, localization, watcher, command or worktree
+  change. Full macOS CI is required.
+
+R67, R69 and R70 own distinct source and test paths and are independent of
+PRs #197 and #199. Each can merge in any order. R62 remains dependent on the
+expanded file-tree implementation that landed through integration PR #189;
+its scope must be revalidated against current code before it returns to Ready.
+
+## Superseded autonomous queue — 2026-09-08 16:30 CEST
 
 `origin/main` is `08ec8b3`; its latest macOS CI, scheduled CodeQL and Release
 workflows are green. PRs #170, #172, #174, #176, #178, #180, #182, #184 and
