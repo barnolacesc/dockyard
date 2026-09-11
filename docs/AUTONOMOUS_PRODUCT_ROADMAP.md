@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-09-08 against `origin/main` at
-`08ec8b33781b5ea406a1dcf5eeaa071954c1ebd6`.
+Last reconciled: 2026-09-11 against `origin/main` at
+`c825f36afed82fa6d0f02d3ed99ac9f66993c4d7`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -11,7 +11,97 @@ The first **Current autonomous queue** is canonical. Dated **Live
 reconciliation** and superseded queue sections are retained as an audit trail
 and can contain stale statuses.
 
-## Current autonomous queue — 2026-09-08 16:30 CEST
+## Current autonomous queue — 2026-09-11 09:30 CEST
+
+`origin/main` is `c825f36`; its macOS CI, CodeQL and Release workflows are
+green. PRs #197 (R68), #199 (R65), #201 (R66) and #203 (R67) are green,
+mergeable and **awaiting Cesc review**. Their changed paths and behavior were
+checked before selecting this run; they remain open and are not modified or
+stacked on here. The latest published release is v0.2.4 and no release-please
+PR is open.
+
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
+`repo` and `workflow` but lacks `read:project`. No Project item or status is
+inferred. Current issues, `TODO.md`, code and every open PR path were
+reconciled before issue #204 was created for this run. Product issues #41,
+#43 and #54 still require native profiling, approval-gated update work and
+non-duplicative agent-status work respectively.
+
+### R69 — Bound persisted sidebar-state decoding
+
+- Status: **Implementation in progress** on
+  `fix/bound-sidebar-state-decoding-r69-20260911` for issue #204. The future
+  pull request must remain open for Cesc review and must not be auto-merged.
+- User outcome: unexpectedly large persisted sidebar selection and
+  expanded-project payloads cannot feed an unbounded JSON decoder during app
+  launch.
+- Success signal: valid selection and expansion payloads at the 1 MiB ceiling
+  restore, while oversized or malformed data uses the existing nil/empty
+  fallback and its stored bytes remain untouched.
+- macOS impact: sidebar state restoration only; no visible UI, accessibility,
+  localization or shortcut behavior changes.
+- Persistence/security impact: adds a read-side restore ceiling. The state
+  schemas, encoding, save behavior, project/workstream state, commands,
+  worktrees, entitlements and release behavior are unchanged.
+- Scope: `SidebarSelection`, `SidebarState`, focused `SidebarStateTests` and
+  roadmap evidence only.
+- Dependencies: none. PR #197 owns worktree creation, sidebar UI,
+  localizations, What's New and `GitOperationsTests`; PR #199 owns
+  `CacheMigration` and its tests; PR #201 owns `ProjectStore` and
+  `ProjectTests`; PR #203 owns workspace-tab restoration and its tests. R69
+  owns none of those implementation or test paths, so all five can merge in
+  any order.
+- Risk: low and reversible read-side persistence hardening. Full GitHub macOS
+  CI is mandatory.
+- Acceptance criteria:
+  1. Valid selection and expanded-project snapshots exactly at the fixed byte
+     ceiling restore.
+  2. Snapshots above the ceiling return the existing nil/empty fallback before
+     decoding.
+  3. Malformed bounded snapshots retain the existing nil/empty fallback.
+  4. Rejected oversized and malformed bytes remain stored in UserDefaults.
+  5. Existing save/load behavior and the full macOS XCTest suite remain green.
+- Required evidence: focused `SidebarStateTests`, localization resource/key
+  checks, XcodeGen/native build, full XCTest, repository script tests,
+  `git diff --check`, added-line secret scan and configured CodeQL.
+- Evidence so far: implementation and focused tests are present; localization
+  resource/key checks pass with 10 declared resources, 463 app keys and 15
+  privacy keys across all five locales. All 38 repository Python script tests,
+  `git diff --check` and the added-line secret review pass. The Linux automation
+  host has no Swift, Xcode, XcodeGen, prek or SwiftFormat executable, so GitHub
+  macOS CI is the mandatory native build/test evidence.
+
+### Independent Ready queue while R65–R69 await review
+
+- **R70 — Bound persisted Attention history decoding.** User outcome: an
+  unexpectedly large local Attention history cannot feed an unbounded decoder
+  before retention and event-count limits apply. Success: bounded valid
+  history still restores while oversized or malformed bytes use the existing
+  empty-history path and remain stored. Scope: `AgentActivityStore` and
+  focused tests; no event semantics, UI, localization, watcher, command or
+  worktree change. Full macOS CI is required.
+- **R71 — Bound coding-agent state snapshot reads.** User outcome: malformed
+  or unexpectedly large agent/subagent state files cannot allocate unbounded
+  memory before validation. Success: regular files at a fixed ceiling still
+  decode while oversized, symlinked and non-regular inputs are rejected
+  without mutation. Scope: `AgentStateFiles`, `AgentSubagentFiles`, app-side
+  state loading and focused tests; no status semantics, hooks, UI,
+  localization, command invocation or cleanup change. Full macOS CI is
+  required and issue #54 must be rechecked before selection to avoid overlap.
+- **R62 — Bound expanded file-tree enumeration.** User outcome: expanding a
+  malformed or extremely large source directory cannot allocate an unbounded
+  entry array or stall the workspace indefinitely. Success: lazy enumeration
+  stops at a fixed per-directory ceiling while containment, directories-first
+  ordering and case-insensitive sorting remain deterministic. Scope:
+  `FileTree` and focused file-tree tests; no file reads/writes, editor state,
+  watcher, command, worktree or UI-string change. Full macOS CI is required.
+  This item was revalidated after R61 merged through integration PR #189;
+  current open PRs do not touch its source or test paths.
+
+R70, R71 and R62 own distinct source and test paths and are independent of all
+open implementation PRs. Each can merge in any order.
+
+## Superseded autonomous queue — 2026-09-08 16:30 CEST
 
 `origin/main` is `08ec8b3`; its latest macOS CI, scheduled CodeQL and Release
 workflows are green. PRs #170, #172, #174, #176, #178, #180, #182, #184 and
