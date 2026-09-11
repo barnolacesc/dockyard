@@ -317,6 +317,7 @@ struct TerminalContainerView: View {
     @EnvironmentObject var surfaceCache: TerminalSurfaceCache
     @EnvironmentObject var appEnv: AppEnvironment
     @EnvironmentObject var agentStateStore: AgentStateStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("dockyard.codingCLI") private var codingCLIRaw: String = ""
     @AppStorage("dockyard.defaultBrowser") private var defaultBrowser: String = ""
     @AppStorage("dockyard.tmuxMode") private var tmuxMode: Bool = false
@@ -358,6 +359,9 @@ struct TerminalContainerView: View {
     @State private var defaultBranch = "main"
     @State private var livePermissionHint: String?
     @State private var showScriptApproval = false
+    @State private var showScriptApprovalNotice = false
+    @State private var didOfferScriptApproval = false
+    @State private var scriptApprovalNoticeTask: Task<Void, Never>?
     init(
         workstreamID: UUID,
         workingDirectory: String,
@@ -766,6 +770,25 @@ struct TerminalContainerView: View {
 
     private var mainContent: some View {
         mainLayout
+            .overlay(alignment: .bottomTrailing) {
+                if showScriptApprovalNotice {
+                    ScriptApprovalNotice(
+                        source: scriptConfig.source,
+                        onReview: {
+                            dismissScriptApprovalNotice()
+                            showScriptApproval = true
+                        },
+                        onSuppress: {
+                            ScriptTrustStore.suppressReminder(projectDirectory: projectDirectory)
+                            dismissScriptApprovalNotice()
+                        },
+                        onDismiss: { dismissScriptApprovalNotice() }
+                    )
+                    .padding(16)
+                    .transition(reduceMotion ? .identity : .move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(reduceMotion ? nil : DesignMotion.interaction, value: showScriptApprovalNotice)
             .onChange(of: tmuxMode) { rebuildAgentCommand() }
             .onChange(of: bypassPermissions) { rebuildAgentCommand() }
             .onChange(of: autoRenameBranch) { rebuildAgentCommand() }
@@ -884,6 +907,7 @@ struct TerminalContainerView: View {
             surfaceCache.splitTabs[workstreamID] = newValue
         }
         .onDisappear {
+            scriptApprovalNoticeTask?.cancel()
             if isActive {
                 editorTabActive = false
                 editorFileDirty = false
@@ -1400,7 +1424,7 @@ struct TerminalContainerView: View {
         guard !SetupStateStore.isCompleted(for: workstreamID) else { return }
         guard setupRunner.state == .idle else { return }
         guard ScriptTrustStore.isTrusted(projectDirectory: projectDirectory, config: scriptConfig) else {
-            showScriptApproval = true
+            offerScriptApprovalNoticeIfNeeded()
             return
         }
 
@@ -1409,6 +1433,30 @@ struct TerminalContainerView: View {
             workingDirectory: workingDirectory,
             environmentVars: terminalEnvVars
         )
+    }
+
+    private func offerScriptApprovalNoticeIfNeeded() {
+        guard isActive, !didOfferScriptApproval else { return }
+        didOfferScriptApproval = true
+        guard !ScriptTrustStore.isReminderSuppressed(projectDirectory: projectDirectory) else { return }
+
+        withAnimation(reduceMotion ? nil : DesignMotion.interaction) {
+            showScriptApprovalNotice = true
+        }
+        scriptApprovalNoticeTask?.cancel()
+        scriptApprovalNoticeTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(10))
+            guard !Task.isCancelled else { return }
+            dismissScriptApprovalNotice()
+        }
+    }
+
+    private func dismissScriptApprovalNotice() {
+        scriptApprovalNoticeTask?.cancel()
+        scriptApprovalNoticeTask = nil
+        withAnimation(reduceMotion ? nil : DesignMotion.interaction) {
+            showScriptApprovalNotice = false
+        }
     }
 
     @MainActor

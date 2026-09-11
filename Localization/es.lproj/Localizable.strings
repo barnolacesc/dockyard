@@ -416,6 +416,7 @@
 "Update & Relaunch" = "Actualizar y reiniciar";
 "Later" = "Más tarde";
 "A new version of Dockyard is ready. It will rebuild and relaunch automatically." = "Hay una nueva versión de Dockyard lista. Se reconstruirá y reiniciará automáticamente.";
+"%d updates available" = "%d actualizaciones disponibles";
 
 /* Logs Window */
 "Logs" = "Registros";
@@ -464,6 +465,11 @@
 "These commands come from %@ and will run in your shell. Review them before allowing Dockyard to run them." = "Estos comandos provienen de %@ y se ejecutarán en tu shell. Revísalos antes de permitir que Dockyard los ejecute.";
 "Run Scripts" = "Ejecutar scripts";
 "Not Now" = "Ahora no";
+"Review project scripts" = "Revisar scripts del proyecto";
+"Automatic setup is paused until you review the commands in %@." = "La configuración automática está en pausa hasta que revises los comandos de %@.";
+"Review…" = "Revisar…";
+"Don't remind me" = "No volver a recordar";
+"Dismiss" = "Descartar";
 "Teardown" = "Desmontaje";
 "built by " = "creado por ";
 

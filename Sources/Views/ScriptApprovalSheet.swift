@@ -65,3 +65,60 @@ struct ScriptApprovalSheet: View {
         }
     }
 }
+
+/// A passive heads-up shown when automatic setup is waiting for script approval.
+/// Reviewing remains an explicit action; dismissing this notice never trusts or
+/// executes repository-provided commands.
+struct ScriptApprovalNotice: View {
+    let source: String?
+    let onReview: () -> Void
+    let onSuppress: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "exclamationmark.shield")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(.orange)
+                .frame(width: 24, height: 24)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Review project scripts")
+                    .font(.system(size: 13, weight: .semibold))
+
+                Text(String(
+                    format: NSLocalizedString(
+                        "Automatic setup is paused until you review the commands in %@.",
+                        comment: "Passive script approval notice; %@ is the config filename"),
+                    source ?? ".dockyard.json"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 10) {
+                    Button("Review…", action: onReview)
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                    Button("Don't remind me", action: onSuppress)
+                        .buttonStyle(.borderless)
+                        .controlSize(.small)
+                }
+            }
+
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .accessibilityLabel("Dismiss")
+        }
+        .padding(14)
+        .frame(width: 360, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous))
+        .shadow(color: .black.opacity(0.10), radius: 2, y: 1)
+        .shadow(color: .black.opacity(0.18), radius: 16, y: 6)
+    }
+}

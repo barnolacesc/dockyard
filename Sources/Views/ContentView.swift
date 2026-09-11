@@ -154,6 +154,7 @@ func commandKeyNotification(event: NSEvent) -> Notification.Name? {
 
 struct ContentView: View {
     @StateObject private var projectList = ProjectList()
+    @StateObject private var appUpdater = AppUpdater()
     @State private var selection: SidebarSelection? = SidebarSelection.loadSaved() ?? ContentView.initialSelection()
     @State private var selectionBeforeSettings: SidebarSelection?
 
@@ -183,6 +184,7 @@ struct ContentView: View {
     @AppStorage("dockyard.codingCLI") private var codingCLIRaw: String = ""
     @AppStorage(SidebarMode.storageKey) private var sidebarModeRaw = SidebarMode.expanded.rawValue
     @AppStorage(SidebarMode.lastVisibleStorageKey) private var lastVisibleSidebarModeRaw = SidebarMode.expanded.rawValue
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Fires when a worktree's git HEAD changes (e.g. `git branch -m`) so the sidebar can
     /// resync the workstream name instantly instead of waiting for the 15s poll.
@@ -357,6 +359,21 @@ struct ContentView: View {
 
     var body: some View {
         navigationView
+            .overlay(alignment: .bottomTrailing) {
+                if appUpdater.shouldPromptUpdate {
+                    UpdateAvailableNotice(
+                        commitsAhead: appUpdater.commitsAhead,
+                        onUpdate: {
+                            appUpdater.shouldPromptUpdate = false
+                            appUpdater.applyUpdate()
+                        },
+                        onDismiss: { appUpdater.shouldPromptUpdate = false }
+                    )
+                    .padding(16)
+                    .transition(reduceMotion ? .identity : .move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(reduceMotion ? nil : DesignMotion.interaction, value: appUpdater.shouldPromptUpdate)
             .shortcutHintOverlay()
             .tourOverlay()
             .sheet(isPresented: $showWhatsNew) {
@@ -690,6 +707,7 @@ struct ContentView: View {
             projects: $projectList.items,
             selection: $selection,
             onProjectsChanged: { ProjectStore.save(projects) },
+            appUpdater: appUpdater,
             selectedUsageProvider: selectedUsageProvider,
             availableUsageProviders: availableUsageProviders,
             onPreviousUsageProvider: { cycleUsageProvider(direction: -1) },
@@ -912,6 +930,51 @@ struct ContentView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
             showWhatsNew = true
         }
+    }
+}
+
+private struct UpdateAvailableNotice: View {
+    let commitsAhead: Int
+    let onUpdate: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.system(size: 20, weight: .medium))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 24, height: 24)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Update Available")
+                    .font(.system(size: 13, weight: .semibold))
+
+                Text("A new version of Dockyard is ready. It will rebuild and relaunch automatically.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button("Update & Relaunch", action: onUpdate)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+            }
+
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .accessibilityLabel("Later")
+        }
+        .padding(14)
+        .frame(width: 360, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous))
+        .shadow(color: .black.opacity(0.10), radius: 2, y: 1)
+        .shadow(color: .black.opacity(0.18), radius: 16, y: 6)
+        .accessibilityValue(String(format: NSLocalizedString("%d updates available", comment: "Available source updates"), commitsAhead))
     }
 }
 
