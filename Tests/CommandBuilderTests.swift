@@ -477,7 +477,9 @@ final class CommandBuilderTests: XCTestCase {
 
         for builtCommand in command.intermediateCommands.prefix(2) {
             XCTAssertTrue(builtCommand.contains("--config 'developer_instructions=\"You are working inside Dockyard"), "got: \(builtCommand)")
-            XCTAssertTrue(builtCommand.contains("git branch -m <new-name>"), "got: \(builtCommand)")
+            XCTAssertTrue(builtCommand.contains("git branch -m <type>/<description>"), "got: \(builtCommand)")
+            XCTAssertTrue(builtCommand.contains("refactor/english-and-catalan-only"), "got: \(builtCommand)")
+            XCTAssertTrue(builtCommand.contains("Remove Other Languages"), "got: \(builtCommand)")
         }
     }
 
