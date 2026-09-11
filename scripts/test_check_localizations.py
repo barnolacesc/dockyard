@@ -23,7 +23,7 @@ def write_locale(
 
 
 def write_supported_locales(root: Path, contents: str) -> None:
-    for locale in ("en", "ca", "de", "es", "sv"):
+    for locale in ("en", "ca"):
         write_locale(root, locale, contents)
         write_locale(root, locale, contents, "InfoPlist.strings")
 
@@ -56,14 +56,12 @@ def test_missing_and_extra_keys_are_reported() -> None:
         root = Path(temporary_directory)
         write_supported_locales(root, '"Shared" = "Value";\n')
         write_locale(root, "ca", '"Extra" = "Valor";\n')
-        write_locale(root, "de", '"Shared" = "Wert";\n"Extra" = "Wert";\n')
 
         errors = check_localizations(root)
 
         assert errors == [
             "ca: missing keys: Shared",
             "ca: extra keys: Extra",
-            "de: extra keys: Extra",
         ]
 
 
@@ -71,10 +69,10 @@ def test_missing_supported_locale_is_reported() -> None:
     with tempfile.TemporaryDirectory() as temporary_directory:
         root = Path(temporary_directory)
         write_supported_locales(root, '"Shared" = "Value";\n')
-        os.remove(root / "sv.lproj" / "Localizable.strings")
+        os.remove(root / "ca.lproj" / "Localizable.strings")
 
         assert check_localizations(root) == [
-            "sv: missing Localization/sv.lproj/Localizable.strings"
+            "ca: missing Localization/ca.lproj/Localizable.strings"
         ]
 
 
@@ -82,10 +80,10 @@ def test_missing_privacy_prompt_file_is_reported() -> None:
     with tempfile.TemporaryDirectory() as temporary_directory:
         root = Path(temporary_directory)
         write_supported_locales(root, '"NSCameraUsageDescription" = "Value";\n')
-        os.remove(root / "de.lproj" / "InfoPlist.strings")
+        os.remove(root / "ca.lproj" / "InfoPlist.strings")
 
         assert check_localizations(root) == [
-            "de: missing Localization/de.lproj/InfoPlist.strings"
+            "ca: missing Localization/ca.lproj/InfoPlist.strings"
         ]
 
 
@@ -95,14 +93,14 @@ def test_privacy_prompt_key_drift_is_reported() -> None:
         write_supported_locales(root, '"Shared" = "Value";\n')
         write_locale(
             root,
-            "sv",
+            "ca",
             '"ExtraPrivacyKey" = "Varde";\n',
             "InfoPlist.strings",
         )
 
         assert check_localizations(root) == [
-            "sv InfoPlist.strings: missing keys: Shared",
-            "sv InfoPlist.strings: extra keys: ExtraPrivacyKey",
+            "ca InfoPlist.strings: missing keys: Shared",
+            "ca InfoPlist.strings: extra keys: ExtraPrivacyKey",
         ]
 
 
@@ -110,18 +108,18 @@ def test_known_baseline_debt_passes_and_must_be_removed_when_resolved() -> None:
     with tempfile.TemporaryDirectory() as temporary_directory:
         root = Path(temporary_directory)
         write_supported_locales(root, '"Shared" = "Value";\n')
-        write_locale(root, "de", "")
+        write_locale(root, "ca", "")
         baseline_path = root / "key-parity-baseline.json"
         baseline_path.write_text(
-            json.dumps({"de": {"missing": ["Shared"], "extra": []}}),
+            json.dumps({"ca": {"missing": ["Shared"], "extra": []}}),
             encoding="utf-8",
         )
 
         assert check_localizations(root) == []
 
-        write_locale(root, "de", '"Shared" = "Wert";\n')
+        write_locale(root, "ca", '"Shared" = "Wert";\n')
         assert check_localizations(root) == [
-            "de: remove resolved missing keys from key-parity-baseline.json: Shared"
+            "ca: remove resolved missing keys from key-parity-baseline.json: Shared"
         ]
 
 
@@ -129,12 +127,12 @@ def test_malformed_strings_are_reported() -> None:
     with tempfile.TemporaryDirectory() as temporary_directory:
         root = Path(temporary_directory)
         write_supported_locales(root, '"Shared" = "Value";\n')
-        write_locale(root, "es", '"Broken" = "Missing semicolon"\n')
+        write_locale(root, "ca", '"Broken" = "Missing semicolon"\n')
 
         errors = check_localizations(root)
 
         assert len(errors) == 1
-        assert errors[0].startswith("es: ")
+        assert errors[0].startswith("ca: ")
         assert "expected ';'" in errors[0]
 
 

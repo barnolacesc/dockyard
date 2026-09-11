@@ -12,7 +12,7 @@ Key capabilities:
 - Embedded browser: WKWebView with automatic port detection from run scripts
 - GitHub integration: repo info, open PRs, and branch PR status via the `gh` CLI
 - Keyboard-first: every action has a shortcut
-- Localized in English, Catalan, German, Spanish, and Swedish
+- Localized in English and Catalan
 
 ## Installation
 

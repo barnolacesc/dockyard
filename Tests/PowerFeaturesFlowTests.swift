@@ -5,7 +5,7 @@ import XCTest
 
 @MainActor
 final class PowerFeaturesFlowTests: XCTestCase {
-    private let localeCodes = ["en", "ca", "de", "es", "sv"]
+    private let localeCodes = ["en", "ca"]
 
     func testFlowHasSixManualStepsWithUniqueIDs() {
         let flow = PowerFeaturesFlow.make()
