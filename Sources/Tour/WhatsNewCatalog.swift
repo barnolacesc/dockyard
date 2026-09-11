@@ -7,7 +7,7 @@ enum WhatsNewCatalog {
     /// Newest first. The version string must match the release that ships it
     /// (release-please owns version numbers; adjust when the release PR is cut).
     static let releases: [WhatsNewRelease] = [
-        WhatsNewRelease(version: "0.3.0", entries: [
+        WhatsNewRelease(version: "0.2.5", entries: [
             WhatsNewEntry(
                 symbol: "rectangle.bottomthird.inset.filled",
                 titleKey: "Passive Notices",

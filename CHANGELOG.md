@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.5](https://github.com/barnolacesc/dockyard/compare/v0.2.4...v0.2.5) (2026-09-11)
+
+
+### Features
+
+* integrate remaining workstream and persistence changes ([#209](https://github.com/barnolacesc/dockyard/issues/209)) ([305323b](https://github.com/barnolacesc/dockyard/commit/305323b4ce8e110d08e570af7805a12d11b080c8))
+
+
+### Bug Fixes
+
+* **cache:** bound legacy migration enumeration ([#199](https://github.com/barnolacesc/dockyard/issues/199)) ([5450320](https://github.com/barnolacesc/dockyard/commit/54503203d9098a7231c08266f532350713954b48))
+* **dev:** launch current debug build ([763e906](https://github.com/barnolacesc/dockyard/commit/763e90605df79acd609a171a2b0ff4de99b4a8b4))
+* **persistence:** bound project snapshot decoding ([#201](https://github.com/barnolacesc/dockyard/issues/201)) ([9215bf5](https://github.com/barnolacesc/dockyard/commit/9215bf5a6e764ca608fa7c16e75baf379dc77e58))
+* **terminal:** support macOS dictation ([af3fef5](https://github.com/barnolacesc/dockyard/commit/af3fef5c1faac6e46b9ba60fb4abe93db97ba1b3))
+* **terminal:** support macOS dictation ([e24314c](https://github.com/barnolacesc/dockyard/commit/e24314c941112fb5348983b6fe7df98105414722))
+* **workspace:** make blocking notices passive ([#208](https://github.com/barnolacesc/dockyard/issues/208)) ([9edbb7f](https://github.com/barnolacesc/dockyard/commit/9edbb7fc5d1cfd227813f73d35cd8064283c1ed6))
+
 ## [0.2.4](https://github.com/barnolacesc/dockyard/compare/v0.2.3...v0.2.4) (2026-09-08)
 
 
