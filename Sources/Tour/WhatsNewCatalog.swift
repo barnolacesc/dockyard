@@ -9,6 +9,11 @@ enum WhatsNewCatalog {
     static let releases: [WhatsNewRelease] = [
         WhatsNewRelease(version: "0.3.0", entries: [
             WhatsNewEntry(
+                symbol: "mic.fill",
+                titleKey: "Mac Dictation in Terminals",
+                bodyKey: "Press your Mac's Dictation key to speak in Agent and Terminal tabs, just like in standalone Ghostty."
+            ),
+            WhatsNewEntry(
                 symbol: "paintpalette.fill",
                 titleKey: "Project Colors",
                 bodyKey: "Assign colors from a project's shortcut menu to make busy sidebars easier to scan."
