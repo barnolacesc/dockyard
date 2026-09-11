@@ -9,6 +9,11 @@ enum WhatsNewCatalog {
     static let releases: [WhatsNewRelease] = [
         WhatsNewRelease(version: "0.2.5", entries: [
             WhatsNewEntry(
+                symbol: "checkmark.circle",
+                titleKey: "Pull Request Checks",
+                bodyKey: "See CI progress on workstreams, inspect check details, and open PR status labels directly on GitHub."
+            ),
+            WhatsNewEntry(
                 symbol: "rectangle.bottomthird.inset.filled",
                 titleKey: "Passive Notices",
                 bodyKey: "Script reviews and source updates now appear as dismissible notices instead of interrupting your work."

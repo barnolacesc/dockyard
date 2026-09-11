@@ -593,3 +593,32 @@
 "Open a persistent terminal at the project root directly from the project row." = "Öppna en beständig terminal i projektroten direkt från projektraden.";
 "Update failed" = "Uppdateringen misslyckades";
 "The update could not be completed. See the log at %@ for details." = "Uppdateringen kunde inte slutföras. Se loggen på %@ för mer information.";
+
+// Pull request CI status
+"Checks passed" = "Kontroller godkända";
+"Checks failed" = "Kontroller misslyckades";
+"Checks pending" = "Kontroller väntar";
+"Checks cancelled" = "Kontroller avbrutna";
+"Checks skipped" = "Kontroller överhoppade";
+"Checks unavailable" = "Kontroller otillgängliga";
+"No checks" = "Inga kontroller";
+"Check status is out of date" = "Kontrollstatus är inaktuell";
+"Show check details" = "Visa kontrolldetaljer";
+"CI checks" = "CI-kontroller";
+"Refresh" = "Uppdatera";
+"Draft" = "Utkast";
+"Waiting for approval" = "Väntar på godkännande";
+"Changes requested" = "Ändringar begärda";
+"Review approved" = "Granskning godkänd";
+"Merge conflicts" = "Sammanslagningskonflikter";
+"Merge blocked on GitHub" = "Sammanslagning blockerad på GitHub";
+"Required checks could not be identified." = "Obligatoriska kontroller kunde inte identifieras.";
+"Passing checks do not guarantee merge eligibility. GitHub may require reviews or other conditions." = "Godkända kontroller garanterar inte att sammanslagning är möjlig. GitHub kan kräva granskningar eller andra villkor.";
+"Open checks on GitHub" = "Öppna kontroller på GitHub";
+"Required" = "Obligatorisk";
+"Unnamed check" = "Namnlös kontroll";
+"Open" = "Öppen";
+"Closed" = "Stängd";
+"Pull Request Checks" = "Kontroller för pull requests";
+"See CI progress on workstreams, inspect check details, and open PR status labels directly on GitHub." = "Se CI-förlopp i workstreams, granska kontrolldetaljer och öppna PR-statusetiketter direkt på GitHub.";
+"Check details may be incomplete. Open GitHub for the full status." = "Kontrolldetaljerna kan vara ofullständiga. Öppna GitHub för fullständig status.";

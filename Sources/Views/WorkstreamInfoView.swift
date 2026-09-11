@@ -208,7 +208,8 @@ struct WorkstreamInfoView: View {
                 {
                     Section("Pull Request") {
                         let prColor: Color = pr.state == "MERGED" ? DesignColor.statusMerged : pr.state == "OPEN" ? DesignColor.statusSuccess : .secondary
-                        LabeledContent {
+                        if let url = URL(string: pr.url) {
+                            Link(destination: url) {
                             HStack(spacing: 6) {
                                 Image(systemName: pr.state == "MERGED" ? "arrow.triangle.merge" : "arrow.triangle.pull")
                                     .foregroundStyle(prColor)
@@ -218,11 +219,17 @@ struct WorkstreamInfoView: View {
                                 Text(pr.title)
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
+                                Spacer()
+                                Text(LocalizedStringKey(pr.state == "MERGED" ? "Merged" : pr.state == "CLOSED" ? "Closed" : "Open"))
+                                    .foregroundStyle(prColor)
                             }
-                        } label: {
-                            Text(pr.state.capitalized)
-                                .foregroundStyle(prColor)
+                            .frame(minHeight: 40)
+                            .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .help("Open on GitHub")
                         }
+                        PRChecksBadge(pr: pr, directory: projectDirectory)
 
                         if pr.state == "MERGED" {
                             HStack {

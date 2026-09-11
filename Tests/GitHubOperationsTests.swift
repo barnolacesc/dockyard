@@ -54,6 +54,24 @@ private final class GitHubReadProcessDouble: GitHubReadProcess, @unchecked Senda
 }
 
 final class GitHubOperationsTests: XCTestCase {
+    func testFailedPRLookupDiffersFromEmptyList() {
+        let failed = GitHubReadProcessDouble(terminationStatus: 1)
+        XCTAssertNil(GitHubOperations.openPRSnapshot(ghPath: "/tmp/gh", at: "/tmp") { _, _, _, _ in failed })
+        let empty = GitHubReadProcessDouble(output: Data("[]".utf8))
+        XCTAssertEqual(GitHubOperations.openPRSnapshot(ghPath: "/tmp/gh", at: "/tmp") { _, _, _, _ in empty }, [])
+        let malformed = GitHubReadProcessDouble(output: Data(#"[{"number":12}]"#.utf8))
+        XCTAssertNil(GitHubOperations.openPRSnapshot(ghPath: "/tmp/gh", at: "/tmp") { _, _, _, _ in malformed })
+    }
+
+    func testCheckExitCodesAreOptIn() {
+        for status in [Int32(1), 8] {
+            let rejected = GitHubReadProcessDouble(output: Data("[]".utf8), terminationStatus: status)
+            XCTAssertNil(GitHubOperations.runCommand("/tmp/gh", args: [], in: "/tmp") { _, _, _, _ in rejected })
+            let accepted = GitHubReadProcessDouble(output: Data("[]".utf8), terminationStatus: status)
+            XCTAssertEqual(GitHubOperations.runCommand("/tmp/gh", args: [], in: "/tmp", acceptedExitCodes: [0, 1, 8]) { _, _, _, _ in accepted }, "[]")
+        }
+    }
+
     func testSuccessfulProbePreservesCommandAndTrimsOutput() {
         let process = GitHubReadProcessDouble(output: Data("  value\n".utf8))
 

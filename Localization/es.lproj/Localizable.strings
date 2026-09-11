@@ -593,3 +593,32 @@
 "Open a persistent terminal at the project root directly from the project row." = "Abre un terminal persistente en la raíz del proyecto directamente desde la fila del proyecto.";
 "Update failed" = "La actualización ha fallado";
 "The update could not be completed. See the log at %@ for details." = "No se ha podido completar la actualización. Consulta el registro en %@ para obtener más información.";
+
+// Pull request CI status
+"Checks passed" = "Comprobaciones superadas";
+"Checks failed" = "Comprobaciones fallidas";
+"Checks pending" = "Comprobaciones pendientes";
+"Checks cancelled" = "Comprobaciones canceladas";
+"Checks skipped" = "Comprobaciones omitidas";
+"Checks unavailable" = "Comprobaciones no disponibles";
+"No checks" = "Sin comprobaciones";
+"Check status is out of date" = "El estado de las comprobaciones está desactualizado";
+"Show check details" = "Mostrar detalles de las comprobaciones";
+"CI checks" = "Comprobaciones de CI";
+"Refresh" = "Actualizar";
+"Draft" = "Borrador";
+"Waiting for approval" = "Esperando aprobación";
+"Changes requested" = "Se han solicitado cambios";
+"Review approved" = "Revisión aprobada";
+"Merge conflicts" = "Conflictos de fusión";
+"Merge blocked on GitHub" = "Fusión bloqueada en GitHub";
+"Required checks could not be identified." = "No se han podido identificar las comprobaciones obligatorias.";
+"Passing checks do not guarantee merge eligibility. GitHub may require reviews or other conditions." = "Superar las comprobaciones no garantiza que se pueda fusionar. GitHub puede requerir revisiones u otras condiciones.";
+"Open checks on GitHub" = "Abrir comprobaciones en GitHub";
+"Required" = "Obligatoria";
+"Unnamed check" = "Comprobación sin nombre";
+"Open" = "Abierta";
+"Closed" = "Cerrada";
+"Pull Request Checks" = "Comprobaciones de las pull requests";
+"See CI progress on workstreams, inspect check details, and open PR status labels directly on GitHub." = "Consulta el progreso de CI en los workstreams, inspecciona las comprobaciones y abre las etiquetas de estado de las PR directamente en GitHub.";
+"Check details may be incomplete. Open GitHub for the full status." = "Los detalles pueden estar incompletos. Abre GitHub para ver el estado completo.";

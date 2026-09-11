@@ -564,3 +564,32 @@
 "Open a persistent terminal at the project root directly from the project row." = "Öffne ein dauerhaftes Terminal im Projektstamm direkt über die Projektzeile.";
 "Update failed" = "Update fehlgeschlagen";
 "The update could not be completed. See the log at %@ for details." = "Das Update konnte nicht abgeschlossen werden. Weitere Informationen findest du im Protokoll unter %@.";
+
+// Pull request CI status
+"Checks passed" = "Prüfungen bestanden";
+"Checks failed" = "Prüfungen fehlgeschlagen";
+"Checks pending" = "Prüfungen ausstehend";
+"Checks cancelled" = "Prüfungen abgebrochen";
+"Checks skipped" = "Prüfungen übersprungen";
+"Checks unavailable" = "Prüfungen nicht verfügbar";
+"No checks" = "Keine Prüfungen";
+"Check status is out of date" = "Prüfstatus ist veraltet";
+"Show check details" = "Prüfdetails anzeigen";
+"CI checks" = "CI-Prüfungen";
+"Refresh" = "Aktualisieren";
+"Draft" = "Entwurf";
+"Waiting for approval" = "Wartet auf Genehmigung";
+"Changes requested" = "Änderungen angefordert";
+"Review approved" = "Review genehmigt";
+"Merge conflicts" = "Merge-Konflikte";
+"Merge blocked on GitHub" = "Merge auf GitHub blockiert";
+"Required checks could not be identified." = "Erforderliche Prüfungen konnten nicht ermittelt werden.";
+"Passing checks do not guarantee merge eligibility. GitHub may require reviews or other conditions." = "Bestandene Prüfungen garantieren keinen Merge. GitHub kann Reviews oder andere Bedingungen verlangen.";
+"Open checks on GitHub" = "Prüfungen auf GitHub öffnen";
+"Required" = "Erforderlich";
+"Unnamed check" = "Unbenannte Prüfung";
+"Open" = "Offen";
+"Closed" = "Geschlossen";
+"Pull Request Checks" = "Pull-Request-Prüfungen";
+"See CI progress on workstreams, inspect check details, and open PR status labels directly on GitHub." = "CI-Fortschritt in Workstreams verfolgen, Prüfdetails ansehen und PR-Statuslabels direkt auf GitHub öffnen.";
+"Check details may be incomplete. Open GitHub for the full status." = "Prüfdetails können unvollständig sein. Den vollständigen Status findest du auf GitHub.";

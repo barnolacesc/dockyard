@@ -175,12 +175,19 @@ struct ProjectOverviewView: View {
                             }
                             ForEach(prs, id: \.number) { pr in
                                 LabeledContent {
-                                    Text(pr.title)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
+                                    HStack {
+                                        if let url = URL(string: pr.url) {
+                                            Link(pr.title, destination: url)
+                                                .lineLimit(1)
+                                        }
+                                        PRChecksBadge(pr: pr, directory: project.directory, compact: true)
+                                    }
                                 } label: {
-                                    Text(verbatim: "#\(pr.number)")
-                                        .tabularNumbers()
+                                    if let url = URL(string: pr.url) {
+                                        Link(destination: url) {
+                                            Text(verbatim: "#\(pr.number)").tabularNumbers().frame(minHeight: 40)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -213,6 +220,8 @@ struct ProjectOverviewView: View {
                                 prNumber: pr?.number,
                                 prState: pr?.state,
                                 prURL: pr?.url,
+                                pullRequest: pr,
+                                projectDirectory: project.directory,
                                 onSelect: { onSelectWorkstream(workstream.id) },
                                 onRemove: { onRemoveWorkstream(workstream.id) },
                                 onPurge: { onPurgeWorkstream(workstream.id) }
@@ -640,6 +649,7 @@ private struct WorktreeInfoRow: View {
                                 }
                                 .foregroundStyle(prColor)
                             }
+                            PRChecksBadge(pr: pr, directory: projectDirectory, compact: true)
                         }
                         switch reviewStatus {
                         case .dirty:
@@ -652,13 +662,16 @@ private struct WorktreeInfoRow: View {
                                     .foregroundStyle(DesignColor.statusWarning)
                             }
                         case .mergedPullRequest:
-                            HStack(spacing: 4) {
-                                Image(systemName: "arrow.triangle.merge")
-                                    .font(.system(size: 10))
-                                Text("Merged")
-                                    .font(.caption)
+                            if let pr, let url = URL(string: pr.url) {
+                                Link(destination: url) {
+                                    Label("Merged", systemImage: "arrow.triangle.merge")
+                                        .font(.caption)
+                                        .foregroundStyle(DesignColor.statusMerged)
+                                        .frame(minHeight: 40)
+                                }
+                                .buttonStyle(.plain)
+                                .help("Open on GitHub")
                             }
-                            .foregroundStyle(DesignColor.statusMerged)
                         case .ahead:
                             HStack(spacing: 4) {
                                 Image(systemName: "arrow.up.circle.fill")
@@ -721,6 +734,8 @@ private struct WorkstreamRow: View {
     var prNumber: Int?
     var prState: String?
     var prURL: String?
+    var pullRequest: GitHubPR?
+    var projectDirectory: String = ""
     let onSelect: () -> Void
     let onRemove: () -> Void
     let onPurge: () -> Void
@@ -758,7 +773,7 @@ private struct WorkstreamRow: View {
     }
 
     var body: some View {
-        Button(action: onSelect) {
+        Group {
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
@@ -779,6 +794,9 @@ private struct WorkstreamRow: View {
                         }
                         if let prNumber, let prState {
                             PRBadge(number: prNumber, state: prState, url: prURL)
+                        }
+                        if let pullRequest {
+                            PRChecksBadge(pr: pullRequest, directory: projectDirectory)
                         }
                     }
                     if let subtitle {
@@ -806,7 +824,8 @@ private struct WorkstreamRow: View {
                 .opacity(isHovering ? 1 : 0)
             }
         }
-        .pressable()
+        .onTapGesture(perform: onSelect)
+        .accessibilityAction { onSelect() }
         .hoverHighlight(radius: DesignRadius.md)
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }

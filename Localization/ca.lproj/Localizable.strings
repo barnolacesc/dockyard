@@ -593,3 +593,32 @@
 "Open a persistent terminal at the project root directly from the project row." = "Obre un terminal persistent a l'arrel del projecte directament des de la fila del projecte.";
 "Update failed" = "L’actualització ha fallat";
 "The update could not be completed. See the log at %@ for details." = "No s’ha pogut completar l’actualització. Consulta el registre a %@ per obtenir més informació.";
+
+// Pull request CI status
+"Checks passed" = "Comprovacions superades";
+"Checks failed" = "Comprovacions fallides";
+"Checks pending" = "Comprovacions pendents";
+"Checks cancelled" = "Comprovacions cancel·lades";
+"Checks skipped" = "Comprovacions omeses";
+"Checks unavailable" = "Comprovacions no disponibles";
+"No checks" = "Sense comprovacions";
+"Check status is out of date" = "L’estat de les comprovacions està desactualitzat";
+"Show check details" = "Mostra els detalls de les comprovacions";
+"CI checks" = "Comprovacions de CI";
+"Refresh" = "Actualitza";
+"Draft" = "Esborrany";
+"Waiting for approval" = "Esperant aprovació";
+"Changes requested" = "S’han sol·licitat canvis";
+"Review approved" = "Revisió aprovada";
+"Merge conflicts" = "Conflictes de fusió";
+"Merge blocked on GitHub" = "Fusió bloquejada a GitHub";
+"Required checks could not be identified." = "No s’han pogut identificar les comprovacions obligatòries.";
+"Passing checks do not guarantee merge eligibility. GitHub may require reviews or other conditions." = "Superar les comprovacions no garanteix que es pugui fusionar. GitHub pot requerir revisions o altres condicions.";
+"Open checks on GitHub" = "Obre les comprovacions a GitHub";
+"Required" = "Obligatòria";
+"Unnamed check" = "Comprovació sense nom";
+"Open" = "Oberta";
+"Closed" = "Tancada";
+"Pull Request Checks" = "Comprovacions de les pull requests";
+"See CI progress on workstreams, inspect check details, and open PR status labels directly on GitHub." = "Consulta el progrés de CI als workstreams, inspecciona les comprovacions i obre les etiquetes d’estat de les PR directament a GitHub.";
+"Check details may be incomplete. Open GitHub for the full status." = "Els detalls poden ser incomplets. Obre GitHub per veure’n l’estat complet.";
