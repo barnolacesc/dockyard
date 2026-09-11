@@ -517,6 +517,11 @@
 "Press ⌘/ for the complete shortcut reference. Settings lets you choose shortcut hints, tmux mode, and usage options." = "Drücke ⌘/ für die vollständige Kurzbefehlübersicht. In den Einstellungen kannst du Kurzbefehlhinweise, tmux-Modus und Nutzungsoptionen wählen.";
 "Attention" = "Aufmerksamkeit";
 "Agent started working" = "Agent hat die Arbeit begonnen";
+"Agent is working" = "Agent arbeitet";
+"See the Coding Agents that are currently working or waiting for you." = "Sieh die Coding-Agents, die gerade arbeiten oder auf dich warten.";
+"Current workspaces" = "Aktuelle Arbeitsbereiche";
+"No active Coding Agents" = "Keine aktiven Coding-Agents";
+"Workstreams appear here while their Coding Agent is working or waiting for your input." = "Workstreams erscheinen hier, während ihr Coding-Agent arbeitet oder auf deine Eingabe wartet.";
 "Agent needs your attention" = "Agent benötigt deine Aufmerksamkeit";
 "Coding Agent needs your attention in “%@”." = "Der Coding-Agent benötigt deine Aufmerksamkeit in „%@“.";
 "Agent finished a turn" = "Agent hat einen Durchgang abgeschlossen";
@@ -533,6 +538,7 @@
 "Ready" = "Bereit";
 "%d more agents" = "%d weitere Agents";
 "%d unread" = "%d ungelesen";
+"%d need attention" = "%d benötigen Aufmerksamkeit";
 "Agent Attention" = "Agent-Aufmerksamkeit";
 "A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "Ein fokussierter Eingang sammelt Coding-Agent-Updates aus allen Workstreams und zeigt Systemmitteilungen, wenn ein Agent dich benötigt.";
 "Project Color" = "Projektfarbe";

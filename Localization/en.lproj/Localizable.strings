@@ -546,6 +546,11 @@
 "Press ⌘/ for the complete shortcut reference. Settings lets you choose shortcut hints, tmux mode, and usage options." = "Press ⌘/ for the complete shortcut reference. Settings lets you choose shortcut hints, tmux mode, and usage options.";
 "Attention" = "Attention";
 "Agent started working" = "Agent started working";
+"Agent is working" = "Agent is working";
+"See the Coding Agents that are currently working or waiting for you." = "See the Coding Agents that are currently working or waiting for you.";
+"Current workspaces" = "Current workspaces";
+"No active Coding Agents" = "No active Coding Agents";
+"Workstreams appear here while their Coding Agent is working or waiting for your input." = "Workstreams appear here while their Coding Agent is working or waiting for your input.";
 "Agent needs your attention" = "Agent needs your attention";
 "Coding Agent needs your attention in “%@”." = "Coding Agent needs your attention in “%@”.";
 "Agent finished a turn" = "Agent finished a turn";
@@ -562,6 +567,7 @@
 "Ready" = "Ready";
 "%d more agents" = "%d more agents";
 "%d unread" = "%d unread";
+"%d need attention" = "%d need attention";
 "Agent Attention" = "Agent Attention";
 "A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams." = "A focused inbox collects Coding Agent updates across workstreams, with system notifications when an agent needs you.";
 "Project Color" = "Project Color";

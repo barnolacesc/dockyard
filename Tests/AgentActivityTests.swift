@@ -1,5 +1,5 @@
-// ABOUTME: Verifies Coding Agent state transitions become bounded Attention events.
-// ABOUTME: Keeps the inbox semantics independent from filesystem observation.
+// ABOUTME: Verifies Coding Agent state transitions produce notification events.
+// ABOUTME: Keeps notification semantics independent from filesystem observation.
 
 @testable import Dockyard
 import XCTest

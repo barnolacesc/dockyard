@@ -167,7 +167,6 @@ struct ContentView: View {
     @StateObject private var appEnvironment = AppEnvironment()
     @StateObject private var activityTracker = WorkstreamActivityTracker()
     @StateObject private var agentStateStore = AgentStateStore.shared
-    @StateObject private var agentActivityStore = AgentActivityStore.shared
     @StateObject private var claudeUsageStore = ClaudeUsageStore.shared
     @StateObject private var codexUsageStore = CodexUsageStore.shared
     @State private var saveWork: DispatchWorkItem?
@@ -559,7 +558,6 @@ struct ContentView: View {
             .environmentObject(appEnvironment)
             .environmentObject(activityTracker)
             .environmentObject(agentStateStore)
-            .environmentObject(agentActivityStore)
             .environmentObject(claudeUsageStore)
             .environmentObject(codexUsageStore)
     }
@@ -613,7 +611,6 @@ struct ContentView: View {
                     return
                 }
                 selection = .workstream(payload.workstreamID)
-                agentActivityStore.markRead(payload.eventID)
                 DispatchQueue.main.async {
                     NotificationCenter.default.post(name: .focusAgent, object: nil)
                 }
