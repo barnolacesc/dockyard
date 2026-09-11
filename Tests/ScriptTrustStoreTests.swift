@@ -61,4 +61,13 @@ final class ScriptTrustStoreTests: XCTestCase {
         ScriptTrustStore.trust(projectDirectory: "/tmp/p", setup: "s", run: nil, teardown: "t", defaults: defaults)
         XCTAssertTrue(ScriptTrustStore.isTrusted(projectDirectory: "/tmp/p", config: config(setup: "s", teardown: "t"), defaults: defaults))
     }
+
+    func testScriptApprovalReminderCanBeSuppressedPerProject() {
+        XCTAssertFalse(ScriptTrustStore.isReminderSuppressed(projectDirectory: "/tmp/a", defaults: defaults))
+
+        ScriptTrustStore.suppressReminder(projectDirectory: "/tmp/a", defaults: defaults)
+
+        XCTAssertTrue(ScriptTrustStore.isReminderSuppressed(projectDirectory: "/tmp/a", defaults: defaults))
+        XCTAssertFalse(ScriptTrustStore.isReminderSuppressed(projectDirectory: "/tmp/b", defaults: defaults))
+    }
 }

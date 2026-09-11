@@ -416,6 +416,7 @@
 "Update & Relaunch" = "Update & Relaunch";
 "Later" = "Later";
 "A new version of Dockyard is ready. It will rebuild and relaunch automatically." = "A new version of Dockyard is ready. It will rebuild and relaunch automatically.";
+"%d updates available" = "%d updates available";
 
 /* Logs Window */
 "Logs" = "Logs";
@@ -464,6 +465,13 @@
 "These commands come from %@ and will run in your shell. Review them before allowing Dockyard to run them." = "These commands come from %@ and will run in your shell. Review them before allowing Dockyard to run them.";
 "Run Scripts" = "Run Scripts";
 "Not Now" = "Not Now";
+"Review project scripts" = "Review project scripts";
+"Automatic setup is paused until you review the commands in %@." = "Automatic setup is paused until you review the commands in %@.";
+"Review…" = "Review…";
+"Don't remind me" = "Don't remind me";
+"Dismiss" = "Dismiss";
+"Passive Notices" = "Passive Notices";
+"Script reviews and source updates now appear as dismissible notices instead of interrupting your work." = "Script reviews and source updates now appear as dismissible notices instead of interrupting your work.";
 "Teardown" = "Teardown";
 "built by " = "built by ";
 

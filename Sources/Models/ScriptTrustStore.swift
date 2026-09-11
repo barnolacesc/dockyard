@@ -6,6 +6,7 @@ import Foundation
 
 enum ScriptTrustStore {
     private static let userDefaultsKey = "dockyard.trustedScripts"
+    private static let suppressedRemindersKey = "dockyard.suppressedScriptApprovalReminders"
 
     /// A config with no scripts needs no approval.
     static func isTrusted(projectDirectory: String, config: ScriptConfig, defaults: UserDefaults = .standard) -> Bool {
@@ -22,6 +23,20 @@ enum ScriptTrustStore {
         var stored = defaults.dictionary(forKey: userDefaultsKey) as? [String: String] ?? [:]
         stored[projectDirectory] = fingerprint(setup: setup, run: run, teardown: teardown)
         defaults.set(stored, forKey: userDefaultsKey)
+    }
+
+    /// The passive reminder can be hidden per project without weakening the
+    /// execution gate: an explicit attempt to run untrusted scripts still asks
+    /// the user to review them.
+    static func isReminderSuppressed(projectDirectory: String, defaults: UserDefaults = .standard) -> Bool {
+        let projects = defaults.stringArray(forKey: suppressedRemindersKey) ?? []
+        return projects.contains(projectDirectory)
+    }
+
+    static func suppressReminder(projectDirectory: String, defaults: UserDefaults = .standard) {
+        var projects = Set(defaults.stringArray(forKey: suppressedRemindersKey) ?? [])
+        projects.insert(projectDirectory)
+        defaults.set(Array(projects), forKey: suppressedRemindersKey)
     }
 
     /// Length-prefixed framing keeps nil/empty/shifted fields from colliding.

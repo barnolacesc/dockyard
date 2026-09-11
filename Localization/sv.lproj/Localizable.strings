@@ -416,6 +416,7 @@
 "Update & Relaunch" = "Uppdatera och starta om";
 "Later" = "Senare";
 "A new version of Dockyard is ready. It will rebuild and relaunch automatically." = "En ny version av Dockyard är klar. Den byggs om och startas om automatiskt.";
+"%d updates available" = "%d uppdateringar tillgängliga";
 
 /* Logs Window */
 "Logs" = "Loggar";
@@ -464,6 +465,13 @@
 "These commands come from %@ and will run in your shell. Review them before allowing Dockyard to run them." = "Dessa kommandon kommer från %@ och körs i ditt skal. Granska dem innan du låter Dockyard köra dem.";
 "Run Scripts" = "Kör skript";
 "Not Now" = "Inte nu";
+"Review project scripts" = "Granska projektskript";
+"Automatic setup is paused until you review the commands in %@." = "Den automatiska konfigurationen är pausad tills du har granskat kommandona i %@.";
+"Review…" = "Granska…";
+"Don't remind me" = "Påminn mig inte igen";
+"Dismiss" = "Stäng";
+"Passive Notices" = "Passiva meddelanden";
+"Script reviews and source updates now appear as dismissible notices instead of interrupting your work." = "Skriptgranskningar och källkodsuppdateringar visas nu som avvisningsbara meddelanden i stället för att avbryta ditt arbete.";
 "Teardown" = "Nedmontering";
 "built by " = "byggd av ";
 

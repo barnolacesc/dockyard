@@ -95,12 +95,11 @@ struct ProjectSidebar: View {
     @Binding var projects: [Project]
     @Binding var selection: SidebarSelection?
     let onProjectsChanged: () -> Void
+    @ObservedObject var appUpdater: AppUpdater
     var selectedUsageProvider: UsageMeterProvider = .claude
     var availableUsageProviders: [UsageMeterProvider] = [.claude]
     var onPreviousUsageProvider: () -> Void = {}
     var onNextUsageProvider: () -> Void = {}
-
-    @StateObject private var appUpdater = AppUpdater()
 
     @State private var showingNewProjectName = false
     @State private var newProjectName = ""
@@ -531,12 +530,6 @@ struct ProjectSidebar: View {
 
     var body: some View {
         sidebar
-            .alert("Update Available", isPresented: $appUpdater.shouldPromptUpdate) {
-                Button("Update & Relaunch") { appUpdater.applyUpdate() }
-                Button("Later", role: .cancel) {}
-            } message: {
-                Text("A new version of Dockyard is ready. It will rebuild and relaunch automatically.")
-            }
             .alert(
                 "Remove Project",
                 isPresented: Binding(
