@@ -29,9 +29,10 @@ non-duplicative agent-status work respectively.
 
 ### R69 — Bound persisted sidebar-state decoding
 
-- Status: **Implementation in progress** on
-  `fix/bound-sidebar-state-decoding-r69-20260911` for issue #204. The future
-  pull request must remain open for Cesc review and must not be auto-merged.
+- Status: **Awaiting Cesc review in PR #205** on
+  `fix/bound-sidebar-state-decoding-r69-20260911` for issue #204. The pull
+  request must remain open and must not be auto-merged. Required native CI is
+  pending and must be green at the final head.
 - User outcome: unexpectedly large persisted sidebar selection and
   expanded-project payloads cannot feed an unbounded JSON decoder during app
   launch.
