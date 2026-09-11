@@ -83,4 +83,56 @@ final class CacheMigrationTests: XCTestCase {
             Data("legacy tmux".utf8)
         )
     }
+
+    func testRemovesEmptyLegacyDirectory() {
+        CacheMigration.migrateIfNeeded(from: legacyBase, to: canonicalBase)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: legacyBase.path))
+    }
+
+    func testRemovesLegacyDirectoryContainingOnlyHiddenEntriesBelowLimit() throws {
+        try Data("legacy metadata".utf8).write(
+            to: legacyBase.appendingPathComponent(".metadata")
+        )
+
+        CacheMigration.migrateIfNeeded(from: legacyBase, to: canonicalBase)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: legacyBase.path))
+    }
+
+    func testPreservesLegacyDirectoryContainingVisibleEntry() throws {
+        let unrelated = legacyBase.appendingPathComponent("unrelated.txt")
+        try Data("keep me".utf8).write(to: unrelated)
+
+        CacheMigration.migrateIfNeeded(from: legacyBase, to: canonicalBase)
+
+        XCTAssertEqual(try Data(contentsOf: unrelated), Data("keep me".utf8))
+    }
+
+    func testPreservesLegacyDirectoryWhenInspectionLimitIsReached() throws {
+        for index in 0 ..< 4 {
+            try Data().write(to: legacyBase.appendingPathComponent(".metadata-\(index)"))
+        }
+
+        CacheMigration.migrateIfNeeded(
+            from: legacyBase,
+            to: canonicalBase,
+            directoryEntryInspectionLimit: 3
+        )
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: legacyBase.path))
+    }
+
+    func testDirectoryClassificationStopsAtInspectionLimit() {
+        var entries = [".one", ".two", ".three", "visible"].makeIterator()
+        var inspectedEntryCount = 0
+
+        let result = CacheMigration.classifyDirectoryContents(maximumEntriesToInspect: 3) {
+            inspectedEntryCount += 1
+            return entries.next()
+        }
+
+        XCTAssertEqual(result, .inspectionLimitReached)
+        XCTAssertEqual(inspectedEntryCount, 3)
+    }
 }
