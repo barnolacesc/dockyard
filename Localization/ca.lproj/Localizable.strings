@@ -585,3 +585,5 @@
 "Open project terminal" = "Obre el terminal del projecte";
 "Close project terminal" = "Tanca el terminal del projecte";
 "Open a persistent terminal at the project root directly from the project row." = "Obre un terminal persistent a l'arrel del projecte directament des de la fila del projecte.";
+"Update failed" = "L’actualització ha fallat";
+"The update could not be completed. See the log at %@ for details." = "No s’ha pogut completar l’actualització. Consulta el registre a %@ per obtenir més informació.";

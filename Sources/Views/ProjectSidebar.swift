@@ -481,7 +481,7 @@ struct ProjectSidebar: View {
 
                 Spacer(minLength: 0)
 
-                if appUpdater.isChecking {
+                if appUpdater.isChecking || appUpdater.isUpdating {
                     ProgressView()
                         .controlSize(.mini)
                 } else if appUpdater.commitsAhead > 0 {

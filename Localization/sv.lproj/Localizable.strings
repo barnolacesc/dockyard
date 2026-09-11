@@ -585,3 +585,5 @@
 "Open project terminal" = "Öppna projektterminal";
 "Close project terminal" = "Stäng projektterminal";
 "Open a persistent terminal at the project root directly from the project row." = "Öppna en beständig terminal i projektroten direkt från projektraden.";
+"Update failed" = "Uppdateringen misslyckades";
+"The update could not be completed. See the log at %@ for details." = "Uppdateringen kunde inte slutföras. Se loggen på %@ för mer information.";
