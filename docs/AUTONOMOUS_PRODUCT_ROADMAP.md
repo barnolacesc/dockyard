@@ -71,7 +71,13 @@ native quit-performance profiling.
   conflict-marker review, changed-file size review and the added-line secret
   scan pass. `./scripts/dev.sh test` stops before compilation because this
   Linux host has neither the built Ghostty macOS resources nor Xcode, so GitHub
-  macOS CI remains mandatory native evidence.
+  macOS CI remains mandatory native evidence. At implementation-and-roadmap
+  head `98c15a2`, macOS CI run `34681426906` passed localization checks,
+  XcodeGen, the native build, bundled-helper verification and all 653 XCTest
+  cases (two skipped), including all 13 `AgentStateTests`. CodeQL run
+  `34681426871` passed its configured Actions and JavaScript analyses; Swift
+  analysis was skipped by the PR workflow. The final evidence-only head must
+  also remain green.
 
 ### Independent Ready queue while R71 awaits review
 
