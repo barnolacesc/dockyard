@@ -41,6 +41,14 @@ uvx prek run --all-files            # run hooks on all files (optional)
 
 ## Git Workflow
 
+### Pull Request Descriptions
+
+Review the provided git diff and write a Pull Request description adhering to core software engineering principles:
+
+1. WHAT: State the high-level functional changes in 2-3 bullet points.
+2. WHY: Explain the motivation, bug fix reason, or technical rationale.
+3. RULE: Do not explain the code line-by-line or restate obvious syntax changes.
+
 ### Conventional Commits
 All commits MUST use [Conventional Commits](https://www.conventionalcommits.org/) format. This is required for release-please to generate changelogs and version bumps.
 
