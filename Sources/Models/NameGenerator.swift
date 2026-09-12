@@ -4,6 +4,17 @@
 import Foundation
 
 enum NameGenerator {
+    /// Convert a user-facing title into a compact git branch/worktree name.
+    static func normalize(_ proposedName: String, maximumLength: Int = 64) -> String {
+        let separated = proposedName.lowercased().unicodeScalars.map { scalar -> Character in
+            CharacterSet.alphanumerics.contains(scalar) ? Character(String(scalar)) : "-"
+        }
+        let collapsed = String(separated)
+            .split(separator: "-", omittingEmptySubsequences: true)
+            .joined(separator: "-")
+        return String(collapsed.prefix(maximumLength)).trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+    }
+
     private static let operations = [
         "build", "check", "clean", "clone", "fetch", "fixup", "flush", "merge",
         "parse", "patch", "probe", "prune", "pull", "push", "queue", "route",

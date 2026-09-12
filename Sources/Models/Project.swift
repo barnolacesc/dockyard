@@ -63,15 +63,17 @@ struct Workstream: Identifiable, Hashable, Codable {
     var worktreePath: String?
     var bypassPermissions: Bool
     var codingCLI: String?
+    var initialAgentPrompt: String?
     var lastAccessedAt: Date
     var stage: WorkstreamStage
 
-    init(name: String, worktreePath: String? = nil, bypassPermissions: Bool = false, codingCLI: String? = nil, id: UUID = UUID(), lastAccessedAt: Date = Date(), stage: WorkstreamStage = .auto) {
+    init(name: String, worktreePath: String? = nil, bypassPermissions: Bool = false, codingCLI: String? = nil, initialAgentPrompt: String? = nil, id: UUID = UUID(), lastAccessedAt: Date = Date(), stage: WorkstreamStage = .auto) {
         self.id = id
         self.name = name
         self.worktreePath = worktreePath
         self.bypassPermissions = bypassPermissions
         self.codingCLI = codingCLI
+        self.initialAgentPrompt = initialAgentPrompt
         self.lastAccessedAt = lastAccessedAt
         self.stage = stage
     }
@@ -82,6 +84,7 @@ struct Workstream: Identifiable, Hashable, Codable {
         case worktreePath
         case bypassPermissions
         case codingCLI
+        case initialAgentPrompt
         case lastAccessedAt
         case stage
     }
@@ -93,6 +96,7 @@ struct Workstream: Identifiable, Hashable, Codable {
         worktreePath = try container.decodeIfPresent(String.self, forKey: .worktreePath)
         bypassPermissions = try container.decode(Bool.self, forKey: .bypassPermissions)
         codingCLI = try container.decodeIfPresent(String.self, forKey: .codingCLI)
+        initialAgentPrompt = try container.decodeIfPresent(String.self, forKey: .initialAgentPrompt)
         lastAccessedAt = try container.decode(Date.self, forKey: .lastAccessedAt)
         stage = try container.decodeIfPresent(WorkstreamStage.self, forKey: .stage) ?? .auto
     }
