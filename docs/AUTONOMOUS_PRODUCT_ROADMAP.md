@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-09-10 against `origin/main` at
-`c825f36afed82fa6d0f02d3ed99ac9f66993c4d7`.
+Last reconciled: 2026-09-12 against `origin/main` at
+`8bd5f85b2b072ae79bd92214ed893e98bca746c3`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -11,91 +11,100 @@ The first **Current autonomous queue** is canonical. Dated **Live
 reconciliation** and superseded queue sections are retained as an audit trail
 and can contain stale statuses.
 
-## Current autonomous queue — 2026-09-10 09:30 CEST
+## Current autonomous queue — 2026-09-12 09:30 CEST
 
-`origin/main` is `c825f36`; its macOS CI, CodeQL and Release workflows are
-green. PR #197 (R68) and PR #199 (R65) are green, mergeable and **awaiting
-Cesc review**. They remain open and are not modified or stacked on here. The
-latest published release is v0.2.4; no release-please PR is currently open.
+`origin/main` is `8bd5f85`; macOS `build-and-test` and configured CodeQL are
+green at that head. The latest published release is v0.2.5. Release-please PR
+#212 is open and remains approval-gated. Product PRs #219, #220 and #221 are
+currently conflicted with `main`; PR #222 is mergeable but its macOS
+`build-and-test` fails. They are left untouched for Cesc and none owns the
+agent-state read paths selected here.
 
 GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
 `repo` and `workflow` but lacks `read:project`. No Project item or status is
-inferred. Current issues, `TODO.md`, code and every open PR path were
-reconciled before issue #200 was created for this run. Product issues #41,
-#43 and #54 still require native profiling, approval-gated update work and
-non-duplicative agent-status work respectively.
+inferred. Current code, `TODO.md`, issues and every open PR path were
+reconciled before issue #223 was created. Issues #196, #202 and #204 describe
+behavior already integrated by PR #209. Issue #214 is obsolete because PR
+#216 removed persisted Attention history. Issue #43 appears implemented by PR
+#215 but remains open; issue #54 now has subagent state plumbing on `main` and
+needs its remaining product expectation reconciled. Issue #41 still requires
+native quit-performance profiling.
 
-### R66 — Bound persisted project snapshot decoding
+### R71 — Bound agent-state cache reads
 
-- Status: **Awaiting Cesc review in PR #201** on
-  `fix/bound-project-snapshot-decoding-r66-20260910` for issue #200. Required
-  native implementation CI is green; the PR must remain open and must not be
-  auto-merged.
-- User outcome: an unexpectedly large `dockyard.projects` defaults payload
-  cannot feed an unbounded JSON decoder during launch.
-- Success signal: a valid snapshot at the 1 MiB ceiling restores, while an
-  oversized or malformed payload follows the existing empty-state path and
-  the stored bytes remain untouched.
-- macOS impact: app launch and project restoration only; no visible UI,
-  accessibility, localization or shortcut behavior changes.
-- Persistence/security impact: adds a read-side decode ceiling. The project
-  schema, lossy per-project recovery, writes, migrations, worktrees, commands,
-  entitlements and release behavior are unchanged.
-- Scope: `ProjectStore`, focused `ProjectTests` and roadmap evidence only.
-- Dependencies: none. PR #197 owns worktree creation, sidebar UI,
-  localizations, What's New and `GitOperationsTests`; PR #199 owns
-  `CacheMigration` and its tests. R66 owns none of those implementation paths,
-  so all three PRs can merge in any order.
+- Status: **In implementation** on
+  `fix/bound-agent-state-cache-reads-r71-20260912` for issue #223. Stop at a
+  tested PR for Cesc; never auto-merge.
+- User outcome: malformed or unexpectedly large main-agent and subagent cache
+  files cannot allocate unbounded buffers while Dockyard refreshes Coding
+  Agent status.
+- Success signal: valid regular-file snapshots exactly at the 1 MiB ceiling
+  decode, while oversized, symbolic-link, non-regular and malformed candidates
+  fail closed without modifying stored bytes.
+- macOS impact: background agent-status refresh only; no visible UI,
+  accessibility, shortcut or localization behavior changes.
+- Persistence/security impact: narrows read-only handling of ephemeral cache
+  files. State schemas, writes, cleanup, PID validation, state decay, watcher
+  scheduling, notifications, commands, worktrees, entitlements and releases
+  are unchanged.
+- Scope: `AgentStateFiles`, `AgentSubagentFiles`, the `AgentStateStore` read
+  path, focused `AgentStateTests`, and this roadmap evidence.
+- Dependencies: none. Open PRs #219-#222 and release-please #212 own disjoint
+  implementation paths, so this change can merge independently.
 - Risk: low and reversible read-side hardening. Full GitHub macOS CI is
   mandatory.
 - Acceptance criteria:
-  1. A valid project snapshot exactly at the fixed byte ceiling restores.
-  2. A valid project snapshot above the ceiling is rejected before decoding.
-  3. Malformed bounded data continues to return the existing empty state.
-  4. Rejected oversized and malformed payload bytes remain in UserDefaults.
-  5. Existing round-trip and lossy per-project restoration tests remain green.
-  6. Full GitHub macOS build and XCTest pass.
-- Required evidence: focused `ProjectTests`, localization resource/key checks,
-  XcodeGen/native build, full XCTest, repository script tests,
-  `git diff --check`, added-line secret scan and configured CodeQL.
-- Evidence so far: localization resource/key checks pass with 10 declared
-  resources, 463 app keys and 15 privacy keys across all five locales; all 38
-  repository Python script tests, `git diff --check` and the added-line secret
-  review pass. `./scripts/dev.sh test` cannot run on this Linux host because
-  Ghostty macOS resources and Xcode are unavailable, so GitHub macOS CI remains
-  mandatory native evidence. At implementation-and-roadmap head `e6d8890`,
-  macOS CI run `34451225379` passed XcodeGen, the native build and the full
-  XCTest suite including `ProjectTests`; configured CodeQL run `34451225147`
-  passed Actions and JavaScript analysis while Swift analysis was skipped by
-  the PR workflow. The final evidence-only head must also remain green.
+  1. Main-agent and subagent snapshots share a fixed pre-decode byte ceiling.
+  2. A valid regular-file snapshot exactly at the ceiling restores.
+  3. Oversized, symbolic-link, non-regular and malformed candidates return the
+     existing nil path without deletion or mutation.
+  4. Existing live-PID validation, state decay, aggregation, writes and
+     cleanup tests remain green.
+  5. Full GitHub macOS build and XCTest pass.
+- Required evidence: focused `AgentStateTests` and `AgentStateStoreTests`,
+  localization resource/key checks, XcodeGen/native build, full XCTest,
+  repository script tests, `git diff --check`, added-line secret review and
+  configured CodeQL.
+- Evidence so far: all 38 repository Python script tests pass; localization
+  checks pass with 491 app keys, 15 privacy keys and four declared resources
+  across the currently shipped English/Catalan locales. `git diff --check`,
+  conflict-marker review, changed-file size review and the added-line secret
+  scan pass. `./scripts/dev.sh test` stops before compilation because this
+  Linux host has neither the built Ghostty macOS resources nor Xcode, so GitHub
+  macOS CI remains mandatory native evidence.
 
-### Independent Ready queue while R65, R66 and R68 await review
+### Independent Ready queue while R71 awaits review
 
-- **R67 — Bound persisted workspace-tab snapshot decoding.** User outcome: an
-  unexpectedly large restored tab payload cannot feed an unbounded decoder
-  while opening a workstream. Success: bounded valid tabs still restore while
-  oversized or malformed data follows the existing default-tab path without
-  deleting stored bytes. Scope: `WorkspaceTabSnapshotStore` and focused tests;
-  no schema, migration, tab mutation, UI string, command, worktree or
-  entitlement change. Full macOS CI is required.
-- **R69 — Bound persisted sidebar-state decoding.** User outcome: malformed
-  selection or expanded-project defaults cannot feed an unbounded decoder at
-  launch. Success: fixtures at the byte ceiling restore while oversized values
-  fall back to the current nil/empty state without deleting stored bytes.
-  Scope: `SidebarSelection`, `SidebarState` and focused tests; no UI, schema,
-  project mutation, worktree or command change. Full macOS CI is required.
-- **R70 — Bound persisted Attention history decoding.** User outcome: an
-  unexpectedly large local Attention history cannot feed an unbounded decoder
-  before retention and event-count limits apply. Success: bounded valid
-  history still restores while oversized or malformed bytes use the existing
-  empty-history path and remain stored. Scope: `AgentActivityStore` and focused
-  tests; no event semantics, UI, localization, watcher, command or worktree
-  change. Full macOS CI is required.
+- **R62 — Bound expanded file-tree enumeration.** User outcome: expanding an
+  unexpectedly large directory cannot materialize and sort an unbounded entry
+  array. Success: deterministic fixtures prove a fixed ceiling, stable visible
+  ordering and unchanged containment/symlink behavior. Scope: `FileTree` and
+  focused tests only; current `main` was revalidated and no open PR owns it.
+- **R72 — Bound setup-output delivery backlog.** User outcome: a noisy setup
+  script cannot enqueue an unbounded number of retained output chunks while
+  the main actor is busy. Success: deterministic collector tests keep only the
+  latest 4 KiB and prove completion drains the bounded tail once. Scope:
+  `SetupRunner` and focused tests; no script command, trust or completion-state
+  change. Command-adjacent and approval-gated.
+- **R73 — Bound installed-CLI validation reads.** User outcome: Settings can
+  verify `/usr/local/bin/dockyard` without loading an unexpectedly large or
+  non-regular candidate. Success: bounded regular fixtures validate while
+  oversized and symbolic-link candidates report not installed. Scope:
+  Settings CLI validation and focused tests; no privileged install script,
+  entitlement or destination change. Approval-gated because it borders the
+  CLI installation path.
+- **R74 — Bound repository exclude-file reads.** User outcome: workstream
+  creation cannot load an unexpectedly large `.git/info/exclude` before adding
+  Dockyard's local ignore entry. Success: bounded fixtures preserve existing
+  lines and over-limit candidates fail without replacement. Scope:
+  `GitOperations.addExcludeEntry` and focused tests; no worktree command or
+  cleanup change. Approval-gated because it touches repository metadata.
 
-R67, R69 and R70 own distinct source and test paths and are independent of
-PRs #197 and #199. Each can merge in any order. R62 remains dependent on the
-expanded file-tree implementation that landed through integration PR #189;
-its scope must be revalidated against current code before it returns to Ready.
+R62 and R72-R74 own distinct implementation paths from R71 and all current
+open PRs, so they can be selected from fresh `origin/main` branches and merge
+in any order. The locale contract also needs explicit reconciliation: PR #218
+reduced shipped locales to English/Catalan while repository `AGENTS.md` still
+requires five locales. That inconsistency is not guessed into a Ready item.
 
 ## Superseded autonomous queue — 2026-09-08 16:30 CEST
 

@@ -219,12 +219,7 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
     }
 
     private static func loadValidated(from url: URL) -> AgentStateSnapshot? {
-        guard let data = try? Data(contentsOf: url) else { return nil }
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        guard let snapshot = try? decoder.decode(AgentStateSnapshot.self, from: data) else { return nil }
+        guard let snapshot = AgentStateFiles.load(from: url) else { return nil }
         if RunStateStore.isProcessRunning(pid: snapshot.pid) {
             return snapshot
         }
