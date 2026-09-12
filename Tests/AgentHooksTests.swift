@@ -31,7 +31,7 @@ final class AgentHooksTests: XCTestCase {
 
         XCTAssertTrue(instructionPath.contains("opencode-settings/aabbccdd-1122-3344-5566-778899aabbcc/auto-rename.md"))
         XCTAssertTrue(FileManager.default.fileExists(atPath: instructionPath))
-        XCTAssertTrue(try String(contentsOfFile: instructionPath).contains("git branch -m <new-name>"))
+        XCTAssertTrue(try String(contentsOfFile: instructionPath).contains("git branch -m <type>/<description>"))
     }
 
     func testHookInvocationReturnsURLForClaude() throws {
