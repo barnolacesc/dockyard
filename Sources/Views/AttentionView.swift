@@ -1,5 +1,5 @@
-// ABOUTME: Read-only inbox for Coding Agent activity across all workstreams.
-// ABOUTME: Highlights unread attention items and deep-links back to their workstreams.
+// ABOUTME: Glanceable overview of current work across every Dockyard project.
+// ABOUTME: Prioritizes workstreams that need input, then groups active, review, and ready work.
 
 import SwiftUI
 
@@ -33,15 +33,10 @@ struct SidebarAttentionRow: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                     .frame(width: 18)
-
                 Text("Attention")
                     .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-
                 Spacer()
-
-                if attentionCount > 0 {
-                    UnreadCountBadge(count: attentionCount)
-                }
+                if attentionCount > 0 { UnreadCountBadge(count: attentionCount) }
             }
             .padding(.horizontal, 10)
             .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
@@ -56,54 +51,105 @@ struct SidebarAttentionRow: View {
         .onHover { isHovering = $0 }
         .animation(reduceMotion ? nil : DesignMotion.interaction, value: isHovering)
         .accessibilityLabel("Attention")
-        .accessibilityValue(
-            attentionCount > 0
-                ? String(format: NSLocalizedString("%d need attention", comment: "Current agents waiting for attention count"), attentionCount)
-                : ""
-        )
+        .accessibilityValue(attentionCount > 0 ? String(format: NSLocalizedString("%d need attention", comment: "Current agents waiting for attention count"), attentionCount) : "")
+    }
+}
+
+private enum AttentionCategory: Int, CaseIterable, Identifiable {
+    case needsYou, inProgress, review, ready
+    var id: Int { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .needsYou: "Needs you"
+        case .inProgress: "In progress"
+        case .review: "In review"
+        case .ready: "Ideas & ready"
+        }
+    }
+
+    var summaryTitle: LocalizedStringKey {
+        switch self {
+        case .needsYou: "Waiting"
+        case .inProgress: "Working"
+        case .review: "Review"
+        case .ready: "Ready"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .needsYou: "exclamationmark.bubble.fill"
+        case .inProgress: "bolt.fill"
+        case .review: "arrow.triangle.pull"
+        case .ready: "lightbulb.fill"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .needsYou: DesignColor.statusWarning
+        case .inProgress: DesignColor.statusSuccess
+        case .review: DesignColor.statusMerged
+        case .ready: DesignColor.statusInfo
+        }
+    }
+
+    var sectionDescription: LocalizedStringKey {
+        switch self {
+        case .needsYou: "Waiting for your input or approval."
+        case .inProgress: "Coding Agents working right now."
+        case .review: "Workstreams ready to review."
+        case .ready: "Ideas and workstreams ready to continue."
+        }
     }
 }
 
 private struct AttentionWorkstream: Identifiable {
     let id: UUID
-    let state: AgentState
+    let projectName: String
+    let workstreamName: String
+    let lastAccessedAt: Date
+    let category: AttentionCategory
 }
 
 struct AttentionView: View {
     let projects: [Project]
     let onSelectWorkstream: (UUID) -> Void
-
     @EnvironmentObject private var agentStateStore: AgentStateStore
 
     private var currentWorkstreams: [AttentionWorkstream] {
-        projects
-            .flatMap(\.workstreams)
-            .compactMap { workstream in
-                guard let state = agentStateStore.agentState(for: workstream.id),
-                      state == .working || state == .waiting
-                else { return nil }
-                return AttentionWorkstream(id: workstream.id, state: state)
+        projects.flatMap { project in
+            project.workstreams.compactMap { workstream in
+                guard workstream.stage != .done else { return nil }
+                return AttentionWorkstream(
+                    id: workstream.id,
+                    projectName: project.name,
+                    workstreamName: workstream.name,
+                    lastAccessedAt: workstream.lastAccessedAt,
+                    category: category(for: workstream)
+                )
             }
-            .sorted { lhs, rhs in
-                if lhs.state != rhs.state {
-                    return lhs.state == .waiting
-                }
-                return workstreamContext(for: lhs.id)?.workstreamName ?? "" < workstreamContext(for: rhs.id)?.workstreamName ?? ""
-            }
+        }
     }
+
+    private var attentionCount: Int { workstreams(in: .needsYou).count }
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 24) {
                 header
-
                 if currentWorkstreams.isEmpty {
                     emptyState
                 } else {
-                    workspaceSection
+                    summary
+                    ForEach(AttentionCategory.allCases) { category in
+                        let rows = workstreams(in: category)
+                        if !rows.isEmpty { workspaceSection(category, workstreams: rows) }
+                    }
                 }
             }
-            .frame(maxWidth: 760, alignment: .leading)
+            .frame(maxWidth: 840, alignment: .leading)
             .padding(32)
             .frame(maxWidth: .infinity, alignment: .center)
         }
@@ -115,31 +161,43 @@ struct AttentionView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous)
                     .fill(Color.accentColor.opacity(0.12))
-                Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 22, weight: .semibold))
+                Image(systemName: "rectangle.3.group.bubble.fill")
+                    .font(.system(size: 21, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
             }
             .frame(width: 48, height: 48)
-
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 8) {
-                    Text("Attention")
-                        .font(.title2.weight(.semibold))
-                    if attentionCount > 0 {
-                        UnreadCountBadge(count: attentionCount)
-                    }
+                    Text("Dockyard overview").font(.title2.weight(.semibold))
+                    if attentionCount > 0 { UnreadCountBadge(count: attentionCount) }
                 }
-                Text("See the Coding Agents that are currently working or waiting for you.")
+                Text("See what needs you, what is moving, and what is ready to pick up next.")
                     .foregroundStyle(.secondary)
             }
-
             Spacer(minLength: 16)
-
         }
     }
 
-    private var attentionCount: Int {
-        currentWorkstreams.filter { $0.state == .waiting }.count
+    private var summary: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 138), spacing: 10)], spacing: 10) {
+            ForEach(AttentionCategory.allCases) { category in
+                HStack(spacing: 10) {
+                    Image(systemName: category.systemImage)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(category.tint)
+                        .frame(width: 30, height: 30)
+                        .background(category.tint.opacity(0.11), in: RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("\(workstreams(in: category).count)").font(.headline.monospacedDigit())
+                        Text(category.summaryTitle).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(10)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous).strokeBorder(category.tint.opacity(0.12)) }
+            }
+        }
     }
 
     private var emptyState: some View {
@@ -147,9 +205,8 @@ struct AttentionView: View {
             Image(systemName: "checkmark.circle")
                 .font(.system(size: 34, weight: .light))
                 .foregroundStyle(DesignColor.statusSuccess)
-            Text("No active Coding Agents")
-                .font(.headline)
-            Text("Workstreams appear here while their Coding Agent is working or waiting for your input.")
+            Text("Nothing on deck").font(.headline)
+            Text("Create a workstream and it will appear here as part of your Dockyard overview.")
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 420)
@@ -158,103 +215,65 @@ struct AttentionView: View {
         .padding(.vertical, 72)
     }
 
-    private var workspaceSection: some View {
+    private func workspaceSection(_ category: AttentionCategory, workstreams: [AttentionWorkstream]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Current workspaces")
-                    .font(.headline)
+            HStack(alignment: .firstTextBaseline) {
+                Text(category.title).font(.headline)
+                Text(category.sectionDescription).font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Text("\(currentWorkstreams.count)")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.tertiary)
+                Text("\(workstreams.count)").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
             }
-
             VStack(spacing: 1) {
-                ForEach(currentWorkstreams) { workstream in
+                ForEach(workstreams) { workstream in
                     workspaceRow(workstream)
-                    if workstream.id != currentWorkstreams.last?.id {
-                        Divider().padding(.leading, 54)
-                    }
+                    if workstream.id != workstreams.last?.id { Divider().padding(.leading, 62) }
                 }
             }
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignRadius.xl, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: DesignRadius.xl, style: .continuous)
-                    .strokeBorder(.primary.opacity(0.07))
-            }
+            .overlay { RoundedRectangle(cornerRadius: DesignRadius.xl, style: .continuous).strokeBorder(.primary.opacity(0.07)) }
         }
     }
 
     private func workspaceRow(_ workstream: AttentionWorkstream) -> some View {
-        let context = workstreamContext(for: workstream.id)
-        return Button {
-            if context != nil {
-                onSelectWorkstream(workstream.id)
-            }
-        } label: {
+        Button { onSelectWorkstream(workstream.id) } label: {
             HStack(spacing: 14) {
-                Image(systemName: systemImage(for: workstream.state))
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(tint(for: workstream.state))
+                Image(systemName: workstream.category.systemImage)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(workstream.category.tint)
                     .frame(width: 40, height: 40)
-                    .background(tint(for: workstream.state).opacity(0.11), in: RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous))
-
+                    .background(workstream.category.tint.opacity(0.11), in: RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous))
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(titleKey(for: workstream.state))
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    Text(context.map { "\($0.projectName) · \($0.workstreamName)" } ?? NSLocalizedString("Unknown workstream", comment: "Attention event with a removed workstream"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    Text(workstream.workstreamName).font(.body.weight(.semibold)).foregroundStyle(.primary).lineLimit(1)
+                    Text(workstream.projectName).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
-
                 Spacer(minLength: 12)
-
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.quaternary)
+                Text(workstream.lastAccessedAt, style: .relative)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.tertiary)
+                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.quaternary)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .disabled(context == nil)
+        .pressable()
         .hoverHighlight(radius: DesignRadius.lg)
-        .accessibilityHint(context == nil ? "" : NSLocalizedString("Open workstream", comment: "Attention row accessibility hint"))
+        .accessibilityHint(NSLocalizedString("Open workstream", comment: "Attention row accessibility hint"))
     }
 
-    private func workstreamContext(for id: UUID) -> (projectName: String, workstreamName: String)? {
-        for project in projects {
-            if let workstream = project.workstreams.first(where: { $0.id == id }) {
-                return (project.name, workstream.name)
-            }
-        }
-        return nil
-    }
-
-    private func systemImage(for state: AgentState) -> String {
-        switch state {
-        case .working: "bolt.fill"
-        case .waiting: "questionmark.bubble.fill"
-        case .idle: "pause.circle.fill"
+    private func workstreams(in category: AttentionCategory) -> [AttentionWorkstream] {
+        currentWorkstreams.filter { $0.category == category }.sorted {
+            if $0.lastAccessedAt != $1.lastAccessedAt { return $0.lastAccessedAt > $1.lastAccessedAt }
+            return $0.workstreamName.localizedCaseInsensitiveCompare($1.workstreamName) == .orderedAscending
         }
     }
 
-    private func titleKey(for state: AgentState) -> LocalizedStringKey {
-        switch state {
-        case .working: "Agent is working"
-        case .waiting: "Agent needs your attention"
-        case .idle: "Agent became inactive"
-        }
-    }
-
-    private func tint(for state: AgentState) -> Color {
-        switch state {
-        case .working: DesignColor.statusSuccess
-        case .waiting: DesignColor.statusWarning
-        case .idle: .secondary
+    private func category(for workstream: Workstream) -> AttentionCategory {
+        switch agentStateStore.agentState(for: workstream.id) {
+        case .waiting: .needsYou
+        case .working: .inProgress
+        case .idle, nil: workstream.stage == .review ? .review : .ready
         }
     }
 }
