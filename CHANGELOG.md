@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.2.6](https://github.com/barnolacesc/dockyard/compare/v0.2.5...v0.2.6) (2026-09-12)
+
+
+### Features
+
+* add actionable agent attention notifications ([#213](https://github.com/barnolacesc/dockyard/issues/213)) ([91eec20](https://github.com/barnolacesc/dockyard/commit/91eec203d1118da30c9c86e1169a0e4ff24dee32))
+* add project root terminal ([#210](https://github.com/barnolacesc/dockyard/issues/210)) ([d12c7a5](https://github.com/barnolacesc/dockyard/commit/d12c7a5c8701c9cae7dc652ff9fd0c81a86bdf1f))
+* **attention:** add Dockyard work overview ([#221](https://github.com/barnolacesc/dockyard/issues/221)) ([36b9173](https://github.com/barnolacesc/dockyard/commit/36b917393f1504f5b5dade1688088cdd8c23514e))
+* configure workstreams from GitHub issues ([#220](https://github.com/barnolacesc/dockyard/issues/220)) ([8933bf2](https://github.com/barnolacesc/dockyard/commit/8933bf2a9ef7a237f7b73d0b7b0a4fc93323e1a6))
+* rename Codex and OpenCode workstreams ([#217](https://github.com/barnolacesc/dockyard/issues/217)) ([9d27d0d](https://github.com/barnolacesc/dockyard/commit/9d27d0d6a22a94c92aeadced4ec192c419e942d3))
+* show pull request CI checks ([#219](https://github.com/barnolacesc/dockyard/issues/219)) ([adf0196](https://github.com/barnolacesc/dockyard/commit/adf01960c5cb2728e5fe85aeed9192ec698dfe42))
+
+
+### Bug Fixes
+
+* **attention:** show only current workspaces ([#216](https://github.com/barnolacesc/dockyard/issues/216)) ([6865dcc](https://github.com/barnolacesc/dockyard/commit/6865dcc9541c2d0440d1c729fb696092c7d589ff))
+* rename task tabs and branches separately ([#222](https://github.com/barnolacesc/dockyard/issues/222)) ([aef9b35](https://github.com/barnolacesc/dockyard/commit/aef9b350dce00b38f19cdc8ef268e07e899febb0))
+* **updater:** run source updates without terminal windows ([#215](https://github.com/barnolacesc/dockyard/issues/215)) ([34ecd1e](https://github.com/barnolacesc/dockyard/commit/34ecd1e0efb3eedb025bec1f02aa40bcffc79e6a))
+
+
+### Refactoring
+
+* **localization:** support English and Catalan only ([#218](https://github.com/barnolacesc/dockyard/issues/218)) ([8bd5f85](https://github.com/barnolacesc/dockyard/commit/8bd5f85b2b072ae79bd92214ed893e98bca746c3))
+
+
+### Documentation
+
+* specify agent attention notifications ([#211](https://github.com/barnolacesc/dockyard/issues/211)) ([60f0e2e](https://github.com/barnolacesc/dockyard/commit/60f0e2eee5c3db31769651cf352a576cd507368e))
+
 ## [0.2.5](https://github.com/barnolacesc/dockyard/compare/v0.2.4...v0.2.5) (2026-09-11)
 
 
