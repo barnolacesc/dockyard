@@ -9,6 +9,11 @@ enum WhatsNewCatalog {
     static let releases: [WhatsNewRelease] = [
         WhatsNewRelease(version: "0.2.5", entries: [
             WhatsNewEntry(
+                symbol: "cup.and.saucer.fill",
+                titleKey: "Caffeinate Mode",
+                bodyKey: "Keep your Mac awake whenever Dockyard is open or only while a Coding Agent is actively working."
+            ),
+            WhatsNewEntry(
                 symbol: "checkmark.circle",
                 titleKey: "Pull Request Checks",
                 bodyKey: "See CI progress on workstreams, inspect check details, and open PR status labels directly on GitHub."
