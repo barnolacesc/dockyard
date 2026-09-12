@@ -55,9 +55,9 @@ Open an issue describing the use case, not just the solution. Context about *why
 
 ### Translations
 
-Dockyard is localized in English, Catalan, Spanish, and Swedish. You can contribute translations for both the app and the website.
+Dockyard is localized in English and Catalan. You can contribute translations for both the app and the website.
 
-See [docs/TRANSLATING.md](docs/TRANSLATING.md) for the full guide, including how to improve existing translations, add new languages, and avoid common pitfalls.
+See [docs/TRANSLATING.md](docs/TRANSLATING.md) for the full guide, including how to maintain English and Catalan translations and avoid common pitfalls.
 
 ### Website
 

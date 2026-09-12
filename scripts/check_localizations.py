@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Sequence
 
 
-SUPPORTED_LOCALES = ("en", "ca", "de", "es", "sv")
+SUPPORTED_LOCALES = ("en", "ca")
 RESOURCE_FILENAMES = ("Localizable.strings", "InfoPlist.strings")
 BASELINE_FILENAME = "key-parity-baseline.json"
 

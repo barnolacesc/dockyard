@@ -275,9 +275,16 @@ final class ProjectTests: XCTestCase {
     }
 
     func testWorkstreamCreation() {
-        let ws = Workstream(name: "feature-auth")
+        let ws = Workstream(name: "feature-auth", codingCLI: "codex", initialAgentPrompt: "Implement #42")
         XCTAssertEqual(ws.name, "feature-auth")
+        XCTAssertEqual(ws.codingCLI, "codex")
+        XCTAssertEqual(ws.initialAgentPrompt, "Implement #42")
         XCTAssertEqual(ws.stage, .auto)
+    }
+
+    func testWorkstreamNameNormalization() {
+        XCTAssertEqual(NameGenerator.normalize("  Fix: Login & Sign-up!  "), "fix-login-sign-up")
+        XCTAssertEqual(NameGenerator.normalize("one---two", maximumLength: 7), "one-two")
     }
 
     func testWorkstreamStageAutoFollowsPullRequestState() {
@@ -316,6 +323,7 @@ final class ProjectTests: XCTestCase {
         XCTAssertEqual(decoded.id, id)
         XCTAssertEqual(decoded.name, "legacy")
         XCTAssertEqual(decoded.worktreePath, "/tmp/legacy")
+        XCTAssertNil(decoded.initialAgentPrompt)
     }
 
     func testWorkstreamDecodingUnknownStageDefaultsToAuto() throws {

@@ -17,24 +17,6 @@ defaultContentLanguage = "en"
   weight = 2
   contentDir = "content/ca"
 
-[languages.es]
-  languageCode = "es"
-  languageName = "Espanol"
-  weight = 3
-  contentDir = "content/es"
-
-[languages.sv]
-  languageCode = "sv"
-  languageName = "Svenska"
-  weight = 4
-  contentDir = "content/sv"
-
-[languages.de]
-  languageCode = "de"
-  languageName = "Deutsch"
-  weight = 5
-  contentDir = "content/de"
-
 [params]
   description = "A native macOS app that manages git worktrees, coding agent sessions, and dev servers from a single window."
   ogImage = "/img/og-image.png"

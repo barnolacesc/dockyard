@@ -63,7 +63,7 @@ def test_missing_locale_declarations_are_reported() -> None:
 
 
 def test_missing_resource_declaration_is_reported() -> None:
-    missing_path = "Localization/de.lproj/InfoPlist.strings"
+    missing_path = "Localization/ca.lproj/InfoPlist.strings"
     resources = [entry for entry in complete_resources() if entry[0] != missing_path]
     assert check_manifest(manifest_for(resources)) == [
         f"missing Dockyard resource declaration: {missing_path}"
@@ -71,7 +71,7 @@ def test_missing_resource_declaration_is_reported() -> None:
 
 
 def test_duplicate_resource_declaration_is_reported() -> None:
-    duplicate_path = "Localization/sv.lproj/Localizable.strings"
+    duplicate_path = "Localization/ca.lproj/Localizable.strings"
     resources = complete_resources() + [(duplicate_path, "resources")]
     assert check_manifest(manifest_for(resources)) == [
         f"duplicate Dockyard resource declaration (2 entries): {duplicate_path}"
@@ -79,7 +79,7 @@ def test_duplicate_resource_declaration_is_reported() -> None:
 
 
 def test_non_resource_build_phase_is_reported() -> None:
-    wrong_phase_path = "Localization/es.lproj/InfoPlist.strings"
+    wrong_phase_path = "Localization/ca.lproj/InfoPlist.strings"
     resources = [
         (path, "sources" if path == wrong_phase_path else build_phase)
         for path, build_phase in complete_resources()

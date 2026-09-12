@@ -310,6 +310,7 @@ struct TerminalContainerView: View {
     let projectDirectory: String
     let projectName: String
     let workstreamName: String
+    let initialAgentPrompt: String?
     @Binding var bypassPermissions: Bool
     @Binding var workstreamCodingCLI: String?
     let isActive: Bool
@@ -368,6 +369,7 @@ struct TerminalContainerView: View {
         projectDirectory: String,
         projectName: String,
         workstreamName: String,
+        initialAgentPrompt: String? = nil,
         bypassPermissions: Binding<Bool> = .constant(false),
         workstreamCodingCLI: Binding<String?> = .constant(nil),
         isActive: Bool,
@@ -379,6 +381,7 @@ struct TerminalContainerView: View {
         self.projectDirectory = projectDirectory
         self.projectName = projectName
         self.workstreamName = workstreamName
+        self.initialAgentPrompt = initialAgentPrompt
         _bypassPermissions = bypassPermissions
         _workstreamCodingCLI = workstreamCodingCLI
         self.isActive = isActive
@@ -717,6 +720,7 @@ struct TerminalContainerView: View {
                     workstreamID: workstreamID,
                     workingDirectory: workingDirectory,
                     command: agentCommand,
+                    initialInput: initialAgentPrompt.map { $0 + "\r" },
                     isFocused: true,
                     environmentVars: agentEnvironmentVars
                 )
@@ -1512,6 +1516,7 @@ struct TerminalContainerView: View {
                 app: app,
                 workingDirectory: workingDirectory,
                 command: cmd,
+                initialInput: initialAgentPrompt.map { $0 + "\r" },
                 environmentVars: agentEnvironmentVars
             )
         }
@@ -2067,6 +2072,7 @@ struct SingleTerminalView: View {
     let workstreamID: UUID
     let workingDirectory: String
     var command: String?
+    var initialInput: String? = nil
     var isFocused: Bool = true
     var environmentVars: [String: String] = [:]
 
@@ -2123,6 +2129,7 @@ private struct TerminalSurfaceView: NSViewRepresentable {
     let workstreamID: UUID
     let workingDirectory: String
     var command: String?
+    var initialInput: String? = nil
     var isFocused: Bool = true
     var environmentVars: [String: String] = [:]
     var size: CGSize
@@ -2144,6 +2151,7 @@ private struct TerminalSurfaceView: NSViewRepresentable {
             app: app,
             workingDirectory: workingDirectory,
             command: command,
+            initialInput: initialInput,
             environmentVars: environmentVars
         )
 
@@ -2281,7 +2289,7 @@ final class TerminalSurfaceCache: ObservableObject {
     struct SurfaceParams {
         let workingDirectory: String
         var command: String?
-        let initialInput: String?
+        var initialInput: String?
         let environmentVars: [String: String]
         let waitAfterCommand: Bool
     }
@@ -2331,6 +2339,13 @@ final class TerminalSurfaceCache: ObservableObject {
             objectWillChange.send()
         } else {
             creationTimes[id] = Date()
+            // Initial task text is a one-shot seed; never replay it on respawn.
+            surfaceParams[id]?.initialInput = nil
+            if initialInput != nil {
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: .initialAgentPromptConsumed, object: workstreamID)
+                }
+            }
         }
         return view
     }
