@@ -19,6 +19,12 @@ struct GitHubPR: Equatable, Sendable {
     let state: String
     let branch: String
     let url: String
+    var checks: [GitHubCheck]? = nil
+    var headOID: String = ""
+    var isDraft: Bool = false
+    var reviewDecision: String? = nil
+    var mergeStateStatus: String? = nil
+    var fetchedAt: Date? = nil
 }
 
 enum GitHubPRLookupResult: Equatable, Sendable {
@@ -196,6 +202,7 @@ let defaultGitHubReadProcessFactory: GitHubReadProcessFactory = {
 }
 
 enum GitHubOperations {
+    static let prFields = "number,title,state,headRefName,url,headRefOid,statusCheckRollup,isDraft,reviewDecision,mergeStateStatus"
     static let probeTimeout: TimeInterval = 10
     static let probeTerminationGrace: TimeInterval = 1
     static let maximumProbeOutputBytes = 256 * 1024
@@ -274,33 +281,61 @@ enum GitHubOperations {
 
     /// Fetch open PRs for this repo.
     static func openPRs(ghPath: String, at path: String, limit: Int = 5) -> [GitHubPR] {
-        guard let json = runCommand(ghPath, args: ["pr", "list", "--json", "number,title,state,headRefName,url", "--limit", "\(limit)"], in: path) else { return [] }
-        guard let data = json.data(using: .utf8),
-              let array = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return [] }
+        openPRSnapshot(ghPath: ghPath, at: path, limit: limit) ?? []
+    }
 
-        return array.compactMap { dict in
-            guard let number = dict["number"] as? Int,
-                  let title = dict["title"] as? String,
-                  let state = dict["state"] as? String,
-                  let branch = dict["headRefName"] as? String,
-                  let url = dict["url"] as? String else { return nil }
-            return GitHubPR(number: number, title: title, state: state, branch: branch, url: url)
-        }
+    /// nil is a failed lookup; an empty array is a successful lookup with no PRs.
+    static func openPRSnapshot(
+        ghPath: String, at path: String, limit: Int = 100,
+        processFactory: GitHubReadProcessFactory = defaultGitHubReadProcessFactory
+    ) -> [GitHubPR]? {
+        guard let json = runCommand(ghPath, args: ["pr", "list", "--json", prFields, "--limit", "\(limit)"],
+                                    in: path, maximumOutputBytes: 4 * 1024 * 1024,
+                                    processFactory: processFactory) else { return nil }
+        guard let data = json.data(using: .utf8),
+              let array = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return nil }
+
+        let prs = array.compactMap { GitHubPR.decode($0) }
+        return prs.count == array.count ? prs : nil
     }
 
     /// Find an open PR for a specific branch.
     static func prForBranch(ghPath: String, at path: String, branch: String) -> GitHubPR? {
-        guard let json = runCommand(ghPath, args: ["pr", "list", "--head", branch, "--json", "number,title,state,headRefName,url", "--limit", "1"], in: path) else { return nil }
+        guard let json = runCommand(ghPath, args: ["pr", "list", "--head", branch, "--json", prFields, "--limit", "1"], in: path) else { return nil }
         guard let data = json.data(using: .utf8),
               let array = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]],
               let dict = array.first else { return nil }
 
-        guard let number = dict["number"] as? Int,
-              let title = dict["title"] as? String,
-              let state = dict["state"] as? String,
-              let branch = dict["headRefName"] as? String,
-              let url = dict["url"] as? String else { return nil }
-        return GitHubPR(number: number, title: title, state: state, branch: branch, url: url)
+        return GitHubPR.decode(dict)
+    }
+
+    static func prSnapshot(ghPath: String, at path: String, number: Int) -> GitHubPR? {
+        guard let json = runCommand(ghPath, args: ["pr", "view", String(number), "--json", prFields], in: path),
+              let data = json.data(using: .utf8),
+              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        return GitHubPR.decode(dict)
+    }
+
+    static func requiredChecks(ghPath: String, at path: String, number: Int) -> [GitHubCheck]? {
+        guard let json = runCommand(
+            ghPath,
+            args: ["pr", "checks", String(number), "--required", "--json", "name,bucket,link,workflow"],
+            in: path, acceptedExitCodes: [0, 1, 8]
+        ), let data = json.data(using: .utf8) else { return nil }
+        return decodeRequiredChecks(data)
+    }
+
+    static func decodeRequiredChecks(_ data: Data) -> [GitHubCheck]? {
+        guard let array = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return nil }
+        var checks: [GitHubCheck] = []
+        for item in array {
+            guard let name = item["name"] as? String,
+                  let bucket = item["bucket"] as? String,
+                  let link = item["link"] as? String else { return nil }
+            checks.append(GitHubCheck(name: name, state: GitHubCheckState(result: bucket), link: link,
+                                      workflow: item["workflow"] as? String ?? ""))
+        }
+        return checks
     }
 
     /// Find a merged PR for a specific branch.
@@ -340,6 +375,8 @@ enum GitHubOperations {
         _ command: String,
         args: [String],
         in directory: String,
+        acceptedExitCodes: Set<Int32> = [0],
+        maximumOutputBytes: Int = maximumProbeOutputBytes,
         processFactory: GitHubReadProcessFactory = defaultGitHubReadProcessFactory
     ) -> String? {
         let process: any GitHubReadProcess
@@ -348,7 +385,7 @@ enum GitHubOperations {
                 URL(fileURLWithPath: command),
                 args,
                 URL(fileURLWithPath: directory),
-                maximumProbeOutputBytes
+                maximumOutputBytes
             )
             try process.run()
         } catch {
@@ -365,7 +402,7 @@ enum GitHubOperations {
         }
 
         let result = process.result
-        guard result.terminationStatus == 0,
+        guard acceptedExitCodes.contains(result.terminationStatus),
               result.didFinishOutput,
               !result.outputExceededLimit,
               let output = String(data: result.output, encoding: .utf8)

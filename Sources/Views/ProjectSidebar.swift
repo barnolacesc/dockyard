@@ -308,6 +308,8 @@ struct ProjectSidebar: View {
                             prTitle: pr?.title,
                             prNumber: pr?.number,
                             prState: pr?.state,
+                            pullRequest: pr,
+                            projectDirectory: project.directory,
                             stage: workstream.stage,
                             uncommittedCount: workstream.worktreePath.map { appEnv.worktreeState(for: $0).uncommittedCount } ?? 0,
                             onRemove: { workstreamToRemove = workstream.id },
@@ -1497,6 +1499,8 @@ private struct WorkstreamRow: View {
     var prTitle: String?
     var prNumber: Int?
     var prState: String?
+    var pullRequest: GitHubPR?
+    var projectDirectory: String = ""
     var stage: WorkstreamStage = .auto
     var uncommittedCount: Int = 0
     let onRemove: () -> Void
@@ -1726,8 +1730,19 @@ private struct WorkstreamRow: View {
             Spacer()
 
             if let pill = stageStyle.stagePill {
-                StagePill(style: pill)
-                    .opacity(contentOpacity * (isHovering ? 0.75 : 1))
+                if let pullRequest, let url = URL(string: pullRequest.url) {
+                    Link(destination: url) {
+                        StagePill(style: pill).frame(minHeight: 40).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Open on GitHub")
+                } else {
+                    StagePill(style: pill)
+                        .opacity(contentOpacity * (isHovering ? 0.75 : 1))
+                }
+            }
+            if let pullRequest {
+                PRChecksBadge(pr: pullRequest, directory: projectDirectory, compact: true)
             }
 
             SidebarIconButton(icon: "xmark", action: onRemove)
@@ -1956,6 +1971,7 @@ private struct GlobalPRRow: View {
             Spacer()
             SidebarIconButton(icon: "arrow.up.right.square", action: onOpenURL)
                 .opacity(isHovering ? 1 : 0)
+            PRChecksBadge(pr: item.pr, directory: item.projectDirectory, compact: true)
         }
         .padding(.leading, 16)
         .frame(minHeight: 40)

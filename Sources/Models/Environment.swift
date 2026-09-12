@@ -120,6 +120,53 @@ final class AppEnvironment: ObservableObject {
     private var githubPRCache: [String: [GitHubPR]] = [:]
     private var githubBranchPRCache: [String: GitHubPR] = [:] // key: "dir|branch"
     private var githubBranchPRLookupCompleted: Set<String> = [] // key: "dir|branch"
+    private var branchPRRefreshInFlight: Set<String> = []
+    private var checkRefreshInFlight: Set<String> = []
+    private var requiredChecksCache: [String: (checks: [GitHubCheck]?, date: Date)] = [:]
+
+    func requiredChecks(for pr: GitHubPR) -> [GitHubCheck]? {
+        guard let cached = requiredChecksCache[pr.checksIdentity],
+              Date().timeIntervalSince(cached.date) < 90 else { return nil }
+        return cached.checks
+    }
+
+    func checksRefreshing(for pr: GitHubPR) -> Bool {
+        checkRefreshInFlight.contains(pr.url)
+    }
+
+    func refreshPRChecks(_ pr: GitHubPR, directory: String, force: Bool = false) {
+        guard pr.state == "OPEN", let ghPath = toolStatus.gh.path,
+              !checkRefreshInFlight.contains(pr.url) else { return }
+        if !force, let cached = requiredChecksCache[pr.checksIdentity],
+           Date().timeIntervalSince(cached.date) < 30 { return }
+        commitChanges { checkRefreshInFlight.insert(pr.url) }
+        Task {
+            let result = await Task.detached {
+                let required = GitHubOperations.requiredChecks(ghPath: ghPath, at: directory, number: pr.number)
+                let fresh = GitHubOperations.prSnapshot(ghPath: ghPath, at: directory, number: pr.number)
+                return (required, fresh)
+            }.value
+            commitChanges {
+                checkRefreshInFlight.remove(pr.url)
+                guard let fresh = result.1 else {
+                    requiredChecksCache[pr.checksIdentity] = (nil, Date())
+                    return
+                }
+                let key = "\(directory)|\(pr.branch)"
+                // A newer background refresh wins over an older detail response.
+                if let current = githubBranchPRCache[key],
+                   current.url != pr.url || (current.fetchedAt ?? .distantPast) > (fresh.fetchedAt ?? .distantPast) { return }
+                githubBranchPRCache[key] = fresh
+                if var prs = githubPRCache[directory], let index = prs.firstIndex(where: { $0.url == pr.url }) {
+                    if fresh.state == "OPEN" { prs[index] = fresh } else { prs.remove(at: index) }
+                    githubPRCache[directory] = prs
+                }
+                if fresh.headOID == pr.headOID, !fresh.headOID.isEmpty {
+                    requiredChecksCache[fresh.checksIdentity] = (result.0, Date())
+                }
+            }
+        }
+    }
 
     /// Send a single `objectWillChange` notification around a batch of mutations.
     /// Callers should batch every coherent refresh cycle into one call so subscribers
@@ -513,7 +560,7 @@ final class AppEnvironment: ObservableObject {
 
         Task.detached {
             let repo = GitHubOperations.repoInfo(ghPath: ghPath, at: directory)
-            let prs = GitHubOperations.openPRs(ghPath: ghPath, at: directory)
+            let prs = GitHubOperations.openPRSnapshot(ghPath: ghPath, at: directory, limit: 100)
             var branchPR: GitHubPR?
             if let branch {
                 branchPR = GitHubOperations.prForBranch(ghPath: ghPath, at: directory, branch: branch)
@@ -525,7 +572,7 @@ final class AppEnvironment: ObservableObject {
             await MainActor.run {
                 self.commitChanges {
                     if let repo { self.githubRepoCache[directory] = repo }
-                    self.githubPRCache[directory] = prs
+                    if let prs { self.githubPRCache[directory] = prs }
                     if let branch, let pr = branchPR {
                         self.githubBranchPRCache["\(directory)|\(branch)"] = pr
                     }
@@ -541,9 +588,14 @@ final class AppEnvironment: ObservableObject {
     /// Refresh PRs for all workstream branches. One gh call per project.
     /// Populate the branch PR cache for a set of branches in a single `gh` call.
     func refreshBranchPRs(for directory: String, branches: Set<String>) {
-        guard ghAvailable, let ghPath = toolStatus.gh.path, !branches.isEmpty else { return }
-        Task.detached {
-            let prs = GitHubOperations.openPRs(ghPath: ghPath, at: directory, limit: 100)
+        guard ghAvailable, let ghPath = toolStatus.gh.path, !branches.isEmpty,
+              !branchPRRefreshInFlight.contains(directory) else { return }
+        branchPRRefreshInFlight.insert(directory)
+        Task {
+            defer { branchPRRefreshInFlight.remove(directory) }
+            guard let prs = await Task.detached(operation: {
+                GitHubOperations.openPRSnapshot(ghPath: ghPath, at: directory, limit: 100)
+            }).value else { return }
             let prsByBranch = Dictionary(prs.map { ($0.branch, $0) }, uniquingKeysWith: { first, _ in first })
             let branchesWithoutOpenPR = branches.filter { prsByBranch[$0] == nil }
             let mergedLookups = await withTaskGroup(
@@ -581,7 +633,6 @@ final class AppEnvironment: ObservableObject {
                             self.githubBranchPRCache.removeValue(forKey: key)
                             self.githubBranchPRLookupCompleted.insert(key)
                         } else {
-                            self.githubBranchPRCache.removeValue(forKey: key)
                             self.githubBranchPRLookupCompleted.remove(key)
                         }
                     }
@@ -607,12 +658,13 @@ final class AppEnvironment: ObservableObject {
                       let branch = branchNameCache[path] else { continue }
                 branches.insert(branch)
             }
-            if !branches.isEmpty {
+            if !branches.isEmpty, !branchPRRefreshInFlight.contains(project.directory) {
                 projectBranches[project.directory] = branches
             }
         }
 
         guard !projectBranches.isEmpty else { return }
+        branchPRRefreshInFlight.formUnion(projectBranches.keys)
 
         // Snapshot currently cached PR states to detect transitions
         var cachedStates: [String: String] = [:]
@@ -625,18 +677,19 @@ final class AppEnvironment: ObservableObject {
             }
         }
 
-        Task.detached {
+        Task {
+            defer { branchPRRefreshInFlight.subtract(projectBranches.keys) }
             // One gh call per project fetches all open PRs
             var allOpenPRs: [(String, [GitHubPR])] = []
-            await withTaskGroup(of: (String, [GitHubPR]).self) { group in
+            await withTaskGroup(of: (String, [GitHubPR]?).self) { group in
                 for (dir, _) in projectBranches {
                     group.addTask {
-                        let prs = GitHubOperations.openPRs(ghPath: ghPath, at: dir, limit: 100)
+                        let prs = GitHubOperations.openPRSnapshot(ghPath: ghPath, at: dir, limit: 100)
                         return (dir, prs)
                     }
                 }
                 for await result in group {
-                    allOpenPRs.append(result)
+                    if let prs = result.1 { allOpenPRs.append((result.0, prs)) }
                 }
             }
 
@@ -648,6 +701,7 @@ final class AppEnvironment: ObservableObject {
 
                 await MainActor.run {
                     self.commitChanges {
+                        self.githubPRCache[dir] = prs
                         for branch in branches {
                             let key = "\(dir)|\(branch)"
                             if let pr = prsByBranch[branch] {
@@ -657,7 +711,6 @@ final class AppEnvironment: ObservableObject {
                             } else if cachedStates[key] != nil {
                                 // Had an open PR that's no longer open, check if merged
                                 mergedLookups.append((dir: dir, branch: branch, key: key))
-                                self.githubBranchPRCache.removeValue(forKey: key)
                             } else {
                                 // Never had a cached PR, nothing to do
                             }
@@ -668,18 +721,23 @@ final class AppEnvironment: ObservableObject {
 
             // Targeted merged lookups for branches whose open PR disappeared
             if !mergedLookups.isEmpty {
-                await withTaskGroup(of: (String, GitHubPR?).self) { group in
+                await withTaskGroup(of: (String, GitHubPRLookupResult).self) { group in
                     for lookup in mergedLookups {
                         group.addTask {
-                            let pr = GitHubOperations.mergedPRForBranch(ghPath: ghPath, at: lookup.dir, branch: lookup.branch)
+                            let pr = GitHubOperations.mergedPRLookupForBranch(ghPath: ghPath, at: lookup.dir, branch: lookup.branch)
                             return (lookup.key, pr)
                         }
                     }
-                    for await (key, pr) in group {
-                        if let pr {
-                            await MainActor.run {
-                                self.commitChanges {
+                    for await (key, result) in group {
+                        await MainActor.run {
+                            self.commitChanges {
+                                switch result {
+                                case let .found(pr):
                                     self.githubBranchPRCache[key] = pr
+                                case .notFound:
+                                    self.githubBranchPRCache.removeValue(forKey: key)
+                                case .unavailable:
+                                    break
                                 }
                             }
                         }

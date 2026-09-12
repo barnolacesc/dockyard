@@ -620,6 +620,7 @@ struct TerminalContainerView: View {
                 .help(pr.title)
                 .accessibilityLabel(Text(verbatim: "Pull request #\(pr.number)"))
                 .accessibilityHint(pr.title)
+                PRChecksBadge(pr: pr, directory: projectDirectory, compact: true)
             }
         }
         .padding(.horizontal, 8)
