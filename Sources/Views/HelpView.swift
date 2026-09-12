@@ -7,7 +7,7 @@ struct HelpView: View {
     private var localizedURL: (_ page: String) -> URL {
         { page in
             let lang = Locale.current.language.languageCode?.identifier ?? "en"
-            let path = lang == "en" ? "/\(page)" : "/\(lang)/\(page)"
+            let path = lang == "ca" ? "/ca/\(page)" : "/\(page)"
             return URL(string: "https://dockyard.barnola.net\(path)")!
         }
     }
