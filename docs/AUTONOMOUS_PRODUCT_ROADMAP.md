@@ -32,9 +32,9 @@ native quit-performance profiling.
 
 ### R71 — Bound agent-state cache reads
 
-- Status: **In implementation** on
-  `fix/bound-agent-state-cache-reads-r71-20260912` for issue #223. Stop at a
-  tested PR for Cesc; never auto-merge.
+- Status: **Open in PR #224 for Cesc review** on
+  `fix/bound-agent-state-cache-reads-r71-20260912` for issue #223. Required
+  native CI is tracked on the PR. Never auto-merge.
 - User outcome: malformed or unexpectedly large main-agent and subagent cache
   files cannot allocate unbounded buffers while Dockyard refreshes Coding
   Agent status.
