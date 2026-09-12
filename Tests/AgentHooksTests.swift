@@ -7,10 +7,12 @@ final class AgentHooksTests: XCTestCase {
     override func setUp() {
         super.setUp()
         try? FileManager.default.removeItem(at: AgentHooks.settingsDirectoryURL)
+        try? FileManager.default.removeItem(at: AgentHooks.openCodeSettingsDirectoryURL)
     }
 
     override func tearDown() {
         try? FileManager.default.removeItem(at: AgentHooks.settingsDirectoryURL)
+        try? FileManager.default.removeItem(at: AgentHooks.openCodeSettingsDirectoryURL)
         super.tearDown()
     }
 
@@ -19,6 +21,17 @@ final class AgentHooksTests: XCTestCase {
 
         XCTAssertNil(try AgentHooks.hookInvocation(for: .opencode, workstreamID: UUID(), helperPath: helperPath))
         XCTAssertNil(try AgentHooks.hookInvocation(for: .gemini, workstreamID: UUID(), helperPath: helperPath))
+    }
+
+    func testOpenCodeAutoRenameConfigurationReferencesGeneratedInstructionFile() throws {
+        let id = UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC")!
+        let content = try AgentHooks.openCodeAutoRenameConfiguration(workstreamID: id)
+        let config = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(content.utf8)) as? [String: Any])
+        let instructionPath = try XCTUnwrap((config["instructions"] as? [String])?.first)
+
+        XCTAssertTrue(instructionPath.contains("opencode-settings/aabbccdd-1122-3344-5566-778899aabbcc/auto-rename.md"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: instructionPath))
+        XCTAssertTrue(try String(contentsOfFile: instructionPath).contains("git branch -m <type>/<description>"))
     }
 
     func testHookInvocationReturnsURLForClaude() throws {

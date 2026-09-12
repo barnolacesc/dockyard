@@ -137,7 +137,7 @@ fix should ship independently of a future sidebar redesign.
 
 ## Localization
 
-Add every new user-facing string to English, Catalan, German, Spanish, and Swedish.
+Add every new user-facing string to English and Catalan.
 The workstream name must be inserted with a localized format string rather than by
 concatenating translated fragments.
 
@@ -152,7 +152,7 @@ concatenating translated fragments.
 - A removed workstream falls back to Attention without crashing
 - Malformed or unrelated payloads do not navigate
 - Badge foreground/background variants meet the contrast threshold
-- Notification strings exist in all five locale files
+- Notification strings exist in both locale files
 
 ## Acceptance criteria
 

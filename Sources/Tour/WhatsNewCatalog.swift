@@ -14,6 +14,16 @@ enum WhatsNewCatalog {
                 bodyKey: "See CI progress on workstreams, inspect check details, and open PR status labels directly on GitHub."
             ),
             WhatsNewEntry(
+                symbol: "link.badge.plus",
+                titleKey: "Create Workstreams Your Way",
+                bodyKey: "Choose a workstream name and Coding Agent, or start directly from a GitHub issue with its task already loaded."
+            ),
+            WhatsNewEntry(
+                symbol: "arrow.triangle.branch",
+                titleKey: "Auto-Rename for More Agents",
+                bodyKey: "Codex and OpenCode now rename a new workstream branch from your first task, just like Claude Code."
+            ),
+            WhatsNewEntry(
                 symbol: "rectangle.bottomthird.inset.filled",
                 titleKey: "Passive Notices",
                 bodyKey: "Script reviews and source updates now appear as dismissible notices instead of interrupting your work."
@@ -39,9 +49,9 @@ enum WhatsNewCatalog {
                 bodyKey: "Assign colors from a project's shortcut menu to make busy sidebars easier to scan."
             ),
             WhatsNewEntry(
-                symbol: "bell.badge.fill",
-                titleKey: "Agent Attention",
-                bodyKey: "A focused inbox collects waiting, completed, and inactive Coding Agent updates across workstreams."
+                symbol: "rectangle.3.group.bubble.fill",
+                titleKey: "Dockyard Overview",
+                bodyKey: "See workstreams that need you, active Coding Agents, reviews, and ideas in one place."
             ),
             WhatsNewEntry(
                 symbol: "bolt.fill",

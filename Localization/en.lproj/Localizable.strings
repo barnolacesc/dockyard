@@ -166,7 +166,9 @@
 "Agent Teams is only available with Claude Code." = "Agent Teams is only available with Claude Code.";
 "Auto-rename branch" = "Auto-rename branch";
 "The agent automatically renames the branch to match your current task, updating the tab name and sidebar description." = "The agent automatically renames the branch to match your current task, updating the tab name and sidebar description.";
-"Auto-rename branch is only available with Claude Code." = "Auto-rename branch is only available with Claude Code.";
+"Auto-rename branch is only available with Claude Code, Codex, and OpenCode." = "Auto-rename branch is only available with Claude Code, Codex, and OpenCode.";
+"Auto-Rename for More Agents" = "Auto-Rename for More Agents";
+"Codex and OpenCode now rename a new workstream branch from your first task, just like Claude Code." = "Codex and OpenCode now rename a new workstream branch from your first task, just like Claude Code.";
 "External Browser" = "External Browser";
 
 /* Settings - Advanced */
@@ -545,6 +547,20 @@
 "Power features, on your terms" = "Power features, on your terms";
 "Press ⌘/ for the complete shortcut reference. Settings lets you choose shortcut hints, tmux mode, and usage options." = "Press ⌘/ for the complete shortcut reference. Settings lets you choose shortcut hints, tmux mode, and usage options.";
 "Attention" = "Attention";
+"Dockyard overview" = "Dockyard overview";
+"Dockyard Overview" = "Dockyard Overview";
+"See workstreams that need you, active Coding Agents, reviews, and ideas in one place." = "See workstreams that need you, active Coding Agents, reviews, and ideas in one place.";
+"See what needs you, what is moving, and what is ready to pick up next." = "See what needs you, what is moving, and what is ready to pick up next.";
+"Needs you" = "Needs you";
+"In progress" = "In progress";
+"In review" = "In review";
+"Ideas & ready" = "Ideas & ready";
+"Waiting for your input or approval." = "Waiting for your input or approval.";
+"Coding Agents working right now." = "Coding Agents working right now.";
+"Workstreams ready to review." = "Workstreams ready to review.";
+"Ideas and workstreams ready to continue." = "Ideas and workstreams ready to continue.";
+"Nothing on deck" = "Nothing on deck";
+"Create a workstream and it will appear here as part of your Dockyard overview." = "Create a workstream and it will appear here as part of your Dockyard overview.";
 "Agent started working" = "Agent started working";
 "Agent is working" = "Agent is working";
 "See the Coding Agents that are currently working or waiting for you." = "See the Coding Agents that are currently working or waiting for you.";
@@ -593,7 +609,6 @@
 "Open a persistent terminal at the project root directly from the project row." = "Open a persistent terminal at the project root directly from the project row.";
 "Update failed" = "Update failed";
 "The update could not be completed. See the log at %@ for details." = "The update could not be completed. See the log at %@ for details.";
-
 // Pull request CI status
 "Checks passed" = "Checks passed";
 "Checks failed" = "Checks failed";
@@ -622,3 +637,15 @@
 "Pull Request Checks" = "Pull Request Checks";
 "See CI progress on workstreams, inspect check details, and open PR status labels directly on GitHub." = "See CI progress on workstreams, inspect check details, and open PR status labels directly on GitHub.";
 "Check details may be incomplete. Open GitHub for the full status." = "Check details may be incomplete. Open GitHub for the full status.";
+"New Workstream" = "New Workstream";
+"Workstream Name" = "Workstream Name";
+"Project Default" = "Project Default";
+"GitHub Issue" = "GitHub Issue";
+"Issue number or URL" = "Issue number or URL";
+"Load" = "Load";
+"No description" = "No description";
+"GitHub CLI is not available." = "GitHub CLI is not available.";
+"Could not load that issue from the current project." = "Could not load that issue from the current project.";
+"Install and authenticate the GitHub CLI to link an issue." = "Install and authenticate the GitHub CLI to link an issue.";
+"Create Workstreams Your Way" = "Create Workstreams Your Way";
+"Choose a workstream name and Coding Agent, or start directly from a GitHub issue with its task already loaded." = "Choose a workstream name and Coding Agent, or start directly from a GitHub issue with its task already loaded.";

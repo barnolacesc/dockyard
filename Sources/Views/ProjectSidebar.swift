@@ -103,6 +103,14 @@ struct ProjectSidebar: View {
     var onNextUsageProvider: () -> Void = {}
 
     @State private var showingNewProjectName = false
+    @State private var showingNewWorkstream = false
+    @State private var newWorkstreamProjectID: UUID?
+    @State private var configuredWorkstreamName = ""
+    @State private var newWorkstreamCodingCLI = ""
+    @State private var newWorkstreamIssue = ""
+    @State private var newWorkstreamIssuePreview: GitHubIssueTaskPreview?
+    @State private var newWorkstreamIssueError = ""
+    @State private var isLoadingWorkstreamIssue = false
     @State private var newProjectName = ""
     @State private var newProjectError = ""
     @State private var isDropTargeted = false
@@ -257,7 +265,7 @@ struct ProjectSidebar: View {
                 onToggle: hasChildren ? { toggleProjectExpansion(project.id) } : nil,
                 isGitRepo: appEnv.isGitRepo(project.directory),
                 githubURL: appEnv.githubURL(for: project.directory),
-                onAdd: { logger.warning("[Dockyard] onAdd button tapped for project \(project.name, privacy: .public)"); addWorkstream(for: project.id) },
+                onAdd: { presentNewWorkstreamSheet(for: project.id) },
                 onAddWithPermissions: { addWorkstream(for: project.id, bypassPermissions: true) },
                 onAddWithoutPermissions: { addWorkstream(for: project.id, bypassPermissions: false) },
                 onOpenTerminal: { onOpenProjectTerminal(project.id) },
@@ -604,6 +612,27 @@ struct ProjectSidebar: View {
 
     private var sidebar: some View {
         sidebarContent
+            .sheet(isPresented: $showingNewWorkstream) {
+                NewWorkstreamSheet(
+                    name: $configuredWorkstreamName,
+                    codingCLI: $newWorkstreamCodingCLI,
+                    issueReference: Binding(
+                        get: { newWorkstreamIssue },
+                        set: {
+                            newWorkstreamIssue = $0
+                            newWorkstreamIssuePreview = nil
+                            newWorkstreamIssueError = ""
+                        }
+                    ),
+                    issuePreview: newWorkstreamIssuePreview,
+                    issueError: newWorkstreamIssueError,
+                    isLoadingIssue: isLoadingWorkstreamIssue,
+                    canUseGitHub: appEnv.ghAvailable,
+                    onLoadIssue: loadNewWorkstreamIssue,
+                    onCreate: createConfiguredWorkstream,
+                    onCancel: { showingNewWorkstream = false }
+                )
+            }
             .sheet(isPresented: $showingNewProjectName) {
                 NewProjectSheet(
                     name: $newProjectName,
@@ -638,9 +667,9 @@ struct ProjectSidebar: View {
                 if case let .workstream(wsID) = selection,
                    let project = projects.first(where: { $0.workstreams.contains(where: { $0.id == wsID }) })
                 {
-                    addWorkstream(for: project.id)
+                    presentNewWorkstreamSheet(for: project.id)
                 } else if case let .project(pid) = selection {
-                    addWorkstream(for: pid)
+                    presentNewWorkstreamSheet(for: pid)
                 } else {
                     // No selection: jump straight to the directory picker (the 99% case is
                     // adding an existing folder). Create New is Cmd+Shift+N / the + menu.
@@ -759,10 +788,94 @@ struct ProjectSidebar: View {
     @AppStorage("dockyard.bypassPermissions") private var defaultBypass: Bool = false
     @AppStorage("dockyard.symlinkEnv") private var symlinkEnv: Bool = true
 
+    private func presentNewWorkstreamSheet(for projectID: UUID) {
+        guard let project = projects.first(where: { $0.id == projectID }) else { return }
+        guard GitOperations.isGitRepo(at: project.directory) else {
+            showNotGitRepoError = true
+            return
+        }
+        newWorkstreamProjectID = projectID
+        configuredWorkstreamName = NameGenerator.generate(avoiding: Set(project.workstreams.map(\.name)))
+        newWorkstreamCodingCLI = ""
+        newWorkstreamIssue = ""
+        newWorkstreamIssuePreview = nil
+        newWorkstreamIssueError = ""
+        showingNewWorkstream = true
+    }
+
+    private func createConfiguredWorkstream() {
+        guard let projectID = newWorkstreamProjectID else { return }
+        let normalizedName = NameGenerator.normalize(configuredWorkstreamName)
+        guard !normalizedName.isEmpty,
+              let project = projects.first(where: { $0.id == projectID }) else { return }
+        let existingNames = Set(project.workstreams.map(\.name))
+        var uniqueName = normalizedName
+        var suffix = 2
+        while existingNames.contains(uniqueName) {
+            uniqueName = "\(normalizedName)-\(suffix)"
+            suffix += 1
+        }
+        let prompt = newWorkstreamIssuePreview.map { issue in
+            var text = "Implement GitHub issue #\(issue.number): \(issue.title)\n\nSource: \(issue.url.absoluteString)"
+            if !issue.body.isEmpty { text += "\n\n\(issue.body)" }
+            if issue.isBodyTruncated { text += "\n\n[Issue body truncated by Dockyard.]" }
+            return text
+        }
+        showingNewWorkstream = false
+        addWorkstream(
+            for: projectID,
+            name: uniqueName,
+            codingCLI: newWorkstreamCodingCLI.isEmpty ? nil : newWorkstreamCodingCLI,
+            initialAgentPrompt: prompt
+        )
+    }
+
+    private func loadNewWorkstreamIssue() {
+        guard let projectID = newWorkstreamProjectID,
+              let project = projects.first(where: { $0.id == projectID }),
+              let ghPath = appEnv.toolStatus.gh.path
+        else {
+            newWorkstreamIssueError = NSLocalizedString("GitHub CLI is not available.", comment: "")
+            return
+        }
+        let reference = newWorkstreamIssue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !reference.isEmpty else { return }
+        let repositoryURL = GitOperations.repoInfo(at: project.directory).remoteURL
+            .flatMap(GitHubOperations.browserURL(from:))?
+            .absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        isLoadingWorkstreamIssue = true
+        newWorkstreamIssueError = ""
+        DispatchQueue.global(qos: .userInitiated).async {
+            let preview = GitHubOperations.issueTaskPreview(ghPath: ghPath, issue: reference, at: project.directory)
+            DispatchQueue.main.async {
+                isLoadingWorkstreamIssue = false
+                guard let preview,
+                      let repositoryURL,
+                      preview.url.absoluteString.hasPrefix(repositoryURL + "/issues/")
+                else {
+                    newWorkstreamIssuePreview = nil
+                    newWorkstreamIssueError = NSLocalizedString("Could not load that issue from the current project.", comment: "")
+                    return
+                }
+                newWorkstreamIssuePreview = preview
+                configuredWorkstreamName = workstreamName(from: preview.title, issueNumber: preview.number)
+            }
+        }
+    }
+
+    private func workstreamName(from title: String, issueNumber: Int) -> String {
+        let collapsed = NameGenerator.normalize(title, maximumLength: 48)
+        let suffix = collapsed.isEmpty ? "issue" : collapsed
+        return "issue-\(issueNumber)-\(suffix)"
+    }
+
     private func addWorkstream(
         for projectID: UUID,
         bypassPermissions: Bool? = nil,
-        baseBranch: String? = nil
+        baseBranch: String? = nil,
+        name requestedName: String? = nil,
+        codingCLI: String? = nil,
+        initialAgentPrompt: String? = nil
     ) {
         logger.warning("[Dockyard] addWorkstream called for projectID=\(projectID, privacy: .public)")
         guard let index = projects.firstIndex(where: { $0.id == projectID }) else {
@@ -780,11 +893,17 @@ struct ProjectSidebar: View {
         logger.warning("[Dockyard] addWorkstream: is git repo")
 
         let existingNames = Set(project.workstreams.map(\.name))
-        let name = NameGenerator.generate(avoiding: existingNames)
+        let name = requestedName ?? NameGenerator.generate(avoiding: existingNames)
         logger.warning("[Dockyard] addWorkstream: generated name=\(name, privacy: .public)")
 
         let bypass = bypassPermissions ?? defaultBypass
-        let workstream = Workstream(name: name, worktreePath: nil, bypassPermissions: bypass)
+        let workstream = Workstream(
+            name: name,
+            worktreePath: nil,
+            bypassPermissions: bypass,
+            codingCLI: codingCLI,
+            initialAgentPrompt: initialAgentPrompt
+        )
         expandedProjects.insert(projectID)
         NotificationCenter.default.post(
             name: .workstreamCreated,
@@ -1938,6 +2057,78 @@ private struct SidebarBottomButton: View {
                 NSCursor.pop()
             }
         }
+    }
+}
+
+private struct NewWorkstreamSheet: View {
+    @Binding var name: String
+    @Binding var codingCLI: String
+    @Binding var issueReference: String
+    let issuePreview: GitHubIssueTaskPreview?
+    let issueError: String
+    let isLoadingIssue: Bool
+    let canUseGitHub: Bool
+    let onLoadIssue: () -> Void
+    let onCreate: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("New Workstream")
+                .font(.headline)
+
+            Form {
+                TextField("Workstream Name", text: $name)
+                Picker("Coding Agent", selection: $codingCLI) {
+                    Text("Project Default").tag("")
+                    ForEach(CodingCLI.allCases) { cli in
+                        Text(cli.displayName).tag(cli.rawValue)
+                    }
+                }
+
+                Section("GitHub Issue") {
+                    HStack {
+                        TextField("Issue number or URL", text: $issueReference)
+                            .onSubmit(onLoadIssue)
+                        Button("Load", action: onLoadIssue)
+                            .disabled(issueReference.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoadingIssue || !canUseGitHub)
+                    }
+                    if isLoadingIssue {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else if let issuePreview {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("#\(issuePreview.number) · \(issuePreview.title)")
+                                .fontWeight(.medium)
+                            Text(issuePreview.body.isEmpty ? NSLocalizedString("No description", comment: "") : issuePreview.body)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(5)
+                        }
+                    } else if !issueError.isEmpty {
+                        Text(issueError)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    } else if !canUseGitHub {
+                        Text("Install and authenticate the GitHub CLI to link an issue.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .formStyle(.grouped)
+
+            HStack {
+                Button("Cancel", action: onCancel)
+                    .keyboardShortcut(.cancelAction)
+                Spacer()
+                Button("Create", action: onCreate)
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoadingIssue)
+            }
+        }
+        .padding(20)
+        .frame(width: 460, height: 390)
     }
 }
 

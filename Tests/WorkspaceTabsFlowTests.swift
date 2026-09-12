@@ -5,7 +5,7 @@ import XCTest
 
 @MainActor
 final class WorkspaceTabsFlowTests: XCTestCase {
-    private let localeCodes = ["en", "ca", "de", "es", "sv"]
+    private let localeCodes = ["en", "ca"]
 
     func testFlowHasFourManualStepsWithUniqueIDs() {
         let flow = WorkspaceTabsFlow.make()

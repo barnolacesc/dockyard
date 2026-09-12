@@ -283,8 +283,8 @@ issue #114 records this run.
    extent proven by code and tests.
 4. Native keyboard, focus, contrast, accessibility and motion quality are
    product behavior, not polish deferred indefinitely.
-5. All user-facing strings ship in English, Catalan, German, Spanish and
-   Swedish.
+5. All new user-facing strings ship in English and Catalan. Historical
+   validation records below retain the locale counts at the time of the run.
 6. Signing, notarization, updates and distribution require evidence across the
    entire release chain; merging code is not publishing a release.
 

@@ -248,7 +248,7 @@ Obre amb **⌘,** o fes clic a la icona d'engranatge.
 - **Branch prefix** — prefix per a les branches dels workstreams (per defecte: `ff`)
 - **Symlink .env files** — symlink automàtic de `.env` i `.env.local` als worktrees
 - **Theme** — Sistema, Clar, o Fosc
-- **Language** — Per defecte del sistema, anglès, català, castellà o suec
+- **Language** — Per defecte del sistema, anglès o català
 - **Confirm before quitting** — pregunta abans de tancar amb workstreams actius
 - **Launch at login** — inicia Dockyard en arrencar
 
