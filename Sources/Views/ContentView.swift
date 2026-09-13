@@ -370,7 +370,14 @@ struct ContentView: View {
     var body: some View {
         navigationView
             .overlay(alignment: .bottomTrailing) {
-                if appUpdater.shouldPromptUpdate {
+                if appUpdater.shouldPromptUpdateReady {
+                    UpdateInstalledNotice(
+                        onRestart: { appUpdater.restartToApplyUpdate() },
+                        onDismiss: { appUpdater.shouldPromptUpdateReady = false }
+                    )
+                    .padding(16)
+                    .transition(reduceMotion ? .identity : .move(edge: .bottom).combined(with: .opacity))
+                } else if appUpdater.shouldPromptUpdate {
                     UpdateAvailableNotice(
                         commitsAhead: appUpdater.commitsAhead,
                         onUpdate: {
@@ -384,6 +391,7 @@ struct ContentView: View {
                 }
             }
             .animation(reduceMotion ? nil : DesignMotion.interaction, value: appUpdater.shouldPromptUpdate)
+            .animation(reduceMotion ? nil : DesignMotion.interaction, value: appUpdater.shouldPromptUpdateReady)
             .shortcutHintOverlay()
             .tourOverlay()
             .sheet(isPresented: $showWhatsNew) {
@@ -953,19 +961,75 @@ struct ContentView: View {
         workstreamToPurge = nil
     }
 
-    /// Once-per-version What's New: fresh installs just stamp the version.
+    /// Show What's New after a version change or a completed source update.
     private func checkWhatsNewGate() {
         let current = AppConstants.version
-        let lastSeen = UserDefaults.standard.string(forKey: WhatsNewGate.lastSeenKey)
-        let releases = WhatsNewGate.releasesToPresent(
-            current: current, lastSeen: lastSeen, catalog: WhatsNewCatalog.releases
+        let defaults = UserDefaults.standard
+        let lastSeen = defaults.string(forKey: WhatsNewGate.lastSeenKey)
+        let pendingCommit = defaults.string(forKey: WhatsNewGate.pendingSourceUpdateCommitKey)
+        let sourceUpdateWasApplied = WhatsNewGate.sourceUpdateWasApplied(
+            pendingCommit: pendingCommit,
+            currentCommit: AppCommit.hash
         )
-        UserDefaults.standard.set(current, forKey: WhatsNewGate.lastSeenKey)
+        let releases = WhatsNewGate.releasesToPresent(
+            current: current,
+            lastSeen: lastSeen,
+            catalog: WhatsNewCatalog.releases,
+            includeCurrentRelease: sourceUpdateWasApplied
+        )
+        defaults.set(current, forKey: WhatsNewGate.lastSeenKey)
+        if sourceUpdateWasApplied {
+            defaults.removeObject(forKey: WhatsNewGate.pendingSourceUpdateCommitKey)
+        }
         guard !releases.isEmpty else { return }
         whatsNewReleases = releases
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
             showWhatsNew = true
         }
+    }
+}
+
+private struct UpdateInstalledNotice: View {
+    let onRestart: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 20, weight: .medium))
+                .foregroundStyle(.green)
+                .frame(width: 24, height: 24)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Update Installed")
+                    .font(.system(size: 13, weight: .semibold))
+
+                Text("The latest changes are ready. Restart Dockyard to apply them and see what's new.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button("Restart & View What's New", action: onRestart)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .pressable()
+            }
+
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .accessibilityLabel("Later")
+        }
+        .padding(14)
+        .frame(width: 360, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous))
+        .shadow(color: .black.opacity(0.10), radius: 2, y: 1)
+        .shadow(color: .black.opacity(0.18), radius: 16, y: 6)
     }
 }
 
@@ -985,14 +1049,15 @@ private struct UpdateAvailableNotice: View {
                 Text("Update Available")
                     .font(.system(size: 13, weight: .semibold))
 
-                Text("A new version of Dockyard is ready. It will rebuild and relaunch automatically.")
+                Text("A new version of Dockyard is ready. It will install in the background while you keep working.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Button("Update & Relaunch", action: onUpdate)
+                Button("Install Update", action: onUpdate)
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
+                    .pressable()
             }
 
             Button(action: onDismiss) {

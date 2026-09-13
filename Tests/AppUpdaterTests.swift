@@ -41,6 +41,11 @@ private final class UpdateCheckProcessDouble: UpdateCheckProcess, @unchecked Sen
 }
 
 final class AppUpdaterTests: XCTestCase {
+    func testSourceUpdateBuildsWithoutTerminatingRunningApp() {
+        XCTAssertEqual(SourceUpdateBuildMode.resolve(configuration: "Debug"), "build")
+        XCTAssertEqual(SourceUpdateBuildMode.resolve(configuration: "Release"), "install-bg")
+    }
+
     func testSuccessfulCountPreservesGitCommandAndWorkingDirectory() {
         let process = UpdateCheckProcessDouble(output: Data("  42\n".utf8))
 

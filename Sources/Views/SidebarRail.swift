@@ -229,6 +229,16 @@ struct SidebarRail: View {
             ProgressView()
                 .controlSize(.small)
                 .frame(minWidth: 40, minHeight: 40)
+        } else if appUpdater.isUpdateReady {
+            Button(action: { appUpdater.restartToApplyUpdate() }) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(minWidth: 40, minHeight: 40)
+            }
+            .pressable()
+            .help(NSLocalizedString("Restart Dockyard to apply the installed update", comment: "Collapsed sidebar update restart tooltip"))
+            .accessibilityLabel("Restart")
         } else if appUpdater.commitsAhead > 0 {
             Button(action: { appUpdater.applyUpdate() }) {
                 ZStack(alignment: .topTrailing) {

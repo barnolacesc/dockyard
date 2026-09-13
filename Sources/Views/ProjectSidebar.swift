@@ -494,6 +494,22 @@ struct ProjectSidebar: View {
                 if appUpdater.isChecking || appUpdater.isUpdating {
                     ProgressView()
                         .controlSize(.mini)
+                } else if appUpdater.isUpdateReady {
+                    Button(action: { appUpdater.restartToApplyUpdate() }) {
+                        HStack(spacing: 2) {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("Restart")
+                        }
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.accentColor)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous))
+                        .frame(minHeight: 40)
+                    }
+                    .pressable()
+                    .help("Restart Dockyard to apply the installed update")
                 } else if appUpdater.commitsAhead > 0 {
                     Button(action: {
                         appUpdater.applyUpdate()

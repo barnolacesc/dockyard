@@ -423,9 +423,9 @@
 "No usage data — tap to refresh" = "Sense dades d'ús — toca per actualitzar";
 
 "Update Available" = "Actualització disponible";
-"Update & Relaunch" = "Actualitza i reinicia";
+"Install Update" = "Instal·la l’actualització";
 "Later" = "Més tard";
-"A new version of Dockyard is ready. It will rebuild and relaunch automatically." = "Hi ha una versió nova de Dockyard a punt. Es reconstruirà i es reiniciarà automàticament.";
+"A new version of Dockyard is ready. It will install in the background while you keep working." = "Hi ha una versió nova de Dockyard a punt. S’instal·larà en segon pla mentre continues treballant.";
 "%d updates available" = "%d actualitzacions disponibles";
 
 /* Logs Window */
@@ -617,6 +617,15 @@
 "Open a persistent terminal at the project root directly from the project row." = "Obre un terminal persistent a l'arrel del projecte directament des de la fila del projecte.";
 "Update failed" = "L’actualització ha fallat";
 "The update could not be completed. See the log at %@ for details." = "No s’ha pogut completar l’actualització. Consulta el registre a %@ per obtenir més informació.";
+"Update Installed" = "Actualització instal·lada";
+"The latest changes are ready. Restart Dockyard to apply them and see what's new." = "Els últims canvis estan preparats. Reinicia Dockyard per aplicar-los i veure'n les novetats.";
+"Restart & View What's New" = "Reinicia i mostra les novetats";
+"Restart" = "Reinicia";
+"Restart Dockyard to apply the installed update" = "Reinicia Dockyard per aplicar l’actualització instal·lada";
+"Restart failed" = "El reinici ha fallat";
+"Dockyard was updated, but it could not restart automatically. Quit and reopen it to apply the update." = "Dockyard s’ha actualitzat, però no s’ha pogut reiniciar automàticament. Surt i torna’l a obrir per aplicar l’actualització.";
+"Reliable Background Updates" = "Actualitzacions en segon pla fiables";
+"Dockyard now installs source updates without interrupting your work, confirms when they are ready, and shows the changelog after restart." = "Dockyard ara instal·la les actualitzacions des del codi font sense interrompre la feina, confirma quan estan preparades i mostra el registre de canvis després de reiniciar.";
 // Pull request CI status
 "Checks passed" = "Comprovacions superades";
 "Checks failed" = "Comprovacions fallides";
