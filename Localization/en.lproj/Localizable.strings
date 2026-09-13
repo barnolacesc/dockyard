@@ -149,6 +149,14 @@
 "Light" = "Light";
 "Dark" = "Dark";
 
+/* Settings - Power */
+"Power" = "Power";
+"Keep Mac awake" = "Keep Mac awake";
+"Off" = "Off";
+"While Coding Agents Work" = "While Coding Agents Work";
+"Always" = "Always";
+"Prevents idle system sleep while Dockyard is open. The display can still turn off." = "Prevents idle system sleep while Dockyard is open. The display can still turn off.";
+
 /* Settings - Coding Agent */
 "Claude Code" = "Claude Code";
 "Codex" = "Codex";
@@ -649,3 +657,5 @@
 "Install and authenticate the GitHub CLI to link an issue." = "Install and authenticate the GitHub CLI to link an issue.";
 "Create Workstreams Your Way" = "Create Workstreams Your Way";
 "Choose a workstream name and Coding Agent, or start directly from a GitHub issue with its task already loaded." = "Choose a workstream name and Coding Agent, or start directly from a GitHub issue with its task already loaded.";
+"Caffeinate Mode" = "Caffeinate Mode";
+"Keep your Mac awake whenever Dockyard is open or only while a Coding Agent is actively working." = "Keep your Mac awake whenever Dockyard is open or only while a Coding Agent is actively working.";

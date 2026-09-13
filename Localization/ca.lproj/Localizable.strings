@@ -149,6 +149,14 @@
 "Light" = "Clar";
 "Dark" = "Fosc";
 
+/* Settings - Power */
+"Power" = "Energia";
+"Keep Mac awake" = "Mantén el Mac despert";
+"Off" = "Desactivat";
+"While Coding Agents Work" = "Mentre treballen els agents de codi";
+"Always" = "Sempre";
+"Prevents idle system sleep while Dockyard is open. The display can still turn off." = "Evita que el sistema entri en repòs per inactivitat mentre Dockyard està obert. La pantalla encara es pot apagar.";
+
 /* Settings - Coding Agent */
 "Claude Code" = "Claude Code";
 "Codex" = "Codex";
@@ -649,3 +657,5 @@
 "Install and authenticate the GitHub CLI to link an issue." = "Instal·la i autentica el GitHub CLI per enllaçar una incidència.";
 "Create Workstreams Your Way" = "Crea fluxos de treball a la teva manera";
 "Choose a workstream name and Coding Agent, or start directly from a GitHub issue with its task already loaded." = "Tria un nom i un agent de codi, o comença directament des d'una incidència de GitHub amb la tasca ja carregada.";
+"Caffeinate Mode" = "Mode cafeïna";
+"Keep your Mac awake whenever Dockyard is open or only while a Coding Agent is actively working." = "Mantén el Mac despert sempre que Dockyard estigui obert o només mentre un agent de codi estigui treballant activament.";

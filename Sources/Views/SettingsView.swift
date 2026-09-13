@@ -8,6 +8,7 @@ struct SettingsView: View {
     @AppStorage("dockyard.languageOverride") private var languageOverride: String = ""
     @AppStorage("dockyard.codingCLI") private var codingCLIRaw: String = ""
     @AppStorage("dockyard.tmuxMode") private var tmuxMode: Bool = false
+    @AppStorage(CaffeinateMode.storageKey) private var caffeinateMode: String = CaffeinateMode.off.rawValue
     @AppStorage("dockyard.bypassPermissions") private var bypassPermissions: Bool = false
     @AppStorage("dockyard.allowOutsideWorktree") private var allowOutsideWorktree: Bool = false
     @AppStorage("dockyard.agentTeams") private var agentTeams: Bool = false
@@ -239,6 +240,20 @@ struct SettingsView: View {
                 .onChange(of: launchAtLogin) { _, newValue in
                     LaunchAtLogin.setEnabled(newValue)
                 }
+            }
+
+            // MARK: - Power
+
+            Section("Power") {
+                Picker("Keep Mac awake", selection: $caffeinateMode) {
+                    ForEach(CaffeinateMode.allCases) { mode in
+                        Text(mode.displayName).tag(mode.rawValue)
+                    }
+                }
+
+                Text("Prevents idle system sleep while Dockyard is open. The display can still turn off.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             // MARK: - Updates

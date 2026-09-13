@@ -50,6 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         guard !isRunningXCTest() else { return }
 
         ShortcutHintController.shared.start()
+        CaffeinateController.shared.start()
 
         // Debug settings should not persist across launches
         UserDefaults.standard.set(false, forKey: "dockyard.quickActionDebug")
