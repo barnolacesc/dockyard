@@ -1,5 +1,5 @@
 // ABOUTME: Checks the running app's embedded commit for updates against origin/main.
-// ABOUTME: Pulls and rebuilds the app in the background without opening Terminal.
+// ABOUTME: Installs source updates in the background, then offers a controlled relaunch.
 
 import AppKit
 import Combine
@@ -161,14 +161,22 @@ enum UpdateCheckCommandRunner {
     }
 }
 
+enum SourceUpdateBuildMode {
+    static func resolve(configuration: String) -> String {
+        configuration == "Debug" ? "build" : "install-bg"
+    }
+}
+
 @MainActor
 final class AppUpdater: ObservableObject {
     @Published var commitsAhead: Int = 0
     @Published var isChecking: Bool = false
     @Published private(set) var isUpdating = false
+    @Published private(set) var isUpdateReady = false
     /// Set once per session when an update is first detected, so the UI can surface a
     /// one-time prompt instead of silently showing a small button.
     @Published var shouldPromptUpdate: Bool = false
+    @Published var shouldPromptUpdateReady: Bool = false
 
     private var hasPromptedThisSession = false
     private var updateTask: Task<Void, Never>?
@@ -192,7 +200,7 @@ final class AppUpdater: ObservableObject {
     }
 
     func checkForUpdates() {
-        guard !isChecking else { return }
+        guard !isChecking, !isUpdating, !isUpdateReady else { return }
         isChecking = true
 
         Task.detached {
@@ -222,16 +230,14 @@ final class AppUpdater: ObservableObject {
     }
 
     func applyUpdate() {
-        guard !isUpdating else { return }
+        guard !isUpdating, !isUpdateReady else { return }
         isUpdating = true
         shouldPromptUpdate = false
         let path = AppCommit.sourcePath
-        let isDebug = AppCommit.configuration == "Debug"
-
-        // Debug builds run from derived data, so `br` kills and relaunches. Release (what the
-        // user runs) uses `install`, which rebuilds then swaps the bundle in /Applications and
-        // relaunches it automatically — no manual restart needed.
-        let buildMode = isDebug ? "br" : "install"
+        // Keep the running process alive until the replacement bundle is completely ready.
+        // Killing and reopening from inside the worker races Launch Services and prevents the
+        // app from reporting success. The user initiates a controlled restart after install.
+        let buildMode = SourceUpdateBuildMode.resolve(configuration: AppCommit.configuration)
 
         // Delegate the git reconciliation + build to a hardened, idempotent script so the
         // update survives divergent branches and dirty build artifacts. Fall back to the
@@ -276,7 +282,15 @@ final class AppUpdater: ObservableObject {
                 }
             }.value
             isUpdating = false
-            if !succeeded {
+            if succeeded {
+                commitsAhead = 0
+                isUpdateReady = true
+                shouldPromptUpdateReady = true
+                UserDefaults.standard.set(
+                    AppCommit.hash,
+                    forKey: WhatsNewGate.pendingSourceUpdateCommitKey
+                )
+            } else {
                 let alert = NSAlert()
                 alert.messageText = NSLocalizedString("Update failed", comment: "Source update failure title")
                 alert.informativeText = String(
@@ -286,6 +300,40 @@ final class AppUpdater: ObservableObject {
                 alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
                 alert.runModal()
             }
+        }
+    }
+
+    func restartToApplyUpdate() {
+        guard isUpdateReady else { return }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/nohup")
+        process.arguments = [
+            "/bin/sh", "-c", """
+            while kill -0 "$1" 2>/dev/null; do sleep 0.1; done
+            exec /usr/bin/open -n "$2"
+            """,
+            "dockyard-relaunch",
+            String(ProcessInfo.processInfo.processIdentifier),
+            Bundle.main.bundleURL.path,
+        ]
+        process.standardInput = FileHandle.nullDevice
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+
+        do {
+            try process.run()
+            NSApp.terminate(nil)
+        } catch {
+            logger.error("Failed to relaunch after update: \(error.localizedDescription, privacy: .public)")
+            let alert = NSAlert()
+            alert.messageText = NSLocalizedString("Restart failed", comment: "Source update restart failure title")
+            alert.informativeText = NSLocalizedString(
+                "Dockyard was updated, but it could not restart automatically. Quit and reopen it to apply the update.",
+                comment: "Source update restart failure instructions"
+            )
+            alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
+            alert.runModal()
         }
     }
 }

@@ -1,22 +1,34 @@
 // ABOUTME: Pure logic deciding which What's New releases to present after an
-// ABOUTME: update, based on the last seen version. Fresh installs see nothing.
+// ABOUTME: update, based on the last seen version or a completed source update.
 
 import Foundation
 
 enum WhatsNewGate {
     static let lastSeenKey = "dockyard.lastSeenVersion"
+    static let pendingSourceUpdateCommitKey = "dockyard.pendingSourceUpdateCommit"
 
     /// Releases to present, newest first. Empty on fresh installs (lastSeen nil),
     /// when nothing changed, or when the catalog has no matching releases.
     static func releasesToPresent(
         current: String,
         lastSeen: String?,
-        catalog: [WhatsNewRelease]
+        catalog: [WhatsNewRelease],
+        includeCurrentRelease: Bool = false
     ) -> [WhatsNewRelease] {
-        guard let lastSeen, lastSeen != current else { return [] }
-        return catalog.filter {
-            isVersion($0.version, newerThan: lastSeen) && !isVersion($0.version, newerThan: current)
+        if let lastSeen, lastSeen != current {
+            let newerReleases = catalog.filter {
+                isVersion($0.version, newerThan: lastSeen) && !isVersion($0.version, newerThan: current)
+            }
+            if !newerReleases.isEmpty { return newerReleases }
         }
+
+        guard includeCurrentRelease else { return [] }
+        return catalog.filter { $0.version == current }
+    }
+
+    static func sourceUpdateWasApplied(pendingCommit: String?, currentCommit: String) -> Bool {
+        guard let pendingCommit, !pendingCommit.isEmpty else { return false }
+        return pendingCommit != currentCommit
     }
 
     /// Numeric dot-component comparison ("0.10.0" > "0.9.0"). Non-numeric

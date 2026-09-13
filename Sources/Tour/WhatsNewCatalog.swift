@@ -9,6 +9,11 @@ enum WhatsNewCatalog {
     static let releases: [WhatsNewRelease] = [
         WhatsNewRelease(version: "0.2.5", entries: [
             WhatsNewEntry(
+                symbol: "arrow.triangle.2.circlepath.circle.fill",
+                titleKey: "Reliable Background Updates",
+                bodyKey: "Dockyard now installs source updates without interrupting your work, confirms when they are ready, and shows the changelog after restart."
+            ),
+            WhatsNewEntry(
                 symbol: "cup.and.saucer.fill",
                 titleKey: "Caffeinate Mode",
                 bodyKey: "Keep your Mac awake whenever Dockyard is open or only while a Coding Agent is actively working."

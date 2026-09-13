@@ -423,9 +423,9 @@
 "No usage data — tap to refresh" = "No usage data — tap to refresh";
 
 "Update Available" = "Update Available";
-"Update & Relaunch" = "Update & Relaunch";
+"Install Update" = "Install Update";
 "Later" = "Later";
-"A new version of Dockyard is ready. It will rebuild and relaunch automatically." = "A new version of Dockyard is ready. It will rebuild and relaunch automatically.";
+"A new version of Dockyard is ready. It will install in the background while you keep working." = "A new version of Dockyard is ready. It will install in the background while you keep working.";
 "%d updates available" = "%d updates available";
 
 /* Logs Window */
@@ -617,6 +617,15 @@
 "Open a persistent terminal at the project root directly from the project row." = "Open a persistent terminal at the project root directly from the project row.";
 "Update failed" = "Update failed";
 "The update could not be completed. See the log at %@ for details." = "The update could not be completed. See the log at %@ for details.";
+"Update Installed" = "Update Installed";
+"The latest changes are ready. Restart Dockyard to apply them and see what's new." = "The latest changes are ready. Restart Dockyard to apply them and see what's new.";
+"Restart & View What's New" = "Restart & View What's New";
+"Restart" = "Restart";
+"Restart Dockyard to apply the installed update" = "Restart Dockyard to apply the installed update";
+"Restart failed" = "Restart failed";
+"Dockyard was updated, but it could not restart automatically. Quit and reopen it to apply the update." = "Dockyard was updated, but it could not restart automatically. Quit and reopen it to apply the update.";
+"Reliable Background Updates" = "Reliable Background Updates";
+"Dockyard now installs source updates without interrupting your work, confirms when they are ready, and shows the changelog after restart." = "Dockyard now installs source updates without interrupting your work, confirms when they are ready, and shows the changelog after restart.";
 // Pull request CI status
 "Checks passed" = "Checks passed";
 "Checks failed" = "Checks failed";

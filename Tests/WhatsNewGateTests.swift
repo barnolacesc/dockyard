@@ -1,7 +1,7 @@
 // ABOUTME: Tests for the What's New version gate: fresh installs, updates, semver compare.
 
-import XCTest
 @testable import Dockyard
+import XCTest
 
 final class WhatsNewGateTests: XCTestCase {
     private func release(_ version: String) -> WhatsNewRelease {
@@ -22,6 +22,22 @@ final class WhatsNewGateTests: XCTestCase {
             current: "0.3.0", lastSeen: "0.3.0", catalog: [release("0.3.0")]
         )
         XCTAssertTrue(result.isEmpty)
+    }
+
+    func testSourceUpdateShowsCurrentReleaseEvenWhenVersionIsUnchanged() {
+        let result = WhatsNewGate.releasesToPresent(
+            current: "0.3.0",
+            lastSeen: "0.3.0",
+            catalog: [release("0.3.0")],
+            includeCurrentRelease: true
+        )
+        XCTAssertEqual(result.map(\.version), ["0.3.0"])
+    }
+
+    func testSourceUpdateIsAppliedOnlyAfterEmbeddedCommitChanges() {
+        XCTAssertFalse(WhatsNewGate.sourceUpdateWasApplied(pendingCommit: nil, currentCommit: "bbbbbbb"))
+        XCTAssertFalse(WhatsNewGate.sourceUpdateWasApplied(pendingCommit: "aaaaaaa", currentCommit: "aaaaaaa"))
+        XCTAssertTrue(WhatsNewGate.sourceUpdateWasApplied(pendingCommit: "aaaaaaa", currentCommit: "bbbbbbb"))
     }
 
     func testOneVersionBehindShowsThatRelease() {
