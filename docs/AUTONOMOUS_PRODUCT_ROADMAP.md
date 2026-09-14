@@ -756,7 +756,13 @@ native quit-performance profiling.
   `releases/latest` download returned a non-ZIP response; the automation token
   could not rerun the upstream workflow. The endpoint subsequently returned a
   valid ZIP signature again, so a final evidence-only push requests a fresh
-  native run without changing application or workflow behavior.
+  native run without changing application or workflow behavior. At repaired
+  implementation head `55a6618`, macOS CI run `34859314096` passed XcodeGen,
+  native build, bundled-helper verification and all 668 XCTest cases (two
+  skipped), including three `SetupOutputCollectorTests` and six
+  `SetupRunnerTests`. CodeQL run `34859314167` passed its configured Actions
+  and JavaScript analyses; Swift analysis was skipped by the PR workflow. The
+  final evidence-only head must also remain green.
 
 ### Independent Ready queue while R62, R71 and R72 await review
 
