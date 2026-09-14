@@ -1010,9 +1010,9 @@ still requires native quit-performance profiling.
 
 ### R62 — Bound expanded file-tree enumeration
 
-- Status: **Implemented for issue #225** on
-  `fix/bound-file-tree-enumeration-r62-20260914`; PR and final native evidence
-  are recorded in the pull request. Never auto-merge.
+- Status: **Awaiting Cesc review in PR #228** on
+  `fix/bound-file-tree-enumeration-r62-20260914` for issue #225. Final native
+  evidence is recorded in the pull request. Never auto-merge.
 - User outcome: expanding an unexpectedly large directory cannot materialize
   and sort an unbounded direct-child snapshot.
 - Success signal: Dockyard lazily enumerates direct children, retains at most
