@@ -51,7 +51,7 @@ final class SetupOutputCollector: @unchecked Sendable {
         defer { stateLock.unlock() }
 
         let output = pending
-        pending.removeAll(keepingCapacity: true)
+        pending = Data()
         deliveryScheduled = false
         return output
     }
@@ -65,7 +65,7 @@ final class SetupOutputCollector: @unchecked Sendable {
         isTerminal = true
         deliveryScheduled = false
         let output = pending
-        pending.removeAll(keepingCapacity: true)
+        pending = Data()
         return output
     }
 
@@ -89,12 +89,12 @@ final class SetupOutputCollector: @unchecked Sendable {
 
         isTerminal = true
         deliveryScheduled = false
-        pending.removeAll(keepingCapacity: true)
+        pending = Data()
     }
 
     private func retainLatest(_ data: Data) {
         guard maximumBytes > 0 else {
-            pending.removeAll(keepingCapacity: true)
+            pending = Data()
             return
         }
         if data.count >= maximumBytes {
@@ -104,7 +104,7 @@ final class SetupOutputCollector: @unchecked Sendable {
 
         pending.append(data)
         if pending.count > maximumBytes {
-            pending.removeFirst(pending.count - maximumBytes)
+            pending = Data(pending.suffix(maximumBytes))
         }
     }
 }
