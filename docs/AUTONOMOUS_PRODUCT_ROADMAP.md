@@ -712,9 +712,9 @@ native quit-performance profiling.
 
 ### R72 — Bound setup-output delivery backlog
 
-- Status: **In implementation for issue #229** on
-  `fix/bound-setup-output-backlog-r72-20260914`; the PR and final native
-  evidence will be recorded before handoff. Never auto-merge.
+- Status: **Awaiting Cesc review in PR #230** on
+  `fix/bound-setup-output-backlog-r72-20260914` for issue #229. Final native
+  evidence is tracked on the PR. Never auto-merge.
 - User outcome: a noisy setup script cannot enqueue an unbounded number of
   retained output chunks while Dockyard's main actor is busy.
 - Success signal: background ingestion retains only the latest 4 KiB,
@@ -751,7 +751,11 @@ native quit-performance profiling.
   changed-file review and the added-line secret scan pass. `./scripts/dev.sh
   test` stops before compilation because this Linux host has neither built
   Ghostty macOS resources nor Xcode, so GitHub macOS CI remains mandatory
-  native evidence.
+  native evidence. Initial CI run `34858074398` failed before XcodeGen, build
+  or XCTest because the pinned XcodeGen action's `releases/latest` download
+  returned a non-ZIP response; the automation token could not rerun that
+  upstream workflow, so the final roadmap-evidence push must obtain a fresh
+  native run.
 
 ### Independent Ready queue while R62, R71 and R72 await review
 
