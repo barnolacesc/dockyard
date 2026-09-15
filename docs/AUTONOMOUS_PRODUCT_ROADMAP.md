@@ -1011,10 +1011,10 @@ requires native quit-performance profiling.
 
 ### R74 — Bound repository exclude-file reads
 
-- Status: **Implementation in progress for issue #233** on
-  `fix/bound-repository-exclude-read-r74-20260915`; the PR and final native
-  evidence will be recorded before this run completes. Never auto-merge because
-  the change mutates persistent repository metadata during workstream creation.
+- Status: **Awaiting Cesc review in PR #234** on
+  `fix/bound-repository-exclude-read-r74-20260915` for issue #233. Final native
+  evidence is tracked on the PR. Never auto-merge because the change mutates
+  persistent repository metadata during workstream creation.
 - User outcome: creating a workstream cannot load an unexpectedly large or
   path-substituted `.git/info/exclude` before adding Dockyard's local ignore
   entry.
