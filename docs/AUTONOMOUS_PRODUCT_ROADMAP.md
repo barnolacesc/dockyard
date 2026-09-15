@@ -694,7 +694,7 @@ native quit-performance profiling.
   path. Full GitHub macOS CI is mandatory.
 - Acceptance criteria:
   1. A regular executable launcher exactly at the fixed byte ceiling containing
-     `dockyard://` validates without modifying its bytes.
+     the build's Dockyard URL scheme validates without modifying its bytes.
   2. Oversized, symbolic-link, non-regular and non-executable candidates fail
      validation.
   3. An executable regular file without the Dockyard URL scheme fails.

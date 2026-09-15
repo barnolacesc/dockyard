@@ -68,7 +68,7 @@ final class CLIInstallationValidatorTests: XCTestCase {
     }
 
     private func launcherData(byteCount: Int? = nil) -> Data {
-        var data = Data("#!/bin/bash\nopen dockyard://$PWD\n".utf8)
+        var data = Data("#!/bin/bash\nopen \(AppConstants.urlScheme)://$PWD\n".utf8)
         if let byteCount {
             XCTAssertLessThan(data.count, byteCount)
             data.append(Data(repeating: 0x20, count: byteCount - data.count))
