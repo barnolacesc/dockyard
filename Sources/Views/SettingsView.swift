@@ -1,6 +1,7 @@
 // ABOUTME: Application settings pane displayed in the detail area.
 // ABOUTME: Environment, general, coding agent, and advanced settings.
 
+import Darwin
 import Foundation
 import SwiftUI
 
