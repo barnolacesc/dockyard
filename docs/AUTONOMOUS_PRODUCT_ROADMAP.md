@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-09-12 against `origin/main` at
-`8bd5f85b2b072ae79bd92214ed893e98bca746c3`.
+Last reconciled: 2026-09-15 against `origin/main` at
+`e7c236cf66e3d7d11d4985397715ce2b144098c8`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -11,106 +11,97 @@ The first **Current autonomous queue** is canonical. Dated **Live
 reconciliation** and superseded queue sections are retained as an audit trail
 and can contain stale statuses.
 
-## Current autonomous queue — 2026-09-12 09:30 CEST
+## Current autonomous queue — 2026-09-15 19:30 CEST
 
-`origin/main` is `8bd5f85`; macOS `build-and-test` and configured CodeQL are
-green at that head. The latest published release is v0.2.5. Release-please PR
-#212 is open and remains approval-gated. Product PRs #219, #220 and #221 are
-currently conflicted with `main`; PR #222 is mergeable but its macOS
-`build-and-test` fails. They are left untouched for Cesc and none owns the
-agent-state read paths selected here.
+`origin/main` is `e7c236c`. The roadmap has been reconciled after the product
+work merged on 11–14 September: GitHub-issue workstream creation, the Attention
+overview and notifications, PR check visibility, independent task-tab/branch
+renaming, English/Catalan-only localization, background source updates and
+caffeinate mode. Older Ready labels below are historical unless repeated here.
 
-GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
-`repo` and `workflow` but lacks `read:project`. No Project item or status is
-inferred. Current code, `TODO.md`, issues and every open PR path were
-reconciled before issue #223 was created. Issues #196, #202 and #204 describe
-behavior already integrated by PR #209. Issue #214 is obsolete because PR
-#216 removed persisted Attention history. Issue #43 appears implemented by PR
-#215 but remains open; issue #54 now has subagent state plumbing on `main` and
-needs its remaining product expectation reconciled. Issue #41 still requires
-native quit-performance profiling.
+Low-risk, reversible roadmap PRs may auto-merge only after all required checks
+pass and the branch is current. Release publication, update trust, command or
+permission boundaries, destructive cleanup and persisted-data migrations remain
+approval-gated. Release-please PR #212 is therefore outside this queue.
 
-### R71 — Bound agent-state cache reads
+### R75 — Prove the issue-to-PR workflow as one coherent product journey
 
-- Status: **Open in PR #224 for Cesc review** on
-  `fix/bound-agent-state-cache-reads-r71-20260912` for issue #223. Required
-  native CI is tracked on the PR. Never auto-merge.
-- User outcome: malformed or unexpectedly large main-agent and subagent cache
-  files cannot allocate unbounded buffers while Dockyard refreshes Coding
-  Agent status.
-- Success signal: valid regular-file snapshots exactly at the 1 MiB ceiling
-  decode, while oversized, symbolic-link, non-regular and malformed candidates
-  fail closed without modifying stored bytes.
-- macOS impact: background agent-status refresh only; no visible UI,
-  accessibility, shortcut or localization behavior changes.
-- Persistence/security impact: narrows read-only handling of ephemeral cache
-  files. State schemas, writes, cleanup, PID validation, state decay, watcher
-  scheduling, notifications, commands, worktrees, entitlements and releases
-  are unchanged.
-- Scope: `AgentStateFiles`, `AgentSubagentFiles`, the `AgentStateStore` read
-  path, focused `AgentStateTests`, and this roadmap evidence.
-- Dependencies: none. Open PRs #219-#222 and release-please #212 own disjoint
-  implementation paths, so this change can merge independently.
-- Risk: low and reversible read-side hardening. Full GitHub macOS CI is
-  mandatory.
-- Acceptance criteria:
-  1. Main-agent and subagent snapshots share a fixed pre-decode byte ceiling.
-  2. A valid regular-file snapshot exactly at the ceiling restores.
-  3. Oversized, symbolic-link, non-regular and malformed candidates return the
-     existing nil path without deletion or mutation.
-  4. Existing live-PID validation, state decay, aggregation, writes and
-     cleanup tests remain green.
-  5. Full GitHub macOS build and XCTest pass.
-- Required evidence: focused `AgentStateTests` and `AgentStateStoreTests`,
-  localization resource/key checks, XcodeGen/native build, full XCTest,
-  repository script tests, `git diff --check`, added-line secret review and
-  configured CodeQL.
-- Evidence so far: all 38 repository Python script tests pass; localization
-  checks pass with 491 app keys, 15 privacy keys and four declared resources
-  across the currently shipped English/Catalan locales. `git diff --check`,
-  conflict-marker review, changed-file size review and the added-line secret
-  scan pass. `./scripts/dev.sh test` stops before compilation because this
-  Linux host has neither the built Ghostty macOS resources nor Xcode, so GitHub
-  macOS CI remains mandatory native evidence. At implementation-and-roadmap
-  head `98c15a2`, macOS CI run `34681426906` passed localization checks,
-  XcodeGen, the native build, bundled-helper verification and all 653 XCTest
-  cases (two skipped), including all 13 `AgentStateTests`. CodeQL run
-  `34681426871` passed its configured Actions and JavaScript analyses; Swift
-  analysis was skipped by the PR workflow. The final evidence-only head must
-  also remain green.
+- Status: **Ready — highest priority**.
+- User outcome: a user can select a GitHub issue, create a correctly named
+  workstream, run an agent, open the resulting PR and understand its CI state
+  without losing context or encountering duplicate/stale state.
+- Success signal: one native integration matrix covers issue loading, workstream
+  creation, task/branch rename separation, PR association, check refresh and
+  restart restoration, including unavailable/rate-limited GitHub responses.
+- Scope: reconciliation and reliability gaps only; no new GitHub mutation,
+  credentials, auto-merge or destructive worktree behavior.
+- Risk: low to medium. Required evidence: focused model/UI tests, full macOS CI,
+  VoiceOver/keyboard checks and a native journey capture.
 
-### Independent Ready queue while R71 awaits review
+### R76 — Make Attention truthful across supported coding CLIs
 
-- **R62 — Bound expanded file-tree enumeration.** User outcome: expanding an
-  unexpectedly large directory cannot materialize and sort an unbounded entry
-  array. Success: deterministic fixtures prove a fixed ceiling, stable visible
-  ordering and unchanged containment/symlink behavior. Scope: `FileTree` and
-  focused tests only; current `main` was revalidated and no open PR owns it.
-- **R72 — Bound setup-output delivery backlog.** User outcome: a noisy setup
-  script cannot enqueue an unbounded number of retained output chunks while
-  the main actor is busy. Success: deterministic collector tests keep only the
-  latest 4 KiB and prove completion drains the bounded tail once. Scope:
-  `SetupRunner` and focused tests; no script command, trust or completion-state
-  change. Command-adjacent and approval-gated.
-- **R73 — Bound installed-CLI validation reads.** User outcome: Settings can
-  verify `/usr/local/bin/dockyard` without loading an unexpectedly large or
-  non-regular candidate. Success: bounded regular fixtures validate while
-  oversized and symbolic-link candidates report not installed. Scope:
-  Settings CLI validation and focused tests; no privileged install script,
-  entitlement or destination change. Approval-gated because it borders the
-  CLI installation path.
-- **R74 — Bound repository exclude-file reads.** User outcome: workstream
-  creation cannot load an unexpectedly large `.git/info/exclude` before adding
-  Dockyard's local ignore entry. Success: bounded fixtures preserve existing
-  lines and over-limit candidates fail without replacement. Scope:
-  `GitOperations.addExcludeEntry` and focused tests; no worktree command or
-  cleanup change. Approval-gated because it touches repository metadata.
+- Status: **Ready**.
+- User outcome: Attention distinguishes running, waiting, failed, completed and
+  stale work without implying unsupported subagent visibility.
+- Success signal: a documented capability matrix and fixtures prove semantics
+  for Claude Code, Codex and OpenCode; stale writers expire deterministically and
+  only actionable state produces notification pressure.
+- Scope: normalize and test the state already surfaced by Attention. Do not add
+  unsupported CLI flags, telemetry or broader filesystem access.
+- Risk: medium because external CLI state is untrusted. Native CI and bounded
+  parser/store tests are mandatory.
 
-R62 and R72-R74 own distinct implementation paths from R71 and all current
-open PRs, so they can be selected from fresh `origin/main` branches and merge
-in any order. The locale contract also needs explicit reconciliation: PR #218
-reduced shipped locales to English/Catalan while repository `AGENTS.md` still
-requires five locales. That inconsistency is not guessed into a Ready item.
+### R77 — Validate caffeinate lifecycle, restoration and energy behavior
+
+- Status: **Ready**.
+- User outcome: sleep prevention is explicit, scoped to active work and never
+  remains silently enabled after completion, restart or failure.
+- Success signal: deterministic state tests cover activation, app restart,
+  terminal/agent completion, cancellation and stale-process recovery; native
+  evidence confirms the menu/status presentation is understandable.
+- Scope: lifecycle correctness and feedback for the existing feature, not new
+  power-management capabilities.
+- Risk: medium; process ownership and persisted state require full macOS CI and
+  native manual evidence.
+
+### R78 — Harden background source updates as an atomic, observable operation
+
+- Status: **Ready after R75**.
+- User outcome: background updates never hide failure, mutate the wrong
+  worktree or leave the user uncertain which source revision is active.
+- Success signal: cancellation, authentication failure, divergent branches,
+  partial output and app restart produce bounded, recoverable and visible state.
+- Scope: existing background update path and status UI. No automatic conflict
+  resolution, force operations, executable download or release behavior.
+- Risk: medium; command boundaries remain approval-gated if behavior expands.
+
+### P2 — Profile launch, refresh and termination with realistic workspaces
+
+- Status: **Discovery; native evidence required before implementation**.
+- User outcome: the richer sidebar, Attention and GitHub checks do not make a
+  busy project feel laggy or delay app quit.
+- Success signal: signposts/Instruments identify launch, 15-second refresh,
+  GitHub polling and termination costs with representative terminals and PRs;
+  each measured bottleneck becomes a bounded follow-up.
+- Scope: measurement only. Never trade responsiveness for lost terminal,
+  worktree or persisted state.
+
+### D4 — Verify release 0.2.6 as one distribution chain
+
+- Status: **Approval-gated**.
+- User outcome: the app, DMG, Sparkle feed, checksum and Homebrew cask all expose
+  the same tested version and update path.
+- Success signal: explicit approval is followed by cross-checks of signed and
+  notarized artifacts, appcast, cask and upgrade behavior.
+- Scope: release verification; PR #212 must not auto-merge or publish.
+
+### Queue discipline
+
+Keep four to six bounded Ready items. Prefer customer workflow, correctness and
+native performance over an endless stream of isolated defensive read ceilings.
+New hardening items enter Ready only when tied to a concrete failure mode,
+measured risk or an exposed trust boundary. GitHub Projects v2 remains
+unavailable without `read:project`; no Project status is inferred.
 
 ## Superseded autonomous queue — 2026-09-08 16:30 CEST
 
