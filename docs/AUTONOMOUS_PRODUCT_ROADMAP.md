@@ -710,6 +710,15 @@ native quit-performance profiling.
   the added-line secret scan pass. `./scripts/dev.sh test` stops before
   compilation because this Linux host has neither built Ghostty macOS
   resources nor Xcode, so GitHub macOS CI remains mandatory native evidence.
+  Initial CI run `34943111805` compiled successfully but exposed a focused
+  fixture that hardcoded the release URL scheme while XCTest runs the debug
+  app; the fixture now uses the active build scheme. At corrected head
+  `1c624d0`, macOS CI run `34943637688` passed localization checks, XcodeGen,
+  the native build, bundled-helper verification and all 670 XCTest cases (two
+  skipped), including all six `CLIInstallationValidatorTests`. Configured
+  CodeQL run `34943637766` passed Actions and JavaScript analysis while Swift
+  analysis was skipped by the PR workflow. The final evidence-only head must
+  also remain green.
 
 ### Independent Ready queue while R62, R71–R73 await review
 
