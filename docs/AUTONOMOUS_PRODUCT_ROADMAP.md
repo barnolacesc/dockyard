@@ -1,7 +1,7 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-09-10 against `origin/main` at
-`c825f36afed82fa6d0f02d3ed99ac9f66993c4d7`.
+Last reconciled: 2026-09-15 against `origin/main` at
+`e7c236cf66e3d7d11d4985397715ce2b144098c8`.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
@@ -11,91 +11,97 @@ The first **Current autonomous queue** is canonical. Dated **Live
 reconciliation** and superseded queue sections are retained as an audit trail
 and can contain stale statuses.
 
-## Current autonomous queue — 2026-09-10 09:30 CEST
+## Current autonomous queue — 2026-09-15 19:30 CEST
 
-`origin/main` is `c825f36`; its macOS CI, CodeQL and Release workflows are
-green. PR #197 (R68) and PR #199 (R65) are green, mergeable and **awaiting
-Cesc review**. They remain open and are not modified or stacked on here. The
-latest published release is v0.2.4; no release-please PR is currently open.
+`origin/main` is `e7c236c`. The roadmap has been reconciled after the product
+work merged on 11–14 September: GitHub-issue workstream creation, the Attention
+overview and notifications, PR check visibility, independent task-tab/branch
+renaming, English/Catalan-only localization, background source updates and
+caffeinate mode. Older Ready labels below are historical unless repeated here.
 
-GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
-`repo` and `workflow` but lacks `read:project`. No Project item or status is
-inferred. Current issues, `TODO.md`, code and every open PR path were
-reconciled before issue #200 was created for this run. Product issues #41,
-#43 and #54 still require native profiling, approval-gated update work and
-non-duplicative agent-status work respectively.
+Low-risk, reversible roadmap PRs may auto-merge only after all required checks
+pass and the branch is current. Release publication, update trust, command or
+permission boundaries, destructive cleanup and persisted-data migrations remain
+approval-gated. Release-please PR #212 is therefore outside this queue.
 
-### R66 — Bound persisted project snapshot decoding
+### R75 — Prove the issue-to-PR workflow as one coherent product journey
 
-- Status: **Awaiting Cesc review in PR #201** on
-  `fix/bound-project-snapshot-decoding-r66-20260910` for issue #200. Required
-  native implementation CI is green; the PR must remain open and must not be
-  auto-merged.
-- User outcome: an unexpectedly large `dockyard.projects` defaults payload
-  cannot feed an unbounded JSON decoder during launch.
-- Success signal: a valid snapshot at the 1 MiB ceiling restores, while an
-  oversized or malformed payload follows the existing empty-state path and
-  the stored bytes remain untouched.
-- macOS impact: app launch and project restoration only; no visible UI,
-  accessibility, localization or shortcut behavior changes.
-- Persistence/security impact: adds a read-side decode ceiling. The project
-  schema, lossy per-project recovery, writes, migrations, worktrees, commands,
-  entitlements and release behavior are unchanged.
-- Scope: `ProjectStore`, focused `ProjectTests` and roadmap evidence only.
-- Dependencies: none. PR #197 owns worktree creation, sidebar UI,
-  localizations, What's New and `GitOperationsTests`; PR #199 owns
-  `CacheMigration` and its tests. R66 owns none of those implementation paths,
-  so all three PRs can merge in any order.
-- Risk: low and reversible read-side hardening. Full GitHub macOS CI is
-  mandatory.
-- Acceptance criteria:
-  1. A valid project snapshot exactly at the fixed byte ceiling restores.
-  2. A valid project snapshot above the ceiling is rejected before decoding.
-  3. Malformed bounded data continues to return the existing empty state.
-  4. Rejected oversized and malformed payload bytes remain in UserDefaults.
-  5. Existing round-trip and lossy per-project restoration tests remain green.
-  6. Full GitHub macOS build and XCTest pass.
-- Required evidence: focused `ProjectTests`, localization resource/key checks,
-  XcodeGen/native build, full XCTest, repository script tests,
-  `git diff --check`, added-line secret scan and configured CodeQL.
-- Evidence so far: localization resource/key checks pass with 10 declared
-  resources, 463 app keys and 15 privacy keys across all five locales; all 38
-  repository Python script tests, `git diff --check` and the added-line secret
-  review pass. `./scripts/dev.sh test` cannot run on this Linux host because
-  Ghostty macOS resources and Xcode are unavailable, so GitHub macOS CI remains
-  mandatory native evidence. At implementation-and-roadmap head `e6d8890`,
-  macOS CI run `34451225379` passed XcodeGen, the native build and the full
-  XCTest suite including `ProjectTests`; configured CodeQL run `34451225147`
-  passed Actions and JavaScript analysis while Swift analysis was skipped by
-  the PR workflow. The final evidence-only head must also remain green.
+- Status: **Ready — highest priority**.
+- User outcome: a user can select a GitHub issue, create a correctly named
+  workstream, run an agent, open the resulting PR and understand its CI state
+  without losing context or encountering duplicate/stale state.
+- Success signal: one native integration matrix covers issue loading, workstream
+  creation, task/branch rename separation, PR association, check refresh and
+  restart restoration, including unavailable/rate-limited GitHub responses.
+- Scope: reconciliation and reliability gaps only; no new GitHub mutation,
+  credentials, auto-merge or destructive worktree behavior.
+- Risk: low to medium. Required evidence: focused model/UI tests, full macOS CI,
+  VoiceOver/keyboard checks and a native journey capture.
 
-### Independent Ready queue while R65, R66 and R68 await review
+### R76 — Make Attention truthful across supported coding CLIs
 
-- **R67 — Bound persisted workspace-tab snapshot decoding.** User outcome: an
-  unexpectedly large restored tab payload cannot feed an unbounded decoder
-  while opening a workstream. Success: bounded valid tabs still restore while
-  oversized or malformed data follows the existing default-tab path without
-  deleting stored bytes. Scope: `WorkspaceTabSnapshotStore` and focused tests;
-  no schema, migration, tab mutation, UI string, command, worktree or
-  entitlement change. Full macOS CI is required.
-- **R69 — Bound persisted sidebar-state decoding.** User outcome: malformed
-  selection or expanded-project defaults cannot feed an unbounded decoder at
-  launch. Success: fixtures at the byte ceiling restore while oversized values
-  fall back to the current nil/empty state without deleting stored bytes.
-  Scope: `SidebarSelection`, `SidebarState` and focused tests; no UI, schema,
-  project mutation, worktree or command change. Full macOS CI is required.
-- **R70 — Bound persisted Attention history decoding.** User outcome: an
-  unexpectedly large local Attention history cannot feed an unbounded decoder
-  before retention and event-count limits apply. Success: bounded valid
-  history still restores while oversized or malformed bytes use the existing
-  empty-history path and remain stored. Scope: `AgentActivityStore` and focused
-  tests; no event semantics, UI, localization, watcher, command or worktree
-  change. Full macOS CI is required.
+- Status: **Ready**.
+- User outcome: Attention distinguishes running, waiting, failed, completed and
+  stale work without implying unsupported subagent visibility.
+- Success signal: a documented capability matrix and fixtures prove semantics
+  for Claude Code, Codex and OpenCode; stale writers expire deterministically and
+  only actionable state produces notification pressure.
+- Scope: normalize and test the state already surfaced by Attention. Do not add
+  unsupported CLI flags, telemetry or broader filesystem access.
+- Risk: medium because external CLI state is untrusted. Native CI and bounded
+  parser/store tests are mandatory.
 
-R67, R69 and R70 own distinct source and test paths and are independent of
-PRs #197 and #199. Each can merge in any order. R62 remains dependent on the
-expanded file-tree implementation that landed through integration PR #189;
-its scope must be revalidated against current code before it returns to Ready.
+### R77 — Validate caffeinate lifecycle, restoration and energy behavior
+
+- Status: **Ready**.
+- User outcome: sleep prevention is explicit, scoped to active work and never
+  remains silently enabled after completion, restart or failure.
+- Success signal: deterministic state tests cover activation, app restart,
+  terminal/agent completion, cancellation and stale-process recovery; native
+  evidence confirms the menu/status presentation is understandable.
+- Scope: lifecycle correctness and feedback for the existing feature, not new
+  power-management capabilities.
+- Risk: medium; process ownership and persisted state require full macOS CI and
+  native manual evidence.
+
+### R78 — Harden background source updates as an atomic, observable operation
+
+- Status: **Ready after R75**.
+- User outcome: background updates never hide failure, mutate the wrong
+  worktree or leave the user uncertain which source revision is active.
+- Success signal: cancellation, authentication failure, divergent branches,
+  partial output and app restart produce bounded, recoverable and visible state.
+- Scope: existing background update path and status UI. No automatic conflict
+  resolution, force operations, executable download or release behavior.
+- Risk: medium; command boundaries remain approval-gated if behavior expands.
+
+### P2 — Profile launch, refresh and termination with realistic workspaces
+
+- Status: **Discovery; native evidence required before implementation**.
+- User outcome: the richer sidebar, Attention and GitHub checks do not make a
+  busy project feel laggy or delay app quit.
+- Success signal: signposts/Instruments identify launch, 15-second refresh,
+  GitHub polling and termination costs with representative terminals and PRs;
+  each measured bottleneck becomes a bounded follow-up.
+- Scope: measurement only. Never trade responsiveness for lost terminal,
+  worktree or persisted state.
+
+### D4 — Verify release 0.2.6 as one distribution chain
+
+- Status: **Approval-gated**.
+- User outcome: the app, DMG, Sparkle feed, checksum and Homebrew cask all expose
+  the same tested version and update path.
+- Success signal: explicit approval is followed by cross-checks of signed and
+  notarized artifacts, appcast, cask and upgrade behavior.
+- Scope: release verification; PR #212 must not auto-merge or publish.
+
+### Queue discipline
+
+Keep four to six bounded Ready items. Prefer customer workflow, correctness and
+native performance over an endless stream of isolated defensive read ceilings.
+New hardening items enter Ready only when tied to a concrete failure mode,
+measured risk or an exposed trust boundary. GitHub Projects v2 remains
+unavailable without `read:project`; no Project status is inferred.
 
 ## Superseded autonomous queue — 2026-09-08 16:30 CEST
 
