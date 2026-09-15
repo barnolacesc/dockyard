@@ -669,9 +669,9 @@ native quit-performance profiling.
 
 ### R73 — Bound installed-CLI validation reads
 
-- Status: **Implementation in progress** on
-  `fix/bound-cli-validation-read-r73-20260915` for issue #231. Stop at a tested
-  PR for Cesc; never auto-merge.
+- Status: **Awaiting Cesc review in PR #232** on
+  `fix/bound-cli-validation-read-r73-20260915` for issue #231. Final native
+  evidence is tracked on the PR. Never auto-merge.
 - User outcome: opening Settings cannot load an unexpectedly large or
   non-regular candidate while checking Dockyard's installed `dy` launcher
   (`ff-debug` in debug builds).
@@ -704,6 +704,12 @@ native quit-performance profiling.
 - Required evidence: focused `CLIInstallationValidatorTests`, localization
   resource/key checks, XcodeGen/native build, full XCTest, repository script
   tests, `git diff --check`, added-line secret review and configured CodeQL.
+- Evidence so far: all 38 repository Python script tests pass; localization
+  checks pass with 561 app keys, 15 privacy keys and four declared resources
+  across English and Catalan. `git diff --check`, conflict-marker review and
+  the added-line secret scan pass. `./scripts/dev.sh test` stops before
+  compilation because this Linux host has neither built Ghostty macOS
+  resources nor Xcode, so GitHub macOS CI remains mandatory native evidence.
 
 ### Independent Ready queue while R62, R71–R73 await review
 
