@@ -267,4 +267,49 @@ final class WorkspaceFileAccessTests: XCTestCase {
             ).isEmpty
         )
     }
+
+    func testFileTreeBoundsExpandedDirectoryAndKeepsDirectoriesFirst() throws {
+        let crowdedDirectory = workspace.appendingPathComponent("Crowded", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: crowdedDirectory,
+            withIntermediateDirectories: true
+        )
+
+        for index in (0 ... FileNode.maximumVisibleChildren).reversed() {
+            let file = crowdedDirectory.appendingPathComponent(
+                String(format: "file-%04d.txt", index)
+            )
+            try Data().write(to: file)
+        }
+
+        for name in ["Zulu", "alpha"] {
+            try FileManager.default.createDirectory(
+                at: crowdedDirectory.appendingPathComponent(name, isDirectory: true),
+                withIntermediateDirectories: false
+            )
+        }
+        try FileManager.default.createDirectory(
+            at: crowdedDirectory.appendingPathComponent(".git", isDirectory: true),
+            withIntermediateDirectories: false
+        )
+
+        let children = FileNode.loadChildren(
+            atRelativePath: "Crowded",
+            rootPath: workspace.path
+        )
+
+        XCTAssertEqual(children.count, FileNode.maximumVisibleChildren)
+        XCTAssertEqual(children.prefix(2).map(\.name), ["alpha", "Zulu"])
+        XCTAssertTrue(children.prefix(2).allSatisfy(\.isDirectory))
+        XCTAssertTrue(children.dropFirst(2).allSatisfy { !$0.isDirectory })
+        XCTAssertFalse(children.contains { $0.name == ".git" })
+
+        let retainedFileNames = children.dropFirst(2).map(\.name)
+        XCTAssertEqual(
+            retainedFileNames,
+            retainedFileNames.sorted {
+                $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
+            }
+        )
+    }
 }

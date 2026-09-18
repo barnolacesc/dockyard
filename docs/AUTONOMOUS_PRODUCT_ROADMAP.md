@@ -986,3 +986,91 @@ were reconciled before issue #198 was created for this run.
   snapshot. Success: deterministic fixtures prove a fixed ceiling, stable
   ordering and unchanged containment/symlink behavior. Scope: `FileTree` and
   focused tests only.
+
+## Live reconciliation — 2026-09-14 09:30 CEST
+
+This append-only section is authoritative for R62 and intentionally avoids PR
+#224's current-queue rewrite so either implementation can merge first.
+`origin/main` is `e7c236c`; CI run `34785476006`, CodeQL run `34785476077`
+and Release run `34785476231` are green at that head. The latest published
+release is v0.2.5. Release-please PR #212 remains approval-gated and is not
+modified. R71 / PR #224 is clean, green on macOS `build-and-test` and
+**awaiting Cesc review**; it owns agent-state cache reads and tests, none of
+which is modified here.
+
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
+`repo` and `workflow` but lacks `read:project`. No Project item or status is
+inferred. Current code, `TODO.md`, issues and every open PR path were
+reconciled before selecting existing issue #225. Issues #196, #202 and #204
+describe behavior already integrated by PR #209. Issue #214 is obsolete after
+PR #216 removed persisted Attention history. Issue #43 appears implemented by
+PRs #215 and #227 but remains open; issue #54 has subagent state plumbing on
+`main` and still needs its remaining product expectation reconciled. Issue #41
+still requires native quit-performance profiling.
+
+### R62 — Bound expanded file-tree enumeration
+
+- Status: **Awaiting Cesc review in PR #228** on
+  `fix/bound-file-tree-enumeration-r62-20260914` for issue #225. Final native
+  evidence is recorded in the pull request. Never auto-merge.
+- User outcome: expanding an unexpectedly large directory cannot materialize
+  and sort an unbounded direct-child snapshot.
+- Success signal: Dockyard lazily enumerates direct children, retains at most
+  1,024 visible entries, presents retained directories before files and keeps
+  deterministic case-insensitive ordering inside each group.
+- macOS impact: embedded editor file-tree loading and refresh only; no visible
+  strings, shortcuts, accessibility labels or layout change.
+- Persistence/security impact: bounds transient file metadata while retaining
+  existing workspace containment and symlink resolution. File reads/writes,
+  commands, worktrees, schemas, entitlements, privacy and release behavior are
+  unchanged.
+- Scope: `FileTree`, focused `WorkspaceFileAccessTests` and this append-only
+  roadmap evidence.
+- Dependencies: none. PR #224 owns `AgentState`, `AgentStateStore` and focused
+  agent-state tests. R62 owns disjoint implementation and test paths, so the
+  pull requests can merge in either order.
+- Risk: low and reversible read-side resource bounding. Full GitHub macOS CI
+  is mandatory.
+- Acceptance criteria:
+  1. Root and expanded-directory loads retain at most 1,024 visible direct
+     children without first materializing the complete directory.
+  2. Retained directories sort before retained files, with stable
+     case-insensitive ordering inside each group.
+  3. `.git` exclusion and existing contained/escaping symlink behavior remain
+     unchanged.
+  4. Focused XCTest and the full GitHub macOS build/test pass.
+- Required evidence: focused `WorkspaceFileAccessTests`, localization
+  resource/key checks, XcodeGen/native build, full XCTest, repository script
+  tests, `git diff --check`, added-line secret review and configured CodeQL.
+- Evidence so far: all 38 repository Python script tests pass; localization
+  checks pass with 561 app keys, 15 privacy keys and four declared resources
+  across English and Catalan. `git diff --check` passes. `./scripts/dev.sh
+  test` cannot reach compilation on this Linux host because Ghostty macOS
+  resources and Xcode are unavailable, so GitHub macOS CI remains mandatory
+  native evidence.
+
+### Independent Ready queue while R62 and R71 await review
+
+- **R72 — Bound setup-output delivery backlog.** User outcome: a noisy setup
+  script cannot enqueue an unbounded number of retained output chunks while
+  the main actor is busy. Success: deterministic collector tests keep only the
+  latest 4 KiB and prove completion drains the bounded tail once. Scope:
+  `SetupRunner` and focused tests; no script command, trust or
+  completion-state change. Command-adjacent and approval-gated.
+- **R73 — Bound installed-CLI validation reads.** User outcome: Settings can
+  verify `/usr/local/bin/dockyard` without loading an unexpectedly large or
+  non-regular candidate. Success: bounded regular fixtures validate while
+  oversized and symbolic-link candidates report not installed. Scope:
+  Settings CLI validation and focused tests; no privileged install script,
+  entitlement or destination change. Approval-gated because it borders the
+  CLI installation path.
+- **R74 — Bound repository exclude-file reads.** User outcome: workstream
+  creation cannot load an unexpectedly large `.git/info/exclude` before adding
+  Dockyard's local ignore entry. Success: bounded fixtures preserve existing
+  lines and over-limit candidates fail without replacement. Scope:
+  `GitOperations.addExcludeEntry` and focused tests; no worktree command or
+  cleanup change. Approval-gated because it touches repository metadata.
+
+R72-R74 own distinct implementation paths from R62, R71 and release metadata;
+each remains available from a fresh `origin/main` branch while these PRs await
+Cesc's review.

@@ -159,6 +159,8 @@ enum WorkspaceFileAccess {
 // MARK: - FileNode
 
 struct FileNode: Identifiable {
+    static let maximumVisibleChildren = 1_024
+
     let id: String // relative path from worktree root (empty string for root)
     let name: String // last path component
     let isDirectory: Bool
@@ -253,14 +255,24 @@ struct FileNode: Identifiable {
         rootPath: String
     ) -> [FileNode] {
         let fm = FileManager.default
-        guard let entries = try? fm.contentsOfDirectory(atPath: directoryURL.path) else {
+        var enumerationFailed = false
+        guard let entries = fm.enumerator(
+            at: directoryURL,
+            includingPropertiesForKeys: nil,
+            options: [.skipsSubdirectoryDescendants],
+            errorHandler: { _, _ in
+                enumerationFailed = true
+                return false
+            }
+        ) else {
             return []
         }
 
         var dirs: [FileNode] = []
         var files: [FileNode] = []
 
-        for entry in entries {
+        for case let entryURL as URL in entries {
+            let entry = entryURL.lastPathComponent
             if entry == ".git" { continue }
 
             let relativePath = relativePathPrefix.isEmpty
@@ -275,16 +287,36 @@ struct FileNode: Identifiable {
             guard fm.fileExists(atPath: resolvedURL.path, isDirectory: &isDir) else { continue }
 
             if isDir.boolValue {
-                dirs.append(FileNode(id: relativePath, name: entry, isDirectory: true, children: nil))
-            } else {
-                files.append(FileNode(id: relativePath, name: entry, isDirectory: false, children: []))
+                if dirs.count < maximumVisibleChildren {
+                    dirs.append(
+                        FileNode(id: relativePath, name: entry, isDirectory: true, children: nil)
+                    )
+                }
+            } else if files.count < maximumVisibleChildren {
+                files.append(
+                    FileNode(id: relativePath, name: entry, isDirectory: false, children: [])
+                )
             }
+
+            // Directories are presented before files. Once the directory quota
+            // is full, no later entry can change the bounded result.
+            if dirs.count == maximumVisibleChildren { break }
         }
 
-        dirs.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        files.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        guard !enumerationFailed else { return [] }
 
-        return dirs + files
+        dirs.sort(by: isOrderedBefore)
+        files.sort(by: isOrderedBefore)
+
+        return dirs + Array(files.prefix(maximumVisibleChildren - dirs.count))
+    }
+
+    private static func isOrderedBefore(_ lhs: FileNode, _ rhs: FileNode) -> Bool {
+        let comparison = lhs.name.localizedCaseInsensitiveCompare(rhs.name)
+        if comparison != .orderedSame {
+            return comparison == .orderedAscending
+        }
+        return lhs.name < rhs.name
     }
 
     /// Merge fresh shallow nodes with existing tree, preserving loaded children.
