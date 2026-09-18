@@ -79,6 +79,7 @@ struct SidebarRail: View {
     @EnvironmentObject private var activityTracker: WorkstreamActivityTracker
     @EnvironmentObject private var usageStore: ClaudeUsageStore
     @EnvironmentObject private var codexUsageStore: CodexUsageStore
+    @EnvironmentObject private var agyUsageStore: AgyUsageStore
 
     private var sortedProjects: [Project] {
         sidebarRailSortedProjects(projects)
@@ -220,6 +221,8 @@ struct SidebarRail: View {
             return usageStore.hasAnyData
         case .codex:
             return codexUsageStore.hasAnyData
+        case .agy:
+            return agyUsageStore.hasAnyData
         }
     }
 

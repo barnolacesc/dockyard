@@ -170,6 +170,7 @@ struct ContentView: View {
     @StateObject private var agentStateStore = AgentStateStore.shared
     @StateObject private var claudeUsageStore = ClaudeUsageStore.shared
     @StateObject private var codexUsageStore = CodexUsageStore.shared
+    @StateObject private var agyUsageStore = AgyUsageStore.shared
     @State private var saveWork: DispatchWorkItem?
     @State private var workstreamToRemove: UUID?
     @State private var workstreamToPurge: UUID?
@@ -250,6 +251,9 @@ struct ContentView: View {
         }
         if appEnvironment.toolStatus.codex.isInstalled || codexUsageStore.hasAnyData {
             providers.append(.codex)
+        }
+        if appEnvironment.toolStatus.agy.isInstalled || agyUsageStore.hasAnyData {
+            providers.append(.agy)
         }
         return providers.isEmpty ? [.claude] : providers
     }
@@ -570,6 +574,7 @@ struct ContentView: View {
             .environmentObject(agentStateStore)
             .environmentObject(claudeUsageStore)
             .environmentObject(codexUsageStore)
+            .environmentObject(agyUsageStore)
     }
 
     private var navigationViewLifecycle: some View {
@@ -582,6 +587,7 @@ struct ContentView: View {
                 appEnvironment.fetchOrigin(projects: projects)
                 syncSelectedUsageProvider()
                 codexUsageStore.refresh()
+                agyUsageStore.refresh()
                 headWatcher.sync(paths: currentWorktreePaths())
                 // Apply saved appearance
                 switch UserDefaults.standard.string(forKey: "dockyard.appearance") ?? "system" {
@@ -725,6 +731,9 @@ struct ContentView: View {
                 claudeUsageStore.refresh()
                 if appEnvironment.toolStatus.codex.isInstalled || codexUsageStore.hasAnyData {
                     codexUsageStore.refresh()
+                }
+                if appEnvironment.toolStatus.agy.isInstalled || agyUsageStore.hasAnyData {
+                    agyUsageStore.refresh()
                 }
                 syncSelectedUsageProvider()
             }

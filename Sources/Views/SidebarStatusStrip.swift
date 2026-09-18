@@ -90,6 +90,7 @@ struct SidebarUsageMeter: View {
 
     @EnvironmentObject private var usageStore: ClaudeUsageStore
     @EnvironmentObject private var codexUsageStore: CodexUsageStore
+    @EnvironmentObject private var agyUsageStore: AgyUsageStore
     @AppStorage("dockyard.claudePlanTier") private var planTierRaw = ClaudePlanTier.none.rawValue
 
     private var planTier: ClaudePlanTier {
@@ -166,6 +167,8 @@ struct SidebarUsageMeter: View {
             return usageStore.isRefreshing
         case .codex:
             return codexUsageStore.isRefreshing
+        case .agy:
+            return agyUsageStore.isRefreshing
         }
     }
 
@@ -214,6 +217,8 @@ struct SidebarUsageMeter: View {
             return usageStore.hasAnyData
         case .codex:
             return codexUsageStore.hasAnyData
+        case .agy:
+            return agyUsageStore.hasAnyData
         }
     }
 
@@ -224,6 +229,8 @@ struct SidebarUsageMeter: View {
             return claudeCurrentRow(now: now)
         case .codex:
             return codexCurrentRow(now: now)
+        case .agy:
+            return agyCurrentRow(now: now)
         }
     }
 
@@ -257,6 +264,8 @@ struct SidebarUsageMeter: View {
             return claudeWeeklyRow
         case .codex:
             return codexWeeklyRow(now: now)
+        case .agy:
+            return agyWeeklyRow(now: now)
         }
     }
 
@@ -313,6 +322,36 @@ struct SidebarUsageMeter: View {
         )
     }
 
+    private func agyCurrentRow(now: Date) -> UsageMeterRow? {
+        agyRow(
+            window: agyUsageStore.report?.fiveHour,
+            label: NSLocalizedString("Current", comment: "Antigravity 5-hour usage window"),
+            tint: DesignColor.statusWarning,
+            now: now
+        )
+    }
+
+    private func agyWeeklyRow(now: Date) -> UsageMeterRow? {
+        agyRow(
+            window: agyUsageStore.report?.week,
+            label: NSLocalizedString("Weekly", comment: "Antigravity weekly usage window"),
+            tint: Self.weeklyTint,
+            now: now
+        )
+    }
+
+    private func agyRow(window: AgyUsageReport.Window?, label: String, tint: Color, now: Date) -> UsageMeterRow? {
+        guard let window else { return nil }
+        return UsageMeterRow(
+            headline: "\(window.usedPercent)%",
+            label: label,
+            tint: tint,
+            fraction: Double(window.usedPercent) / 100,
+            subtitle: estimateResetSubtitle(window.resetsAt, now: now),
+            style: style
+        )
+    }
+
     private func fraction(tokens: Int, budget: Int?) -> Double {
         guard let budget, budget > 0 else { return 0 }
         return min(1, Double(tokens) / Double(budget))
@@ -341,6 +380,8 @@ struct SidebarUsageMeter: View {
             usageStore.refresh(force: true)
         case .codex:
             codexUsageStore.refresh(force: true)
+        case .agy:
+            agyUsageStore.refresh(force: true)
         }
     }
 
@@ -350,6 +391,8 @@ struct SidebarUsageMeter: View {
             return claudeUsageTooltip
         case .codex:
             return NSLocalizedString("Real usage from your Codex subscription. Click to refresh.", comment: "")
+        case .agy:
+            return NSLocalizedString("Real usage from Antigravity CLI /usage. Click to refresh.", comment: "")
         }
     }
 

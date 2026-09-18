@@ -8,16 +8,17 @@ final class UsageMeterProviderTests: XCTestCase {
     func testPreferredProviderMapsSupportedCodingCLIs() {
         XCTAssertEqual(UsageMeterProvider.preferred(for: .claude), .claude)
         XCTAssertEqual(UsageMeterProvider.preferred(for: .codex), .codex)
+        XCTAssertEqual(UsageMeterProvider.preferred(for: .agy), .agy)
         XCTAssertNil(UsageMeterProvider.preferred(for: .opencode))
-        XCTAssertNil(UsageMeterProvider.preferred(for: .agy))
     }
 
     func testCyclingWrapsThroughAvailableProviders() {
-        let providers: [UsageMeterProvider] = [.claude, .codex]
+        let providers: [UsageMeterProvider] = [.claude, .codex, .agy]
 
         XCTAssertEqual(cycledUsageMeterProvider(current: .claude, available: providers, direction: 1), .codex)
-        XCTAssertEqual(cycledUsageMeterProvider(current: .codex, available: providers, direction: 1), .claude)
-        XCTAssertEqual(cycledUsageMeterProvider(current: .claude, available: providers, direction: -1), .codex)
+        XCTAssertEqual(cycledUsageMeterProvider(current: .codex, available: providers, direction: 1), .agy)
+        XCTAssertEqual(cycledUsageMeterProvider(current: .agy, available: providers, direction: 1), .claude)
+        XCTAssertEqual(cycledUsageMeterProvider(current: .claude, available: providers, direction: -1), .agy)
     }
 
     func testResolvedSelectionUsesPreferredProviderWhenItChanges() {
