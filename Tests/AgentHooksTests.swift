@@ -16,15 +16,15 @@ final class AgentHooksTests: XCTestCase {
         super.tearDown()
     }
 
-    func testHookInvocationReturnsNilForOpenCodeAndGemini() throws {
+    func testHookInvocationReturnsNilForOpenCodeAndAgy() throws {
         let helperPath = "/Applications/Dockyard.app/Contents/Helpers/dy-agent-state"
 
         XCTAssertNil(try AgentHooks.hookInvocation(for: .opencode, workstreamID: UUID(), helperPath: helperPath))
-        XCTAssertNil(try AgentHooks.hookInvocation(for: .gemini, workstreamID: UUID(), helperPath: helperPath))
+        XCTAssertNil(try AgentHooks.hookInvocation(for: .agy, workstreamID: UUID(), helperPath: helperPath))
     }
 
     func testOpenCodeAutoRenameConfigurationReferencesGeneratedInstructionFile() throws {
-        let id = UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC")!
+        let id = try XCTUnwrap(UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC"))
         let content = try AgentHooks.openCodeAutoRenameConfiguration(workstreamID: id)
         let config = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(content.utf8)) as? [String: Any])
         let instructionPath = try XCTUnwrap((config["instructions"] as? [String])?.first)
@@ -42,11 +42,11 @@ final class AgentHooksTests: XCTestCase {
         XCTAssertEqual(invocation.generatedConfigURL, AgentHooks.settingsURL(for: id))
         XCTAssertEqual(invocation.commandConfigOverrides, [])
         XCTAssertEqual(invocation.commandFlags, [])
-        XCTAssertTrue(FileManager.default.fileExists(atPath: invocation.generatedConfigURL!.path))
+        XCTAssertTrue(try FileManager.default.fileExists(atPath: XCTUnwrap(invocation.generatedConfigURL?.path)))
     }
 
     func testCodexHookInvocationBuildsThreeConfigOverrides() throws {
-        let id = UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC")!
+        let id = try XCTUnwrap(UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC"))
         let helperPath = "/Applications/Dockyard.app/Contents/Helpers/dy-agent-state"
         let invocation = try XCTUnwrap(AgentHooks.hookInvocation(for: .codex, workstreamID: id, helperPath: helperPath))
 
@@ -70,7 +70,7 @@ final class AgentHooksTests: XCTestCase {
     }
 
     func testCodexHookInvocationShellQuotesHelperPathWithSpacesAndApostrophes() throws {
-        let id = UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC")!
+        let id = try XCTUnwrap(UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC"))
         let helperPath = "/Applications/Dockyard's Debug.app/Contents/Helpers/dy-agent-state"
         let invocation = try XCTUnwrap(AgentHooks.hookInvocation(for: .codex, workstreamID: id, helperPath: helperPath))
         let joined = invocation.commandConfigOverrides.joined(separator: "\n")
@@ -89,7 +89,7 @@ final class AgentHooksTests: XCTestCase {
     }
 
     func testWriteSettingsProducesValidJSONWithChromeActivityHooks() throws {
-        let id = UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC")!
+        let id = try XCTUnwrap(UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC"))
         let helperPath = "/Applications/Dockyard.app/Contents/Helpers/dy-agent-state"
         let url = try AgentHooks.writeClaudeSettings(workstreamID: id, helperPath: helperPath)
 
@@ -109,9 +109,9 @@ final class AgentHooksTests: XCTestCase {
         let inner = (userPrompt?["hooks"] as? [[String: Any]])?.first
         let command = inner?["command"] as? String
         XCTAssertNotNil(command)
-        XCTAssertTrue(command!.contains(helperPath))
-        XCTAssertTrue(command!.contains("aabbccdd-1122-3344-5566-778899aabbcc"))
-        XCTAssertTrue(command!.contains("--state working"))
+        XCTAssertTrue(try XCTUnwrap(command?.contains(helperPath)))
+        XCTAssertTrue(try XCTUnwrap(command?.contains("aabbccdd-1122-3344-5566-778899aabbcc")))
+        XCTAssertTrue(try XCTUnwrap(command?.contains("--state working")))
 
         let preToolUse = (hooks?["PreToolUse"] as? [[String: Any]])?.first
         XCTAssertEqual(preToolUse?["matcher"] as? String, "mcp__claude-in-chrome__.*")
@@ -147,7 +147,7 @@ final class AgentHooksTests: XCTestCase {
         // The helper path must be wrapped in single quotes so /bin/sh -c treats
         // it as a single argv[0]. Without quoting, sh splits on the space and
         // tries to exec '/path/with' which fails.
-        XCTAssertTrue(command!.hasPrefix("'\(helperPath)' "), "expected single-quoted helper path, got: \(command!)")
+        XCTAssertTrue(try XCTUnwrap(command?.hasPrefix("'\(helperPath)' ")), "expected single-quoted helper path, got: \(command!)")
     }
 
     func testHelperPathWithSingleQuoteIsEscaped() throws {
@@ -163,6 +163,6 @@ final class AgentHooksTests: XCTestCase {
         let command = inner?["command"] as? String
 
         // POSIX single-quote escape: ' becomes '\''
-        XCTAssertTrue(command!.hasPrefix("'/weird'\\''path/dy-agent-state' "), "got: \(command!)")
+        XCTAssertTrue(try XCTUnwrap(command?.hasPrefix("'/weird'\\''path/dy-agent-state' ")), "got: \(command!)")
     }
 }

@@ -7,7 +7,9 @@ enum UsageMeterProvider: String, CaseIterable, Identifiable {
     case claude
     case codex
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var displayName: String {
         switch self {
@@ -24,7 +26,7 @@ enum UsageMeterProvider: String, CaseIterable, Identifiable {
             return .claude
         case .codex:
             return .codex
-        case .opencode, .gemini:
+        case .opencode, .agy:
             return nil
         }
     }

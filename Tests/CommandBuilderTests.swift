@@ -391,15 +391,43 @@ final class CommandBuilderTests: XCTestCase {
 
     func testUnknownEffectiveCodingCLIUsesAutoDetectChain() {
         var status = ToolStatus()
-        status.gemini = .found("/usr/local/bin/gemini")
+        status.agy = .found("/usr/local/bin/agy")
         status.codex = .found("/usr/local/bin/codex")
 
-        XCTAssertEqual(status.resolvedCodingCLI(storedValue: "unknown"), .gemini)
-        XCTAssertEqual(status.resolvedCodingCLI(storedValue: ""), .gemini)
+        XCTAssertEqual(status.resolvedCodingCLI(storedValue: "unknown"), .agy)
+        XCTAssertEqual(status.resolvedCodingCLI(storedValue: ""), .agy)
     }
 
-    func testBuildCodexAgentCommandBypassUsesDangerousFullAccessFlag() {
-        let workstreamID = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+    func testLegacyGeminiStoredValueMigratesToAgy() {
+        var status = ToolStatus()
+        status.agy = .found("/usr/local/bin/agy")
+        status.codex = .found("/usr/local/bin/codex")
+
+        XCTAssertEqual(status.resolvedCodingCLI(storedValue: "gemini"), .agy)
+    }
+
+    func testBuildAgyAgentCommandLaunchesWithoutUnverifiedFlags() {
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .agy,
+            cliPath: "/usr/local/bin/agy",
+            workingDirectory: "/tmp/dockyard worktree",
+            projectName: "dockyard",
+            workstreamName: "agy-contract",
+            workstreamID: UUID(),
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: false,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: false
+        )
+        XCTAssertEqual(command.finalCommand, "/usr/local/bin/agy")
+        XCTAssertEqual(command.intermediateCommands, ["/usr/local/bin/agy"])
+    }
+
+    func testBuildCodexAgentCommandBypassUsesDangerousFullAccessFlag() throws {
+        let workstreamID = try XCTUnwrap(UUID(uuidString: "12345678-1234-1234-1234-123456789abc"))
         let command = CodingCLICommandBuilder.buildAgentCommand(
             cli: .codex,
             cliPath: "/usr/local/bin/codex",
@@ -430,8 +458,8 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertTrue(command.finalCommand.contains("Starting new session..."))
     }
 
-    func testBuildCodexAgentCommandWithoutBypassUsesPromptedWorkspaceSandbox() {
-        let workstreamID = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+    func testBuildCodexAgentCommandWithoutBypassUsesPromptedWorkspaceSandbox() throws {
+        let workstreamID = try XCTUnwrap(UUID(uuidString: "12345678-1234-1234-1234-123456789abc"))
         let command = CodingCLICommandBuilder.buildAgentCommand(
             cli: .codex,
             cliPath: "/usr/local/bin/codex",
@@ -483,8 +511,8 @@ final class CommandBuilderTests: XCTestCase {
         }
     }
 
-    func testBuildCodexAgentCommandWithoutBypassCanAllowOutsideWorktreeWithPrompts() {
-        let workstreamID = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+    func testBuildCodexAgentCommandWithoutBypassCanAllowOutsideWorktreeWithPrompts() throws {
+        let workstreamID = try XCTUnwrap(UUID(uuidString: "12345678-1234-1234-1234-123456789abc"))
         let command = CodingCLICommandBuilder.buildAgentCommand(
             cli: .codex,
             cliPath: "/usr/local/bin/codex",
@@ -506,8 +534,8 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertFalse(command.intermediateCommands[0].contains("--dangerously-bypass-approvals-and-sandbox"))
     }
 
-    func testBuildClaudeAgentCommandWithoutBypassAllowsLiveDangerousModeSwitch() {
-        let id = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+    func testBuildClaudeAgentCommandWithoutBypassAllowsLiveDangerousModeSwitch() throws {
+        let id = try XCTUnwrap(UUID(uuidString: "12345678-1234-1234-1234-123456789abc"))
         let command = CodingCLICommandBuilder.buildAgentCommand(
             cli: .claude,
             cliPath: "/usr/local/bin/claude",
@@ -530,8 +558,8 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertFalse(command.intermediateCommands[0].contains("--permission-mode bypassPermissions"))
     }
 
-    func testBuildClaudeAgentCommandBypassStartsInBypassPermissionMode() {
-        let id = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+    func testBuildClaudeAgentCommandBypassStartsInBypassPermissionMode() throws {
+        let id = try XCTUnwrap(UUID(uuidString: "12345678-1234-1234-1234-123456789abc"))
         let command = CodingCLICommandBuilder.buildAgentCommand(
             cli: .claude,
             cliPath: "/usr/local/bin/claude",
@@ -555,8 +583,8 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertFalse(command.intermediateCommands[0].contains("--dangerously-skip-permissions"))
     }
 
-    func testBuildClaudeAgentCommandUsesSessionNameForNameFlag() {
-        let id = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+    func testBuildClaudeAgentCommandUsesSessionNameForNameFlag() throws {
+        let id = try XCTUnwrap(UUID(uuidString: "12345678-1234-1234-1234-123456789abc"))
         let command = CodingCLICommandBuilder.buildAgentCommand(
             cli: .claude,
             cliPath: "/usr/local/bin/claude",
@@ -584,8 +612,8 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertTrue(command.finalCommand.contains(tmuxSession))
     }
 
-    func testBuildClaudeAgentCommandDefaultsSessionNameToWorkstreamName() {
-        let id = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+    func testBuildClaudeAgentCommandDefaultsSessionNameToWorkstreamName() throws {
+        let id = try XCTUnwrap(UUID(uuidString: "12345678-1234-1234-1234-123456789abc"))
         let command = CodingCLICommandBuilder.buildAgentCommand(
             cli: .claude,
             cliPath: "/usr/local/bin/claude",
@@ -657,8 +685,8 @@ final class CommandBuilderTests: XCTestCase {
                        "expected no --settings flag, got: \(command.finalCommand)")
     }
 
-    func testBuildCodexAgentCommandIncludesHookConfigOverrides() {
-        let workstreamID = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+    func testBuildCodexAgentCommandIncludesHookConfigOverrides() throws {
+        let workstreamID = try XCTUnwrap(UUID(uuidString: "12345678-1234-1234-1234-123456789abc"))
         let hookInvocation = AgentHookInvocation(
             generatedConfigURL: nil,
             commandConfigOverrides: [
@@ -697,8 +725,8 @@ final class CommandBuilderTests: XCTestCase {
         }
     }
 
-    func testBuildCodexAgentCommandWithoutHooksHasNoTrustBypassFlag() {
-        let workstreamID = UUID(uuidString: "12345678-1234-1234-1234-123456789abc")!
+    func testBuildCodexAgentCommandWithoutHooksHasNoTrustBypassFlag() throws {
+        let workstreamID = try XCTUnwrap(UUID(uuidString: "12345678-1234-1234-1234-123456789abc"))
         let command = CodingCLICommandBuilder.buildAgentCommand(
             cli: .codex,
             cliPath: "/usr/local/bin/codex",
@@ -721,5 +749,4 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertFalse(command.intermediateCommands[0].contains("--config"))
         XCTAssertFalse(command.intermediateCommands[1].contains("--config"))
     }
-
 }

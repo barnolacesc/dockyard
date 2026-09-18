@@ -9,7 +9,7 @@ final class UsageMeterProviderTests: XCTestCase {
         XCTAssertEqual(UsageMeterProvider.preferred(for: .claude), .claude)
         XCTAssertEqual(UsageMeterProvider.preferred(for: .codex), .codex)
         XCTAssertNil(UsageMeterProvider.preferred(for: .opencode))
-        XCTAssertNil(UsageMeterProvider.preferred(for: .gemini))
+        XCTAssertNil(UsageMeterProvider.preferred(for: .agy))
     }
 
     func testCyclingWrapsThroughAvailableProviders() {

@@ -160,6 +160,8 @@
 /* Settings - Coding Agent */
 "Claude Code" = "Claude Code";
 "Codex" = "Codex";
+"OpenCode" = "OpenCode";
+"Antigravity CLI" = "Antigravity CLI";
 "Coding CLI" = "CLI de codi";
 "Use Default (%@)" = "Utilitza el valor per defecte (%@)";
 "Use Default follows the Coding Agent selected in Settings." = "Utilitza el valor per defecte segueix l'agent de codi seleccionat a Configuració.";
@@ -230,6 +232,12 @@
 "Codex not found" = "Codex no trobat";
 "Install Codex to use the Coding Agent." = "Instal·la Codex per utilitzar l'agent de codi.";
 "Install Codex" = "Instal·la Codex";
+"OpenCode not found" = "OpenCode no trobat";
+"Install OpenCode to use the Coding Agent." = "Instal·la OpenCode per utilitzar l'agent de codi.";
+"Install OpenCode" = "Instal·la OpenCode";
+"Antigravity CLI not found" = "Antigravity CLI no trobat";
+"Install Antigravity CLI to use the Coding Agent." = "Instal·la Antigravity CLI per utilitzar l'agent de codi.";
+"Install Antigravity CLI" = "Instal·la Antigravity CLI";
 
 /* BrowserView */
 "Server not responding" = "El servidor no respon";
@@ -624,6 +632,8 @@
 "Restart Dockyard to apply the installed update" = "Reinicia Dockyard per aplicar l’actualització instal·lada";
 "Restart failed" = "El reinici ha fallat";
 "Dockyard was updated, but it could not restart automatically. Quit and reopen it to apply the update." = "Dockyard s’ha actualitzat, però no s’ha pogut reiniciar automàticament. Surt i torna’l a obrir per aplicar l’actualització.";
+"Antigravity CLI Support" = "Compatibilitat amb Antigravity CLI";
+"Run Antigravity CLI (agy) in the Agent tab as a first-class coding agent." = "Executa Antigravity CLI (agy) a la pestanya d'agent com a agent de programació de primer nivell.";
 "Reliable Background Updates" = "Actualitzacions en segon pla fiables";
 "Dockyard now installs source updates without interrupting your work, confirms when they are ready, and shows the changelog after restart." = "Dockyard ara instal·la les actualitzacions des del codi font sense interrompre la feina, confirma quan estan preparades i mostra el registre de canvis després de reiniciar.";
 // Pull request CI status

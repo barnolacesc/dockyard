@@ -74,14 +74,14 @@ struct SettingsView: View {
                     version: appEnv.toolStatus.opencodeVersion
                 )
                 ToolRow(
-                    name: "gemini",
-                    status: appEnv.toolStatus.gemini,
-                    version: appEnv.toolStatus.geminiVersion
+                    name: "agy",
+                    status: appEnv.toolStatus.agy,
+                    version: appEnv.toolStatus.agyVersion
                 )
                 ToolRow(
                     name: "gh",
                     status: appEnv.toolStatus.gh,
-                    version: appEnv.toolStatus.ghVersion,
+                    version: appEnv.toolStatus.ghVersion
                 )
                 ToolRow(
                     name: "git",
@@ -607,8 +607,8 @@ struct ToolStatus {
     var codexVersion: String?
     var opencode: BinaryStatus = .notFound
     var opencodeVersion: String?
-    var gemini: BinaryStatus = .notFound
-    var geminiVersion: String?
+    var agy: BinaryStatus = .notFound
+    var agyVersion: String?
     var gh: BinaryStatus = .notFound
     var ghVersion: String?
     var git: BinaryStatus = .notFound
@@ -638,9 +638,9 @@ struct ToolStatus {
             status.opencodeVersion = runForVersion(path, args: ["--version"])
         }
 
-        status.gemini = findBinary("gemini")
-        if let path = status.gemini.path {
-            status.geminiVersion = runForVersion(path, args: ["--version"])
+        status.agy = findBinary("agy")
+        if let path = status.agy.path {
+            status.agyVersion = runForVersion(path, args: ["--version"])
         }
 
         status.gh = findBinary("gh")
@@ -655,6 +655,7 @@ struct ToolStatus {
 
         return status
     }
+
     private static func findBinary(_ name: String) -> BinaryStatus {
         guard let path = CommandLineTools.path(for: name) else { return .notFound }
         return .found(path)

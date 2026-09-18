@@ -9,6 +9,11 @@ enum WhatsNewCatalog {
     static let releases: [WhatsNewRelease] = [
         WhatsNewRelease(version: "0.2.5", entries: [
             WhatsNewEntry(
+                symbol: "sparkles",
+                titleKey: "Antigravity CLI Support",
+                bodyKey: "Run Antigravity CLI (agy) in the Agent tab as a first-class coding agent."
+            ),
+            WhatsNewEntry(
                 symbol: "arrow.triangle.2.circlepath.circle.fill",
                 titleKey: "Reliable Background Updates",
                 bodyKey: "Dockyard now installs source updates without interrupting your work, confirms when they are ready, and shows the changelog after restart."
