@@ -160,6 +160,8 @@
 /* Settings - Coding Agent */
 "Claude Code" = "Claude Code";
 "Codex" = "Codex";
+"OpenCode" = "OpenCode";
+"Antigravity CLI" = "Antigravity CLI";
 "Coding CLI" = "Coding CLI";
 "Use Default (%@)" = "Use Default (%@)";
 "Use Default follows the Coding Agent selected in Settings." = "Use Default follows the Coding Agent selected in Settings.";
@@ -230,6 +232,12 @@
 "Codex not found" = "Codex not found";
 "Install Codex to use the Coding Agent." = "Install Codex to use the Coding Agent.";
 "Install Codex" = "Install Codex";
+"OpenCode not found" = "OpenCode not found";
+"Install OpenCode to use the Coding Agent." = "Install OpenCode to use the Coding Agent.";
+"Install OpenCode" = "Install OpenCode";
+"Antigravity CLI not found" = "Antigravity CLI not found";
+"Install Antigravity CLI to use the Coding Agent." = "Install Antigravity CLI to use the Coding Agent.";
+"Install Antigravity CLI" = "Install Antigravity CLI";
 
 /* BrowserView */
 "Server not responding" = "Server not responding";
@@ -417,6 +425,7 @@
 "resets %@" = "resets %@";
 "Real usage from Claude Code's /usage. Click to refresh." = "Real usage from Claude Code's /usage. Click to refresh.";
 "Real usage from your Codex subscription. Click to refresh." = "Real usage from your Codex subscription. Click to refresh.";
+"Real usage from Antigravity CLI /usage. Click to refresh." = "Real usage from Antigravity CLI /usage. Click to refresh.";
 "Previous usage meter" = "Previous usage meter";
 "Next usage meter" = "Next usage meter";
 "Fetching usage…" = "Fetching usage…";
@@ -547,7 +556,7 @@
 "Hold Command for shortcut hints" = "Hold Command for shortcut hints";
 "Hold ⌘ to reveal available shortcuts on visible controls. Nothing runs until you choose a command." = "Hold ⌘ to reveal available shortcuts on visible controls. Nothing runs until you choose a command.";
 "Track local agent usage" = "Track local agent usage";
-"The sidebar meter shows locally available Claude Code or Codex usage. Use its arrows to switch providers, or click the meter to refresh." = "The sidebar meter shows locally available Claude Code or Codex usage. Use its arrows to switch providers, or click the meter to refresh.";
+"The sidebar meter shows locally available Claude Code, Codex, or Antigravity CLI usage. Use its arrows to switch providers, or click the meter to refresh." = "The sidebar meter shows locally available Claude Code, Codex, or Antigravity CLI usage. Use its arrows to switch providers, or click the meter to refresh.";
 "Resume Coding Agent sessions" = "Resume Coding Agent sessions";
 "When tmux mode is enabled, Dockyard reconnects to this workstream's Coding Agent session after you quit and reopen the app." = "When tmux mode is enabled, Dockyard reconnects to this workstream's Coding Agent session after you quit and reopen the app.";
 "Remove without deleting work" = "Remove without deleting work";
@@ -624,6 +633,8 @@
 "Restart Dockyard to apply the installed update" = "Restart Dockyard to apply the installed update";
 "Restart failed" = "Restart failed";
 "Dockyard was updated, but it could not restart automatically. Quit and reopen it to apply the update." = "Dockyard was updated, but it could not restart automatically. Quit and reopen it to apply the update.";
+"Antigravity CLI Support" = "Antigravity CLI Support";
+"Run Antigravity CLI (agy) in the Agent tab as a first-class coding agent." = "Run Antigravity CLI (agy) in the Agent tab as a first-class coding agent.";
 "Reliable Background Updates" = "Reliable Background Updates";
 "Dockyard now installs source updates without interrupting your work, confirms when they are ready, and shows the changelog after restart." = "Dockyard now installs source updates without interrupting your work, confirms when they are ready, and shows the changelog after restart.";
 // Pull request CI status

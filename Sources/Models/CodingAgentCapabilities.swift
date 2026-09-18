@@ -74,7 +74,7 @@ extension CodingCLI {
                 supportsAutoRenameBranch: true,
                 supportsAgentTeams: false
             )
-        case .gemini:
+        case .agy:
             return CodingAgentCapabilities(
                 commandStrategy: .generic,
                 stateReportingStrategy: .unavailable,

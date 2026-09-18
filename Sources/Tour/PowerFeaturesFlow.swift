@@ -27,7 +27,7 @@ enum PowerFeaturesFlow {
                 id: "usage-meters",
                 anchor: .sidebarStatusStrip,
                 titleKey: "Track local agent usage",
-                bodyKey: "The sidebar meter shows locally available Claude Code or Codex usage. Use its arrows to switch providers, or click the meter to refresh.",
+                bodyKey: "The sidebar meter shows locally available Claude Code, Codex, or Antigravity CLI usage. Use its arrows to switch providers, or click the meter to refresh.",
                 advance: .manual
             ),
             TourStep(

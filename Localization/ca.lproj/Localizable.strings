@@ -160,6 +160,8 @@
 /* Settings - Coding Agent */
 "Claude Code" = "Claude Code";
 "Codex" = "Codex";
+"OpenCode" = "OpenCode";
+"Antigravity CLI" = "Antigravity CLI";
 "Coding CLI" = "CLI de codi";
 "Use Default (%@)" = "Utilitza el valor per defecte (%@)";
 "Use Default follows the Coding Agent selected in Settings." = "Utilitza el valor per defecte segueix l'agent de codi seleccionat a Configuració.";
@@ -230,6 +232,12 @@
 "Codex not found" = "Codex no trobat";
 "Install Codex to use the Coding Agent." = "Instal·la Codex per utilitzar l'agent de codi.";
 "Install Codex" = "Instal·la Codex";
+"OpenCode not found" = "OpenCode no trobat";
+"Install OpenCode to use the Coding Agent." = "Instal·la OpenCode per utilitzar l'agent de codi.";
+"Install OpenCode" = "Instal·la OpenCode";
+"Antigravity CLI not found" = "Antigravity CLI no trobat";
+"Install Antigravity CLI to use the Coding Agent." = "Instal·la Antigravity CLI per utilitzar l'agent de codi.";
+"Install Antigravity CLI" = "Instal·la Antigravity CLI";
 
 /* BrowserView */
 "Server not responding" = "El servidor no respon";
@@ -417,6 +425,7 @@
 "resets %@" = "es reinicia %@";
 "Real usage from Claude Code's /usage. Click to refresh." = "Ús real des de /usage de Claude Code. Fes clic per actualitzar.";
 "Real usage from your Codex subscription. Click to refresh." = "Ús real de la teva subscripció de Codex. Fes clic per actualitzar.";
+"Real usage from Antigravity CLI /usage. Click to refresh." = "Ús real des de /usage d'Antigravity CLI. Fes clic per actualitzar.";
 "Previous usage meter" = "Mesurador d'ús anterior";
 "Next usage meter" = "Mesurador d'ús següent";
 "Fetching usage…" = "Carregant l'ús…";
@@ -547,7 +556,7 @@
 "Hold Command for shortcut hints" = "Mantén premuda la tecla Ordre per veure les dreceres";
 "Hold ⌘ to reveal available shortcuts on visible controls. Nothing runs until you choose a command." = "Mantén premuda ⌘ per mostrar les dreceres disponibles als controls visibles. No s'executa res fins que triïs una ordre.";
 "Track local agent usage" = "Controla l'ús local dels agents";
-"The sidebar meter shows locally available Claude Code or Codex usage. Use its arrows to switch providers, or click the meter to refresh." = "El mesurador de la barra lateral mostra l'ús disponible localment de Claude Code o Codex. Fes servir les fletxes per canviar de proveïdor o fes clic al mesurador per actualitzar.";
+"The sidebar meter shows locally available Claude Code, Codex, or Antigravity CLI usage. Use its arrows to switch providers, or click the meter to refresh." = "El mesurador de la barra lateral mostra l'ús disponible localment de Claude Code, Codex o Antigravity CLI. Fes servir les fletxes per canviar de proveïdor o fes clic al mesurador per actualitzar.";
 "Resume Coding Agent sessions" = "Reprèn les sessions de l'agent de programació";
 "When tmux mode is enabled, Dockyard reconnects to this workstream's Coding Agent session after you quit and reopen the app." = "Quan el mode tmux està activat, Dockyard es torna a connectar a la sessió de l'agent de programació d'aquest workstream després de tancar i tornar a obrir l'app.";
 "Remove without deleting work" = "Elimina sense esborrar la feina";
@@ -624,6 +633,8 @@
 "Restart Dockyard to apply the installed update" = "Reinicia Dockyard per aplicar l’actualització instal·lada";
 "Restart failed" = "El reinici ha fallat";
 "Dockyard was updated, but it could not restart automatically. Quit and reopen it to apply the update." = "Dockyard s’ha actualitzat, però no s’ha pogut reiniciar automàticament. Surt i torna’l a obrir per aplicar l’actualització.";
+"Antigravity CLI Support" = "Compatibilitat amb Antigravity CLI";
+"Run Antigravity CLI (agy) in the Agent tab as a first-class coding agent." = "Executa Antigravity CLI (agy) a la pestanya d'agent com a agent de programació de primer nivell.";
 "Reliable Background Updates" = "Actualitzacions en segon pla fiables";
 "Dockyard now installs source updates without interrupting your work, confirms when they are ready, and shows the changelog after restart." = "Dockyard ara instal·la les actualitzacions des del codi font sense interrompre la feina, confirma quan estan preparades i mostra el registre de canvis després de reiniciar.";
 // Pull request CI status

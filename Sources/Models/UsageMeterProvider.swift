@@ -6,8 +6,11 @@ import Foundation
 enum UsageMeterProvider: String, CaseIterable, Identifiable {
     case claude
     case codex
+    case agy
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var displayName: String {
         switch self {
@@ -15,6 +18,8 @@ enum UsageMeterProvider: String, CaseIterable, Identifiable {
             return CodingCLI.claude.displayName
         case .codex:
             return CodingCLI.codex.displayName
+        case .agy:
+            return CodingCLI.agy.displayName
         }
     }
 
@@ -24,7 +29,9 @@ enum UsageMeterProvider: String, CaseIterable, Identifiable {
             return .claude
         case .codex:
             return .codex
-        case .opencode, .gemini:
+        case .agy:
+            return .agy
+        case .opencode:
             return nil
         }
     }

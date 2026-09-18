@@ -53,7 +53,7 @@ Dockyard is a native macOS app built on [Ghostty](https://ghostty.org)'s GPU-ren
 ### Features
 
 - **Git Worktrees** &mdash; Each workstream gets its own branch and worktree. Switch between tasks without stashing.
-- **Selectable Coding CLI** &mdash; Run Claude Code, Codex, OpenCode, or Gemini CLI in the Agent tab. Capabilities vary by CLI as documented below.
+- **Selectable Coding CLI** &mdash; Run Claude Code, Codex, OpenCode, or Antigravity CLI in the Agent tab. Capabilities vary by CLI as documented below.
 - **Tmux Persistence** &mdash; Agent sessions survive app restarts via tmux on a dedicated socket.
 - **Setup & Run Scripts** &mdash; Configure setup, run, and teardown scripts per project via `.dockyard.json`. Environment tab with split-pane terminals, Start/Rerun (⌘⇧⏎).
 - **Embedded Browser** &mdash; WKWebView tab with automatic port detection. The browser navigates to the port your run script opens.
@@ -70,7 +70,7 @@ Dockyard launches each detected CLI in the workstream directory. Tmux
 persistence is provided by Dockyard's dedicated tmux session and does not imply
 that the CLI itself supports resume after that session exits.
 
-| Capability | Claude Code | Codex | OpenCode | Gemini CLI |
+| Capability | Claude Code | Codex | OpenCode | Antigravity CLI |
 |---|---:|---:|---:|---:|
 | Direct launch in a workstream | Yes | Yes | Yes | Yes |
 | Dockyard tmux persistence | Yes | Yes | Yes | Yes |

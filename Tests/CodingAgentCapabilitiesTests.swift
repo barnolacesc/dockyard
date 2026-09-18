@@ -52,14 +52,14 @@ final class CodingAgentCapabilitiesTests: XCTestCase {
         XCTAssertEqual(CodingCLI.opencode.capabilities.commandStrategy, .generic)
     }
 
-    func testGeminiCapabilitiesDoNotClaimAutoRename() {
-        XCTAssertFalse(CodingCLI.gemini.supportsAutoRenameBranch)
-        XCTAssertEqual(CodingCLI.gemini.capabilities.commandStrategy, .generic)
+    func testAgyCapabilitiesDoNotClaimAutoRename() {
+        XCTAssertFalse(CodingCLI.agy.supportsAutoRenameBranch)
+        XCTAssertEqual(CodingCLI.agy.capabilities.commandStrategy, .generic)
     }
 
     func testOnlyClaudeClaimsSubagentStatus() {
         XCTAssertTrue(CodingCLI.claude.capabilities.reportsSubagentState)
-        XCTAssertTrue([CodingCLI.codex, .opencode, .gemini].allSatisfy {
+        XCTAssertTrue([CodingCLI.codex, .opencode, .agy].allSatisfy {
             !$0.capabilities.reportsSubagentState
         })
     }

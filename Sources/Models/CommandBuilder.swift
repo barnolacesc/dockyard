@@ -104,9 +104,11 @@ enum CodingCLI: String, CaseIterable, Identifiable {
     case claude
     case codex
     case opencode
-    case gemini
+    case agy
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var commandName: String {
         rawValue
@@ -120,8 +122,8 @@ enum CodingCLI: String, CaseIterable, Identifiable {
             return NSLocalizedString("Codex", comment: "")
         case .opencode:
             return NSLocalizedString("OpenCode", comment: "")
-        case .gemini:
-            return NSLocalizedString("Gemini CLI", comment: "")
+        case .agy:
+            return NSLocalizedString("Antigravity CLI", comment: "")
         }
     }
 
@@ -133,8 +135,8 @@ enum CodingCLI: String, CaseIterable, Identifiable {
             return URL(string: "https://developers.openai.com/codex")!
         case .opencode:
             return URL(string: "https://github.com/opencode")!
-        case .gemini:
-            return URL(string: "https://github.com/google/gemini-cli")!
+        case .agy:
+            return URL(string: "https://antigravity.google")!
         }
     }
 
@@ -146,8 +148,8 @@ enum CodingCLI: String, CaseIterable, Identifiable {
             return NSLocalizedString("Codex not found", comment: "")
         case .opencode:
             return NSLocalizedString("OpenCode not found", comment: "")
-        case .gemini:
-            return NSLocalizedString("Gemini CLI not found", comment: "")
+        case .agy:
+            return NSLocalizedString("Antigravity CLI not found", comment: "")
         }
     }
 
@@ -159,8 +161,8 @@ enum CodingCLI: String, CaseIterable, Identifiable {
             return NSLocalizedString("Install Codex to use the Coding Agent.", comment: "")
         case .opencode:
             return NSLocalizedString("Install OpenCode to use the Coding Agent.", comment: "")
-        case .gemini:
-            return NSLocalizedString("Install Gemini CLI to use the Coding Agent.", comment: "")
+        case .agy:
+            return NSLocalizedString("Install Antigravity CLI to use the Coding Agent.", comment: "")
         }
     }
 
@@ -172,8 +174,8 @@ enum CodingCLI: String, CaseIterable, Identifiable {
             return NSLocalizedString("Install Codex", comment: "")
         case .opencode:
             return NSLocalizedString("Install OpenCode", comment: "")
-        case .gemini:
-            return NSLocalizedString("Install Gemini CLI", comment: "")
+        case .agy:
+            return NSLocalizedString("Install Antigravity CLI", comment: "")
         }
     }
 }
@@ -192,8 +194,8 @@ extension ToolStatus {
             return codex
         case .opencode:
             return opencode
-        case .gemini:
-            return gemini
+        case .agy:
+            return agy
         }
     }
 
@@ -205,8 +207,8 @@ extension ToolStatus {
             return codexVersion
         case .opencode:
             return opencodeVersion
-        case .gemini:
-            return geminiVersion
+        case .agy:
+            return agyVersion
         }
     }
 
@@ -218,13 +220,14 @@ extension ToolStatus {
         switch cli {
         case .claude:
             return claudeSupportsSessionName
-        case .codex, .opencode, .gemini:
+        case .codex, .opencode, .agy:
             return false
         }
     }
 
     func resolvedCodingCLI(storedValue: String) -> CodingCLI {
-        if let selected = CodingCLI(rawValue: storedValue), !storedValue.isEmpty {
+        let normalized = storedValue == "gemini" ? CodingCLI.agy.rawValue : storedValue
+        if let selected = CodingCLI(rawValue: normalized), !normalized.isEmpty {
             return selected
         }
         if claude.isInstalled {
@@ -233,8 +236,8 @@ extension ToolStatus {
         if opencode.isInstalled {
             return .opencode
         }
-        if gemini.isInstalled {
-            return .gemini
+        if agy.isInstalled {
+            return .agy
         }
         if codex.isInstalled {
             return .codex
@@ -426,10 +429,10 @@ enum CodingCLICommandBuilder {
 
     private static func buildGenericAgentCommand(
         cliPath: String,
-        workingDirectory: String
+        workingDirectory _: String
     ) -> AgentLaunchCommand {
         let fresh = CommandBuilder(cliPath)
-        
+
         return AgentLaunchCommand(
             finalCommand: fresh.command,
             intermediateCommands: [fresh.command]
