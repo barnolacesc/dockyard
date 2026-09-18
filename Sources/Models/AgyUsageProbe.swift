@@ -238,17 +238,14 @@ enum AgyUsageProbe {
         }
 
         let groups = envelope.command?.data?.groups ?? []
-        // Choose group with lowest remaining fraction (active usage) or the first non-empty group
-        let selectedGroup = groups.min(by: { g1, g2 in
-            let min1 = g1.buckets?.compactMap(\.remaining_fraction).min() ?? 1.0
-            let min2 = g2.buckets?.compactMap(\.remaining_fraction).min() ?? 1.0
-            return min1 < min2
-        }) ?? groups.first
+        let buckets = groups.flatMap { $0.buckets ?? [] }
 
         var report = AgyUsageReport()
+        var fiveHourFraction: Double?
+        var weeklyFraction: Double?
         let dateFormatter = ISO8601DateFormatter()
 
-        for bucket in selectedGroup?.buckets ?? [] {
+        for bucket in buckets {
             let fraction = bucket.remaining_fraction ?? 1.0
             let remainingPercent = max(0, min(100, Int(round(fraction * 100))))
             let usedPercent = max(0, min(100, 100 - remainingPercent))
@@ -262,10 +259,16 @@ enum AgyUsageProbe {
             let isFiveHour = bucket.window == "5h" || (bucket.id?.contains("5h") ?? false)
             let isWeekly = bucket.window == "weekly" || (bucket.id?.contains("weekly") ?? false)
 
-            if isFiveHour {
+            if isFiveHour,
+               fiveHourFraction.map({ fraction < $0 }) ?? true
+            {
                 report.fiveHour = window
-            } else if isWeekly {
+                fiveHourFraction = fraction
+            } else if isWeekly,
+                      weeklyFraction.map({ fraction < $0 }) ?? true
+            {
                 report.week = window
+                weeklyFraction = fraction
             }
         }
 
@@ -302,9 +305,13 @@ enum AgyUsageProbe {
             )
 
             if lower.contains("five hour") || lower.contains("5-hour") || lower.contains("5h") {
-                report.fiveHour = window
+                if report.fiveHour == nil || remainingPercent < report.fiveHour!.remainingPercent {
+                    report.fiveHour = window
+                }
             } else if lower.contains("weekly") || lower.contains("7-day") || lower.contains("7d") {
-                report.week = window
+                if report.week == nil || remainingPercent < report.week!.remainingPercent {
+                    report.week = window
+                }
             }
         }
 

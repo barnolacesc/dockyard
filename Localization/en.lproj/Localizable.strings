@@ -556,7 +556,7 @@
 "Hold Command for shortcut hints" = "Hold Command for shortcut hints";
 "Hold ⌘ to reveal available shortcuts on visible controls. Nothing runs until you choose a command." = "Hold ⌘ to reveal available shortcuts on visible controls. Nothing runs until you choose a command.";
 "Track local agent usage" = "Track local agent usage";
-"The sidebar meter shows locally available Claude Code or Codex usage. Use its arrows to switch providers, or click the meter to refresh." = "The sidebar meter shows locally available Claude Code or Codex usage. Use its arrows to switch providers, or click the meter to refresh.";
+"The sidebar meter shows locally available Claude Code, Codex, or Antigravity CLI usage. Use its arrows to switch providers, or click the meter to refresh." = "The sidebar meter shows locally available Claude Code, Codex, or Antigravity CLI usage. Use its arrows to switch providers, or click the meter to refresh.";
 "Resume Coding Agent sessions" = "Resume Coding Agent sessions";
 "When tmux mode is enabled, Dockyard reconnects to this workstream's Coding Agent session after you quit and reopen the app." = "When tmux mode is enabled, Dockyard reconnects to this workstream's Coding Agent session after you quit and reopen the app.";
 "Remove without deleting work" = "Remove without deleting work";

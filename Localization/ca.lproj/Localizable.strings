@@ -556,7 +556,7 @@
 "Hold Command for shortcut hints" = "Mantén premuda la tecla Ordre per veure les dreceres";
 "Hold ⌘ to reveal available shortcuts on visible controls. Nothing runs until you choose a command." = "Mantén premuda ⌘ per mostrar les dreceres disponibles als controls visibles. No s'executa res fins que triïs una ordre.";
 "Track local agent usage" = "Controla l'ús local dels agents";
-"The sidebar meter shows locally available Claude Code or Codex usage. Use its arrows to switch providers, or click the meter to refresh." = "El mesurador de la barra lateral mostra l'ús disponible localment de Claude Code o Codex. Fes servir les fletxes per canviar de proveïdor o fes clic al mesurador per actualitzar.";
+"The sidebar meter shows locally available Claude Code, Codex, or Antigravity CLI usage. Use its arrows to switch providers, or click the meter to refresh." = "El mesurador de la barra lateral mostra l'ús disponible localment de Claude Code, Codex o Antigravity CLI. Fes servir les fletxes per canviar de proveïdor o fes clic al mesurador per actualitzar.";
 "Resume Coding Agent sessions" = "Reprèn les sessions de l'agent de programació";
 "When tmux mode is enabled, Dockyard reconnects to this workstream's Coding Agent session after you quit and reopen the app." = "Quan el mode tmux està activat, Dockyard es torna a connectar a la sessió de l'agent de programació d'aquest workstream després de tancar i tornar a obrir l'app.";
 "Remove without deleting work" = "Elimina sense esborrar la feina";

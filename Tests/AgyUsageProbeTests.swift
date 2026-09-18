@@ -113,6 +113,46 @@ final class AgyUsageProbeTests: XCTestCase {
         XCTAssertEqual(report?.week?.resetsAt, expectedWeeklyReset)
     }
 
+    func testSelectsLimitingBucketsIndependentlyAcrossGroups() {
+        let multiGroupJSON = Data("""
+        {
+          "command": {
+            "name": "usage",
+            "data": {
+              "groups": [
+                {
+                  "name": "Group A",
+                  "buckets": [
+                    { "id": "a-5h", "window": "5h", "remaining_fraction": 0.40, "reset_time": "2026-09-19T01:00:00Z" },
+                    { "id": "a-weekly", "window": "weekly", "remaining_fraction": 0.90, "reset_time": "2026-09-25T01:00:00Z" }
+                  ]
+                },
+                {
+                  "name": "Group B",
+                  "buckets": [
+                    { "id": "b-5h", "window": "5h", "remaining_fraction": 0.80, "reset_time": "2026-09-19T02:00:00Z" },
+                    { "id": "b-weekly", "window": "weekly", "remaining_fraction": 0.50, "reset_time": "2026-09-25T02:00:00Z" }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+        """.utf8)
+
+        let report = AgyUsageProbe.parse(multiGroupJSON)
+        XCTAssertNotNil(report)
+
+        let formatter = ISO8601DateFormatter()
+        XCTAssertEqual(report?.fiveHour?.usedPercent, 60)
+        XCTAssertEqual(report?.fiveHour?.remainingPercent, 40)
+        XCTAssertEqual(report?.fiveHour?.resetsAt, formatter.date(from: "2026-09-19T01:00:00Z"))
+
+        XCTAssertEqual(report?.week?.usedPercent, 50)
+        XCTAssertEqual(report?.week?.remainingPercent, 50)
+        XCTAssertEqual(report?.week?.resetsAt, formatter.date(from: "2026-09-25T02:00:00Z"))
+    }
+
     func testReturnsNilForInvalidOrEmptyOutput() {
         XCTAssertNil(AgyUsageProbe.parse(Data("{}".utf8)))
         XCTAssertNil(AgyUsageProbe.parse(Data("random command output".utf8)))
