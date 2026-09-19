@@ -1,8 +1,57 @@
 // ABOUTME: Application settings pane displayed in the detail area.
 // ABOUTME: Environment, general, coding agent, and advanced settings.
 
+import Darwin
 import Foundation
 import SwiftUI
+
+enum CLIInstallationValidator {
+    static let maximumScriptBytes = 64 * 1024
+
+    static func isValidLauncher(
+        atPath path: String,
+        urlScheme: String = AppConstants.urlScheme,
+        fileManager: FileManager = .default
+    ) -> Bool {
+        guard fileManager.isExecutableFile(atPath: path) else { return false }
+
+        let descriptor = open(path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK)
+        guard descriptor >= 0 else { return false }
+        defer { close(descriptor) }
+
+        var metadata = stat()
+        guard fstat(descriptor, &metadata) == 0,
+              (metadata.st_mode & S_IFMT) == S_IFREG,
+              metadata.st_size >= 0,
+              metadata.st_size <= off_t(maximumScriptBytes)
+        else {
+            return false
+        }
+
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: false)
+        var data = Data()
+        data.reserveCapacity(Int(metadata.st_size))
+
+        do {
+            while data.count <= maximumScriptBytes {
+                let remaining = maximumScriptBytes + 1 - data.count
+                let chunkSize = min(64 * 1024, remaining)
+                guard chunkSize > 0 else { break }
+                guard let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty else { break }
+                data.append(chunk)
+            }
+        } catch {
+            return false
+        }
+
+        guard data.count <= maximumScriptBytes,
+              let contents = String(data: data, encoding: .utf8)
+        else {
+            return false
+        }
+        return contents.contains(urlScheme)
+    }
+}
 
 struct SettingsView: View {
     @AppStorage("dockyard.languageOverride") private var languageOverride: String = ""
@@ -496,14 +545,7 @@ struct SettingsView: View {
     /// Check if the CLI is installed and points to a valid script that opens this app.
     private static func isCliCorrectlyInstalled() -> Bool {
         let path = "/usr/local/bin/\(cliName)"
-        let fm = FileManager.default
-        guard fm.fileExists(atPath: path),
-              fm.isExecutableFile(atPath: path),
-              let contents = try? String(contentsOfFile: path, encoding: .utf8)
-        else {
-            return false
-        }
-        return contents.contains(AppConstants.urlScheme)
+        return CLIInstallationValidator.isValidLauncher(atPath: path)
     }
 
     private func applyAppearance(_ mode: String) {
