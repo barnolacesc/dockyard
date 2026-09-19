@@ -163,10 +163,6 @@ other = "Cycle workstreams (globally)"
 other = "Cycle projects"
 [sc_editor]
 other = "New Editor"
-[sc_save]
-other = "Save (Editor)"
-[sc_save_as]
-other = "Save As (Editor)"
 [sc_ext_browser]
 other = "External browser"
 [sc_ext_terminal]

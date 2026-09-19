@@ -28,11 +28,9 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
             tabs: tabs,
             terminalCount: 1,
             browserCount: 1,
-            editorCount: 0,
             activeTab: .terminal(terminalID),
             browserTitles: [browserID: "localhost"],
             terminalTitles: [terminalID: "zsh"],
-            editorFilePaths: [:],
             runStarted: false,
             runStoppedManually: false
         )
@@ -49,32 +47,31 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         let workstreamID = UUID()
         let terminalID = derivedUUID(from: workstreamID, salt: "terminal-1")
         let browserID = derivedUUID(from: workstreamID, salt: "browser-1")
-        let editorID = derivedUUID(from: workstreamID, salt: "editor-1")
-        let tabs: [WorkspaceTab] = [.info, .agent, .terminal(terminalID), .browser(browserID), .editor(editorID)]
+        let editorTerminalID = derivedUUID(from: workstreamID, salt: "editor-terminal-1")
+        let tabs: [WorkspaceTab] = [.info, .agent, .terminal(terminalID), .browser(browserID), .terminal(editorTerminalID)]
         let snapshot = WorkspaceTabSnapshot(
             tabs: tabs,
-            terminalCount: 1,
+            terminalCount: 2,
             browserCount: 1,
-            editorCount: 1,
-            activeTab: .editor(editorID),
+            activeTab: .terminal(editorTerminalID),
             browserTitles: [browserID: "localhost"],
-            terminalTitles: [terminalID: "zsh"],
-            editorFilePaths: [editorID: "Sources/App.swift"],
+            terminalTitles: [terminalID: "zsh", editorTerminalID: "Editor"],
             runStarted: true,
-            runStoppedManually: false
+            runStoppedManually: false,
+            terminalEditorCommands: [editorTerminalID: "nvim ."]
         )
 
         let data = try JSONEncoder().encode(snapshot)
         let restored = try JSONDecoder().decode(WorkspaceTabSnapshot.self, from: data)
 
         XCTAssertEqual(restored.tabs, tabs)
-        XCTAssertEqual(restored.terminalCount, 1)
+        XCTAssertEqual(restored.terminalCount, 2)
         XCTAssertEqual(restored.browserCount, 1)
-        XCTAssertEqual(restored.editorCount, 1)
-        XCTAssertEqual(restored.activeTab, .editor(editorID))
+        XCTAssertEqual(restored.activeTab, .terminal(editorTerminalID))
         XCTAssertEqual(restored.browserTitles[browserID], "localhost")
         XCTAssertEqual(restored.terminalTitles[terminalID], "zsh")
-        XCTAssertEqual(restored.editorFilePaths[editorID], "Sources/App.swift")
+        XCTAssertEqual(restored.terminalTitles[editorTerminalID], "Editor")
+        XCTAssertEqual(restored.terminalEditorCommands[editorTerminalID], "nvim .")
         XCTAssertTrue(restored.runStarted)
         XCTAssertFalse(restored.runStoppedManually)
     }
@@ -186,11 +183,9 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
             tabs: [.info, .agent, .terminal(liveTerminalID), .terminal(deadTerminalID), .browser(browserID)],
             terminalCount: 2,
             browserCount: 1,
-            editorCount: 0,
             activeTab: .terminal(deadTerminalID),
             browserTitles: [:],
             terminalTitles: [:],
-            editorFilePaths: [:],
             runStarted: false,
             runStoppedManually: false
         )
@@ -211,11 +206,9 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
             tabs: [.info, .agent, .terminal(liveTerminalID), .terminal(deadTerminalID)],
             terminalCount: 2,
             browserCount: 0,
-            editorCount: 0,
             activeTab: .terminal(liveTerminalID),
             browserTitles: [:],
             terminalTitles: [:],
-            editorFilePaths: [:],
             runStarted: false,
             runStoppedManually: false,
             terminalEditorCommands: [
@@ -237,11 +230,9 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
             tabs: [.info, .agent, .terminal(terminalID)],
             terminalCount: 1,
             browserCount: 0,
-            editorCount: 0,
             activeTab: .terminal(terminalID),
             browserTitles: [:],
             terminalTitles: [:],
-            editorFilePaths: [:],
             runStarted: false,
             runStoppedManually: false
         )
@@ -257,11 +248,9 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
             tabs: [.info, .agent],
             terminalCount: 0,
             browserCount: 0,
-            editorCount: 0,
             activeTab: .agent,
             browserTitles: [:],
             terminalTitles: [:],
-            editorFilePaths: [:],
             runStarted: true,
             runStoppedManually: false
         )
@@ -279,11 +268,9 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
             tabs: [.info, .agent, .browser(browserID)],
             terminalCount: 0,
             browserCount: 1,
-            editorCount: 0,
             activeTab: .browser(browserID),
             browserTitles: [:],
             terminalTitles: [:],
-            editorFilePaths: [:],
             runStarted: false,
             runStoppedManually: false
         )
@@ -300,11 +287,9 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
             tabs: [.info, .agent],
             terminalCount: 0,
             browserCount: 0,
-            editorCount: 0,
             activeTab: .agent,
             browserTitles: [:],
             terminalTitles: [:],
-            editorFilePaths: [:],
             runStarted: true,
             runStoppedManually: false
         )
@@ -323,18 +308,17 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         let workstreamID = UUID()
         let terminalID = derivedUUID(from: workstreamID, salt: "terminal-1")
         let browserID = derivedUUID(from: workstreamID, salt: "browser-1")
-        let editorID = derivedUUID(from: workstreamID, salt: "editor-1")
+        let editorTerminalID = derivedUUID(from: workstreamID, salt: "editor-terminal-1")
         let snapshot = WorkspaceTabSnapshot(
-            tabs: [.info, .agent, .terminal(terminalID), .browser(browserID), .editor(editorID)],
-            terminalCount: 1,
+            tabs: [.info, .agent, .terminal(terminalID), .browser(browserID), .terminal(editorTerminalID)],
+            terminalCount: 2,
             browserCount: 1,
-            editorCount: 1,
-            activeTab: .editor(editorID),
+            activeTab: .terminal(editorTerminalID),
             browserTitles: [browserID: "localhost"],
-            terminalTitles: [terminalID: "zsh"],
-            editorFilePaths: [editorID: "Sources/App.swift"],
+            terminalTitles: [terminalID: "zsh", editorTerminalID: "Editor"],
             runStarted: true,
-            runStoppedManually: true
+            runStoppedManually: true,
+            terminalEditorCommands: [editorTerminalID: "nvim ."]
         )
 
         let state = startupWorkspaceTabState(
@@ -342,14 +326,14 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
             persistedSnapshot: snapshot
         )
 
-        XCTAssertEqual(state.tabs, [.info, .agent, .terminal(terminalID), .browser(browserID), .editor(editorID)])
-        XCTAssertEqual(state.terminalCount, 1)
+        XCTAssertEqual(state.tabs, [.info, .agent, .terminal(terminalID), .browser(browserID), .terminal(editorTerminalID)])
+        XCTAssertEqual(state.terminalCount, 2)
         XCTAssertEqual(state.browserCount, 1)
-        XCTAssertEqual(state.editorCount, 1)
-        XCTAssertEqual(state.activeTab, .editor(editorID))
+        XCTAssertEqual(state.activeTab, .terminal(editorTerminalID))
         XCTAssertEqual(state.browserTitles[browserID], "localhost")
         XCTAssertEqual(state.terminalTitles[terminalID], "zsh")
-        XCTAssertEqual(state.editorFilePaths[editorID], "Sources/App.swift")
+        XCTAssertEqual(state.terminalTitles[editorTerminalID], "Editor")
+        XCTAssertEqual(state.terminalEditorCommands[editorTerminalID], "nvim .")
         XCTAssertTrue(state.runStarted)
         XCTAssertTrue(state.runStoppedManually)
     }
@@ -360,11 +344,9 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
             tabs: [.info, .agent],
             terminalCount: 0,
             browserCount: 0,
-            editorCount: 0,
             activeTab: .terminal(terminalID),
             browserTitles: [:],
             terminalTitles: [:],
-            editorFilePaths: [:],
             runStarted: false,
             runStoppedManually: false
         )
@@ -376,6 +358,42 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
 
         XCTAssertEqual(state.tabs, [.info, .agent])
         XCTAssertEqual(state.activeTab, .info)
+    }
+
+    func testLegacyEditorTabDecodingIsSafelySkipped() throws {
+        let workstreamID = UUID()
+        let terminalID = derivedUUID(from: workstreamID, salt: "terminal-1")
+        let legacyEditorID = derivedUUID(from: workstreamID, salt: "legacy-editor-1")
+
+        // JSON matching pre-removal WorkspaceTabSnapshot with .editor tab and activeTab: .editor
+        let legacyJSON = """
+        {
+            "tabs": [
+                {"info": {}},
+                {"agent": {}},
+                {"editor": {"_0": "\(legacyEditorID.uuidString)"}},
+                {"terminal": {"_0": "\(terminalID.uuidString)"}}
+            ],
+            "terminalCount": 1,
+            "browserCount": 0,
+            "editorCount": 1,
+            "activeTab": {"editor": {"_0": "\(legacyEditorID.uuidString)"}},
+            "browserTitles": [],
+            "terminalTitles": ["\(terminalID.uuidString)", "zsh"],
+            "editorFilePaths": ["\(legacyEditorID.uuidString)", "Sources/App.swift"],
+            "runStarted": false,
+            "runStoppedManually": false
+        }
+        """
+
+        let data = Data(legacyJSON.utf8)
+        let restored = try JSONDecoder().decode(WorkspaceTabSnapshot.self, from: data)
+
+        // Legacy editor tab should be skipped, leaving info, agent, and terminal
+        XCTAssertEqual(restored.tabs, [.info, .agent, .terminal(terminalID)])
+        // Active tab was the legacy editor tab, which was dropped, so it falls back to .agent
+        XCTAssertEqual(restored.activeTab, .agent)
+        XCTAssertEqual(restored.terminalTitles[terminalID], "zsh")
     }
 
     func testWorkspaceEnvironmentUsesSuppliedDefaultBranch() throws {
@@ -417,11 +435,9 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
             tabs: [.info, .agent],
             terminalCount: 0,
             browserCount: 0,
-            editorCount: 0,
             activeTab: activeTab,
             browserTitles: [:],
             terminalTitles: [:],
-            editorFilePaths: [:],
             runStarted: false,
             runStoppedManually: false
         )

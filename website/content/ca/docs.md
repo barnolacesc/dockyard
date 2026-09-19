@@ -70,6 +70,7 @@ La interfície apareix a l'instant, la creació del worktree passa en segon pla.
 - **Environment** — controls de setup i run script
 - **Terminal** (⌘T) — terminal tabs addicionals, tants com vulguis
 - **Navegador** (⌘B) — navegador integrat amb detecció automàtica de port
+- **Editor** (⌘O) — obre l'editor de terminal configurat (com Neovim) en una pestanya de terminal
 
 #### Branch auto-rename {#branch-auto-rename}
 
@@ -166,6 +167,7 @@ Dockyard prioritza el teclat. Aquí tens tot.
 | ⌘Return | Focus Coding Agent |
 | ⌘T | Nou Terminal |
 | ⌘B | Nou navegador |
+| ⌘O | Nou Editor |
 | ⌘W | Tanca tab |
 | ⌘Shift+W | Arxiva workstream |
 | ⌘L | Barra d'adreces (navegador) |

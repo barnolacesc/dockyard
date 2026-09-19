@@ -71,7 +71,7 @@ The UI shows up instantly — worktree creation happens in the background.
 - **Environment** — setup and run script controls
 - **Terminal** (⌘T) — additional terminal tabs, as many as you want
 - **Browser** (⌘B) — embedded browser with auto-port detection
-- **Editor** (⌘O) — built-in Monaco code editor with syntax highlighting and IntelliSense
+- **Editor** (⌘O) — launches your configured terminal editor (e.g. Neovim) in a terminal tab
 
 #### Branch auto-rename
 
@@ -144,7 +144,7 @@ The browser shows a connection error page with a retry button if the server isn'
 
 ### The Editor
 
-Each workstream can have editor tabs (⌘O). The editor is Monaco — the same engine that powers VS Code.
+Each workstream can have editor tabs (⌘O), launching your configured terminal editor command (e.g. `nvim .`) directly in a native Ghostty terminal tab.
 
 
 ### Keyboard Shortcuts
@@ -175,8 +175,6 @@ Dockyard is keyboard-first. Here's everything.
 | ⌘T | New Terminal |
 | ⌘B | New Browser |
 | ⌘O | New Editor |
-| ⌘S | Save (Editor) |
-| ⌘Shift+S | Save As (Editor) |
 | ⌘W | Close tab |
 | ⌘Shift+W | Archive workstream |
 | ⌘L | Address bar (browser) |

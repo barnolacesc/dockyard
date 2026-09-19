@@ -56,8 +56,7 @@ release is supported.
 
 **Supply chain?** Dependencies are minimal: Sparkle (SPM) and the Ghostty
 terminal engine as a git submodule pinned to stable release tags and built
-from source. The Monaco editor bundle is built from the in-repo `editor/`
-project. No third-party analytics or networking SDKs.
+from source. No third-party analytics or networking SDKs.
 
 **Supported platforms / cadence.** macOS 14+, Apple Silicon and Intel.
 Releases are frequent (release-please, semantic versioning); changelog in

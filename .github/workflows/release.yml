@@ -86,13 +86,10 @@ jobs:
           test -d ghostty/zig-out/share/terminfo
           test -d ghostty/zig-out/share/ghostty
 
-      # AppCommit.swift and the Monaco editor bundle are gitignored, generated
-      # inputs that xcodegen validates the existence of at `generate` time.
+      # AppCommit.swift is a gitignored, generated input that xcodegen
+      # validates the existence of at `generate` time.
       - name: Generate AppCommit
         run: bash scripts/gen-appcommit.sh
-
-      - name: Build Monaco editor
-        run: bash scripts/build-editor.sh
 
       - name: Generate Xcode project
         run: xcodegen generate

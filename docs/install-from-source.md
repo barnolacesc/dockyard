@@ -13,7 +13,6 @@ signed by your local build, not distributed).
 | Xcode 16+ (macOS 14+) | Building the app | App Store / developer.apple.com |
 | XcodeGen | Generating the Xcode project from `project.yml` | `brew install xcodegen` |
 | Zig (version noted in `ghostty/build.zig.zon`) | Building the Ghostty terminal engine | `brew install zig` |
-| Bun | Building the Monaco editor bundle | `brew install oven-sh/bun/bun` |
 
 ## Build and install
 
@@ -28,8 +27,7 @@ cd ghostty && zig build && cd ..
 ./scripts/dev.sh install
 ```
 
-`dev.sh` handles `xcodegen generate` and building the Monaco editor bundle
-automatically.
+`dev.sh` handles `xcodegen generate` automatically.
 
 ## Updates
 

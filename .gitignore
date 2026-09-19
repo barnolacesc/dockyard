@@ -18,12 +18,8 @@ ghostty/.zig-cache/
 # Generated build metadata (regenerated per-build by scripts/gen-appcommit.sh)
 Sources/Models/AppCommit.swift
 
-# Monaco editor build output (rebuild with scripts/build-editor.sh)
-Resources/MonacoEditor/
-
 # Node dependencies
 node_modules/
-editor/node_modules/
 
 # Python
 __pycache__/

@@ -83,9 +83,6 @@ targets:
       - path: ghostty/zig-out/share/ghostty
         type: folder
         buildPhase: resources
-      - path: Resources/MonacoEditor
-        type: folder
-        buildPhase: resources
     settings:
       base:
         PRODUCT_MODULE_NAME: Dockyard
@@ -136,18 +133,6 @@ targets:
           set -e
           "${PROJECT_DIR}/scripts/gen-appcommit.sh"
         name: Generate AppCommit
-      - script: |
-          set -e
-          "${PROJECT_DIR}/scripts/build-editor.sh"
-        name: Build Monaco Editor
-        inputFiles:
-          - $(PROJECT_DIR)/editor/package.json
-          - $(PROJECT_DIR)/editor/bun.lock
-          - $(PROJECT_DIR)/editor/src/main.js
-          - $(PROJECT_DIR)/editor/index.html
-          - $(PROJECT_DIR)/editor/vite.config.js
-        outputFiles:
-          - $(PROJECT_DIR)/Resources/MonacoEditor/index.html
     postBuildScripts:
       - script: |
           set -e

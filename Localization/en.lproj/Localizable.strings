@@ -76,10 +76,7 @@
 "None" = "None";
 "Browser" = "Browser";
 "Editor" = "Editor";
-"New Editor (\u2318E)" = "New Editor (\u2318E)";
-"Open File" = "Open File";
-"Toggle file tree" = "Toggle file tree";
-"Select a file to edit" = "Select a file to edit";
+"New Editor (\u2318O)" = "New Editor (\u2318O)";
 "GitHub" = "GitHub";
 "Coding Agent" = "Coding Agent";
 "Bypass permission prompts" = "Bypass permission prompts";
@@ -140,8 +137,6 @@
 "Choose base directory for projects" = "Choose base directory for projects";
 "Default location when adding new projects." = "Default location when adding new projects.";
 "Branch prefix" = "Branch prefix";
-"Open editor in a terminal" = "Open editor in a terminal";
-"Open your editor in a terminal tab (Cmd+O) instead of the built-in editor." = "Open your editor in a terminal tab (Cmd+O) instead of the built-in editor.";
 "Editor command" = "Editor command";
 "Runs in the worktree directory when you open an editor (Cmd+O)." = "Runs in the worktree directory when you open an editor (Cmd+O).";
 "Theme" = "Theme";
