@@ -48,371 +48,107 @@ struct WorkstreamInfoView: View {
     @State private var showScriptApproval = false
     @State private var pendingSetupAction: PendingSetupAction?
     @State private var showUncommittedPopover = false
+    @State private var isRunExpanded = false
 
     private enum PendingSetupAction { case inline, terminal }
 
     var body: some View {
-        VStack(spacing: 0) {
-            if scriptConfig.setup != nil, setupRunner.state != .succeeded {
-                SetupStatusBanner(
-                    script: scriptConfig.setup!,
-                    state: setupRunner.state,
-                    logTail: setupRunner.logTail,
-                    onStart: { requestSetupStart(.inline) },
-                    onCancel: { setupRunner.cancel() },
-                    onRunInTerminal: { requestSetupStart(.terminal) }
-                )
-            }
-            Form {
-                // Hero header
-                Section {
-                    VStack(spacing: 4) {
-                        if let icon = projectIcon {
-                            Image(nsImage: icon)
-                                .resizable()
-                                .interpolation(.high)
-                                .frame(width: 48, height: 48)
-                                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous))
-                                .imageOutline(radius: DesignRadius.lg)
-                        }
-                        Text(projectName)
-                            .font(.system(size: 13))
-                            .foregroundStyle(.secondary)
-                        if let desc = appEnv.taskDescription(for: workingDirectory), !desc.isEmpty {
-                            Text(desc)
-                                .font(.system(size: 22, weight: .bold))
-                                .multilineTextAlignment(.center)
-                            Text(workstreamName)
-                                .font(.system(size: 13, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                        } else {
-                            Text(workstreamName)
-                                .font(.system(size: 22, weight: .bold, design: .monospaced))
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
-
-                Section {
-                    if let branch = branchName {
-                        LabeledContent {
-                            HStack(spacing: 4) {
-                                Text(branch)
-                                    .font(.system(.body, design: .monospaced))
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
-                                DirectoryActionButton(
-                                    icon: copiedBranch ? "checkmark" : "doc.on.doc",
-                                    color: copiedBranch ? DesignColor.statusSuccess : nil,
-                                    tooltip: "Copy branch name"
-                                ) {
-                                    NSPasteboard.general.clearContents()
-                                    NSPasteboard.general.setString(branch, forType: .string)
-                                    copiedBranch = true
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copiedBranch = false }
-                                }
-                            }
-                        } label: {
-                            Text("Branch")
-                        }
-
-                        let state = appEnv.worktreeState(for: workingDirectory)
-
-                        if state.commitsAhead > 0 {
-                            LabeledContent {
-                                Text("↑ \(state.commitsAhead) commits")
-                                    .font(.system(.body, design: .monospaced))
-                                    .tabularNumbers()
-                                    .foregroundStyle(.secondary)
-                            } label: {
-                                Text("Ahead")
-                            }
-                        }
-
-                        LabeledContent {
-                            if state.uncommittedCount > 0 {
-                                Button {
-                                    showUncommittedPopover = true
-                                } label: {
-                                    HStack(spacing: 4) {
-                                        Text("\(state.uncommittedCount) files")
-                                            .font(.system(.body, design: .monospaced))
-                                            .tabularNumbers()
-                                            .foregroundStyle(DesignColor.statusWarning)
-                                        Image(systemName: "info.circle")
-                                            .font(.system(size: 10))
-                                            .foregroundStyle(DesignColor.statusWarning.opacity(0.8))
-                                    }
-                                    .frame(minHeight: 28)
-                                }
-                                .buttonStyle(.plain)
-                                .popover(isPresented: $showUncommittedPopover) {
-                                    UncommittedChangesPopover(
-                                        path: workingDirectory,
-                                        title: workstreamName,
-                                        onDiscard: {
-                                            appEnv.refreshWorktreeState(for: workingDirectory, projectDirectory: projectDirectory, force: true)
-                                        },
-                                        onCleanUntracked: {
-                                            appEnv.refreshWorktreeState(for: workingDirectory, projectDirectory: projectDirectory, force: true)
-                                        }
-                                    )
-                                }
-                            } else {
-                                Text("Clean")
-                                    .font(.system(.body, design: .monospaced))
-                                    .foregroundStyle(.secondary)
-                            }
-                        } label: {
-                            Text("Uncommitted")
-                        }
-
-                        LabeledContent {
-                            Text(formattedBaseString(baseBranch: state.baseBranch, createdDate: state.branchCreatedDate))
-                                .font(.system(.body, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                        } label: {
-                            Text("Base")
-                        }
-
-                        if workingDirectory != projectDirectory, let worktreeCreated = state.worktreeCreatedDate {
-                            LabeledContent {
-                                Text(formatWorktreeAge(worktreeCreated))
-                                    .font(.system(.body, design: .monospaced))
-                                    .foregroundStyle(.secondary)
-                            } label: {
-                                Text("Worktree Age")
-                            }
-                        }
-                    }
-
-                    LabeledContent {
-                        HStack(spacing: 4) {
-                            Text(workingDirectory.abbreviatedPath)
-                                .font(.system(.body, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                            DirectoryActionButton(
-                                icon: copiedPath ? "checkmark" : "doc.on.doc",
-                                color: copiedPath ? DesignColor.statusSuccess : nil,
-                                tooltip: "Copy path"
-                            ) {
-                                NSPasteboard.general.clearContents()
-                                NSPasteboard.general.setString(workingDirectory, forType: .string)
-                                copiedPath = true
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copiedPath = false }
-                            }
-                            DirectoryActionButton(
-                                icon: "terminal",
-                                tooltip: "Open in external terminal"
-                            ) {
-                                openInTerminal(path: workingDirectory)
-                            }
-                            if let githubURL = appEnv.githubURL(for: projectDirectory, branch: appEnv.branchName(for: workingDirectory)) {
-                                DirectoryActionButton(
-                                    assetIcon: "github",
-                                    tooltip: "Open on GitHub"
-                                ) {
-                                    NSWorkspace.shared.open(githubURL)
-                                }
-                            }
-                        }
-                    } label: {
-                        Text("Directory")
-                    }
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                if scriptConfig.setup != nil, setupRunner.state != .succeeded {
+                    SetupStatusBanner(
+                        script: scriptConfig.setup!,
+                        state: setupRunner.state,
+                        logTail: setupRunner.logTail,
+                        onStart: { requestSetupStart(.inline) },
+                        onCancel: { setupRunner.cancel() },
+                        onRunInTerminal: { requestSetupStart(.terminal) }
+                    )
                 }
 
-                if appEnv.ghAvailable, let branch = branchName,
-                   let pr = appEnv.githubPR(for: projectDirectory, branch: branch)
-                {
-                    Section("Pull Request") {
-                        let prColor: Color = pr.state == "MERGED" ? DesignColor.statusMerged : pr.state == "OPEN" ? DesignColor.statusSuccess : .secondary
-                        if let url = URL(string: pr.url) {
-                            Link(destination: url) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: pr.state == "MERGED" ? "arrow.triangle.merge" : "arrow.triangle.pull")
-                                        .foregroundStyle(prColor)
-                                    Text(verbatim: "#\(pr.number)")
-                                        .font(.system(.body, design: .monospaced))
-                                        .tabularNumbers()
-                                    Text(pr.title)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
-                                    Spacer()
-                                    Text(LocalizedStringKey(pr.state == "MERGED" ? "Merged" : pr.state == "CLOSED" ? "Closed" : "Open"))
-                                        .foregroundStyle(prColor)
-                                }
-                                .frame(minHeight: 40)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .help("Open on GitHub")
+                if selectedDoc == nil {
+                    ScrollView {
+                        VStack(spacing: 14) {
+                            heroHeader
+
+                            gitWorktreeCard
+
+                            pullRequestCard
+
+                            codingAgentCard
+
+                            scriptsCard
                         }
-                        PRChecksBadge(pr: pr, directory: projectDirectory)
-
-                        if pr.state == "MERGED" {
-                            HStack {
-                                Text("This branch has been merged.")
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Button("Purge") {
-                                    NotificationCenter.default.post(name: .purgeWorkstream, object: workstreamID)
-                                }
-                                .foregroundStyle(DesignColor.statusMerged)
-                            }
-                        }
-                    }
-                }
-
-                Section("Coding Agent") {
-                    Picker("Coding Agent", selection: $workstreamCodingCLI) {
-                        Text(defaultCodingAgentLabel).tag(String?.none)
-                        ForEach(CodingCLI.allCases) { cli in
-                            Text(cli.displayName).tag(String?.some(cli.rawValue))
-                        }
-                    }
-                    .tourAnchor(.agentPicker)
-
-                    Text("Use Default follows the Coding Agent selected in Settings.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    if !appEnv.toolStatus.status(for: selectedCodingCLI).isInstalled {
-                        HStack(spacing: 8) {
-                            Image(systemName: "exclamationmark.triangle")
-                                .foregroundStyle(DesignColor.statusWarning)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(selectedCodingCLI.missingTitle)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Link(selectedCodingCLI.installLabel, destination: selectedCodingCLI.installURL)
-                                    .font(.caption)
-                            }
-                        }
-                    }
-
-                    Toggle("Dangerously skip permissions", isOn: $bypassPermissions)
-                        .disabled(!selectedCodingCLI.capabilities.supportsDangerousPermissionBypass)
-
-                    Text("Saved for the next Coding Agent start.")
-                        .font(.caption)
-                        .foregroundStyle(bypassPermissions ? DesignColor.statusWarning : .secondary)
-
-                    if livePermissionControlAvailable {
-                        Button("Change live permissions...", action: onChangeLivePermissions)
-                            .buttonStyle(.borderless)
-                    }
-
-                    if let livePermissionHint {
-                        Text(livePermissionHint)
-                            .font(.caption)
-                            .foregroundStyle(DesignColor.statusWarning)
-                    }
-                }
-
-                Section {
-                    scriptsSectionContent
-                } header: {
-                    HStack {
-                        Text("Scripts")
-                        Spacer()
-                        if isEditingConfig {
-                            Button("Cancel", action: cancelConfigEditing)
-                                .font(.caption2)
-                                .buttonStyle(.borderless)
-                                .onHover { hovering in
-                                    updatePointingHand(hovering, enabled: true)
-                                }
-                            Button("Save", action: saveEditedConfig)
-                                .font(.caption2)
-                                .buttonStyle(.borderless)
-                                .disabled(!canSaveEditedConfig)
-                                .onHover { hovering in
-                                    updatePointingHand(hovering, enabled: canSaveEditedConfig)
-                                }
-                        } else if hasEditableScriptConfig {
-                            if let source = scriptConfig.source {
-                                Text(source)
-                                    .font(.caption2)
-                                    .foregroundStyle(.quaternary)
-                            }
-                            Button("Regenerate…", action: generateConfig)
-                                .font(.caption2)
-                                .pressable()
-                                .disabled(isDetectingStack)
-                                .onHover { hovering in
-                                    updatePointingHand(hovering, enabled: !isDetectingStack)
-                                }
-                            Button("Edit", action: beginConfigEditing)
-                                .font(.caption2)
-                                .buttonStyle(.borderless)
-                                .onHover { hovering in
-                                    updatePointingHand(hovering, enabled: true)
-                                }
-                        }
-                    }
-                }
-            }
-            .formStyle(.grouped)
-
-            // Environment (run script) section
-            if scriptConfig.run != nil || scriptConfig.loadError != nil {
-                Divider()
-                if sessionMode == .waitingForTools {
-                    VStack(spacing: 12) {
-                        ProgressView()
-                            .controlSize(.regular)
-                        Text("Checking terminal tools...")
-                            .font(.system(size: 13))
-                            .foregroundStyle(.secondary)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 14)
+                        .frame(maxWidth: 600)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    EnvironmentTabView(
-                        workstreamID: workstreamID,
-                        workingDirectory: workingDirectory,
-                        projectDirectory: projectDirectory,
-                        projectName: projectName,
-                        workstreamName: workstreamName,
-                        scriptConfig: scriptConfig,
-                        useTmux: useTmux,
-                        environmentVars: environmentVars,
-                        runStoppedManually: $runStoppedManually,
-                        runStarted: $runStarted
-                    )
-                }
-            } else {
-                // Markdown content fills remaining space when a doc is selected
-                if let selected = selectedDoc,
-                   let doc = docFiles.first(where: { $0.name == selected })
-                {
-                    Divider()
-                    MarkdownContentView(markdown: doc.content)
-                        .id(selected)
-                }
-            }
-
-            // Doc tabs pinned to bottom
-            if !docFiles.isEmpty {
-                Divider()
-                HStack(spacing: 0) {
-                    ForEach(docFiles) { doc in
-                        DocTabButton(
-                            name: doc.name,
-                            isActive: selectedDoc == doc.name,
-                            action: { selectedDoc = selectedDoc == doc.name ? nil : doc.name }
-                        )
+                    // Markdown content fills remaining space when a doc is selected
+                    if let selected = selectedDoc,
+                       let doc = docFiles.first(where: { $0.name == selected })
+                    {
+                        MarkdownContentView(markdown: doc.content)
+                            .id(selected)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                    Spacer()
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 4)
+
+                // Doc tabs pinned above the run script bar
+                if !docFiles.isEmpty {
+                    Divider()
+                    HStack(spacing: 4) {
+                        ForEach(docFiles) { doc in
+                            DocTabButton(
+                                name: doc.name,
+                                isActive: selectedDoc == doc.name,
+                                action: {
+                                    withAnimation(.easeInOut(duration: 0.15)) {
+                                        selectedDoc = selectedDoc == doc.name ? nil : doc.name
+                                    }
+                                }
+                            )
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 4)
+                    .background(.bar)
+                }
+
+                // Environment (run script) section
+                if scriptConfig.run != nil || scriptConfig.loadError != nil {
+                    Divider()
+                    if sessionMode == .waitingForTools {
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .controlSize(.regular)
+                            Text("Checking terminal tools...")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: isRunExpanded ? max(220, geometry.size.height * 0.45) : 32)
+                    } else {
+                        EnvironmentTabView(
+                            workstreamID: workstreamID,
+                            workingDirectory: workingDirectory,
+                            projectDirectory: projectDirectory,
+                            projectName: projectName,
+                            workstreamName: workstreamName,
+                            scriptConfig: scriptConfig,
+                            useTmux: useTmux,
+                            environmentVars: environmentVars,
+                            runStoppedManually: $runStoppedManually,
+                            runStarted: $runStarted,
+                            isExpanded: $isRunExpanded
+                        )
+                        .frame(height: isRunExpanded ? max(220, geometry.size.height * 0.45) : 32)
+                    }
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { loadInfo() }
@@ -446,6 +182,364 @@ struct WorkstreamInfoView: View {
         }
     } // body
 
+    private var heroHeader: some View {
+        VStack(spacing: 4) {
+            if let icon = projectIcon {
+                Image(nsImage: icon)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 32, height: 32)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                    .imageOutline(radius: DesignRadius.sm)
+            }
+            Text(projectName)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+            if let desc = appEnv.taskDescription(for: workingDirectory), !desc.isEmpty {
+                Text(desc)
+                    .font(.system(size: 16, weight: .bold))
+                    .multilineTextAlignment(.center)
+                Text(workstreamName)
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            } else {
+                Text(workstreamName)
+                    .font(.system(size: 17, weight: .bold, design: .monospaced))
+            }
+        }
+        .padding(.top, 4)
+        .padding(.bottom, 2)
+    }
+
+    @ViewBuilder
+    private var gitWorktreeCard: some View {
+        if let branch = branchName {
+            let state = appEnv.worktreeState(for: workingDirectory)
+
+            InfoCard {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .top, spacing: 16) {
+                        // Left column
+                        VStack(alignment: .leading, spacing: 8) {
+                            infoField(label: "Branch") {
+                                HStack(spacing: 4) {
+                                    Text(branch)
+                                        .font(.system(size: 12, design: .monospaced))
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                    DirectoryActionButton(
+                                        icon: copiedBranch ? "checkmark" : "doc.on.doc",
+                                        color: copiedBranch ? DesignColor.statusSuccess : nil,
+                                        tooltip: "Copy branch name"
+                                    ) {
+                                        NSPasteboard.general.clearContents()
+                                        NSPasteboard.general.setString(branch, forType: .string)
+                                        copiedBranch = true
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copiedBranch = false }
+                                    }
+                                }
+                            }
+
+                            infoField(label: "Base") {
+                                Text(formattedBaseString(baseBranch: state.baseBranch, createdDate: state.branchCreatedDate))
+                                    .font(.system(size: 12, design: .monospaced))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                        // Right column
+                        VStack(alignment: .leading, spacing: 8) {
+                            infoField(label: "Status") {
+                                if state.uncommittedCount > 0 {
+                                    Button {
+                                        showUncommittedPopover = true
+                                    } label: {
+                                        HStack(spacing: 4) {
+                                            Text("\(state.uncommittedCount) files")
+                                                .font(.system(size: 12, design: .monospaced))
+                                                .tabularNumbers()
+                                                .foregroundStyle(DesignColor.statusWarning)
+                                            Image(systemName: "info.circle")
+                                                .font(.system(size: 10))
+                                                .foregroundStyle(DesignColor.statusWarning.opacity(0.8))
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+                                    .popover(isPresented: $showUncommittedPopover) {
+                                        UncommittedChangesPopover(
+                                            path: workingDirectory,
+                                            title: workstreamName,
+                                            onDiscard: {
+                                                appEnv.refreshWorktreeState(for: workingDirectory, projectDirectory: projectDirectory, force: true)
+                                            },
+                                            onCleanUntracked: {
+                                                appEnv.refreshWorktreeState(for: workingDirectory, projectDirectory: projectDirectory, force: true)
+                                            }
+                                        )
+                                    }
+                                } else {
+                                    Text("Clean")
+                                        .font(.system(size: 12, design: .monospaced))
+                                        .foregroundStyle(DesignColor.statusSuccess)
+                                }
+                            }
+
+                            if workingDirectory != projectDirectory, let worktreeCreated = state.worktreeCreatedDate {
+                                infoField(label: "Age") {
+                                    HStack(spacing: 6) {
+                                        Text(formatWorktreeAge(worktreeCreated))
+                                            .font(.system(size: 12, design: .monospaced))
+                                            .foregroundStyle(.secondary)
+                                        if state.commitsAhead > 0 {
+                                            Text("·")
+                                                .foregroundStyle(.tertiary)
+                                            Text("↑ \(state.commitsAhead)")
+                                                .font(.system(size: 12, design: .monospaced))
+                                                .tabularNumbers()
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                }
+                            } else if state.commitsAhead > 0 {
+                                infoField(label: "Ahead") {
+                                    Text("↑ \(state.commitsAhead) commits")
+                                        .font(.system(size: 12, design: .monospaced))
+                                        .tabularNumbers()
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    Divider().padding(.vertical, 1)
+
+                    // Directory row
+                    HStack(alignment: .center, spacing: 8) {
+                        Text("Directory")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 50, alignment: .leading)
+
+                        Text(workingDirectory.abbreviatedPath)
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+
+                        Spacer(minLength: 4)
+
+                        HStack(spacing: 2) {
+                            DirectoryActionButton(
+                                icon: copiedPath ? "checkmark" : "doc.on.doc",
+                                color: copiedPath ? DesignColor.statusSuccess : nil,
+                                tooltip: "Copy path"
+                            ) {
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(workingDirectory, forType: .string)
+                                copiedPath = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copiedPath = false }
+                            }
+                            DirectoryActionButton(
+                                icon: "terminal",
+                                tooltip: "Open in external terminal"
+                            ) {
+                                openInTerminal(path: workingDirectory)
+                            }
+                            if let githubURL = appEnv.githubURL(for: projectDirectory, branch: appEnv.branchName(for: workingDirectory)) {
+                                DirectoryActionButton(
+                                    assetIcon: "github",
+                                    tooltip: "Open on GitHub"
+                                ) {
+                                    NSWorkspace.shared.open(githubURL)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var pullRequestCard: some View {
+        if appEnv.ghAvailable, let branch = branchName,
+           let pr = appEnv.githubPR(for: projectDirectory, branch: branch)
+        {
+            VStack(alignment: .leading, spacing: 5) {
+                SectionHeader(title: "Pull Request")
+
+                InfoCard {
+                    VStack(alignment: .leading, spacing: 8) {
+                        let prColor: Color = pr.state == "MERGED" ? DesignColor.statusMerged : pr.state == "OPEN" ? DesignColor.statusSuccess : .secondary
+                        if let url = URL(string: pr.url) {
+                            Link(destination: url) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: pr.state == "MERGED" ? "arrow.triangle.merge" : "arrow.triangle.pull")
+                                        .foregroundStyle(prColor)
+                                    Text(verbatim: "#\(pr.number)")
+                                        .font(.system(size: 12, design: .monospaced))
+                                        .tabularNumbers()
+                                    Text(pr.title)
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(1)
+                                    Spacer()
+                                    Text(LocalizedStringKey(pr.state == "MERGED" ? "Merged" : pr.state == "CLOSED" ? "Closed" : "Open"))
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundStyle(prColor)
+                                }
+                                .frame(minHeight: 24)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .help("Open on GitHub")
+                        }
+                        PRChecksBadge(pr: pr, directory: projectDirectory)
+
+                        if pr.state == "MERGED" {
+                            Divider()
+                            HStack {
+                                Text("This branch has been merged.")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Button("Purge") {
+                                    NotificationCenter.default.post(name: .purgeWorkstream, object: workstreamID)
+                                }
+                                .controlSize(.small)
+                                .foregroundStyle(DesignColor.statusMerged)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var codingAgentCard: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            SectionHeader(title: "Coding Agent")
+
+            InfoCard {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        Text("Agent")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 50, alignment: .leading)
+
+                        Picker("", selection: $workstreamCodingCLI) {
+                            Text(defaultCodingAgentLabel).tag(String?.none)
+                            ForEach(CodingCLI.allCases) { cli in
+                                Text(cli.displayName).tag(String?.some(cli.rawValue))
+                            }
+                        }
+                        .labelsHidden()
+                        .tourAnchor(.agentPicker)
+
+                        Spacer()
+                    }
+
+                    if !appEnv.toolStatus.status(for: selectedCodingCLI).isInstalled {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 11))
+                                .foregroundStyle(DesignColor.statusWarning)
+                            Text(selectedCodingCLI.missingTitle)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Link(selectedCodingCLI.installLabel, destination: selectedCodingCLI.installURL)
+                                .font(.caption)
+                        }
+                        .padding(.leading, 58)
+                    }
+
+                    Divider().padding(.vertical, 1)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Toggle(isOn: $bypassPermissions) {
+                            Text("Dangerously skip permissions")
+                                .font(.system(size: 12))
+                        }
+                        .toggleStyle(.checkbox)
+                        .disabled(!selectedCodingCLI.capabilities.supportsDangerousPermissionBypass)
+
+                        HStack(spacing: 6) {
+                            Text("Saved for next session.")
+                                .font(.caption2)
+                                .foregroundStyle(bypassPermissions ? DesignColor.statusWarning : .secondary)
+
+                            if livePermissionControlAvailable {
+                                Button("Change live permissions…", action: onChangeLivePermissions)
+                                    .font(.caption2)
+                                    .buttonStyle(.borderless)
+                            }
+                        }
+                        .padding(.leading, 20)
+
+                        if let livePermissionHint {
+                            Text(livePermissionHint)
+                                .font(.caption2)
+                                .foregroundStyle(DesignColor.statusWarning)
+                                .padding(.leading, 20)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var scriptsCard: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack {
+                SectionHeader(title: "Scripts")
+                Spacer()
+                if isEditingConfig {
+                    Button("Cancel", action: cancelConfigEditing)
+                        .font(.caption)
+                        .buttonStyle(.borderless)
+                    Button("Save", action: saveEditedConfig)
+                        .font(.caption)
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .disabled(!canSaveEditedConfig)
+                } else if hasEditableScriptConfig {
+                    if let source = scriptConfig.source {
+                        Text(source)
+                            .font(.system(.caption2, design: .monospaced))
+                            .foregroundStyle(.tertiary)
+                    }
+                    Button("Regenerate…", action: generateConfig)
+                        .font(.caption)
+                        .buttonStyle(.borderless)
+                        .disabled(isDetectingStack)
+                    Button("Edit", action: beginConfigEditing)
+                        .font(.caption)
+                        .buttonStyle(.borderless)
+                }
+            }
+
+            InfoCard {
+                scriptsSectionContent
+            }
+        }
+    }
+
+    private func infoField<Content: View>(label: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .frame(width: 50, alignment: .leading)
+            content()
+        }
+    }
+
     private func requestSetupStart(_ action: PendingSetupAction) {
         guard ScriptTrustStore.isTrusted(projectDirectory: projectDirectory, config: scriptConfig) else {
             pendingSetupAction = action
@@ -478,65 +572,72 @@ struct WorkstreamInfoView: View {
 
     @ViewBuilder
     private var configReadRows: some View {
-        if let setup = scriptConfig.setup {
-            LabeledContent("Setup") {
-                Text(setup)
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 8) {
+            if let setup = scriptConfig.setup {
+                alignedScriptRow(label: "Setup", value: setup)
+            }
+            if let run = scriptConfig.run {
+                alignedScriptRow(label: "Run", value: run)
+            }
+            if let teardown = scriptConfig.teardown {
+                alignedScriptRow(label: "Teardown", value: teardown)
+            }
+            if let expectedPort = scriptConfig.expectedPort {
+                alignedScriptRow(label: "Expected Port", value: "\(expectedPort)")
             }
         }
-        if let run = scriptConfig.run {
-            LabeledContent("Run") {
-                Text(run)
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        if let teardown = scriptConfig.teardown {
-            LabeledContent("Teardown") {
-                Text(teardown)
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        if let expectedPort = scriptConfig.expectedPort {
-            LabeledContent("Expected Port") {
-                Text("\(expectedPort)")
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundStyle(.secondary)
-            }
+        .padding(.vertical, 2)
+    }
+
+    private func alignedScriptRow(label: LocalizedStringKey, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .frame(width: 80, alignment: .leading)
+            Text(value)
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer(minLength: 0)
         }
     }
 
     @ViewBuilder
     private var configEditorRows: some View {
-        LabeledContent("Setup") {
-            TextField("", text: $editSetup)
-                .font(.system(.body, design: .monospaced))
+        VStack(alignment: .leading, spacing: 8) {
+            alignedEditorRow(label: "Setup", text: $editSetup)
+            alignedEditorRow(label: "Run", text: $editRun)
+            alignedEditorRow(label: "Teardown", text: $editTeardown)
+            alignedEditorRow(label: "Expected Port", text: $editPortText)
+
+            if editParseResult.validationError == .invalidPort {
+                Label("Port must be between 1 and 65535", systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, 88)
+            }
+            if let editWriteError {
+                Label(editWriteError, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, 88)
+            }
         }
-        LabeledContent("Run") {
-            TextField("", text: $editRun)
-                .font(.system(.body, design: .monospaced))
-        }
-        LabeledContent("Teardown") {
-            TextField("", text: $editTeardown)
-                .font(.system(.body, design: .monospaced))
-        }
-        LabeledContent("Expected Port") {
-            TextField("", text: $editPortText)
-                .font(.system(.body, design: .monospaced))
-        }
-        if editParseResult.validationError == .invalidPort {
-            Label("Port must be between 1 and 65535", systemImage: "exclamationmark.triangle.fill")
-                .font(.caption)
-                .foregroundStyle(.red)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        if let editWriteError {
-            Label(editWriteError, systemImage: "exclamationmark.triangle.fill")
-                .font(.caption)
-                .foregroundStyle(.red)
-                .fixedSize(horizontal: false, vertical: true)
+        .padding(.vertical, 2)
+    }
+
+    private func alignedEditorRow(label: LocalizedStringKey, text: Binding<String>) -> some View {
+        HStack(alignment: .center, spacing: 8) {
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .frame(width: 80, alignment: .leading)
+            TextField("", text: text)
+                .font(.system(size: 12, design: .monospaced))
         }
     }
 
@@ -855,6 +956,39 @@ struct DirectoryRow: View {
     }
 }
 
+private struct SectionHeader: View {
+    let title: LocalizedStringKey
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.secondary)
+            .padding(.leading, 2)
+    }
+}
+
+private struct InfoCard<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            content
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(nsColor: .controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        )
+    }
+}
+
 private struct DirectoryActionButton: View {
     var icon: String = ""
     var assetIcon: String?
@@ -867,14 +1001,13 @@ private struct DirectoryActionButton: View {
     var body: some View {
         Button(action: action) {
             (assetIcon.map { Image($0) } ?? Image(systemName: icon))
-                .font(.system(size: 12))
+                .font(.system(size: 11))
                 .foregroundStyle(color ?? (isHovering ? Color.primary : Color.secondary))
-                .frame(width: 22, height: 22)
-                .background(isHovering ? Color.primary.opacity(0.1) : .clear)
+                .frame(width: 20, height: 20)
+                .background(isHovering ? Color.primary.opacity(0.08) : .clear)
                 .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
-                .frame(minWidth: 40, minHeight: 40)
         }
-        .pressable()
+        .buttonStyle(.plain)
         .onHover { isHovering = $0 }
         .help(tooltip)
         .accessibilityLabel(tooltip)
@@ -963,15 +1096,14 @@ struct DocTabButton: View {
     var body: some View {
         Button(action: action) {
             Text(name)
-                .font(.system(size: 10, weight: isActive ? .medium : .regular, design: .monospaced))
+                .font(.system(size: 11, weight: isActive ? .medium : .regular, design: .monospaced))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
-                .background(isActive ? Color.primary.opacity(0.08) : (isHovering ? Color.primary.opacity(0.04) : .clear))
+                .background(isActive ? Color.primary.opacity(0.1) : (isHovering ? Color.primary.opacity(0.05) : .clear))
                 .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
                 .foregroundStyle(isActive ? .primary : .secondary)
-                .frame(minHeight: 40)
         }
-        .pressable()
+        .buttonStyle(.plain)
         .onHover { isHovering = $0 }
     }
 }
