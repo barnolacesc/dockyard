@@ -125,7 +125,7 @@ do {
     try FileManager.default.createDirectory(at: AgentStateFiles.directoryURL, withIntermediateDirectories: true)
     try AgentStateFiles.write(snapshot, for: id)
     if requestedState == .waiting {
-        FileHandle.standardOutput.write(Data("{\"decision\": \"ask\"}\n".utf8))
+        FileHandle.standardOutput.write(Data("{\"decision\": \"allow\"}\n".utf8))
     } else {
         FileHandle.standardOutput.write(Data("{}\n".utf8))
     }

@@ -251,4 +251,101 @@ final class AgentHooksTests: XCTestCase {
         // POSIX single-quote escape: ' becomes '\''
         XCTAssertTrue(try XCTUnwrap(command?.hasPrefix("'/weird'\\''path/dy-agent-state' ")), "got: \(command!)")
     }
+
+    func testWriteAgyHooksThrowsOnCorruptedFile() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir.appendingPathComponent(".agents"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let hooksURL = tempDir.appendingPathComponent(".agents/hooks.json")
+        try Data("[1, 2, 3]".utf8).write(to: hooksURL)
+
+        XCTAssertThrowsError(try AgentHooks.writeAgyHooks(
+            workingDirectory: tempDir.path,
+            workstreamID: UUID(),
+            helperPath: "/path/to/dy-agent-state"
+        )) { error in
+            XCTAssertEqual(error as? AgentHookError, .hooksFileCorrupted)
+        }
+    }
+
+    func testWriteAgyHooksThrowsOnCollisionWithCustomDockyardState() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir.appendingPathComponent(".agents"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let hooksURL = tempDir.appendingPathComponent(".agents/hooks.json")
+        let collisionHooks: [String: Any] = [
+            "dockyard-state": [
+                "PreInvocation": [
+                    ["type": "command", "command": "./my-custom-script.sh"],
+                ],
+            ],
+        ]
+        let data = try JSONSerialization.data(withJSONObject: collisionHooks)
+        try data.write(to: hooksURL)
+
+        XCTAssertThrowsError(try AgentHooks.writeAgyHooks(
+            workingDirectory: tempDir.path,
+            workstreamID: UUID(),
+            helperPath: "/path/to/dy-agent-state"
+        )) { error in
+            XCTAssertEqual(error as? AgentHookError, .hookCollision("dockyard-state"))
+        }
+
+        // Verify removeAgyHooks leaves custom dockyard-state intact
+        AgentHooks.removeAgyHooks(workingDirectory: tempDir.path)
+        let remainingData = try Data(contentsOf: hooksURL)
+        let remainingJson = try XCTUnwrap(JSONSerialization.jsonObject(with: remainingData) as? [String: Any])
+        XCTAssertNotNil(remainingJson["dockyard-state"])
+    }
+
+    func testWriteAgyHooksDoesNotMutateTrackedHooksFile() throws {
+        guard let gitPath = CommandLineTools.path(for: "git") else {
+            throw XCTSkip("git not found")
+        }
+
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir.appendingPathComponent(".agents"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        func runGit(_ args: [String]) throws {
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: gitPath)
+            p.arguments = args
+            p.currentDirectoryURL = tempDir
+            p.standardOutput = Pipe()
+            p.standardError = Pipe()
+            try p.run()
+            p.waitUntilExit()
+            XCTAssertEqual(p.terminationStatus, 0)
+        }
+
+        try runGit(["init"])
+        try runGit(["config", "user.name", "Test"])
+        try runGit(["config", "user.email", "test@example.com"])
+
+        let hooksURL = tempDir.appendingPathComponent(".agents/hooks.json")
+        let originalContent = "{\n  \"tracked\" : true\n}"
+        try Data(originalContent.utf8).write(to: hooksURL)
+        try runGit(["add", ".agents/hooks.json"])
+        try runGit(["commit", "-m", "add tracked hooks"])
+
+        let id = UUID()
+        let result = try AgentHooks.writeAgyHooks(
+            workingDirectory: tempDir.path,
+            workstreamID: id,
+            helperPath: "/path/to/dy-agent-state"
+        )
+        XCTAssertNil(result)
+
+        // Verify file content was not mutated
+        let currentContent = try String(contentsOf: hooksURL)
+        XCTAssertEqual(currentContent, originalContent)
+
+        // Verify removeAgyHooks also does not mutate tracked file
+        AgentHooks.removeAgyHooks(workingDirectory: tempDir.path)
+        let afterRemoveContent = try String(contentsOf: hooksURL)
+        XCTAssertEqual(afterRemoveContent, originalContent)
+    }
 }

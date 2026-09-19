@@ -9,6 +9,20 @@ struct AgentHookInvocation: Equatable {
     let commandFlags: [String]
 }
 
+enum AgentHookError: LocalizedError, Equatable {
+    case hooksFileCorrupted
+    case hookCollision(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .hooksFileCorrupted:
+            return "The .agents/hooks.json file is corrupted or not a valid JSON object."
+        case let .hookCollision(key):
+            return "A hook named '\(key)' already exists and is not managed by Dockyard."
+        }
+    }
+}
+
 enum AgentHooks {
     static var settingsDirectoryURL: URL {
         AppConstants.cacheDirectory.appendingPathComponent("claude-settings", isDirectory: true)
@@ -61,7 +75,9 @@ enum AgentHooks {
             return codexHookInvocation(workstreamID: workstreamID, helperPath: helperPath)
         case .agyHooks:
             guard let workingDirectory else { return nil }
-            let url = try writeAgyHooks(workingDirectory: workingDirectory, workstreamID: workstreamID, helperPath: helperPath)
+            guard let url = try writeAgyHooks(workingDirectory: workingDirectory, workstreamID: workstreamID, helperPath: helperPath) else {
+                return nil
+            }
             return AgentHookInvocation(
                 generatedConfigURL: url,
                 commandConfigOverrides: [],
@@ -74,9 +90,14 @@ enum AgentHooks {
 
     /// Writes `<workingDirectory>/.agents/hooks.json` for the workstream,
     /// embedding the bundled helper's absolute path and the workstream UUID.
-    /// Preserves any existing non-dockyard hooks. Returns the file URL.
+    /// Preserves any existing non-dockyard hooks. Returns the file URL,
+    /// or `nil` if the file is tracked by git and should not be mutated.
     @discardableResult
-    static func writeAgyHooks(workingDirectory: String, workstreamID: UUID, helperPath: String) throws -> URL {
+    static func writeAgyHooks(workingDirectory: String, workstreamID: UUID, helperPath: String) throws -> URL? {
+        if isTrackedByGit(workingDirectory: workingDirectory, relativePath: ".agents/hooks.json") {
+            return nil
+        }
+
         let id = workstreamID.uuidString.lowercased()
         let quotedHelper = shellSingleQuote(helperPath)
 
@@ -85,10 +106,19 @@ enum AgentHooks {
         let hooksURL = agentsDir.appendingPathComponent("hooks.json")
 
         var existingHooks: [String: Any] = [:]
-        if let data = try? Data(contentsOf: hooksURL),
-           let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
-        {
+        if FileManager.default.fileExists(atPath: hooksURL.path) {
+            let data = try Data(contentsOf: hooksURL)
+            let jsonObject = try JSONSerialization.jsonObject(with: data)
+            guard let json = jsonObject as? [String: Any] else {
+                throw AgentHookError.hooksFileCorrupted
+            }
             existingHooks = json
+        }
+
+        if let existing = existingHooks["dockyard-state"] {
+            guard isDockyardManagedHook(existing) else {
+                throw AgentHookError.hookCollision("dockyard-state")
+            }
         }
 
         let dockyardHooks: [String: Any] = [
@@ -141,12 +171,18 @@ enum AgentHooks {
     /// Removes the `dockyard-state` hook entry from `<workingDirectory>/.agents/hooks.json`.
     /// If no other hooks remain, deletes `hooks.json`.
     static func removeAgyHooks(workingDirectory: String) {
+        if isTrackedByGit(workingDirectory: workingDirectory, relativePath: ".agents/hooks.json") {
+            return
+        }
+
         let hooksURL = URL(fileURLWithPath: workingDirectory)
             .appendingPathComponent(".agents", isDirectory: true)
             .appendingPathComponent("hooks.json")
         guard FileManager.default.fileExists(atPath: hooksURL.path),
               let data = try? Data(contentsOf: hooksURL),
-              var json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+              var json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let existing = json["dockyard-state"],
+              isDockyardManagedHook(existing)
         else { return }
 
         json.removeValue(forKey: "dockyard-state")
@@ -157,7 +193,37 @@ enum AgentHooks {
         }
     }
 
+    static func isDockyardManagedHook(_ hookValue: Any) -> Bool {
+        guard let hookDict = hookValue as? [String: Any] else { return false }
+        guard let data = try? JSONSerialization.data(withJSONObject: hookDict),
+              let string = String(data: data, encoding: .utf8)
+        else {
+            return false
+        }
+        return string.contains("dy-agent-state")
+    }
+
+    static func isTrackedByGit(workingDirectory: String, relativePath: String) -> Bool {
+        guard let gitPath = CommandLineTools.path(for: "git") else { return false }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: gitPath)
+        process.arguments = ["ls-files", "--error-unmatch", "--", relativePath]
+        process.currentDirectoryURL = URL(fileURLWithPath: workingDirectory)
+        process.standardOutput = Pipe()
+        process.standardError = Pipe()
+        do {
+            try process.run()
+            process.waitUntilExit()
+            return process.terminationStatus == 0
+        } catch {
+            return false
+        }
+    }
+
     static func excludeFromGitIfPossible(workingDirectory: String, relativePath: String) {
+        if isTrackedByGit(workingDirectory: workingDirectory, relativePath: relativePath) {
+            return
+        }
         guard let gitPath = CommandLineTools.path(for: "git") else { return }
         let process = Process()
         let pipe = Pipe()
