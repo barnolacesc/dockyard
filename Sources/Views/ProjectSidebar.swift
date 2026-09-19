@@ -807,6 +807,8 @@ struct ProjectSidebar: View {
     @AppStorage("dockyard.codingCLI") private var globalCodingCLIRaw: String = ""
     @AppStorage("dockyard.symlinkEnv") private var symlinkEnv: Bool = true
 
+    /// Presents the creation sheet for a new workstream, initializing defaults for name,
+    /// Coding Agent, and dangerous permission bypass mode based on user preferences.
     private func presentNewWorkstreamSheet(for projectID: UUID) {
         guard let project = projects.first(where: { $0.id == projectID }) else { return }
         guard GitOperations.isGitRepo(at: project.directory) else {
@@ -824,6 +826,8 @@ struct ProjectSidebar: View {
         showingNewWorkstream = true
     }
 
+    /// Creates and registers a workstream with the configured name, Coding Agent,
+    /// permission bypass mode, and optional GitHub issue task prompt.
     private func createConfiguredWorkstream() {
         guard let projectID = newWorkstreamProjectID else { return }
         let normalizedName = NameGenerator.normalize(configuredWorkstreamName)
@@ -2108,6 +2112,8 @@ private struct NewWorkstreamSheet: View {
         effectiveCodingCLI.capabilities.supportsDangerousPermissionBypass
     }
 
+    /// Returns a localized description of the dangerous permission bypass behavior
+    /// specific to the given Coding Agent CLI.
     private func permissionDescription(for cli: CodingCLI) -> String {
         switch cli {
         case .claude:
