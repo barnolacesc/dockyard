@@ -158,6 +158,56 @@ final class BrowserViewTests: XCTestCase {
         XCTAssertTrue(coordinator is WKUIDelegate, "Coordinator should conform to WKUIDelegate")
     }
 
+    func testBrowserWebViewConfigurationUsesSharedProcessPoolAndDataStore() {
+        let config1 = BrowserWebViewConfiguration.makeConfiguration()
+        let config2 = BrowserWebViewConfiguration.makeConfiguration()
+
+        XCTAssertTrue(config1.processPool === config2.processPool, "Configs should share the exact same WKProcessPool")
+        XCTAssertTrue(config1.websiteDataStore === config2.websiteDataStore, "Configs should share the exact same WKWebsiteDataStore")
+        XCTAssertTrue(config1.preferences.value(forKey: "developerExtrasEnabled") as? Bool == true)
+    }
+
+    func testLinkOpenerDefaultsToExternal() {
+        let originalTarget = UserDefaults.standard.object(forKey: LinkOpener.targetStorageKey)
+        defer {
+            if let originalTarget {
+                UserDefaults.standard.set(originalTarget, forKey: LinkOpener.targetStorageKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: LinkOpener.targetStorageKey)
+            }
+        }
+        UserDefaults.standard.removeObject(forKey: LinkOpener.targetStorageKey)
+        XCTAssertEqual(LinkOpener.currentTarget, .external)
+    }
+
+    func testLinkOpenerQueuesAndConsumesPendingURLs() {
+        let workstreamID = UUID()
+        let testURL = URL(string: "https://example.com/test")!
+
+        LinkOpener.openInApp(url: testURL, workstreamID: workstreamID)
+        let consumed = LinkOpener.consumePendingURL(for: workstreamID)
+        XCTAssertEqual(consumed, testURL)
+        XCTAssertNil(LinkOpener.consumePendingURL(for: workstreamID))
+    }
+
+    func testLinkOpenerPostsInAppNotification() {
+        let originalTarget = LinkOpener.currentTarget
+        defer { LinkOpener.currentTarget = originalTarget }
+
+        LinkOpener.currentTarget = .inApp
+        let workstreamID = UUID()
+        let testURL = URL(string: "https://github.com/test/repo")!
+
+        let expectation = expectation(forNotification: .openInAppBrowser, object: nil) { notification in
+            guard let url = notification.userInfo?["url"] as? URL,
+                  let targetID = notification.object as? UUID else { return false }
+            return url == testURL && targetID == workstreamID
+        }
+
+        LinkOpener.open(url: testURL, workstreamID: workstreamID)
+        wait(for: [expectation], timeout: 1.0)
+    }
+
     private func permissions(of url: URL) throws -> Int {
         let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
         return try XCTUnwrap(attributes[.posixPermissions] as? NSNumber).intValue

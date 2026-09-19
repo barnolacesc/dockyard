@@ -16,6 +16,7 @@ struct SettingsView: View {
     @AppStorage("dockyard.claudePlanTier") private var claudePlanTier: String = ClaudePlanTier.none.rawValue
     @AppStorage("dockyard.defaultTerminal") private var defaultTerminal: String = ""
     @AppStorage("dockyard.defaultBrowser") private var defaultBrowser: String = ""
+    @AppStorage(LinkOpener.targetStorageKey) private var linkOpenTarget: String = LinkOpenTarget.external.rawValue
     @AppStorage("dockyard.branchPrefix") private var branchPrefix: String = "dy"
     @AppStorage("dockyard.terminalEditorCommand") private var terminalEditorCommand: String = "nvim ."
     @AppStorage("dockyard.appearance") private var appearance: String = "system"
@@ -379,6 +380,15 @@ struct SettingsView: View {
                         defaultTerminal = first.bundleID
                     }
                 }
+
+                Picker("Open links in", selection: $linkOpenTarget) {
+                    ForEach(LinkOpenTarget.allCases) { target in
+                        Text(target.displayName).tag(target.rawValue)
+                    }
+                }
+                Text("Where links clicked in the Coding Agent, terminal, and browser tabs should open.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
                 Picker("External Browser", selection: $defaultBrowser) {
                     Text("System Default").tag("")

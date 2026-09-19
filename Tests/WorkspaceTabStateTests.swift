@@ -58,7 +58,8 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
             terminalTitles: [terminalID: "zsh", editorTerminalID: "Editor"],
             runStarted: true,
             runStoppedManually: false,
-            terminalEditorCommands: [editorTerminalID: "nvim ."]
+            terminalEditorCommands: [editorTerminalID: "nvim ."],
+            browserURLs: [browserID: "https://github.com/test"]
         )
 
         let data = try JSONEncoder().encode(snapshot)
@@ -72,6 +73,7 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         XCTAssertEqual(restored.terminalTitles[terminalID], "zsh")
         XCTAssertEqual(restored.terminalTitles[editorTerminalID], "Editor")
         XCTAssertEqual(restored.terminalEditorCommands[editorTerminalID], "nvim .")
+        XCTAssertEqual(restored.browserURLs[browserID], "https://github.com/test")
         XCTAssertTrue(restored.runStarted)
         XCTAssertFalse(restored.runStoppedManually)
     }

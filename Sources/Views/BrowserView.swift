@@ -9,44 +9,61 @@ extension Notification.Name {
     static let browserTitleChanged = Notification.Name("dockyard.browserTitleChanged")
     static let browserReload = Notification.Name("dockyard.browserReload")
     static let browserHardReload = Notification.Name("dockyard.browserHardReload")
+    static let openInAppBrowser = Notification.Name("dockyard.openInAppBrowser")
+    static let browserURLChanged = Notification.Name("dockyard.browserURLChanged")
 }
 
-func browserWebViewConfiguration() -> WKWebViewConfiguration {
-    let configuration = WKWebViewConfiguration()
-    configuration.mediaTypesRequiringUserActionForPlayback = []
-    configuration.preferences.setValue(true, forKey: "mediaDevicesEnabled")
-    configuration.preferences.setValue(true, forKey: "mediaStreamEnabled")
-    configuration.preferences.setValue(true, forKey: "peerConnectionEnabled")
+@MainActor
+enum BrowserWebViewConfiguration {
+    static let sharedProcessPool = WKProcessPool()
+    static let sharedDataStore = WKWebsiteDataStore.default()
 
-    // Inject a tiny console-capture shim so the embedded browser can ship
-    // recent logs through to the agent via BrowserBridge.
-    let consoleShim = WKUserScript(
-        source: """
-        (function(){
-            if (window.__dockyardConsoleHooked) return;
-            window.__dockyardConsoleHooked = true;
-            const post = (level, args) => {
-                try {
-                    const message = Array.from(args).map(a => {
-                        if (a == null) return String(a);
-                        if (typeof a === 'string') return a;
-                        try { return JSON.stringify(a); } catch (_) { return String(a); }
-                    }).join(' ');
-                    window.webkit?.messageHandlers?.dockyardConsole?.postMessage({ level, message });
-                } catch (_) { /* swallow */ }
-            };
-            ['log','info','warn','error','debug'].forEach(level => {
-                const orig = console[level].bind(console);
-                console[level] = function(){ post(level, arguments); orig.apply(null, arguments); };
-            });
-            window.addEventListener('error', e => post('error', [e.message]));
-        })();
-        """,
-        injectionTime: .atDocumentStart,
-        forMainFrameOnly: false
-    )
-    configuration.userContentController.addUserScript(consoleShim)
-    return configuration
+    static func makeConfiguration() -> WKWebViewConfiguration {
+        let configuration = WKWebViewConfiguration()
+        configuration.processPool = sharedProcessPool
+        configuration.websiteDataStore = sharedDataStore
+        configuration.mediaTypesRequiringUserActionForPlayback = []
+        configuration.preferences.setValue(true, forKey: "mediaDevicesEnabled")
+        configuration.preferences.setValue(true, forKey: "mediaStreamEnabled")
+        configuration.preferences.setValue(true, forKey: "peerConnectionEnabled")
+        configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+
+        // Inject a tiny console-capture shim so the embedded browser can ship
+        // recent logs through to the agent via BrowserBridge.
+        let consoleShim = WKUserScript(
+            source: """
+            (function(){
+                if (window.__dockyardConsoleHooked) return;
+                window.__dockyardConsoleHooked = true;
+                const post = (level, args) => {
+                    try {
+                        const message = Array.from(args).map(a => {
+                            if (a == null) return String(a);
+                            if (typeof a === 'string') return a;
+                            try { return JSON.stringify(a); } catch (_) { return String(a); }
+                        }).join(' ');
+                        window.webkit?.messageHandlers?.dockyardConsole?.postMessage({ level, message });
+                    } catch (_) { /* swallow */ }
+                };
+                ['log','info','warn','error','debug'].forEach(level => {
+                    const orig = console[level].bind(console);
+                    console[level] = function(){ post(level, arguments); orig.apply(null, arguments); };
+                });
+                window.addEventListener('error', e => post('error', [e.message]));
+            })();
+            """,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
+        )
+        configuration.userContentController.addUserScript(consoleShim)
+        return configuration
+    }
+}
+
+@MainActor
+func browserWebViewConfiguration() -> WKWebViewConfiguration {
+    BrowserWebViewConfiguration.makeConfiguration()
 }
 
 /// Hides the "Open Link in New Window" context menu item since the app is single-window.
@@ -92,6 +109,7 @@ private func normalizedBrowserURL(_ urlString: String) -> String {
 
 struct BrowserView: View {
     let defaultURL: String
+    var initialURL: String? = nil
     var tabID: UUID?
     var workstreamID: UUID?
     let webView: WKWebView
@@ -185,6 +203,7 @@ struct BrowserView: View {
             ZStack {
                 WebViewRepresentable(
                     webView: webView,
+                    tabID: tabID,
                     workstreamID: workstreamID,
                     isLoading: $isLoading,
                     canGoBack: $canGoBack,
@@ -222,8 +241,9 @@ struct BrowserView: View {
         }
         .onAppear {
             if webView.url == nil {
-                urlText = defaultURL
-                navigateTo(defaultURL)
+                let startURL = initialURL ?? defaultURL
+                urlText = startURL
+                navigateTo(startURL)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     urlFieldFocused = true
                 }
@@ -296,6 +316,7 @@ struct BrowserView: View {
 
 struct WebViewRepresentable: NSViewRepresentable {
     let webView: WKWebView
+    var tabID: UUID? = nil
     var workstreamID: UUID?
     @Binding var isLoading: Bool
     @Binding var canGoBack: Bool
@@ -459,7 +480,7 @@ struct WebViewRepresentable: NSViewRepresentable {
                let url = action.request.url,
                url.scheme == "https" || url.scheme == "http"
             {
-                NSWorkspace.shared.open(url)
+                LinkOpener.open(url: url, workstreamID: parent.workstreamID)
                 decisionHandler(.cancel)
                 return
             }
@@ -476,6 +497,13 @@ struct WebViewRepresentable: NSViewRepresentable {
             parent.isLoading = false
             parent.connectionError = false
             updateState(webView)
+            if let tabID = parent.tabID, let url = webView.url?.absoluteString {
+                NotificationCenter.default.post(
+                    name: .browserURLChanged,
+                    object: tabID,
+                    userInfo: ["url": url]
+                )
+            }
         }
 
         func webView(_ webView: WKWebView, didFail _: WKNavigation!, withError _: Error) {

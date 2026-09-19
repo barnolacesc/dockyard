@@ -210,8 +210,13 @@
 "The agent automatically renames the branch to match your current task, updating the tab name and sidebar description." = "L'agent canvia automàticament el nom de la branca per coincidir amb la teva tasca actual, actualitzant el nom de la pestanya i la descripció a la barra lateral.";
 "Auto-rename branch is only available with Claude Code, Codex, and OpenCode." = "El canvi automàtic del nom de la branca només està disponible amb Claude Code, Codex i OpenCode.";
 "Auto-Rename for More Agents" = "Canvi automàtic per a més agents";
-"Codex and OpenCode now rename a new workstream branch from your first task, just like Claude Code." = "Ara Codex i OpenCode canvien el nom de la branca d'un workstream nou a partir de la primera tasca, igual que Claude Code.";
 "External Browser" = "Navegador extern";
+"Open links in" = "Obre els enllaços a";
+"In-App Browser" = "Navegador integrat";
+"Ask Each Time" = "Pregunta cada vegada";
+"Where links clicked in the Coding Agent, terminal, and browser tabs should open." = "On s'han d'obrir els enllaços clicats a l'Agent de Codi, el terminal i les pestanyes del navegador.";
+"Open Link" = "Obrir l'enllaç";
+"Always use this choice" = "Fes servir sempre aquesta opció";
 
 /* Settings - Advanced */
 "Advanced" = "Avançat";
@@ -678,6 +683,8 @@
 "Restart Dockyard to apply the installed update" = "Reinicia Dockyard per aplicar l’actualització instal·lada";
 "Restart failed" = "El reinici ha fallat";
 "Dockyard was updated, but it could not restart automatically. Quit and reopen it to apply the update." = "Dockyard s’ha actualitzat, però no s’ha pogut reiniciar automàticament. Surt i torna’l a obrir per aplicar l’actualització.";
+"Enhanced In-App Browser" = "Navegador integrat millorat";
+"Logins and cache now persist across browser tabs and restarts. Choose whether links open in-app, in your external browser, or prompt you each time." = "Les sessions i la memòria cau ara persisteixen entre pestanyes del navegador i reinicis. Tria si els enllaços s'obren a l'aplicació, al teu navegador extern o et pregunten cada vegada.";
 "Antigravity CLI Support" = "Compatibilitat amb Antigravity CLI";
 "Run Antigravity CLI (agy) in the Agent tab as a first-class coding agent." = "Executa Antigravity CLI (agy) a la pestanya d'agent com a agent de programació de primer nivell.";
 "Reliable Background Updates" = "Actualitzacions en segon pla fiables";

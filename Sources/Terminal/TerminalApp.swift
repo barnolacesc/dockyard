@@ -106,6 +106,18 @@ private func handleTerminalAction(
             )
         }
         return true
+    case GHOSTTY_ACTION_OPEN_URL:
+        let openUrl = action.action.open_url
+        guard let cstr = openUrl.url else { return false }
+        let urlString = String(cString: cstr)
+        guard let url = URL(string: urlString) ?? URL(string: urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "") else {
+            return false
+        }
+        let wsID = TerminalView.view(for: target.target.surface)?.workstreamID
+        DispatchQueue.main.async {
+            LinkOpener.open(url: url, workstreamID: wsID)
+        }
+        return true
     default:
         return false
     }

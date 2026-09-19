@@ -210,8 +210,13 @@
 "The agent automatically renames the branch to match your current task, updating the tab name and sidebar description." = "The agent automatically renames the branch to match your current task, updating the tab name and sidebar description.";
 "Auto-rename branch is only available with Claude Code, Codex, and OpenCode." = "Auto-rename branch is only available with Claude Code, Codex, and OpenCode.";
 "Auto-Rename for More Agents" = "Auto-Rename for More Agents";
-"Codex and OpenCode now rename a new workstream branch from your first task, just like Claude Code." = "Codex and OpenCode now rename a new workstream branch from your first task, just like Claude Code.";
 "External Browser" = "External Browser";
+"Open links in" = "Open links in";
+"In-App Browser" = "In-App Browser";
+"Ask Each Time" = "Ask Each Time";
+"Where links clicked in the Coding Agent, terminal, and browser tabs should open." = "Where links clicked in the Coding Agent, terminal, and browser tabs should open.";
+"Open Link" = "Open Link";
+"Always use this choice" = "Always use this choice";
 
 /* Settings - Advanced */
 "Advanced" = "Advanced";
@@ -678,6 +683,8 @@
 "Restart Dockyard to apply the installed update" = "Restart Dockyard to apply the installed update";
 "Restart failed" = "Restart failed";
 "Dockyard was updated, but it could not restart automatically. Quit and reopen it to apply the update." = "Dockyard was updated, but it could not restart automatically. Quit and reopen it to apply the update.";
+"Enhanced In-App Browser" = "Enhanced In-App Browser";
+"Logins and cache now persist across browser tabs and restarts. Choose whether links open in-app, in your external browser, or prompt you each time." = "Logins and cache now persist across browser tabs and restarts. Choose whether links open in-app, in your external browser, or prompt you each time.";
 "Antigravity CLI Support" = "Antigravity CLI Support";
 "Run Antigravity CLI (agy) in the Agent tab as a first-class coding agent." = "Run Antigravity CLI (agy) in the Agent tab as a first-class coding agent.";
 "Reliable Background Updates" = "Reliable Background Updates";
