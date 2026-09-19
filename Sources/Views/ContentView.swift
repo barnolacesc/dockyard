@@ -182,7 +182,8 @@ struct ContentView: View {
     @State private var previousPreferredUsageProvider: UsageMeterProvider?
     @State private var whatsNewReleases: [WhatsNewRelease] = []
     @State private var showWhatsNew = false
-    @State private var projectTerminalProjectID: UUID?
+    @State private var projectActiveTabs: [UUID: ProjectTab] = [:]
+    @State private var openProjectTerminalIDs: Set<UUID> = []
     @AppStorage("dockyard.codingCLI") private var codingCLIRaw: String = ""
     @AppStorage(SidebarMode.storageKey) private var sidebarModeRaw = SidebarMode.expanded.rawValue
     @AppStorage(SidebarMode.lastVisibleStorageKey) private var lastVisibleSidebarModeRaw = SidebarMode.expanded.rawValue
@@ -348,21 +349,27 @@ struct ContentView: View {
         } else if let project = activeProject,
                   let projectIndex = projects.firstIndex(where: { $0.id == project.id })
         {
-            Group {
-                if projectTerminalProjectID == project.id {
-                    ProjectRootTerminalView(project: project) {
-                        projectTerminalProjectID = nil
+            ProjectContainerView(
+                project: $projectList.items[projectIndex],
+                activeTab: Binding(
+                    get: { projectActiveTabs[project.id] ?? .overview },
+                    set: { projectActiveTabs[project.id] = $0 }
+                ),
+                isTerminalOpen: Binding(
+                    get: { openProjectTerminalIDs.contains(project.id) },
+                    set: {
+                        if $0 {
+                            openProjectTerminalIDs.insert(project.id)
+                        } else {
+                            openProjectTerminalIDs.remove(project.id)
+                        }
                     }
-                } else {
-                    ProjectOverviewView(
-                        project: $projectList.items[projectIndex],
-                        onSelectWorkstream: { wsID in selection = .workstream(wsID) },
-                        onRemoveWorkstream: { wsID in workstreamToRemove = wsID },
-                        onPurgeWorkstream: { wsID in confirmPurge(wsID) },
-                        onProjectChanged: { ProjectStore.save(projects) }
-                    )
-                }
-            }
+                ),
+                onSelectWorkstream: { wsID in selection = .workstream(wsID) },
+                onRemoveWorkstream: { wsID in workstreamToRemove = wsID },
+                onPurgeWorkstream: { wsID in confirmPurge(wsID) },
+                onProjectChanged: { ProjectStore.save(projects) }
+            )
             .navigationTitle(project.name)
             .navigationSubtitle(AppConstants.appName)
         } else {
@@ -758,7 +765,8 @@ struct ContentView: View {
             onProjectsChanged: { ProjectStore.save(projects) },
             appUpdater: appUpdater,
             onOpenProjectTerminal: { projectID in
-                projectTerminalProjectID = projectID
+                openProjectTerminalIDs.insert(projectID)
+                projectActiveTabs[projectID] = .terminal
                 selection = .project(projectID)
             },
             selectedUsageProvider: selectedUsageProvider,

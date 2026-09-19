@@ -1681,7 +1681,7 @@ private struct WorkspaceTabButton: View {
     }
 }
 
-private struct TabBarActionButton: View {
+struct TabBarActionButton: View {
     let icon: String
     let shortcut: String
     let tooltip: String
