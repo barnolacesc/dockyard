@@ -89,12 +89,69 @@ private struct PRChecksPopover: View {
                 Label("Check status is out of date", systemImage: "clock.badge.exclamationmark")
                     .foregroundStyle(DesignColor.statusWarning)
             }
+            if current.hasConflicts {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(DesignColor.statusError)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Merge conflicts detected")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(DesignColor.statusError)
+                        Text("Resolve conflicts with base branch on GitHub or locally.")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    prLink("Resolve")
+                }
+                .padding(8)
+                .background(DesignColor.statusError.opacity(0.10), in: RoundedRectangle(cornerRadius: DesignRadius.sm))
+            }
+
+            switch current.codeRabbitStatus {
+            case .hasFindings(let count):
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(DesignColor.statusWarning)
+                    if let count {
+                        Text(String(format: NSLocalizedString("CodeRabbit: %d actionable findings", comment: ""), count))
+                            .font(.system(size: 11, weight: .medium))
+                    } else {
+                        Text("CodeRabbit: Actionable findings")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    Spacer()
+                    prLink("View findings")
+                }
+                .padding(8)
+                .background(DesignColor.statusWarning.opacity(0.10), in: RoundedRectangle(cornerRadius: DesignRadius.sm))
+            case .reviewing:
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.mini)
+                    Text("CodeRabbit: Review in progress...")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(DesignColor.statusInfo)
+                }
+                .padding(8)
+                .background(DesignColor.statusInfo.opacity(0.10), in: RoundedRectangle(cornerRadius: DesignRadius.sm))
+            case .clean:
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(DesignColor.statusSuccess)
+                    Text("CodeRabbit: No actionable findings")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .padding(8)
+                .background(DesignColor.statusSuccess.opacity(0.10), in: RoundedRectangle(cornerRadius: DesignRadius.sm))
+            case .notConfigured:
+                EmptyView()
+            }
+
             if current.isDraft { prLink("Draft") }
             if current.reviewDecision == "REVIEW_REQUIRED" { prLink("Waiting for approval") }
             if current.reviewDecision == "CHANGES_REQUESTED" { prLink("Changes requested") }
             if current.reviewDecision == "APPROVED" { prLink("Review approved") }
-            if current.mergeStateStatus == "DIRTY" { prLink("Merge conflicts") }
-            if current.mergeStateStatus == "BLOCKED" { prLink("Merge blocked on GitHub") }
+            if current.mergeStateStatus == "BLOCKED" && !current.hasConflicts { prLink("Merge blocked on GitHub") }
 
             Divider()
             if let checks = current.checks, !checks.isEmpty {

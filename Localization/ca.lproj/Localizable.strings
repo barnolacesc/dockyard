@@ -738,3 +738,19 @@
 "Collapse run console" = "Replega la consola d'execució";
 "Expand run console" = "Desplega la consola d'execució";
 "Permissions" = "Permisos";
+
+/* PR Status & CodeRabbit */
+"Conflicts" = "Conflictes";
+"Merge conflicts with base branch" = "Conflictes de fusió amb la branca base";
+"Merge conflicts detected" = "S'han detectat conflictes de fusió";
+"Resolve conflicts with base branch on GitHub or locally." = "Resol els conflictes amb la branca base a GitHub o localment.";
+"Resolve" = "Resoldre";
+"CodeRabbit: %d actionable findings" = "CodeRabbit: %d observacions accionables";
+"CodeRabbit: Actionable findings" = "CodeRabbit: Observacions accionables";
+"CodeRabbit: Review in progress..." = "CodeRabbit: Revisió en curs...";
+"CodeRabbit: No actionable findings" = "CodeRabbit: Cap observació accionable";
+"View findings" = "Veure observacions";
+"Reviewing" = "Revisant";
+"Findings" = "Observacions";
+"Changes" = "Canvis";
+"Approved" = "Aprovat";

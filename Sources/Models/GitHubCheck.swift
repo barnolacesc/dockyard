@@ -89,29 +89,78 @@ extension GitHubPR {
               let state = dict["state"] as? String,
               let branch = dict["headRefName"] as? String,
               let url = dict["url"] as? String else { return nil }
+        let checks = GitHubCheck.rollup(dict["statusCheckRollup"])
         let reviewDecision = dict["reviewDecision"] as? String
-        var hasReviewFindings = (reviewDecision == "CHANGES_REQUESTED")
-        if !hasReviewFindings, let latestReviews = dict["latestReviews"] as? [[String: Any]] {
-            for review in latestReviews {
-                let reviewState = review["state"] as? String
-                let author = review["author"] as? [String: Any]
-                let login = (author?["login"] as? String) ?? ""
-                if reviewState == "CHANGES_REQUESTED"
-                    || (reviewState == "COMMENTED" && login.localizedCaseInsensitiveContains("coderabbit")) {
-                    hasReviewFindings = true
-                    break
-                }
-            }
-        }
+        let latestReviews = dict["latestReviews"] as? [[String: Any]]
+        let codeRabbit = decodeCodeRabbitStatus(checks: checks, latestReviews: latestReviews)
+        let hasReviewFindings = (reviewDecision == "CHANGES_REQUESTED") || codeRabbit.hasFindings
+
         return GitHubPR(
-            number: number, title: title, state: state, branch: branch, url: url,
-            checks: GitHubCheck.rollup(dict["statusCheckRollup"]),
+            number: number,
+            title: title,
+            state: state,
+            branch: branch,
+            url: url,
+            checks: checks,
             headOID: dict["headRefOid"] as? String ?? "",
             isDraft: dict["isDraft"] as? Bool ?? false,
             reviewDecision: reviewDecision,
             mergeStateStatus: dict["mergeStateStatus"] as? String,
+            mergeable: dict["mergeable"] as? String,
             fetchedAt: fetchedAt,
-            hasReviewFindings: hasReviewFindings
+            hasReviewFindings: hasReviewFindings,
+            codeRabbitStatus: codeRabbit.status
         )
     }
+
+    static func decodeCodeRabbitStatus(
+        checks: [GitHubCheck]?,
+        latestReviews: [[String: Any]]?
+    ) -> (status: CodeRabbitStatus, hasFindings: Bool) {
+        let codeRabbitCheck = checks?.first(where: {
+            $0.name.localizedCaseInsensitiveContains("coderabbit")
+                || $0.workflow.localizedCaseInsensitiveContains("coderabbit")
+        })
+        let isReviewing = codeRabbitCheck?.state == .pending
+
+        var findingsCount: Int? = nil
+        var hasFindings = false
+        var foundCodeRabbitReview = false
+
+        if let latestReviews {
+            for review in latestReviews {
+                let author = review["author"] as? [String: Any]
+                let login = (author?["login"] as? String) ?? ""
+                let state = (review["state"] as? String) ?? ""
+                let body = (review["body"] as? String) ?? ""
+
+                if login.localizedCaseInsensitiveContains("coderabbit") {
+                    foundCodeRabbitReview = true
+                    if let regex = try? NSRegularExpression(pattern: #"\*\*Actionable comments posted:\s*(\d+)\*\*"#, options: .caseInsensitive),
+                       let match = regex.firstMatch(in: body, range: NSRange(body.startIndex..., in: body)),
+                       let range = Range(match.range(at: 1), in: body),
+                       let count = Int(body[range]) {
+                        findingsCount = count
+                        if count > 0 {
+                            hasFindings = true
+                        }
+                    } else if body.contains("<!-- autofix_checkbox_start -->") || state == "CHANGES_REQUESTED" {
+                        hasFindings = true
+                    }
+                    break
+                }
+            }
+        }
+
+        if hasFindings {
+            return (.hasFindings(count: findingsCount), true)
+        } else if isReviewing {
+            return (.reviewing, false)
+        } else if foundCodeRabbitReview || (codeRabbitCheck != nil && codeRabbitCheck?.state == .passed) {
+            return (.clean, false)
+        } else {
+            return (.notConfigured, false)
+        }
+    }
 }
+
