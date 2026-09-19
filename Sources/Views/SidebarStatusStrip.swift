@@ -13,6 +13,12 @@ struct SidebarStatusStrip: View {
     var onPreviousUsageProvider: () -> Void = {}
     var onNextUsageProvider: () -> Void = {}
 
+    @AppStorage(CaffeinateMode.storageKey) private var caffeinateMode: String = CaffeinateMode.off.rawValue
+
+    private var currentCaffeinateMode: CaffeinateMode {
+        CaffeinateMode(rawValue: caffeinateMode) ?? .off
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             SidebarUsageMeter(
@@ -44,9 +50,58 @@ struct SidebarStatusStrip: View {
                     .foregroundStyle(DesignColor.statusWarning)
                     .help(NSLocalizedString("Agents waiting on you", comment: ""))
             }
+            Spacer(minLength: 4)
+            caffeinateToggle
         }
         .font(.system(size: 12))
         .foregroundStyle(.tertiary)
+    }
+
+    private var caffeinateToggle: some View {
+        Button(action: cycleCaffeinate) {
+            Image(systemName: currentCaffeinateMode == .off ? "cup.and.saucer" : "cup.and.saucer.fill")
+                .font(.system(size: 12))
+        }
+        .pressable()
+        .foregroundStyle(caffeinateForeground)
+        .help(caffeinateTooltip)
+        .accessibilityLabel(Text("Keep Mac awake"))
+        .contextMenu {
+            ForEach(CaffeinateMode.allCases) { mode in
+                Button {
+                    caffeinateMode = mode.rawValue
+                } label: {
+                    HStack {
+                        Text(mode.displayName)
+                        if currentCaffeinateMode == mode {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var caffeinateForeground: Color {
+        switch currentCaffeinateMode {
+        case .off:
+            .secondary
+        case .whileAgentsWork:
+            Color.accentColor
+        case .always:
+            DesignColor.statusWarning
+        }
+    }
+
+    private var caffeinateTooltip: String {
+        String(
+            format: NSLocalizedString("Keep Mac awake: %@ (click to cycle)", comment: "Caffeinate toggle tooltip; %@ is mode name"),
+            currentCaffeinateMode.displayName
+        )
+    }
+
+    private func cycleCaffeinate() {
+        caffeinateMode = currentCaffeinateMode.next.rawValue
     }
 
     private func countItem(systemImage: String, count: Int) -> some View {
