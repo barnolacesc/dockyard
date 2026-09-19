@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.2.6](https://github.com/barnolacesc/dockyard/compare/v0.2.5...v0.2.6) (2026-09-19)
+
+
+### Features
+
+* add actionable agent attention notifications ([#213](https://github.com/barnolacesc/dockyard/issues/213)) ([91eec20](https://github.com/barnolacesc/dockyard/commit/91eec203d1118da30c9c86e1169a0e4ff24dee32))
+* add Antigravity CLI (agy) support replacing legacy Gemini CLI ([#236](https://github.com/barnolacesc/dockyard/issues/236)) ([62c8b3d](https://github.com/barnolacesc/dockyard/commit/62c8b3dd1be8c8cd57f34429a24db0a725b348b1))
+* add caffeinate mode ([#226](https://github.com/barnolacesc/dockyard/issues/226)) ([078c5da](https://github.com/barnolacesc/dockyard/commit/078c5dac52e6b905616886d423ab32df986edee2))
+* add project root terminal ([#210](https://github.com/barnolacesc/dockyard/issues/210)) ([d12c7a5](https://github.com/barnolacesc/dockyard/commit/d12c7a5c8701c9cae7dc652ff9fd0c81a86bdf1f))
+* **agent:** add Antigravity CLI (agy) lifecycle hooks and permission bypass ([#240](https://github.com/barnolacesc/dockyard/issues/240)) ([87fe408](https://github.com/barnolacesc/dockyard/commit/87fe408395c51d759a5e9e194be022945acb7b9a))
+* **attention:** add Dockyard work overview ([#221](https://github.com/barnolacesc/dockyard/issues/221)) ([36b9173](https://github.com/barnolacesc/dockyard/commit/36b917393f1504f5b5dade1688088cdd8c23514e))
+* **browser:** persistent session and configurable link opening ([#244](https://github.com/barnolacesc/dockyard/issues/244)) ([830933b](https://github.com/barnolacesc/dockyard/commit/830933bccb6434782e26de79fc182d48d0256511))
+* **caffeinate:** add sidebar toggle to cycle sleep modes ([#246](https://github.com/barnolacesc/dockyard/issues/246)) ([92ece1f](https://github.com/barnolacesc/dockyard/commit/92ece1f417d21b322bfc84d6eaab4790f0c0ecf4))
+* configure workstreams from GitHub issues ([#220](https://github.com/barnolacesc/dockyard/issues/220)) ([8933bf2](https://github.com/barnolacesc/dockyard/commit/8933bf2a9ef7a237f7b73d0b7b0a4fc93323e1a6))
+* **info:** improve worktree management and uncommitted changes handling ([#239](https://github.com/barnolacesc/dockyard/issues/239)) ([10c859e](https://github.com/barnolacesc/dockyard/commit/10c859e1da55fd2c53e6e9e6d5e0d71494da7ef0))
+* **project:** add overview and terminal tabs with script configuration ([#238](https://github.com/barnolacesc/dockyard/issues/238)) ([263285e](https://github.com/barnolacesc/dockyard/commit/263285ea6c27fc7773a2546e6a267f0c57af8c11))
+* rename Codex and OpenCode workstreams ([#217](https://github.com/barnolacesc/dockyard/issues/217)) ([9d27d0d](https://github.com/barnolacesc/dockyard/commit/9d27d0d6a22a94c92aeadced4ec192c419e942d3))
+* show pull request CI checks ([#219](https://github.com/barnolacesc/dockyard/issues/219)) ([adf0196](https://github.com/barnolacesc/dockyard/commit/adf01960c5cb2728e5fe85aeed9192ec698dfe42))
+* **sidebar:** report all PR statuses, merge conflicts, and CodeRabbit reviews ([#245](https://github.com/barnolacesc/dockyard/issues/245)) ([39fc5cc](https://github.com/barnolacesc/dockyard/commit/39fc5ccc2593d44150dae75de5ff287a294da200))
+* **workspace:** collapse run script console and redesign workstream info layout ([#243](https://github.com/barnolacesc/dockyard/issues/243)) ([6e16046](https://github.com/barnolacesc/dockyard/commit/6e1604654ebf7b002e5a0499ebdf3034ce263ca6))
+* **workspace:** redesign top bar with lifecycle pill and ai reviewer action ([#242](https://github.com/barnolacesc/dockyard/issues/242)) ([0d21219](https://github.com/barnolacesc/dockyard/commit/0d21219d7ddd25487cac7ae92c7efb79e7e7f8d5))
+* **workstream:** toggle dangerous permissions in creation sheet ([#241](https://github.com/barnolacesc/dockyard/issues/241)) ([88e9883](https://github.com/barnolacesc/dockyard/commit/88e9883ba78a178f62e12b4b8214438c09f4d062))
+
+
+### Bug Fixes
+
+* **attention:** show only current workspaces ([#216](https://github.com/barnolacesc/dockyard/issues/216)) ([6865dcc](https://github.com/barnolacesc/dockyard/commit/6865dcc9541c2d0440d1c729fb696092c7d589ff))
+* rename task tabs and branches separately ([#222](https://github.com/barnolacesc/dockyard/issues/222)) ([aef9b35](https://github.com/barnolacesc/dockyard/commit/aef9b350dce00b38f19cdc8ef268e07e899febb0))
+* **updater:** complete background source updates ([#227](https://github.com/barnolacesc/dockyard/issues/227)) ([e7c236c](https://github.com/barnolacesc/dockyard/commit/e7c236cf66e3d7d11d4985397715ce2b144098c8))
+* **updater:** run source updates without terminal windows ([#215](https://github.com/barnolacesc/dockyard/issues/215)) ([34ecd1e](https://github.com/barnolacesc/dockyard/commit/34ecd1e0efb3eedb025bec1f02aa40bcffc79e6a))
+
+
+### Refactoring
+
+* **editor:** remove Monaco editor and use terminal editor for Cmd+O ([#237](https://github.com/barnolacesc/dockyard/issues/237)) ([9dc2d31](https://github.com/barnolacesc/dockyard/commit/9dc2d3105c8b2798419bed093a3b82ec25428a78))
+* **localization:** support English and Catalan only ([#218](https://github.com/barnolacesc/dockyard/issues/218)) ([8bd5f85](https://github.com/barnolacesc/dockyard/commit/8bd5f85b2b072ae79bd92214ed893e98bca746c3))
+
+
+### Documentation
+
+* specify agent attention notifications ([#211](https://github.com/barnolacesc/dockyard/issues/211)) ([60f0e2e](https://github.com/barnolacesc/dockyard/commit/60f0e2eee5c3db31769651cf352a576cd507368e))
+
 ## [0.2.5](https://github.com/barnolacesc/dockyard/compare/v0.2.4...v0.2.5) (2026-09-11)
 
 
