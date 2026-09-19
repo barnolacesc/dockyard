@@ -315,6 +315,7 @@ final class AppEnvironment: ObservableObject {
     }
 
     private var worktreeStateTimestamps: [String: Date] = [:]
+    private var worktreeStateGenerations: [String: Int] = [:]
     private static let worktreeStateRefreshInterval: TimeInterval = 5
 
     /// Refresh working tree state for a single worktree path. Throttled to once
@@ -329,6 +330,8 @@ final class AppEnvironment: ObservableObject {
             return
         }
         worktreeStateTimestamps[worktreePath] = now
+        let generation = (worktreeStateGenerations[worktreePath] ?? 0) + 1
+        worktreeStateGenerations[worktreePath] = generation
 
         let path = worktreePath
         let projectDir = projectDirectory
@@ -344,13 +347,14 @@ final class AppEnvironment: ObservableObject {
                 worktreeCreatedDate: (try? FileManager.default.attributesOfItem(atPath: path)[.creationDate]) as? Date,
                 baseBranch: GitOperations.defaultBranch(at: projectDir)
             )
-            await self.deferWorktreeStateUpdate(state, for: path)
+            await self.deferWorktreeStateUpdate(state, for: path, generation: generation)
         }
     }
 
-    private func deferWorktreeStateUpdate(_ state: WorktreeState, for path: String) {
+    private func deferWorktreeStateUpdate(_ state: WorktreeState, for path: String, generation: Int) {
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 50_000_000)
+            guard self.worktreeStateGenerations[path] == generation else { return }
             self.commitChanges {
                 self.worktreeStateCache[path] = state
             }
