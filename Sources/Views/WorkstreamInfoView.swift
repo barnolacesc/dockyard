@@ -129,7 +129,8 @@ struct WorkstreamInfoView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: isRunExpanded ? max(220, geometry.size.height * 0.45) : 32)
+                        .frame(height: isRunExpanded ? max(220, geometry.size.height * 0.45) : nil)
+                        .frame(minHeight: 32)
                     } else {
                         EnvironmentTabView(
                             workstreamID: workstreamID,
@@ -144,7 +145,8 @@ struct WorkstreamInfoView: View {
                             runStarted: $runStarted,
                             isExpanded: $isRunExpanded
                         )
-                        .frame(height: isRunExpanded ? max(220, geometry.size.height * 0.45) : 32)
+                        .frame(height: isRunExpanded ? max(220, geometry.size.height * 0.45) : nil)
+                        .frame(minHeight: 32)
                     }
                 }
             }
@@ -470,7 +472,7 @@ struct WorkstreamInfoView: View {
                         .disabled(!selectedCodingCLI.capabilities.supportsDangerousPermissionBypass)
 
                         HStack(spacing: 6) {
-                            Text("Saved for next session.")
+                            Text("Saved for the next Coding Agent start.")
                                 .font(.caption2)
                                 .foregroundStyle(bypassPermissions ? DesignColor.statusWarning : .secondary)
 
