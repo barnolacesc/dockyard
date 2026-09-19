@@ -111,6 +111,7 @@ struct WorkspaceTabSnapshot: Codable {
     var runStarted: Bool
     var runStoppedManually: Bool
     var terminalEditorCommands: [UUID: String] = [:]
+    var browserURLs: [UUID: String] = [:]
 
     init(
         tabs: [WorkspaceTab],
@@ -121,7 +122,8 @@ struct WorkspaceTabSnapshot: Codable {
         terminalTitles: [UUID: String] = [:],
         runStarted: Bool = false,
         runStoppedManually: Bool = false,
-        terminalEditorCommands: [UUID: String] = [:]
+        terminalEditorCommands: [UUID: String] = [:],
+        browserURLs: [UUID: String] = [:]
     ) {
         self.tabs = tabs
         self.terminalCount = terminalCount
@@ -132,6 +134,7 @@ struct WorkspaceTabSnapshot: Codable {
         self.runStarted = runStarted
         self.runStoppedManually = runStoppedManually
         self.terminalEditorCommands = terminalEditorCommands
+        self.browserURLs = browserURLs
     }
 
     enum CodingKeys: String, CodingKey {
@@ -144,6 +147,7 @@ struct WorkspaceTabSnapshot: Codable {
         case runStarted
         case runStoppedManually
         case terminalEditorCommands
+        case browserURLs
     }
 
     private enum DecodedWorkspaceTab: Decodable {
@@ -220,6 +224,7 @@ struct WorkspaceTabSnapshot: Codable {
         self.runStarted = (try? container.decode(Bool.self, forKey: .runStarted)) ?? false
         self.runStoppedManually = (try? container.decode(Bool.self, forKey: .runStoppedManually)) ?? false
         self.terminalEditorCommands = (try? container.decode([UUID: String].self, forKey: .terminalEditorCommands)) ?? [:]
+        self.browserURLs = (try? container.decode([UUID: String].self, forKey: .browserURLs)) ?? [:]
     }
 
     /// Returns a copy with dead terminal tabs removed.
@@ -242,7 +247,8 @@ struct WorkspaceTabSnapshot: Codable {
             terminalTitles: terminalTitles,
             runStarted: runStarted,
             runStoppedManually: runStoppedManually,
-            terminalEditorCommands: liveTerminalEditorCommands
+            terminalEditorCommands: liveTerminalEditorCommands,
+            browserURLs: browserURLs
         )
     }
 }
@@ -439,6 +445,7 @@ struct TerminalContainerView: View {
     @State private var browserTitles: [UUID: String] = [:]
     @State private var terminalTitles: [UUID: String] = [:]
     @State private var terminalEditorCommands: [UUID: String] = [:]
+    @State private var browserURLs: [UUID: String] = [:]
     @State private var cachedAgentCommand: String?
     @State private var draggedCustomTab: WorkspaceTab?
     @StateObject private var portDetector: PortDetector
@@ -482,6 +489,7 @@ struct TerminalContainerView: View {
         _browserTitles = State(initialValue: initialTabState.browserTitles)
         _terminalTitles = State(initialValue: initialTabState.terminalTitles)
         _terminalEditorCommands = State(initialValue: initialTabState.terminalEditorCommands)
+        _browserURLs = State(initialValue: initialTabState.browserURLs)
         _runStoppedManually = State(initialValue: initialTabState.runStoppedManually)
         _runStarted = State(initialValue: initialTabState.runStarted)
         _portDetector = StateObject(wrappedValue: PortDetector(workstreamID: workstreamID))
@@ -811,7 +819,8 @@ struct TerminalContainerView: View {
                 environmentVars: terminalEnvVars
             )
         case let .browser(id):
-            BrowserView(defaultURL: browserDefaultURL, tabID: id, workstreamID: workstreamID, webView: surfaceCache.webView(for: id))
+            let initialURL = browserURLs[id] ?? browserDefaultURL
+            BrowserView(defaultURL: initialURL, tabID: id, workstreamID: workstreamID, webView: surfaceCache.webView(for: id))
                 .id(id)
         }
     }
@@ -1020,16 +1029,30 @@ struct TerminalContainerView: View {
                 guard let surfaceID = notification.object as? UUID else { return }
                 terminalTitles[surfaceID] = notification.userInfo?["title"] as? String
             }
+            .onReceive(NotificationCenter.default.publisher(for: .openInAppBrowser)) { notification in
+                let targetWorkstreamID = notification.object as? UUID
+                if let targetWorkstreamID {
+                    guard targetWorkstreamID == workstreamID else { return }
+                } else {
+                    guard isActive else { return }
+                }
+                guard let url = notification.userInfo?["url"] as? URL else { return }
+                addBrowser(url: url.absoluteString)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .browserURLChanged)) { notification in
+                guard let tabID = notification.object as? UUID,
+                      let url = notification.userInfo?["url"] as? String else { return }
+                browserURLs[tabID] = url
+                saveTabSnapshot()
+            }
             .onReceive(NotificationCenter.default.publisher(for: .openExternalBrowser)) { _ in
                 guard isActive else { return }
-                guard let url = URL(string: browserDefaultURL) else { return }
-                if defaultBrowser.isEmpty {
-                    NSWorkspace.shared.open(url)
-                } else if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: defaultBrowser) {
-                    NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: NSWorkspace.OpenConfiguration())
-                } else {
-                    NSWorkspace.shared.open(url)
+                var targetURL: URL?
+                if case let .browser(id) = activeTab {
+                    targetURL = surfaceCache.webView(for: id).url ?? URL(string: browserURLs[id] ?? "")
                 }
+                guard let url = targetURL ?? URL(string: browserDefaultURL) else { return }
+                LinkOpener.openExternal(url: url)
             }
             .toolbar {
                 if isActive {
@@ -1219,8 +1242,15 @@ struct TerminalContainerView: View {
     }
 
     private func addBrowser() {
+        addBrowser(url: nil)
+    }
+
+    private func addBrowser(url: String?) {
         browserCount += 1
         let id = derivedUUID(from: workstreamID, salt: "browser-\(browserCount)")
+        if let url {
+            browserURLs[id] = url
+        }
         let tab = WorkspaceTab.browser(id)
         tabs.append(tab)
         activeTab = tab
@@ -1246,6 +1276,8 @@ struct TerminalContainerView: View {
             terminalEditorCommands.removeValue(forKey: id)
             surfaceCache.removeSurface(for: id)
         case let .browser(id):
+            browserURLs.removeValue(forKey: id)
+            browserTitles.removeValue(forKey: id)
             surfaceCache.removeWebView(for: id)
         default:
             break
@@ -1268,7 +1300,8 @@ struct TerminalContainerView: View {
             terminalTitles: terminalTitles,
             runStarted: runStarted,
             runStoppedManually: runStoppedManually,
-            terminalEditorCommands: terminalEditorCommands
+            terminalEditorCommands: terminalEditorCommands,
+            browserURLs: browserURLs
         )
     }
 
@@ -1282,6 +1315,7 @@ struct TerminalContainerView: View {
         runStarted = snapshot.runStarted
         runStoppedManually = snapshot.runStoppedManually
         terminalEditorCommands = snapshot.terminalEditorCommands
+        browserURLs = snapshot.browserURLs
     }
 
     private func saveTabSnapshot() {

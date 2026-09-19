@@ -691,6 +691,11 @@ struct ContentView: View {
                     NotificationCenter.default.post(name: .focusAgent, object: nil)
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .openInAppBrowser)) { notification in
+                if let wsID = notification.object as? UUID, selection?.workstreamID != wsID {
+                    selection = .workstream(wsID)
+                }
+            }
             .onReceive(NotificationCenter.default.publisher(for: .nextWorkstream)) { _ in
                 cycleWorkstream(direction: 1)
             }

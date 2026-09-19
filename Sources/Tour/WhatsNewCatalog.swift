@@ -9,6 +9,11 @@ enum WhatsNewCatalog {
     static let releases: [WhatsNewRelease] = [
         WhatsNewRelease(version: "0.2.5", entries: [
             WhatsNewEntry(
+                symbol: "globe",
+                titleKey: "Enhanced In-App Browser",
+                bodyKey: "Logins and cache now persist across browser tabs and restarts. Choose whether links open in-app, in your external browser, or prompt you each time."
+            ),
+            WhatsNewEntry(
                 symbol: "sparkles",
                 titleKey: "Antigravity CLI Support",
                 bodyKey: "Run Antigravity CLI (agy) in the Agent tab as a first-class coding agent."
