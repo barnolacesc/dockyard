@@ -13,6 +13,21 @@ struct GitHubRepoInfo {
     let openIssues: Int
 }
 
+enum CodeRabbitStatus: Equatable, Sendable {
+    case notConfigured
+    case reviewing
+    case hasFindings(count: Int?)
+    case clean
+}
+
+enum PRReviewStatus: Equatable, Sendable {
+    case draft
+    case changesRequested
+    case awaitingReview
+    case approved
+    case none
+}
+
 struct GitHubPR: Equatable, Sendable {
     let number: Int
     let title: String
@@ -24,9 +39,32 @@ struct GitHubPR: Equatable, Sendable {
     var isDraft: Bool = false
     var reviewDecision: String? = nil
     var mergeStateStatus: String? = nil
+    var mergeable: String? = nil
     var fetchedAt: Date? = nil
     var hasReviewFindings: Bool = false
+    var codeRabbitStatus: CodeRabbitStatus = .notConfigured
 }
+
+extension GitHubPR {
+    var hasConflicts: Bool {
+        mergeStateStatus == "DIRTY" || mergeable == "CONFLICTING"
+    }
+
+    var reviewStatus: PRReviewStatus {
+        if isDraft { return .draft }
+        if hasReviewFindings || reviewDecision == "CHANGES_REQUESTED" {
+            return .changesRequested
+        }
+        if reviewDecision == "APPROVED" {
+            return .approved
+        }
+        if reviewDecision == "REVIEW_REQUIRED" {
+            return .awaitingReview
+        }
+        return .none
+    }
+}
+
 
 enum GitHubPRLookupResult: Equatable, Sendable {
     case found(GitHubPR)
@@ -203,7 +241,7 @@ let defaultGitHubReadProcessFactory: GitHubReadProcessFactory = {
 }
 
 enum GitHubOperations {
-    static let prFields = "number,title,state,headRefName,url,headRefOid,statusCheckRollup,isDraft,reviewDecision,mergeStateStatus,latestReviews"
+    static let prFields = "number,title,state,headRefName,url,headRefOid,statusCheckRollup,isDraft,reviewDecision,mergeStateStatus,mergeable,latestReviews"
     static let probeTimeout: TimeInterval = 10
     static let probeTerminationGrace: TimeInterval = 1
     static let maximumProbeOutputBytes = 256 * 1024

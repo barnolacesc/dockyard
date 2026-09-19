@@ -80,6 +80,88 @@ final class GitHubCheckTests: XCTestCase {
         XCTAssertEqual(GitHubOperations.decodeRequiredChecks(Data("[]".utf8)), [])
     }
 
+    func testConflictDetection() throws {
+        var payload: [String: Any] = [
+            "number": 1, "title": "PR", "state": "OPEN", "headRefName": "feat", "url": "https://example.com/1",
+            "mergeStateStatus": "DIRTY", "mergeable": "MERGEABLE"
+        ]
+        let pr1 = try XCTUnwrap(GitHubPR.decode(payload))
+        XCTAssertTrue(pr1.hasConflicts)
+
+        payload["mergeStateStatus"] = "BLOCKED"
+        payload["mergeable"] = "CONFLICTING"
+        let pr2 = try XCTUnwrap(GitHubPR.decode(payload))
+        XCTAssertTrue(pr2.hasConflicts)
+
+        payload["mergeStateStatus"] = "CLEAN"
+        payload["mergeable"] = "MERGEABLE"
+        let pr3 = try XCTUnwrap(GitHubPR.decode(payload))
+        XCTAssertFalse(pr3.hasConflicts)
+    }
+
+    func testCodeRabbitReviewDecoding() throws {
+        // 1. Pending check -> reviewing
+        var payload: [String: Any] = [
+            "number": 2, "title": "PR", "state": "OPEN", "headRefName": "feat", "url": "https://example.com/2",
+            "statusCheckRollup": [
+                ["name": "CodeRabbit", "status": "IN_PROGRESS", "state": "PENDING"]
+            ]
+        ]
+        let pr1 = try XCTUnwrap(GitHubPR.decode(payload))
+        XCTAssertEqual(pr1.codeRabbitStatus, .reviewing)
+        XCTAssertFalse(pr1.hasReviewFindings)
+
+        // 2. Actionable comments posted -> hasFindings
+        payload["statusCheckRollup"] = [
+            ["name": "CodeRabbit", "status": "COMPLETED", "conclusion": "SUCCESS"]
+        ]
+        payload["latestReviews"] = [
+            [
+                "author": ["login": "coderabbitai[bot]"],
+                "state": "COMMENTED",
+                "body": "**Actionable comments posted: 4**\n\n---\n<!-- autofix_checkbox_start -->"
+            ]
+        ]
+        let pr2 = try XCTUnwrap(GitHubPR.decode(payload))
+        XCTAssertEqual(pr2.codeRabbitStatus, .hasFindings(count: 4))
+        XCTAssertTrue(pr2.hasReviewFindings)
+
+        // 3. 0 actionable comments posted -> clean
+        payload["latestReviews"] = [
+            [
+                "author": ["login": "coderabbitai"],
+                "state": "COMMENTED",
+                "body": "**Actionable comments posted: 0**\n\nNo issues found."
+            ]
+        ]
+        let pr3 = try XCTUnwrap(GitHubPR.decode(payload))
+        XCTAssertEqual(pr3.codeRabbitStatus, .clean)
+        XCTAssertFalse(pr3.hasReviewFindings)
+    }
+
+    func testReviewStatusDecoding() throws {
+        var payload: [String: Any] = [
+            "number": 3, "title": "PR", "state": "OPEN", "headRefName": "feat", "url": "https://example.com/3",
+            "isDraft": true
+        ]
+        let draftPR = try XCTUnwrap(GitHubPR.decode(payload))
+        XCTAssertEqual(draftPR.reviewStatus, .draft)
+
+        payload["isDraft"] = false
+        payload["reviewDecision"] = "APPROVED"
+        let approvedPR = try XCTUnwrap(GitHubPR.decode(payload))
+        XCTAssertEqual(approvedPR.reviewStatus, .approved)
+
+        payload["reviewDecision"] = "CHANGES_REQUESTED"
+        let changesPR = try XCTUnwrap(GitHubPR.decode(payload))
+        XCTAssertEqual(changesPR.reviewStatus, .changesRequested)
+        XCTAssertTrue(changesPR.hasReviewFindings)
+
+        payload["reviewDecision"] = "REVIEW_REQUIRED"
+        let reviewPR = try XCTUnwrap(GitHubPR.decode(payload))
+        XCTAssertEqual(reviewPR.reviewStatus, .awaitingReview)
+    }
+
     private func check(_ state: GitHubCheckState) -> GitHubCheck {
         GitHubCheck(name: "test", state: state, link: "")
     }

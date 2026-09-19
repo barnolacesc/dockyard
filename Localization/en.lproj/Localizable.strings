@@ -738,3 +738,19 @@
 "Collapse run console" = "Collapse run console";
 "Expand run console" = "Expand run console";
 "Permissions" = "Permissions";
+
+/* PR Status & CodeRabbit */
+"Conflicts" = "Conflicts";
+"Merge conflicts with base branch" = "Merge conflicts with base branch";
+"Merge conflicts detected" = "Merge conflicts detected";
+"Resolve conflicts with base branch on GitHub or locally." = "Resolve conflicts with base branch on GitHub or locally.";
+"Resolve" = "Resolve";
+"CodeRabbit: %d actionable findings" = "CodeRabbit: %d actionable findings";
+"CodeRabbit: Actionable findings" = "CodeRabbit: Actionable findings";
+"CodeRabbit: Review in progress..." = "CodeRabbit: Review in progress...";
+"CodeRabbit: No actionable findings" = "CodeRabbit: No actionable findings";
+"View findings" = "View findings";
+"Reviewing" = "Reviewing";
+"Findings" = "Findings";
+"Changes" = "Changes";
+"Approved" = "Approved";

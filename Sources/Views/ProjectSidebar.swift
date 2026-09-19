@@ -49,12 +49,94 @@ struct WorkstreamStagePillStyle: Equatable {
     let titleKey: String
     let prNumber: Int?
     let showsManualMark: Bool
+    var tintColor: Color? = nil
+}
+
+extension GitHubPR {
+    func stagePill(isManuallySet: Bool, includeNumber: Bool = true) -> WorkstreamStagePillStyle? {
+        let numberToDisplay = includeNumber ? number : nil
+
+        if isDraft {
+            return WorkstreamStagePillStyle(
+                appearance: .outline,
+                iconSystemName: "doc.text",
+                titleKey: "Draft",
+                prNumber: numberToDisplay,
+                showsManualMark: isManuallySet,
+                tintColor: .secondary
+            )
+        }
+
+        switch codeRabbitStatus {
+        case .hasFindings(let count):
+            let title = count != nil ? "\(count!)" : "Findings"
+            return WorkstreamStagePillStyle(
+                appearance: .filled,
+                iconSystemName: "sparkles",
+                titleKey: title,
+                prNumber: numberToDisplay,
+                showsManualMark: isManuallySet,
+                tintColor: DesignColor.statusWarning
+            )
+        case .reviewing:
+            return WorkstreamStagePillStyle(
+                appearance: .filled,
+                iconSystemName: "clock",
+                titleKey: "Reviewing",
+                prNumber: numberToDisplay,
+                showsManualMark: isManuallySet,
+                tintColor: DesignColor.statusInfo
+            )
+        case .clean, .notConfigured:
+            break
+        }
+
+        switch reviewStatus {
+        case .changesRequested:
+            return WorkstreamStagePillStyle(
+                appearance: .filled,
+                iconSystemName: "exclamationmark.bubble.fill",
+                titleKey: "Changes",
+                prNumber: numberToDisplay,
+                showsManualMark: isManuallySet,
+                tintColor: DesignColor.statusError
+            )
+        case .approved:
+            return WorkstreamStagePillStyle(
+                appearance: .filled,
+                iconSystemName: "checkmark.seal.fill",
+                titleKey: "Approved",
+                prNumber: numberToDisplay,
+                showsManualMark: isManuallySet,
+                tintColor: DesignColor.statusSuccess
+            )
+        case .awaitingReview, .none:
+            return WorkstreamStagePillStyle(
+                appearance: .filled,
+                iconSystemName: "arrow.triangle.pull",
+                titleKey: "Review",
+                prNumber: numberToDisplay,
+                showsManualMark: isManuallySet,
+                tintColor: DesignColor.statusMerged
+            )
+        case .draft:
+            return WorkstreamStagePillStyle(
+                appearance: .outline,
+                iconSystemName: "doc.text",
+                titleKey: "Draft",
+                prNumber: numberToDisplay,
+                showsManualMark: isManuallySet,
+                tintColor: .secondary
+            )
+        }
+    }
 }
 
 struct WorkstreamStageStyle: Equatable {
     let displayStage: WorkstreamDisplayStage
     let isManuallySet: Bool
     let prNumber: Int?
+    var pullRequest: GitHubPR? = nil
 
     var recedesRow: Bool {
         displayStage == .done
@@ -72,6 +154,9 @@ struct WorkstreamStageStyle: Equatable {
                 showsManualMark: true
             )
         case .review:
+            if let pullRequest {
+                return pullRequest.stagePill(isManuallySet: isManuallySet)
+            }
             return WorkstreamStagePillStyle(
                 appearance: .filled,
                 iconSystemName: "arrow.triangle.pull",
@@ -1572,7 +1657,8 @@ private struct WorkstreamRow: View {
         WorkstreamStageStyle(
             displayStage: displayStage,
             isManuallySet: stage != .auto,
-            prNumber: prNumber
+            prNumber: prNumber,
+            pullRequest: pullRequest
         )
     }
 
@@ -1752,9 +1838,14 @@ private struct WorkstreamRow: View {
                     .foregroundStyle(subtitleStyle)
                 }
             }
+            .layoutPriority(-1)
             .opacity(contentOpacity)
 
             Spacer()
+
+            if let pullRequest, pullRequest.hasConflicts {
+                ConflictBadge(url: URL(string: pullRequest.url))
+            }
 
             if let pill = stageStyle.stagePill {
                 if let pullRequest, let url = URL(string: pullRequest.url) {
@@ -1836,20 +1927,52 @@ private struct WorkstreamRow: View {
     }
 }
 
+struct ConflictBadge: View {
+    var url: URL? = nil
+
+    var body: some View {
+        let content = HStack(spacing: 2) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 8, weight: .bold))
+            Text("Conflicts")
+                .font(.system(size: 9, weight: .semibold))
+        }
+        .foregroundStyle(DesignColor.statusError)
+        .padding(.horizontal, 5)
+        .padding(.vertical, 2)
+        .background(DesignColor.statusError.opacity(0.14), in: RoundedRectangle(cornerRadius: DesignRadius.sm))
+        .help(NSLocalizedString("Merge conflicts with base branch", comment: ""))
+        .accessibilityLabel(NSLocalizedString("Merge conflicts with base branch", comment: ""))
+
+        if let url {
+            Link(destination: url) {
+                content.frame(minHeight: 40).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } else {
+            content
+        }
+    }
+}
+
 private struct StagePill: View {
     let style: WorkstreamStagePillStyle
+
+    private var baseColor: Color {
+        style.tintColor ?? DesignColor.statusMerged
+    }
 
     private var foregroundColor: Color {
         switch style.appearance {
         case .filled:
             return .white
         case .outline, .bare:
-            return DesignColor.statusMerged.opacity(0.75)
+            return baseColor.opacity(0.85)
         }
     }
 
     private var fillColor: Color {
-        style.appearance == .filled ? DesignColor.statusMerged : Color.clear
+        style.appearance == .filled ? baseColor : Color.clear
     }
 
     private var strokeColor: Color {
@@ -1857,9 +1980,9 @@ private struct StagePill: View {
         case .filled:
             return Color.clear
         case .outline:
-            return DesignColor.statusMerged.opacity(0.5)
+            return baseColor.opacity(0.5)
         case .bare:
-            return DesignColor.statusMerged.opacity(0.35)
+            return baseColor.opacity(0.35)
         }
     }
 
@@ -1881,6 +2004,7 @@ private struct StagePill: View {
         }
         .font(.system(size: 9, weight: .semibold))
         .lineLimit(1)
+        .fixedSize(horizontal: true, vertical: false)
         .foregroundStyle(foregroundColor)
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
@@ -1995,7 +2119,14 @@ private struct GlobalPRRow: View {
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
             }
+            .layoutPriority(-1)
             Spacer()
+            if item.pr.hasConflicts {
+                ConflictBadge(url: URL(string: item.pr.url))
+            }
+            if let pill = item.pr.stagePill(isManuallySet: false, includeNumber: false) {
+                StagePill(style: pill)
+            }
             SidebarIconButton(icon: "arrow.up.right.square", action: onOpenURL)
                 .opacity(isHovering ? 1 : 0)
             PRChecksBadge(pr: item.pr, directory: item.projectDirectory, compact: true)
