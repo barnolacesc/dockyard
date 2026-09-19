@@ -107,6 +107,7 @@ struct ProjectSidebar: View {
     @State private var newWorkstreamProjectID: UUID?
     @State private var configuredWorkstreamName = ""
     @State private var newWorkstreamCodingCLI = ""
+    @State private var newWorkstreamBypassPermissions = false
     @State private var newWorkstreamIssue = ""
     @State private var newWorkstreamIssuePreview: GitHubIssueTaskPreview?
     @State private var newWorkstreamIssueError = ""
@@ -632,6 +633,7 @@ struct ProjectSidebar: View {
                 NewWorkstreamSheet(
                     name: $configuredWorkstreamName,
                     codingCLI: $newWorkstreamCodingCLI,
+                    bypassPermissions: $newWorkstreamBypassPermissions,
                     issueReference: Binding(
                         get: { newWorkstreamIssue },
                         set: {
@@ -802,6 +804,7 @@ struct ProjectSidebar: View {
     // MARK: - Workstream management
 
     @AppStorage("dockyard.bypassPermissions") private var defaultBypass: Bool = false
+    @AppStorage("dockyard.codingCLI") private var globalCodingCLIRaw: String = ""
     @AppStorage("dockyard.symlinkEnv") private var symlinkEnv: Bool = true
 
     private func presentNewWorkstreamSheet(for projectID: UUID) {
@@ -813,6 +816,8 @@ struct ProjectSidebar: View {
         newWorkstreamProjectID = projectID
         configuredWorkstreamName = NameGenerator.generate(avoiding: Set(project.workstreams.map(\.name)))
         newWorkstreamCodingCLI = ""
+        let defaultCLI = appEnv.toolStatus.resolvedCodingCLI(storedValue: globalCodingCLIRaw)
+        newWorkstreamBypassPermissions = defaultBypass && defaultCLI.capabilities.supportsDangerousPermissionBypass
         newWorkstreamIssue = ""
         newWorkstreamIssuePreview = nil
         newWorkstreamIssueError = ""
@@ -840,6 +845,7 @@ struct ProjectSidebar: View {
         showingNewWorkstream = false
         addWorkstream(
             for: projectID,
+            bypassPermissions: newWorkstreamBypassPermissions,
             name: uniqueName,
             codingCLI: newWorkstreamCodingCLI.isEmpty ? nil : newWorkstreamCodingCLI,
             initialAgentPrompt: prompt
@@ -2080,6 +2086,7 @@ private struct SidebarBottomButton: View {
 private struct NewWorkstreamSheet: View {
     @Binding var name: String
     @Binding var codingCLI: String
+    @Binding var bypassPermissions: Bool
     @Binding var issueReference: String
     let issuePreview: GitHubIssueTaskPreview?
     let issueError: String
@@ -2088,6 +2095,31 @@ private struct NewWorkstreamSheet: View {
     let onLoadIssue: () -> Void
     let onCreate: () -> Void
     let onCancel: () -> Void
+
+    @AppStorage("dockyard.codingCLI") private var globalCodingCLIRaw: String = ""
+    @EnvironmentObject private var appEnv: AppEnvironment
+
+    private var effectiveCodingCLI: CodingCLI {
+        let effectiveRaw = effectiveCodingCLIRaw(workstream: codingCLI, global: globalCodingCLIRaw)
+        return appEnv.toolStatus.resolvedCodingCLI(storedValue: effectiveRaw)
+    }
+
+    private var supportsDangerousPermissionBypass: Bool {
+        effectiveCodingCLI.capabilities.supportsDangerousPermissionBypass
+    }
+
+    private func permissionDescription(for cli: CodingCLI) -> String {
+        switch cli {
+        case .claude:
+            return NSLocalizedString("Claude Code will start with bypassPermissions.", comment: "")
+        case .codex:
+            return NSLocalizedString("Codex will bypass approvals and sandboxing.", comment: "")
+        case .agy:
+            return NSLocalizedString("Antigravity CLI will start with --dangerously-skip-permissions (YOLO mode).", comment: "")
+        case .opencode:
+            return ""
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -2101,6 +2133,24 @@ private struct NewWorkstreamSheet: View {
                     ForEach(CodingCLI.allCases) { cli in
                         Text(cli.displayName).tag(cli.rawValue)
                     }
+                }
+                .onChange(of: codingCLI) { _ in
+                    if !supportsDangerousPermissionBypass {
+                        bypassPermissions = false
+                    }
+                }
+
+                Toggle("Dangerously skip permissions", isOn: $bypassPermissions)
+                    .disabled(!supportsDangerousPermissionBypass)
+
+                if !supportsDangerousPermissionBypass {
+                    Text(String(format: NSLocalizedString("Dangerous permission mode is not supported by %@.", comment: ""), effectiveCodingCLI.displayName))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if bypassPermissions {
+                    Text(permissionDescription(for: effectiveCodingCLI))
+                        .font(.caption)
+                        .foregroundStyle(DesignColor.statusWarning)
                 }
 
                 Section("GitHub Issue") {
@@ -2145,7 +2195,7 @@ private struct NewWorkstreamSheet: View {
             }
         }
         .padding(20)
-        .frame(width: 460, height: 390)
+        .frame(width: 460, height: 440)
     }
 }
 

@@ -712,3 +712,7 @@
 "Choose a workstream name and Coding Agent, or start directly from a GitHub issue with its task already loaded." = "Tria un nom i un agent de codi, o comença directament des d'una incidència de GitHub amb la tasca ja carregada.";
 "Caffeinate Mode" = "Mode cafeïna";
 "Keep your Mac awake whenever Dockyard is open or only while a Coding Agent is actively working." = "Mantén el Mac despert sempre que Dockyard estigui obert o només mentre un agent de codi estigui treballant activament.";
+"Claude Code will start with bypassPermissions." = "Claude Code s'iniciarà amb bypassPermissions.";
+"Codex will bypass approvals and sandboxing." = "Codex ometrà les aprovacions i el sandboxing.";
+"Antigravity CLI will start with --dangerously-skip-permissions (YOLO mode)." = "Antigravity CLI s'iniciarà amb --dangerously-skip-permissions (mode YOLO).";
+"Dangerous permission mode is not supported by %@." = "El mode de permisos perillós no és compatible amb %@.";
