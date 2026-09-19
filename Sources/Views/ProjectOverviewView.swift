@@ -69,7 +69,13 @@ struct ProjectOverviewView: View {
     @State private var worktrees: [WorktreeInfo] = []
     @State private var isLoadingWorktrees = false
     @State private var showingPruneConfirm = false
+    @State private var showingPruneMergedConfirm = false
     @State private var isPruning = false
+    @State private var isPruningMerged = false
+    @State private var worktreeFilter: WorktreeFilter = .all
+    @State private var showingRepoChanges = false
+    @State private var worktreeToDelete: WorktreeInfo?
+    @State private var showingDeleteConfirm = false
 
     @AppStorage("dockyard.defaultTerminal") private var defaultTerminal: String = ""
     @State private var docFiles: [DocFile] = []
@@ -126,8 +132,37 @@ struct ProjectOverviewView: View {
                             }
 
                             LabeledContent("Status") {
-                                Text(info.isDirty ? "Uncommitted changes" : "Clean")
-                                    .foregroundStyle(info.isDirty ? DesignColor.statusWarning : DesignColor.statusSuccess)
+                                if info.isDirty {
+                                    Button {
+                                        showingRepoChanges = true
+                                    } label: {
+                                        HStack(spacing: 4) {
+                                            Circle()
+                                                .fill(DesignColor.statusWarning)
+                                                .frame(width: 6, height: 6)
+                                            Text(info.modifiedCount == 0
+                                                ? String(format: NSLocalizedString(info.untrackedCount == 1 ? "%d untracked file" : "%d untracked files", comment: ""), info.untrackedCount)
+                                                : NSLocalizedString("Uncommitted changes", comment: ""))
+                                                .foregroundStyle(DesignColor.statusWarning)
+                                            Image(systemName: "info.circle")
+                                                .font(.system(size: 10))
+                                                .foregroundStyle(DesignColor.statusWarning.opacity(0.8))
+                                        }
+                                        .frame(minHeight: 28)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .popover(isPresented: $showingRepoChanges) {
+                                        UncommittedChangesPopover(
+                                            path: project.directory,
+                                            title: project.name,
+                                            onDiscard: { reloadProjectOverview() },
+                                            onCleanUntracked: { reloadProjectOverview() }
+                                        )
+                                    }
+                                } else {
+                                    Text("Clean")
+                                        .foregroundStyle(DesignColor.statusSuccess)
+                                }
                             }
                         } else {
                             LabeledContent("Status") {
@@ -266,8 +301,17 @@ struct ProjectOverviewView: View {
                                 Spacer()
                             }
                             .padding(.vertical, 8)
+                        } else if worktrees.count > 1 {
+                            Picker("", selection: $worktreeFilter) {
+                                ForEach(WorktreeFilter.allCases) { filter in
+                                    Text(filterLabel(filter)).tag(filter)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .padding(.vertical, 4)
                         }
-                        ForEach(ProjectOverviewState.triageSorted(worktrees)) { wt in
+
+                        ForEach(filteredWorktrees) { wt in
                             let matchingWorkstream = project.workstreams.first { ws in
                                 guard let path = ws.worktreePath else { return false }
                                 return Self.standardizedPath(path) == Self.standardizedPath(wt.path)
@@ -282,16 +326,37 @@ struct ProjectOverviewView: View {
                                         branch: $0
                                     )
                                 } ?? false,
-                                onAdopt: { adoptWorktree(wt) }
+                                onSelectWorkstream: onSelectWorkstream,
+                                onRemoveWorkstream: onRemoveWorkstream,
+                                onPurgeWorkstream: onPurgeWorkstream,
+                                onAdopt: { adoptWorktree(wt) },
+                                onDelete: {
+                                    worktreeToDelete = wt
+                                    showingDeleteConfirm = true
+                                },
+                                onChangesDiscarded: { reloadProjectOverview() }
                             )
                         }
 
-                        if prunableCount > 0 {
+                        if prunableMergedCount > 0 {
+                            Button(action: { showingPruneMergedConfirm = true }) {
+                                HStack {
+                                    Image(systemName: "arrow.triangle.merge")
+                                        .font(.system(size: 12))
+                                    Text(String(format: NSLocalizedString(prunableMergedCount == 1 ? "Prune %d merged worktree" : "Prune %d merged worktrees", comment: ""), prunableMergedCount))
+                                }
+                            }
+                            .foregroundStyle(DesignColor.statusMerged)
+                            .pressable()
+                            .disabled(isPruningMerged)
+                        }
+
+                        if prunableCleanCount > 0 {
                             Button(action: { showingPruneConfirm = true }) {
                                 HStack {
                                     Image(systemName: "trash")
                                         .font(.system(size: 12))
-                                    Text(String(format: NSLocalizedString(prunableCount == 1 ? "Prune %d clean worktree" : "Prune %d clean worktrees", comment: ""), prunableCount))
+                                    Text(String(format: NSLocalizedString(prunableCleanCount == 1 ? "Prune %d clean worktree" : "Prune %d clean worktrees", comment: ""), prunableCleanCount))
                                 }
                             }
                             .foregroundStyle(DesignColor.statusError)
@@ -306,6 +371,13 @@ struct ProjectOverviewView: View {
                                     .controlSize(.mini)
                             }
                             Spacer()
+                            if mergedCount > 0 {
+                                WorktreeStatusCount(
+                                    count: mergedCount,
+                                    color: DesignColor.statusMerged,
+                                    helpText: NSLocalizedString("Merged", comment: "")
+                                )
+                            }
                             if dirtyCount > 0 {
                                 WorktreeStatusCount(
                                     count: dirtyCount,
@@ -333,7 +405,7 @@ struct ProjectOverviewView: View {
                                 .foregroundStyle(.secondary)
                         }
                     } footer: {
-                        Text("Worktrees on disk for this repository. Pruning removes clean worktrees that are not associated with a workstream.")
+                        Text("Worktrees on disk for this repository. Pruning removes clean or merged worktrees that are not associated with a workstream.")
                     }
                 }
             }
@@ -377,9 +449,34 @@ struct ProjectOverviewView: View {
         }
         .alert("Prune Worktrees", isPresented: $showingPruneConfirm) {
             Button("Cancel", role: .cancel) {}
-            Button("Prune", role: .destructive) { pruneWorktrees() }
+            Button("Prune", role: .destructive) { pruneCleanWorktrees() }
         } message: {
-            Text(String(format: NSLocalizedString(prunableCount == 1 ? "Remove %d clean worktree with no uncommitted changes?" : "Remove %d clean worktrees with no uncommitted changes?", comment: ""), prunableCount))
+            Text(String(format: NSLocalizedString(prunableCleanCount == 1 ? "Remove %d clean worktree with no uncommitted changes?" : "Remove %d clean worktrees with no uncommitted changes?", comment: ""), prunableCleanCount))
+        }
+        .alert("Prune Merged Worktrees", isPresented: $showingPruneMergedConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Prune Merged", role: .destructive) { pruneMergedWorktrees() }
+        } message: {
+            Text(String(format: NSLocalizedString(prunableMergedCount == 1 ? "Remove %d merged worktree and delete its local branch?" : "Remove %d merged worktrees and delete their local branches?", comment: ""), prunableMergedCount))
+        }
+        .alert(isDeleteWarning ? "Delete Worktree with Changes?" : "Delete Worktree", isPresented: $showingDeleteConfirm) {
+            Button("Cancel", role: .cancel) { worktreeToDelete = nil }
+            Button(isDeleteWarning ? "Force Delete" : "Delete", role: .destructive) {
+                if let wt = worktreeToDelete {
+                    deleteWorktree(wt)
+                }
+                worktreeToDelete = nil
+            }
+        } message: {
+            if let wt = worktreeToDelete {
+                if wt.isDirty {
+                    Text(String(format: NSLocalizedString("Worktree '%@' has uncommitted changes that will be permanently lost.", comment: ""), wt.branch ?? wt.path.components(separatedBy: "/").last ?? "worktree"))
+                } else if wt.hasUnpushedCommits {
+                    Text(String(format: NSLocalizedString("Worktree '%@' has unpushed commits that will be lost.", comment: ""), wt.branch ?? wt.path.components(separatedBy: "/").last ?? "worktree"))
+                } else {
+                    Text(String(format: NSLocalizedString("Remove worktree '%@' and delete its local branch?", comment: ""), wt.branch ?? wt.path.components(separatedBy: "/").last ?? "worktree"))
+                }
+            }
         }
     }
 
@@ -387,31 +484,132 @@ struct ProjectOverviewView: View {
         Set(project.workstreams.compactMap(\.worktreePath).map(Self.standardizedPath))
     }
 
+    private var isDeleteWarning: Bool {
+        worktreeToDelete?.isDirty == true || worktreeToDelete?.hasUnpushedCommits == true
+    }
+
+    private func isWorktreeMerged(_ wt: WorktreeInfo) -> Bool {
+        if wt.isMergedIntoBase { return true }
+        if let branch = wt.branch,
+           let pr = appEnv.githubPR(for: project.directory, branch: branch),
+           pr.state == "MERGED"
+        {
+            return true
+        }
+        return false
+    }
+
+    private var mergedCount: Int {
+        worktrees.filter { !$0.isMain && isWorktreeMerged($0) }.count
+    }
+
     private var dirtyCount: Int {
-        worktrees.filter { !$0.isMain && $0.isDirty }.count
+        worktrees.filter { !$0.isMain && !isWorktreeMerged($0) && $0.isDirty }.count
     }
 
     private var aheadCount: Int {
-        worktrees.filter { !$0.isMain && !$0.isDirty && $0.hasBranchCommits }.count
+        worktrees.filter { !$0.isMain && !isWorktreeMerged($0) && !$0.isDirty && $0.hasBranchCommits }.count
     }
 
     private var cleanCount: Int {
-        worktrees.filter { !$0.isMain && !$0.isDirty && !$0.hasBranchCommits }.count
+        worktrees.filter { !$0.isMain && !isWorktreeMerged($0) && !$0.isDirty && !$0.hasBranchCommits }.count
     }
 
-    private var prunableWorktrees: [WorktreeInfo] {
-        return worktrees.filter { worktree in
+    private var prunableCleanWorktrees: [WorktreeInfo] {
+        worktrees.filter { worktree in
             guard !worktree.isMain, !worktree.isDirty, !worktree.hasBranchCommits else { return false }
             return !workstreamPaths.contains(Self.standardizedPath(worktree.path))
         }
     }
 
-    private var prunablePaths: Set<String> {
-        Set(prunableWorktrees.map(\.path).map(Self.standardizedPath))
+    private var prunableCleanPaths: Set<String> {
+        Set(prunableCleanWorktrees.map(\.path).map(Self.standardizedPath))
     }
 
-    private var prunableCount: Int {
-        prunableWorktrees.count
+    private var prunableCleanCount: Int {
+        prunableCleanWorktrees.count
+    }
+
+    private var prunableMergedWorktrees: [WorktreeInfo] {
+        worktrees.filter { wt in
+            guard !wt.isMain, isWorktreeMerged(wt) else { return false }
+            return !workstreamPaths.contains(Self.standardizedPath(wt.path))
+        }
+    }
+
+    private var prunableMergedPaths: Set<String> {
+        Set(prunableMergedWorktrees.map(\.path).map(Self.standardizedPath))
+    }
+
+    private var prunableMergedCount: Int {
+        prunableMergedWorktrees.count
+    }
+
+    private var filteredWorktrees: [WorktreeInfo] {
+        let sorted = ProjectOverviewState.triageSorted(worktrees)
+        switch worktreeFilter {
+        case .all:
+            return sorted
+        case .workstreams:
+            return sorted.filter { wt in
+                workstreamPaths.contains(Self.standardizedPath(wt.path))
+            }
+        case .orphaned:
+            return sorted.filter { wt in
+                !wt.isMain && !workstreamPaths.contains(Self.standardizedPath(wt.path))
+            }
+        case .merged:
+            return sorted.filter { wt in
+                !wt.isMain && isWorktreeMerged(wt)
+            }
+        }
+    }
+
+    private func filterLabel(_ filter: WorktreeFilter) -> String {
+        switch filter {
+        case .all:
+            return String(format: NSLocalizedString("All (%d)", comment: ""), worktrees.count)
+        case .workstreams:
+            let count = worktrees.filter { workstreamPaths.contains(Self.standardizedPath($0.path)) }.count
+            return String(format: NSLocalizedString("Workstreams (%d)", comment: ""), count)
+        case .orphaned:
+            let count = worktrees.filter { !$0.isMain && !workstreamPaths.contains(Self.standardizedPath($0.path)) }.count
+            return String(format: NSLocalizedString("Orphaned (%d)", comment: ""), count)
+        case .merged:
+            return String(format: NSLocalizedString("Merged (%d)", comment: ""), mergedCount)
+        }
+    }
+
+    private func deleteWorktree(_ wt: WorktreeInfo) {
+        let dir = project.directory
+        let path = wt.path
+        let branch = wt.branch
+        Task.detached {
+            GitOperations.deleteWorktreeAndBranch(projectPath: dir, worktreePath: path, branchName: branch)
+            await MainActor.run {
+                self.refreshWorktrees()
+            }
+        }
+    }
+
+    private func pruneCleanWorktrees() {
+        isPruning = true
+        let dir = project.directory
+        let pathsToPrune = prunableCleanPaths
+        Task.detached {
+            GitOperations.pruneCleanWorktrees(at: dir, onlyPaths: pathsToPrune)
+            await applyPrunedWorktrees(pathsToPrune, loadedFor: dir)
+        }
+    }
+
+    private func pruneMergedWorktrees() {
+        isPruningMerged = true
+        let dir = project.directory
+        let pathsToPrune = prunableMergedPaths
+        Task.detached {
+            GitOperations.pruneMergedWorktrees(at: dir, onlyPaths: pathsToPrune)
+            await applyPrunedWorktrees(pathsToPrune, loadedFor: dir)
+        }
     }
 
     private func adoptWorktree(_ worktree: WorktreeInfo) {
@@ -450,16 +648,6 @@ struct ProjectOverviewView: View {
         Task.detached {
             let found = DocFile.loadFrom(directory: dir)
             await updateDocFiles(found, loadedFor: dir)
-        }
-    }
-
-    private func pruneWorktrees() {
-        isPruning = true
-        let dir = project.directory
-        let pathsToPrune = prunablePaths
-        Task.detached {
-            GitOperations.pruneCleanWorktrees(at: dir, onlyPaths: pathsToPrune)
-            await applyPrunedWorktrees(pathsToPrune, loadedFor: dir)
         }
     }
 
@@ -511,10 +699,20 @@ struct ProjectOverviewView: View {
 
 enum WorktreeReviewStatus: Equatable {
     case clean
-    case dirty
+    case dirty(untrackedOnly: Bool, count: Int)
     case ahead
-    case mergedPullRequest
+    case merged(hasUncommitted: Bool, untrackedOnly: Bool, count: Int)
     case unknown
+}
+
+enum WorktreeFilter: String, CaseIterable, Identifiable {
+    case all = "All"
+    case workstreams = "Workstreams"
+    case orphaned = "Orphaned"
+    case merged = "Merged"
+    var id: String {
+        rawValue
+    }
 }
 
 enum ProjectOverviewState {
@@ -538,11 +736,19 @@ enum ProjectOverviewState {
         pullRequestState: String?,
         isPullRequestLookupComplete: Bool
     ) -> WorktreeReviewStatus {
-        if worktree.isDirty {
-            return .dirty
+        let isMerged = pullRequestState == "MERGED" || worktree.isMergedIntoBase
+        if isMerged {
+            return .merged(
+                hasUncommitted: worktree.isDirty,
+                untrackedOnly: worktree.isDirty && worktree.modifiedCount == 0,
+                count: worktree.uncommittedCount
+            )
         }
-        if pullRequestState == "MERGED" {
-            return .mergedPullRequest
+        if worktree.isDirty {
+            return .dirty(
+                untrackedOnly: worktree.modifiedCount == 0,
+                count: worktree.uncommittedCount
+            )
         }
         if !worktree.hasBranchCommits {
             return .clean
@@ -596,10 +802,16 @@ private struct WorktreeInfoRow: View {
     let projectDirectory: String
     let workstreamID: UUID?
     let isPullRequestLookupComplete: Bool
+    let onSelectWorkstream: (UUID) -> Void
+    let onRemoveWorkstream: (UUID) -> Void
+    let onPurgeWorkstream: (UUID) -> Void
     let onAdopt: () -> Void
+    let onDelete: () -> Void
+    let onChangesDiscarded: () -> Void
 
     @EnvironmentObject var appEnv: AppEnvironment
     @EnvironmentObject var agentStateStore: AgentStateStore
+    @State private var showingChangesPopover = false
 
     private var pr: GitHubPR? {
         guard let branch = worktree.branch else { return nil }
@@ -652,25 +864,81 @@ private struct WorktreeInfoRow: View {
                             PRChecksBadge(pr: pr, directory: projectDirectory, compact: true)
                         }
                         switch reviewStatus {
-                        case .dirty:
-                            HStack(spacing: 4) {
-                                Circle()
-                                    .fill(DesignColor.statusWarning)
-                                    .frame(width: 6, height: 6)
-                                Text("Uncommitted changes")
-                                    .font(.caption)
-                                    .foregroundStyle(DesignColor.statusWarning)
+                        case let .dirty(untrackedOnly, count):
+                            Button {
+                                showingChangesPopover = true
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Circle()
+                                        .fill(DesignColor.statusWarning)
+                                        .frame(width: 6, height: 6)
+                                    Text(untrackedOnly
+                                        ? String(format: NSLocalizedString(count == 1 ? "%d untracked file" : "%d untracked files", comment: ""), count)
+                                        : NSLocalizedString("Uncommitted changes", comment: ""))
+                                        .font(.caption)
+                                        .foregroundStyle(DesignColor.statusWarning)
+                                    Image(systemName: "info.circle")
+                                        .font(.system(size: 10))
+                                        .foregroundStyle(DesignColor.statusWarning.opacity(0.8))
+                                }
+                                .frame(minHeight: 28)
                             }
-                        case .mergedPullRequest:
-                            if let pr, let url = URL(string: pr.url) {
-                                Link(destination: url) {
+                            .buttonStyle(.plain)
+                            .popover(isPresented: $showingChangesPopover) {
+                                UncommittedChangesPopover(
+                                    path: worktree.path,
+                                    title: worktree.branch ?? worktree.path.abbreviatedPath,
+                                    onDiscard: onChangesDiscarded,
+                                    onCleanUntracked: onChangesDiscarded
+                                )
+                            }
+                        case let .merged(hasUncommitted, untrackedOnly, count):
+                            HStack(spacing: 6) {
+                                if let pr, let url = URL(string: pr.url) {
+                                    Link(destination: url) {
+                                        Label("Merged", systemImage: "arrow.triangle.merge")
+                                            .font(.caption)
+                                            .foregroundStyle(DesignColor.statusMerged)
+                                            .frame(minHeight: 28)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .help("Open on GitHub")
+                                } else {
                                     Label("Merged", systemImage: "arrow.triangle.merge")
                                         .font(.caption)
                                         .foregroundStyle(DesignColor.statusMerged)
-                                        .frame(minHeight: 40)
+                                        .frame(minHeight: 28)
                                 }
-                                .buttonStyle(.plain)
-                                .help("Open on GitHub")
+
+                                if hasUncommitted {
+                                    Button {
+                                        showingChangesPopover = true
+                                    } label: {
+                                        HStack(spacing: 3) {
+                                            Circle()
+                                                .fill(DesignColor.statusWarning)
+                                                .frame(width: 5, height: 5)
+                                            Text(untrackedOnly
+                                                ? String(format: NSLocalizedString(count == 1 ? "%d untracked" : "%d untracked", comment: ""), count)
+                                                : NSLocalizedString("Uncommitted", comment: ""))
+                                                .font(.caption)
+                                                .foregroundStyle(DesignColor.statusWarning)
+                                            Image(systemName: "info.circle")
+                                                .font(.system(size: 9))
+                                                .foregroundStyle(DesignColor.statusWarning.opacity(0.8))
+                                        }
+                                        .frame(minHeight: 28)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .popover(isPresented: $showingChangesPopover) {
+                                        UncommittedChangesPopover(
+                                            path: worktree.path,
+                                            title: worktree.branch ?? worktree.path.abbreviatedPath,
+                                            onDiscard: onChangesDiscarded,
+                                            onCleanUntracked: onChangesDiscarded
+                                        )
+                                    }
+                                }
                             }
                         case .ahead:
                             HStack(spacing: 4) {
@@ -702,12 +970,12 @@ private struct WorktreeInfoRow: View {
                 Text("main")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-            } else if workstreamID == nil {
-                Button(action: onAdopt) {
+            } else if let workstreamID {
+                Button(action: { onSelectWorkstream(workstreamID) }) {
                     HStack(spacing: 4) {
-                        Image(systemName: "plus.rectangle.on.folder")
-                            .font(.system(size: 12))
-                        Text("Open")
+                        Image(systemName: "arrow.right.circle")
+                            .font(.system(size: 11))
+                        Text("Switch")
                             .font(.caption)
                     }
                     .foregroundStyle(.secondary)
@@ -715,12 +983,110 @@ private struct WorktreeInfoRow: View {
                     .padding(.vertical, 4)
                     .background(Color.primary.opacity(0.08))
                     .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
-                    .frame(minHeight: 40)
+                    .frame(minHeight: 36)
                 }
                 .pressable()
+                .help("Switch to this workstream")
+            } else {
+                HStack(spacing: 6) {
+                    Button(action: onAdopt) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "plus.rectangle.on.folder")
+                                .font(.system(size: 12))
+                            Text("Open")
+                                .font(.caption)
+                        }
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.primary.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                        .frame(minHeight: 36)
+                    }
+                    .pressable()
+                    .help("Open as workstream in Dockyard")
+
+                    Button(action: onDelete) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 11))
+                            .foregroundStyle(DesignColor.statusError)
+                            .frame(width: 28, height: 28)
+                            .background(Color.primary.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                    }
+                    .pressable()
+                    .help("Delete worktree and branch")
+                }
             }
         }
         .hoverHighlight(radius: DesignRadius.md)
+        .contextMenu {
+            if let workstreamID {
+                Button {
+                    onSelectWorkstream(workstreamID)
+                } label: {
+                    Label("Switch to Workstream", systemImage: "arrow.right.circle")
+                }
+            } else if !worktree.isMain {
+                Button(action: onAdopt) {
+                    Label("Open as Workstream", systemImage: "plus.rectangle.on.folder")
+                }
+            }
+            Button {
+                NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: worktree.path)
+            } label: {
+                Label("Reveal in Finder", systemImage: "folder")
+            }
+            Button {
+                openDirectoryInTerminal(worktree.path)
+            } label: {
+                Label("Open in External Terminal", systemImage: "terminal")
+            }
+            if let pr, let url = URL(string: pr.url) {
+                Button {
+                    NSWorkspace.shared.open(url)
+                } label: {
+                    Label("View on GitHub", systemImage: "arrow.up.right.square")
+                }
+            }
+            if let branch = worktree.branch {
+                Button {
+                    copyTextToPasteboard(branch)
+                } label: {
+                    Label("Copy branch name", systemImage: "arrow.triangle.branch")
+                }
+            }
+            Button {
+                copyTextToPasteboard(worktree.path)
+            } label: {
+                Label("Copy Path", systemImage: "doc.on.doc")
+            }
+            if worktree.isDirty {
+                Divider()
+                Button {
+                    showingChangesPopover = true
+                } label: {
+                    Label("View Uncommitted Changes…", systemImage: "info.circle")
+                }
+            }
+            if !worktree.isMain {
+                Divider()
+                if let workstreamID {
+                    Button(action: { onRemoveWorkstream(workstreamID) }) {
+                        Label("Remove Workstream", systemImage: "xmark")
+                    }
+                    Button(role: .destructive) {
+                        onPurgeWorkstream(workstreamID)
+                    } label: {
+                        Label("Purge Workstream…", systemImage: "trash")
+                    }
+                } else {
+                    Button(role: .destructive, action: onDelete) {
+                        Label("Delete Worktree…", systemImage: "trash")
+                    }
+                }
+            }
+        }
     }
 }
 

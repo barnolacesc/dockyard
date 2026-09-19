@@ -12,6 +12,17 @@ struct GitRepoInfo {
     let remoteURL: String?
     let commitCount: Int?
     let isDirty: Bool
+    var uncommittedCount: Int = 0
+    var untrackedCount: Int = 0
+    var modifiedCount: Int = 0
+}
+
+struct UncommittedFileChange: Identifiable, Equatable {
+    let path: String
+    let status: FileGitStatus
+    var id: String {
+        path
+    }
 }
 
 struct WorktreeInfo: Identifiable {
@@ -21,13 +32,17 @@ struct WorktreeInfo: Identifiable {
     let isMain: Bool
     let hasUnpushedCommits: Bool
     let hasBranchCommits: Bool
+    var isMergedIntoBase: Bool = false
+    var uncommittedCount: Int = 0
+    var untrackedCount: Int = 0
+    var modifiedCount: Int = 0
 
     var id: String {
         path
     }
 }
 
-struct GitPushProcessResult: Sendable {
+struct GitPushProcessResult {
     let output: Data
     let terminationStatus: Int32
 }
@@ -166,16 +181,30 @@ enum GitOperations {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let commitCount = countStr.flatMap(Int.init)
 
-        let status = run(args: ["status", "--porcelain", "--ignore-submodules=dirty"], in: path)?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let isDirty = status.map { !$0.isEmpty } ?? false
+        var untracked = 0
+        var modified = 0
+        if let rawStatus = run(args: ["status", "--porcelain", "--ignore-submodules=dirty"], in: path) {
+            for line in rawStatus.components(separatedBy: .newlines) {
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                guard !trimmed.isEmpty else { continue }
+                if line.hasPrefix("??") {
+                    untracked += 1
+                } else {
+                    modified += 1
+                }
+            }
+        }
+        let isDirty = (untracked + modified) > 0
 
         return GitRepoInfo(
             isRepo: true,
             branch: branch,
             remoteURL: remote,
             commitCount: commitCount,
-            isDirty: isDirty
+            isDirty: isDirty,
+            uncommittedCount: untracked + modified,
+            untrackedCount: untracked,
+            modifiedCount: modified
         )
     }
 
@@ -523,16 +552,95 @@ enum GitOperations {
         DispatchQueue.concurrentPerform(iterations: entries.count) { index in
             let entry = entries[index]
             let isMain = URL(fileURLWithPath: entry.path).standardizedFileURL.path == mainPath
-            let dirty = !isMain && hasUncommittedChanges(at: entry.path)
+            var dirty = false
+            var untracked = 0
+            var modified = 0
+            if !isMain {
+                if let status = run(args: ["status", "--porcelain", "--ignore-submodules=dirty"], in: entry.path) {
+                    for line in status.components(separatedBy: .newlines) {
+                        let trimmed = line.trimmingCharacters(in: .whitespaces)
+                        guard !trimmed.isEmpty else { continue }
+                        if line.hasPrefix("??") {
+                            untracked += 1
+                        } else {
+                            modified += 1
+                        }
+                    }
+                }
+                dirty = (untracked + modified) > 0
+            }
             let unpushed = !isMain && hasUnpushedCommits(at: entry.path)
             let branchCommits = !isMain && hasBranchCommits(at: entry.path, base: base)
-            let info = WorktreeInfo(path: entry.path, branch: entry.branch, isDirty: dirty, isMain: isMain, hasUnpushedCommits: unpushed, hasBranchCommits: branchCommits)
+            let isMerged = !isMain && (run(args: ["merge-base", "--is-ancestor", "HEAD", base], in: entry.path) != nil)
+            let info = WorktreeInfo(
+                path: entry.path,
+                branch: entry.branch,
+                isDirty: dirty,
+                isMain: isMain,
+                hasUnpushedCommits: unpushed,
+                hasBranchCommits: branchCommits,
+                isMergedIntoBase: isMerged,
+                uncommittedCount: untracked + modified,
+                untrackedCount: untracked,
+                modifiedCount: modified
+            )
             lock.lock()
             results[index] = info
             lock.unlock()
         }
 
         return results.compactMap { $0 }
+    }
+
+    /// Get the detailed list of uncommitted changes (modified, added, deleted, untracked).
+    static func uncommittedFileChanges(at path: String) -> [UncommittedFileChange] {
+        guard let output = run(args: ["status", "--porcelain", "--ignore-submodules=dirty"], in: path) else {
+            return []
+        }
+        var changes: [UncommittedFileChange] = []
+        for line in output.components(separatedBy: .newlines) {
+            guard line.count >= 4 else { continue }
+            let xy = String(line.prefix(2))
+            var filePath = String(line.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+            if let arrowRange = filePath.range(of: " -> ") {
+                filePath = String(filePath[arrowRange.upperBound...]).trimmingCharacters(in: .whitespaces)
+            }
+            if xy == "??" {
+                changes.append(UncommittedFileChange(path: filePath, status: .untracked))
+            } else {
+                changes.append(UncommittedFileChange(path: filePath, status: .modified))
+            }
+        }
+        return changes
+    }
+
+    /// Discards all uncommitted changes (staged, unstaged, and untracked).
+    @discardableResult
+    static func discardAllChanges(at path: String) -> Bool {
+        _ = run(args: ["reset", "HEAD", "."], in: path)
+        _ = run(args: ["checkout", "--", "."], in: path)
+        _ = run(args: ["clean", "-fd"], in: path)
+        return !hasUncommittedChanges(at: path)
+    }
+
+    /// Cleans untracked files and directories only.
+    @discardableResult
+    static func cleanUntrackedFiles(at path: String) -> Bool {
+        _ = run(args: ["clean", "-fd"], in: path)
+        return true
+    }
+
+    /// Removes an orphaned or past worktree and its local branch.
+    @discardableResult
+    static func deleteWorktreeAndBranch(projectPath: String, worktreePath: String, branchName: String?) -> Bool {
+        guard removeWorktree(projectPath: projectPath, worktreePath: worktreePath) else {
+            return false
+        }
+        if let branchName {
+            deleteLocalBranch(at: projectPath, branchName: branchName)
+        }
+        _ = run(args: ["worktree", "prune"], in: projectPath)
+        return true
     }
 
     /// Remove clean worktrees (no uncommitted changes and no unmerged branch commits)
@@ -564,6 +672,26 @@ enum GitOperations {
             }
         }
         // Clean up stale entries
+        _ = run(args: ["worktree", "prune"], in: projectPath)
+        return pruned
+    }
+
+    /// Remove merged worktrees along with their local branches.
+    @discardableResult
+    static func pruneMergedWorktrees(at projectPath: String, onlyPaths: Set<String>) -> Int {
+        let worktrees = listWorktreesWithInfo(at: projectPath)
+        let allowedPaths = Set(onlyPaths.map { URL(fileURLWithPath: $0).standardizedFileURL.path })
+        var pruned = 0
+        for wt in worktrees where !wt.isMain {
+            let standardizedPath = URL(fileURLWithPath: wt.path).standardizedFileURL.path
+            guard allowedPaths.contains(standardizedPath) else { continue }
+            if removeWorktree(projectPath: projectPath, worktreePath: wt.path) {
+                pruned += 1
+                if let branch = wt.branch {
+                    deleteLocalBranch(at: projectPath, branchName: branch)
+                }
+            }
+        }
         _ = run(args: ["worktree", "prune"], in: projectPath)
         return pruned
     }

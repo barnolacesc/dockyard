@@ -137,8 +137,8 @@ final class ProjectTests: XCTestCase {
                 pullRequestState: "MERGED",
                 isPullRequestLookupComplete: true
             ),
-            .dirty,
-            "Uncommitted changes must remain the highest-priority safety signal"
+            .merged(hasUncommitted: true, untrackedOnly: true, count: 0),
+            "Merged status is surfaced while tracking uncommitted changes"
         )
         XCTAssertEqual(
             ProjectOverviewState.reviewStatus(
@@ -155,15 +155,15 @@ final class ProjectTests: XCTestCase {
                 pullRequestState: "MERGED",
                 isPullRequestLookupComplete: true
             ),
-            .mergedPullRequest
+            .merged(hasUncommitted: false, untrackedOnly: false, count: 0)
         )
         XCTAssertEqual(
             ProjectOverviewState.reviewStatus(
-                for: wt(ahead: true),
+                for: wt(dirty: true),
                 pullRequestState: "OPEN",
                 isPullRequestLookupComplete: true
             ),
-            .ahead
+            .dirty(untrackedOnly: true, count: 0)
         )
         XCTAssertEqual(
             ProjectOverviewState.reviewStatus(
