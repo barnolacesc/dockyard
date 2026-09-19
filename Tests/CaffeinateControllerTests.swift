@@ -40,4 +40,10 @@ final class CaffeinateControllerTests: XCTestCase {
 
         XCTAssertTrue(result)
     }
+
+    func testModeCycle() {
+        XCTAssertEqual(CaffeinateMode.off.next, .whileAgentsWork)
+        XCTAssertEqual(CaffeinateMode.whileAgentsWork.next, .always)
+        XCTAssertEqual(CaffeinateMode.always.next, .off)
+    }
 }

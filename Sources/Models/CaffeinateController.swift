@@ -27,6 +27,17 @@ enum CaffeinateMode: String, CaseIterable, Identifiable {
             NSLocalizedString("Always", comment: "Caffeinate mode option")
         }
     }
+
+    var next: CaffeinateMode {
+        switch self {
+        case .off:
+            .whileAgentsWork
+        case .whileAgentsWork:
+            .always
+        case .always:
+            .off
+        }
+    }
 }
 
 protocol SleepAssertionManaging: AnyObject, Sendable {
