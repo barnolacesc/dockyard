@@ -118,9 +118,9 @@ struct WorkstreamInfoView: View {
                         } label: {
                             Text("Branch")
                         }
-                        
+
                         let state = appEnv.worktreeState(for: workingDirectory)
-                        
+
                         if state.commitsAhead > 0 {
                             LabeledContent {
                                 Text("↑ \(state.commitsAhead) commits")
@@ -131,7 +131,7 @@ struct WorkstreamInfoView: View {
                                 Text("Ahead")
                             }
                         }
-                        
+
                         LabeledContent {
                             if state.uncommittedCount > 0 {
                                 Text("\(state.uncommittedCount) files")
@@ -146,7 +146,7 @@ struct WorkstreamInfoView: View {
                         } label: {
                             Text("Uncommitted")
                         }
-                        
+
                         LabeledContent {
                             Text(formattedBaseString(baseBranch: state.baseBranch, createdDate: state.branchCreatedDate))
                                 .font(.system(.body, design: .monospaced))
@@ -154,7 +154,7 @@ struct WorkstreamInfoView: View {
                         } label: {
                             Text("Base")
                         }
-                        
+
                         if workingDirectory != projectDirectory, let worktreeCreated = state.worktreeCreatedDate {
                             LabeledContent {
                                 Text(formatWorktreeAge(worktreeCreated))
@@ -210,21 +210,21 @@ struct WorkstreamInfoView: View {
                         let prColor: Color = pr.state == "MERGED" ? DesignColor.statusMerged : pr.state == "OPEN" ? DesignColor.statusSuccess : .secondary
                         if let url = URL(string: pr.url) {
                             Link(destination: url) {
-                            HStack(spacing: 6) {
-                                Image(systemName: pr.state == "MERGED" ? "arrow.triangle.merge" : "arrow.triangle.pull")
-                                    .foregroundStyle(prColor)
-                                Text(verbatim: "#\(pr.number)")
-                                    .font(.system(.body, design: .monospaced))
-                                    .tabularNumbers()
-                                Text(pr.title)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                                Spacer()
-                                Text(LocalizedStringKey(pr.state == "MERGED" ? "Merged" : pr.state == "CLOSED" ? "Closed" : "Open"))
-                                    .foregroundStyle(prColor)
-                            }
-                            .frame(minHeight: 40)
-                            .contentShape(Rectangle())
+                                HStack(spacing: 6) {
+                                    Image(systemName: pr.state == "MERGED" ? "arrow.triangle.merge" : "arrow.triangle.pull")
+                                        .foregroundStyle(prColor)
+                                    Text(verbatim: "#\(pr.number)")
+                                        .font(.system(.body, design: .monospaced))
+                                        .tabularNumbers()
+                                    Text(pr.title)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                    Spacer()
+                                    Text(LocalizedStringKey(pr.state == "MERGED" ? "Merged" : pr.state == "CLOSED" ? "Closed" : "Open"))
+                                        .foregroundStyle(prColor)
+                                }
+                                .frame(minHeight: 40)
+                                .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .help("Open on GitHub")
@@ -993,7 +993,7 @@ private struct SetupStatusBanner: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(backgroundColor.opacity(0.15))
-            
+
             if case .failed = state, !logTail.isEmpty {
                 Divider()
                 DisclosureGroup("View log") {
@@ -1028,7 +1028,7 @@ private struct SetupStatusBanner: View {
 
 // MARK: - Generate .dockyard.json confirmation sheet
 
-private struct GenerateConfigSheet: View {
+struct GenerateConfigSheet: View {
     let draft: DockyardConfigDraft
     let existingConfigText: String?
     let projectName: String

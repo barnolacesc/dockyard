@@ -3,60 +3,6 @@
 
 import SwiftUI
 
-struct ProjectRootTerminalView: View {
-    let project: Project
-    let onClose: () -> Void
-
-    @EnvironmentObject private var surfaceCache: TerminalSurfaceCache
-
-    private var surfaceID: UUID {
-        derivedUUID(from: project.id, salt: "project-root-terminal")
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                Image(systemName: "terminal")
-                    .foregroundStyle(.secondary)
-                Text("Project Terminal")
-                    .font(.system(size: 12, weight: .medium))
-                Spacer()
-                Button(action: onClose) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .semibold))
-                        .frame(minWidth: 40, minHeight: 40)
-                }
-                .buttonStyle(.plain)
-                .pressable()
-                .accessibilityLabel("Close project terminal")
-                .help("Close project terminal")
-            }
-            .padding(.leading, 12)
-            .padding(.trailing, 4)
-            .frame(height: 44)
-            .background(.bar)
-
-            Divider()
-
-            SingleTerminalView(
-                surfaceID: surfaceID,
-                workstreamID: project.id,
-                workingDirectory: project.directory
-            )
-        }
-        .onAppear {
-            surfaceCache.updateOcclusion(visibleSurfaceIDs: [surfaceID])
-        }
-        .onDisappear {
-            surfaceCache.updateOcclusion(visibleSurfaceIDs: [])
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .terminalTabExited)) { notification in
-            guard notification.object as? UUID == surfaceID else { return }
-            onClose()
-        }
-    }
-}
-
 struct ProjectOverviewView: View {
     @Binding var project: Project
     let onSelectWorkstream: (UUID) -> Void
@@ -74,6 +20,20 @@ struct ProjectOverviewView: View {
     @AppStorage("dockyard.defaultTerminal") private var defaultTerminal: String = ""
     @State private var docFiles: [DocFile] = []
     @State private var selectedDoc: String?
+
+    @State private var scriptConfig: ScriptConfig = .empty
+    @State private var configDraft: DockyardConfigDraft?
+    @State private var configDraftDirectory: String?
+    @State private var existingConfigText: String?
+    @State private var writeError: String?
+    @State private var isEditingConfig = false
+    @State private var editSetup = ""
+    @State private var editRun = ""
+    @State private var editTeardown = ""
+    @State private var editPortText = ""
+    @State private var editWriteError: String?
+    @State private var showGenerateSheet = false
+    @State private var isDetectingStack = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -190,6 +150,39 @@ struct ProjectOverviewView: View {
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+
+                // MARK: - Scripts
+
+                Section {
+                    scriptsSectionContent
+                } header: {
+                    HStack {
+                        Text("Scripts")
+                        Spacer()
+                        if isEditingConfig {
+                            Button("Cancel", action: cancelConfigEditing)
+                                .font(.caption2)
+                                .buttonStyle(.borderless)
+                            Button("Save", action: saveEditedConfig)
+                                .font(.caption2)
+                                .buttonStyle(.borderless)
+                                .disabled(!canSaveEditedConfig)
+                        } else if hasEditableScriptConfig {
+                            if let source = scriptConfig.source {
+                                Text(source)
+                                    .font(.caption2)
+                                    .foregroundStyle(.quaternary)
+                            }
+                            Button("Regenerate…", action: generateConfig)
+                                .font(.caption2)
+                                .pressable()
+                                .disabled(isDetectingStack)
+                            Button("Edit", action: beginConfigEditing)
+                                .font(.caption2)
+                                .buttonStyle(.borderless)
                         }
                     }
                 }
@@ -373,7 +366,26 @@ struct ProjectOverviewView: View {
             worktrees = []
             docFiles = []
             selectedDoc = nil
+            isEditingConfig = false
+            isDetectingStack = false
+            showGenerateSheet = false
+            configDraft = nil
+            configDraftDirectory = nil
+            existingConfigText = nil
             reloadProjectOverview()
+        }
+        .sheet(isPresented: $showGenerateSheet) {
+            GenerateConfigSheet(
+                draft: configDraft ?? DockyardConfigDraft(),
+                existingConfigText: existingConfigText,
+                projectName: project.name,
+                writeError: writeError,
+                onConfirm: confirmWrite,
+                onCancel: { showGenerateSheet = false }
+            )
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .configGenerated)) { _ in
+            loadScriptConfig()
         }
         .alert("Prune Worktrees", isPresented: $showingPruneConfirm) {
             Button("Cancel", role: .cancel) {}
@@ -429,6 +441,11 @@ struct ProjectOverviewView: View {
         appEnv.refreshGitHubInfo(for: project.directory)
         refreshWorktrees()
         loadDocFiles()
+        loadScriptConfig()
+    }
+
+    private func loadScriptConfig() {
+        scriptConfig = ScriptConfig.load(from: project.directory)
     }
 
     private func refreshWorktrees() {
@@ -502,6 +519,216 @@ struct ProjectOverviewView: View {
         onProjectChanged()
         isPruning = false
         refreshWorktrees()
+    }
+
+    // MARK: - Scripts
+
+    @ViewBuilder
+    private var scriptsSectionContent: some View {
+        if isEditingConfig {
+            configEditorRows
+        } else if hasEditableScriptConfig {
+            configReadRows
+        } else {
+            configEmptyState
+        }
+    }
+
+    @ViewBuilder
+    private var configReadRows: some View {
+        if let setup = scriptConfig.setup {
+            LabeledContent("Setup") {
+                Text(setup)
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        if let run = scriptConfig.run {
+            LabeledContent("Run") {
+                Text(run)
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        if let teardown = scriptConfig.teardown {
+            LabeledContent("Teardown") {
+                Text(teardown)
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        if let expectedPort = scriptConfig.expectedPort {
+            LabeledContent("Expected Port") {
+                Text("\(expectedPort)")
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var configEditorRows: some View {
+        LabeledContent("Setup") {
+            TextField("", text: $editSetup)
+                .font(.system(.body, design: .monospaced))
+        }
+        LabeledContent("Run") {
+            TextField("", text: $editRun)
+                .font(.system(.body, design: .monospaced))
+        }
+        LabeledContent("Teardown") {
+            TextField("", text: $editTeardown)
+                .font(.system(.body, design: .monospaced))
+        }
+        LabeledContent("Expected Port") {
+            TextField("", text: $editPortText)
+                .font(.system(.body, design: .monospaced))
+        }
+        if editParseResult.validationError == .invalidPort {
+            Label("Port must be between 1 and 65535", systemImage: "exclamationmark.triangle.fill")
+                .font(.caption)
+                .foregroundStyle(.red)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        if let editWriteError {
+            Label(editWriteError, systemImage: "exclamationmark.triangle.fill")
+                .font(.caption)
+                .foregroundStyle(.red)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var configEmptyState: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("No setup or run scripts are configured for this project.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 10) {
+                Button(action: generateConfig) {
+                    HStack(spacing: 6) {
+                        if isDetectingStack {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Image(systemName: "wand.and.stars")
+                        }
+                        Text("Generate .dockyard.json")
+                    }
+                }
+                .disabled(isDetectingStack)
+                .tourAnchor(.generateConfigButton)
+
+                Button("Create manually", action: beginBlankConfigEditing)
+                    .font(.caption)
+                    .buttonStyle(.borderless)
+                    .disabled(isDetectingStack)
+            }
+            Text("Detect your stack automatically, or fill in the commands yourself.")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 2)
+    }
+
+    private var hasEditableScriptConfig: Bool {
+        scriptConfig.hasAnyScript || scriptConfig.expectedPort != nil
+    }
+
+    private var canSaveEditedConfig: Bool {
+        !isDetectingStack && editParseResult.validationError == nil && !editParseResult.draft.isEmpty
+    }
+
+    private var editParseResult: DockyardConfigDraft.FieldParseResult {
+        DockyardConfigDraft.parseFields(
+            setup: editSetup,
+            run: editRun,
+            teardown: editTeardown,
+            portText: editPortText
+        )
+    }
+
+    private func generateConfig() {
+        guard !isDetectingStack else { return }
+        isDetectingStack = true
+        writeError = nil
+        let dir = project.directory
+        Task.detached {
+            let draft = StackDetector.detect(at: dir)
+            let path = URL(fileURLWithPath: dir).appendingPathComponent(".dockyard.json").path
+            let existing = try? String(contentsOfFile: path, encoding: .utf8)
+            await MainActor.run {
+                guard ProjectOverviewState.matchesProject(loadedFor: dir, currentDirectory: project.directory) else { return }
+                configDraft = draft
+                configDraftDirectory = dir
+                existingConfigText = existing
+                isDetectingStack = false
+                showGenerateSheet = true
+            }
+        }
+    }
+
+    private func beginConfigEditing() {
+        seedConfigEditingFieldsFromScriptConfig()
+        editWriteError = nil
+        isEditingConfig = true
+    }
+
+    private func beginBlankConfigEditing() {
+        editSetup = ""
+        editRun = ""
+        editTeardown = ""
+        editPortText = ""
+        editWriteError = nil
+        isEditingConfig = true
+    }
+
+    private func cancelConfigEditing() {
+        seedConfigEditingFieldsFromScriptConfig()
+        editWriteError = nil
+        isEditingConfig = false
+    }
+
+    private func saveEditedConfig() {
+        let result = editParseResult
+        guard result.validationError == nil, !result.draft.isEmpty else { return }
+
+        do {
+            try DockyardConfigWriter.write(result.draft, to: project.directory)
+            ScriptTrustStore.trust(projectDirectory: project.directory, setup: result.draft.setup, run: result.draft.run, teardown: result.draft.teardown)
+            editWriteError = nil
+            isEditingConfig = false
+            loadScriptConfig()
+            NotificationCenter.default.post(name: .configGenerated, object: nil)
+        } catch {
+            editWriteError = error.localizedDescription
+        }
+    }
+
+    private func seedConfigEditingFieldsFromScriptConfig() {
+        editSetup = scriptConfig.setup ?? ""
+        editRun = scriptConfig.run ?? ""
+        editTeardown = scriptConfig.teardown ?? ""
+        editPortText = scriptConfig.expectedPort.map(String.init) ?? ""
+    }
+
+    private func confirmWrite() {
+        guard let draft = configDraft,
+              let configDraftDirectory,
+              ProjectOverviewState.matchesProject(loadedFor: configDraftDirectory, currentDirectory: project.directory),
+              !draft.isEmpty
+        else {
+            showGenerateSheet = false
+            return
+        }
+        do {
+            try DockyardConfigWriter.write(draft, to: configDraftDirectory)
+            ScriptTrustStore.trust(projectDirectory: configDraftDirectory, setup: draft.setup, run: draft.run, teardown: draft.teardown)
+            writeError = nil
+            showGenerateSheet = false
+            loadScriptConfig()
+            NotificationCenter.default.post(name: .configGenerated, object: nil)
+        } catch {
+            writeError = error.localizedDescription
+        }
     }
 
     private static func standardizedPath(_ path: String) -> String {

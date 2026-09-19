@@ -1046,6 +1046,7 @@ struct ProjectSidebar: View {
                 surfaceCache.removeWorkstreamSurfaces(for: ws.id)
             }
         }
+        surfaceCache.removeProjectRootSurface(for: id)
         projects.removeAll { $0.id == id }
         if case let .project(pid) = selection, pid == id { selection = nil }
         if case let .workstream(wsID) = selection,

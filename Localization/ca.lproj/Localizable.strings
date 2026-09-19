@@ -278,6 +278,7 @@
 /* Tab labels */
 "Info" = "Informació";
 "Agent" = "Agent";
+"Overview" = "Visió general";
 
 /* ProjectSidebar - context menu */
 "New workstream (full permissions)" = "Nou flux de treball (permisos complets)";

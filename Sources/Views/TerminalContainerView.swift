@@ -1531,7 +1531,7 @@ private struct WorkspaceTabButton: View {
     }
 }
 
-private struct TabBarActionButton: View {
+struct TabBarActionButton: View {
     let icon: String
     let shortcut: String
     let tooltip: LocalizedStringKey
@@ -2270,6 +2270,11 @@ final class TerminalSurfaceCache: ObservableObject {
             if surfaces[id] != nil { removeSurface(for: id) }
             if webViews[id] != nil { removeWebView(for: id) }
         }
+    }
+
+    func removeProjectRootSurface(for projectID: UUID) {
+        let rootTerminalID = derivedUUID(from: projectID, salt: "project-root-terminal")
+        removeSurface(for: rootTerminalID)
     }
 
     private func handleSurfaceClosed(_ closedView: TerminalView) {
