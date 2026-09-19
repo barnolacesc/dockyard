@@ -47,6 +47,7 @@ struct WorkstreamInfoView: View {
     @State private var editWriteError: String?
     @State private var showScriptApproval = false
     @State private var pendingSetupAction: PendingSetupAction?
+    @State private var showUncommittedPopover = false
 
     private enum PendingSetupAction { case inline, terminal }
 
@@ -134,10 +135,33 @@ struct WorkstreamInfoView: View {
 
                         LabeledContent {
                             if state.uncommittedCount > 0 {
-                                Text("\(state.uncommittedCount) files")
-                                    .font(.system(.body, design: .monospaced))
-                                    .tabularNumbers()
-                                    .foregroundStyle(DesignColor.statusWarning)
+                                Button {
+                                    showUncommittedPopover = true
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Text("\(state.uncommittedCount) files")
+                                            .font(.system(.body, design: .monospaced))
+                                            .tabularNumbers()
+                                            .foregroundStyle(DesignColor.statusWarning)
+                                        Image(systemName: "info.circle")
+                                            .font(.system(size: 10))
+                                            .foregroundStyle(DesignColor.statusWarning.opacity(0.8))
+                                    }
+                                    .frame(minHeight: 28)
+                                }
+                                .buttonStyle(.plain)
+                                .popover(isPresented: $showUncommittedPopover) {
+                                    UncommittedChangesPopover(
+                                        path: workingDirectory,
+                                        title: workstreamName,
+                                        onDiscard: {
+                                            appEnv.refreshWorktreeState(for: workingDirectory, projectDirectory: projectDirectory, force: true)
+                                        },
+                                        onCleanUntracked: {
+                                            appEnv.refreshWorktreeState(for: workingDirectory, projectDirectory: projectDirectory, force: true)
+                                        }
+                                    )
+                                }
                             } else {
                                 Text("Clean")
                                     .font(.system(.body, design: .monospaced))

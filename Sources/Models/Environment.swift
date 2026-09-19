@@ -13,7 +13,9 @@ struct OpenPRItem: Identifiable, Equatable {
     let projectName: String
     let projectDirectory: String
     let workstreamID: UUID?
-    var id: String { "\(projectDirectory)#\(pr.number)" }
+    var id: String {
+        "\(projectDirectory)#\(pr.number)"
+    }
 }
 
 struct WorktreeState {
@@ -299,7 +301,7 @@ final class AppEnvironment: ObservableObject {
         } else if let ghURL = githubRepoCache[directory]?.url {
             base = ghURL
         }
-        
+
         guard let base else { return nil }
         if let branch, !branch.isEmpty {
             let encodedBranch = branch.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? branch
@@ -313,19 +315,23 @@ final class AppEnvironment: ObservableObject {
     }
 
     private var worktreeStateTimestamps: [String: Date] = [:]
+    private var worktreeStateGenerations: [String: Int] = [:]
     private static let worktreeStateRefreshInterval: TimeInterval = 5
 
     /// Refresh working tree state for a single worktree path. Throttled to once
     /// every `worktreeStateRefreshInterval` seconds per path so chatty terminal
     /// activity doesn't spawn git subprocesses on every keystroke.
-    func refreshWorktreeState(for worktreePath: String, projectDirectory: String) {
+    func refreshWorktreeState(for worktreePath: String, projectDirectory: String, force: Bool = false) {
         let now = Date()
-        if let last = worktreeStateTimestamps[worktreePath],
+        if !force,
+           let last = worktreeStateTimestamps[worktreePath],
            now.timeIntervalSince(last) < Self.worktreeStateRefreshInterval
         {
             return
         }
         worktreeStateTimestamps[worktreePath] = now
+        let generation = (worktreeStateGenerations[worktreePath] ?? 0) + 1
+        worktreeStateGenerations[worktreePath] = generation
 
         let path = worktreePath
         let projectDir = projectDirectory
@@ -341,13 +347,14 @@ final class AppEnvironment: ObservableObject {
                 worktreeCreatedDate: (try? FileManager.default.attributesOfItem(atPath: path)[.creationDate]) as? Date,
                 baseBranch: GitOperations.defaultBranch(at: projectDir)
             )
-            await self.deferWorktreeStateUpdate(state, for: path)
+            await self.deferWorktreeStateUpdate(state, for: path, generation: generation)
         }
     }
 
-    private func deferWorktreeStateUpdate(_ state: WorktreeState, for path: String) {
+    private func deferWorktreeStateUpdate(_ state: WorktreeState, for path: String, generation: Int) {
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 50_000_000)
+            guard self.worktreeStateGenerations[path] == generation else { return }
             self.commitChanges {
                 self.worktreeStateCache[path] = state
             }
@@ -502,7 +509,7 @@ final class AppEnvironment: ObservableObject {
     // MARK: - GitHub
 
     var ghAvailable: Bool {
-        toolStatus.gh.isInstalled 
+        toolStatus.gh.isInstalled
     }
 
     func githubRepo(for directory: String) -> GitHubRepoInfo? {
