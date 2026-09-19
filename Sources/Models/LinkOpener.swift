@@ -57,9 +57,24 @@ public enum LinkOpener {
         }
     }
 
+    private(set) static var pendingURLs: [UUID: [URL]] = [:]
+
+    public static func consumePendingURL(for workstreamID: UUID) -> URL? {
+        guard let list = pendingURLs[workstreamID], !list.isEmpty else { return nil }
+        var updated = list
+        let first = updated.removeFirst()
+        if updated.isEmpty {
+            pendingURLs.removeValue(forKey: workstreamID)
+        } else {
+            pendingURLs[workstreamID] = updated
+        }
+        return first
+    }
+
     public static func openInApp(url: URL, workstreamID: UUID?) {
         let resolvedWSID = workstreamID ?? SidebarSelection.loadSaved()?.workstreamID
         if let resolvedWSID {
+            pendingURLs[resolvedWSID, default: []].append(url)
             NotificationCenter.default.post(
                 name: .openInAppBrowser,
                 object: resolvedWSID,

@@ -168,8 +168,26 @@ final class BrowserViewTests: XCTestCase {
     }
 
     func testLinkOpenerDefaultsToExternal() {
+        let originalTarget = UserDefaults.standard.object(forKey: LinkOpener.targetStorageKey)
+        defer {
+            if let originalTarget {
+                UserDefaults.standard.set(originalTarget, forKey: LinkOpener.targetStorageKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: LinkOpener.targetStorageKey)
+            }
+        }
         UserDefaults.standard.removeObject(forKey: LinkOpener.targetStorageKey)
         XCTAssertEqual(LinkOpener.currentTarget, .external)
+    }
+
+    func testLinkOpenerQueuesAndConsumesPendingURLs() {
+        let workstreamID = UUID()
+        let testURL = URL(string: "https://example.com/test")!
+
+        LinkOpener.openInApp(url: testURL, workstreamID: workstreamID)
+        let consumed = LinkOpener.consumePendingURL(for: workstreamID)
+        XCTAssertEqual(consumed, testURL)
+        XCTAssertNil(LinkOpener.consumePendingURL(for: workstreamID))
     }
 
     func testLinkOpenerPostsInAppNotification() {

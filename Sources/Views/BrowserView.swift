@@ -109,6 +109,7 @@ private func normalizedBrowserURL(_ urlString: String) -> String {
 
 struct BrowserView: View {
     let defaultURL: String
+    var initialURL: String? = nil
     var tabID: UUID?
     var workstreamID: UUID?
     let webView: WKWebView
@@ -202,6 +203,7 @@ struct BrowserView: View {
             ZStack {
                 WebViewRepresentable(
                     webView: webView,
+                    tabID: tabID,
                     workstreamID: workstreamID,
                     isLoading: $isLoading,
                     canGoBack: $canGoBack,
@@ -239,8 +241,9 @@ struct BrowserView: View {
         }
         .onAppear {
             if webView.url == nil {
-                urlText = defaultURL
-                navigateTo(defaultURL)
+                let startURL = initialURL ?? defaultURL
+                urlText = startURL
+                navigateTo(startURL)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     urlFieldFocused = true
                 }
@@ -286,13 +289,6 @@ struct BrowserView: View {
         .onChange(of: urlText) { _, newURL in
             guard let workstreamID else { return }
             BrowserBridge.write(workstreamID: workstreamID, url: newURL, title: pageTitle)
-            if let tabID {
-                NotificationCenter.default.post(
-                    name: .browserURLChanged,
-                    object: tabID,
-                    userInfo: ["url": newURL]
-                )
-            }
         }
     }
 
@@ -320,6 +316,7 @@ struct BrowserView: View {
 
 struct WebViewRepresentable: NSViewRepresentable {
     let webView: WKWebView
+    var tabID: UUID? = nil
     var workstreamID: UUID?
     @Binding var isLoading: Bool
     @Binding var canGoBack: Bool
@@ -500,6 +497,13 @@ struct WebViewRepresentable: NSViewRepresentable {
             parent.isLoading = false
             parent.connectionError = false
             updateState(webView)
+            if let tabID = parent.tabID, let url = webView.url?.absoluteString {
+                NotificationCenter.default.post(
+                    name: .browserURLChanged,
+                    object: tabID,
+                    userInfo: ["url": url]
+                )
+            }
         }
 
         func webView(_ webView: WKWebView, didFail _: WKNavigation!, withError _: Error) {

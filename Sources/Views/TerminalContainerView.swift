@@ -819,9 +819,14 @@ struct TerminalContainerView: View {
                 environmentVars: terminalEnvVars
             )
         case let .browser(id):
-            let initialURL = browserURLs[id] ?? browserDefaultURL
-            BrowserView(defaultURL: initialURL, tabID: id, workstreamID: workstreamID, webView: surfaceCache.webView(for: id))
-                .id(id)
+            BrowserView(
+                defaultURL: browserDefaultURL,
+                initialURL: browserURLs[id],
+                tabID: id,
+                workstreamID: workstreamID,
+                webView: surfaceCache.webView(for: id)
+            )
+            .id(id)
         }
     }
 
@@ -964,6 +969,9 @@ struct TerminalContainerView: View {
                 }
             }
             splitTab = surfaceCache.splitTabs[workstreamID]
+            while let pendingURL = LinkOpener.consumePendingURL(for: workstreamID) {
+                addBrowser(url: pendingURL.absoluteString)
+            }
         }
         .onChange(of: splitTab) { _, newValue in
             surfaceCache.splitTabs[workstreamID] = newValue
@@ -1037,6 +1045,7 @@ struct TerminalContainerView: View {
                     guard isActive else { return }
                 }
                 guard let url = notification.userInfo?["url"] as? URL else { return }
+                _ = LinkOpener.consumePendingURL(for: workstreamID)
                 addBrowser(url: url.absoluteString)
             }
             .onReceive(NotificationCenter.default.publisher(for: .browserURLChanged)) { notification in
