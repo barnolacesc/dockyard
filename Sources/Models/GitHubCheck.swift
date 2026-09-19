@@ -89,14 +89,28 @@ extension GitHubPR {
               let state = dict["state"] as? String,
               let branch = dict["headRefName"] as? String,
               let url = dict["url"] as? String else { return nil }
+        let reviewDecision = dict["reviewDecision"] as? String
+        var hasReviewFindings = (reviewDecision == "CHANGES_REQUESTED")
+        if !hasReviewFindings, let latestReviews = dict["latestReviews"] as? [[String: Any]] {
+            for review in latestReviews {
+                let reviewState = review["state"] as? String
+                let author = review["author"] as? [String: Any]
+                let login = (author?["login"] as? String) ?? ""
+                if reviewState == "CHANGES_REQUESTED" || login.localizedCaseInsensitiveContains("coderabbit") {
+                    hasReviewFindings = true
+                    break
+                }
+            }
+        }
         return GitHubPR(
             number: number, title: title, state: state, branch: branch, url: url,
             checks: GitHubCheck.rollup(dict["statusCheckRollup"]),
             headOID: dict["headRefOid"] as? String ?? "",
             isDraft: dict["isDraft"] as? Bool ?? false,
-            reviewDecision: dict["reviewDecision"] as? String,
+            reviewDecision: reviewDecision,
             mergeStateStatus: dict["mergeStateStatus"] as? String,
-            fetchedAt: fetchedAt
+            fetchedAt: fetchedAt,
+            hasReviewFindings: hasReviewFindings
         )
     }
 }

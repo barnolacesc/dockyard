@@ -11,6 +11,7 @@ enum QuickAction: String, CaseIterable, Identifiable {
     case push
     case createPR
     case closePR
+    case addressReviewFindings
 
     var id: String {
         rawValue
@@ -22,6 +23,7 @@ enum QuickAction: String, CaseIterable, Identifiable {
         case .push: return NSLocalizedString("Push", comment: "")
         case .createPR: return NSLocalizedString("Create PR", comment: "")
         case .closePR: return NSLocalizedString("Close PR", comment: "")
+        case .addressReviewFindings: return NSLocalizedString("Address Review Findings", comment: "")
         }
     }
 
@@ -31,20 +33,21 @@ enum QuickAction: String, CaseIterable, Identifiable {
         case .push: return "arrow.up"
         case .createPR: return "arrow.triangle.pull"
         case .closePR: return "xmark.circle"
+        case .addressReviewFindings: return "sparkles"
         }
     }
 
     /// Whether this action should be sent to the live Coding Agent.
     var delegatesToAgent: Bool {
         switch self {
-        case .commit, .createPR: return true
+        case .commit, .createPR, .addressReviewFindings: return true
         case .push, .closePR: return false
         }
     }
 
     var requiresGitHubRemote: Bool {
         switch self {
-        case .createPR, .closePR: return true
+        case .createPR, .closePR, .addressReviewFindings: return true
         case .commit, .push: return false
         }
     }
@@ -55,6 +58,8 @@ enum QuickAction: String, CaseIterable, Identifiable {
             return "Stage and commit all changes in the working tree with a good commit message based on the changes. Do not push."
         case .createPR:
             return "Create a pull request for the current changes. Write a clear title and description based on what we've been working on."
+        case .addressReviewFindings:
+            return "Check the review comments and findings on the current pull request (including CodeRabbit AI review feedback). Review each finding carefully, filter out false positives, and make the necessary code fixes in this worktree to resolve the real issues."
         case .push, .closePR:
             return nil
         }
@@ -221,7 +226,7 @@ final class QuickActionRunner: ObservableObject {
         dismissWork?.cancel()
 
         switch action {
-        case .commit, .createPR:
+        case .commit, .createPR, .addressReviewFindings:
             break
         case .push:
             runPush(workingDirectory: workingDirectory)

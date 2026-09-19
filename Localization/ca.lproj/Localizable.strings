@@ -368,6 +368,7 @@
 "Push" = "Push";
 "Create PR" = "Crear PR";
 "Close PR" = "Tancar PR";
+"Address Review Findings" = "Resoldre observacions de la revisió";
 "Open #%d" = "Obrir #%d";
 "This branch has been merged." = "Aquesta branca s'ha fusionat.";
 "gh CLI is not installed." = "gh CLI no està instal·lat.";
@@ -378,6 +379,17 @@
 "No GitHub remote found for this project." = "No s'ha trobat cap remot de GitHub per a aquest projecte.";
 "Quick action debug" = "Depuració d'accions ràpides";
 "Show a debug panel with command output from quick actions." = "Mostra un panell de depuració amb la sortida de les accions ràpides.";
+
+/* Workstream Lifecycle & Top Bar */
+"Agent Working" = "L'agent està treballant";
+"Changes Committed" = "Canvis confirmats";
+"Review Findings" = "Observacions de revisió";
+"In Review" = "En revisió";
+"Approved" = "Aprovat";
+"Merged" = "Fusionat";
+"Workstream Info" = "Informació del workstream";
+"Review findings detected. Click to address with agent." = "S'han detectat observacions de revisió. Fes clic per resoldre-les amb l'agent.";
+"Open localhost:%d in browser (⌘B)" = "Obre localhost:%d al navegador (⌘B)";
 
 /* Workstream Info Git Stats */
 "Ahead" = "Ahead";
@@ -534,7 +546,7 @@
 "Create a workstream" = "Crea un workstream";
 "Hover over your project and click its + button. A workstream is an isolated git worktree with its own branch, terminal, and Coding Agent." = "Passa el cursor sobre el projecte i fes clic al seu botó +. Un workstream és un worktree de git aïllat amb la seva pròpia branca, terminal i agent de programació.";
 "Your workspace" = "El teu espai de treball";
-"Every workstream has an Info tab and a Coding Agent tab. Add terminals, browsers, and editors on demand — they all live here." = "Cada workstream té una pestanya Info i una pestanya de l'agent de programació. Afegeix terminals, navegadors i editors quan calgui — tots viuen aquí.";
+"Every workstream has a Coding Agent tab and an integrated top bar. Add terminals, browsers, and editors on demand — they all live here." = "Cada workstream té una pestanya de l'agent de programació i una barra superior integrada. Afegeix terminals, navegadors i editors quan calgui — tots viuen aquí.";
 "Choose your Coding Agent" = "Tria el teu agent de programació";
 "Pick Claude Code or Codex for this workstream, or keep the default from Settings." = "Tria Claude Code o Codex per a aquest workstream, o mantén el valor per defecte de Configuració.";
 "Prompt the agent" = "Dona instruccions a l'agent";

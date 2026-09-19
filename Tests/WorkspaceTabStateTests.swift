@@ -22,7 +22,7 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         let workstreamID = UUID()
         let terminalID = derivedUUID(from: workstreamID, salt: "terminal-1")
         let browserID = derivedUUID(from: workstreamID, salt: "browser-1")
-        let tabs: [WorkspaceTab] = [.info, .agent, .terminal(terminalID), .browser(browserID)]
+        let tabs: [WorkspaceTab] = [.agent, .terminal(terminalID), .browser(browserID)]
 
         let snapshot = WorkspaceTabSnapshot(
             tabs: tabs,
@@ -48,7 +48,7 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         let terminalID = derivedUUID(from: workstreamID, salt: "terminal-1")
         let browserID = derivedUUID(from: workstreamID, salt: "browser-1")
         let editorTerminalID = derivedUUID(from: workstreamID, salt: "editor-terminal-1")
-        let tabs: [WorkspaceTab] = [.info, .agent, .terminal(terminalID), .browser(browserID), .terminal(editorTerminalID)]
+        let tabs: [WorkspaceTab] = [.agent, .terminal(terminalID), .browser(browserID), .terminal(editorTerminalID)]
         let snapshot = WorkspaceTabSnapshot(
             tabs: tabs,
             terminalCount: 2,
@@ -148,10 +148,23 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         ])
         UserDefaults.standard.set(data, forKey: snapshotsKey)
 
-        WorkspaceTabSnapshotStore.save(makeSnapshot(activeTab: .info), for: newID)
+        let newTerminalID = UUID()
+        WorkspaceTabSnapshotStore.save(
+            WorkspaceTabSnapshot(
+                tabs: [.agent, .terminal(newTerminalID)],
+                terminalCount: 1,
+                browserCount: 0,
+                activeTab: .terminal(newTerminalID),
+                browserTitles: [:],
+                terminalTitles: [:],
+                runStarted: false,
+                runStoppedManually: false
+            ),
+            for: newID
+        )
 
         XCTAssertEqual(WorkspaceTabSnapshotStore.load(for: existingID)?.activeTab, .agent)
-        XCTAssertEqual(WorkspaceTabSnapshotStore.load(for: newID)?.activeTab, .info)
+        XCTAssertEqual(WorkspaceTabSnapshotStore.load(for: newID)?.activeTab, .terminal(newTerminalID))
         XCTAssertNil(WorkspaceTabSnapshotStore.load(for: malformedID))
     }
 
@@ -180,7 +193,7 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         let browserID = derivedUUID(from: workstreamID, salt: "browser-1")
 
         let snapshot = WorkspaceTabSnapshot(
-            tabs: [.info, .agent, .terminal(liveTerminalID), .terminal(deadTerminalID), .browser(browserID)],
+            tabs: [.agent, .terminal(liveTerminalID), .terminal(deadTerminalID), .browser(browserID)],
             terminalCount: 2,
             browserCount: 1,
             activeTab: .terminal(deadTerminalID),
@@ -192,7 +205,7 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
 
         let reconciled = snapshot.reconciled(liveSurfaceIDs: [liveTerminalID])
 
-        XCTAssertEqual(reconciled.tabs, [.info, .agent, .terminal(liveTerminalID), .browser(browserID)])
+        XCTAssertEqual(reconciled.tabs, [.agent, .terminal(liveTerminalID), .browser(browserID)])
         XCTAssertEqual(reconciled.terminalCount, 2) // count preserved for ID generation
         XCTAssertEqual(reconciled.activeTab, .agent) // fell back since dead terminal was active
     }
@@ -203,7 +216,7 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         let deadTerminalID = derivedUUID(from: workstreamID, salt: "terminal-2")
 
         let snapshot = WorkspaceTabSnapshot(
-            tabs: [.info, .agent, .terminal(liveTerminalID), .terminal(deadTerminalID)],
+            tabs: [.agent, .terminal(liveTerminalID), .terminal(deadTerminalID)],
             terminalCount: 2,
             browserCount: 0,
             activeTab: .terminal(liveTerminalID),
@@ -227,7 +240,7 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         let terminalID = derivedUUID(from: workstreamID, salt: "terminal-1")
 
         let snapshot = WorkspaceTabSnapshot(
-            tabs: [.info, .agent, .terminal(terminalID)],
+            tabs: [.agent, .terminal(terminalID)],
             terminalCount: 1,
             browserCount: 0,
             activeTab: .terminal(terminalID),
@@ -239,13 +252,13 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
 
         let reconciled = snapshot.reconciled(liveSurfaceIDs: [terminalID])
 
-        XCTAssertEqual(reconciled.tabs, [.info, .agent, .terminal(terminalID)])
+        XCTAssertEqual(reconciled.tabs, [.agent, .terminal(terminalID)])
         XCTAssertEqual(reconciled.activeTab, .terminal(terminalID))
     }
 
     func testReconciledPreservesRunState() {
         let snapshot = WorkspaceTabSnapshot(
-            tabs: [.info, .agent],
+            tabs: [.agent],
             terminalCount: 0,
             browserCount: 0,
             activeTab: .agent,
@@ -265,7 +278,7 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         let browserID = UUID()
 
         let snapshot = WorkspaceTabSnapshot(
-            tabs: [.info, .agent, .browser(browserID)],
+            tabs: [.agent, .browser(browserID)],
             terminalCount: 0,
             browserCount: 1,
             activeTab: .browser(browserID),
@@ -278,13 +291,13 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         // Empty live surfaces - browser should still survive
         let reconciled = snapshot.reconciled(liveSurfaceIDs: [])
 
-        XCTAssertEqual(reconciled.tabs, [.info, .agent, .browser(browserID)])
+        XCTAssertEqual(reconciled.tabs, [.agent, .browser(browserID)])
         XCTAssertEqual(reconciled.activeTab, .browser(browserID))
     }
 
     func testStartupStatePreservesRestoredSnapshot() {
         let snapshot = WorkspaceTabSnapshot(
-            tabs: [.info, .agent],
+            tabs: [.agent],
             terminalCount: 0,
             browserCount: 0,
             activeTab: .agent,
@@ -299,7 +312,7 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
             persistedSnapshot: nil
         )
 
-        XCTAssertEqual(state.tabs, [.info, .agent])
+        XCTAssertEqual(state.tabs, [.agent])
         XCTAssertEqual(state.activeTab, .agent)
         XCTAssertTrue(state.runStarted)
     }
@@ -310,7 +323,7 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         let browserID = derivedUUID(from: workstreamID, salt: "browser-1")
         let editorTerminalID = derivedUUID(from: workstreamID, salt: "editor-terminal-1")
         let snapshot = WorkspaceTabSnapshot(
-            tabs: [.info, .agent, .terminal(terminalID), .browser(browserID), .terminal(editorTerminalID)],
+            tabs: [.agent, .terminal(terminalID), .browser(browserID), .terminal(editorTerminalID)],
             terminalCount: 2,
             browserCount: 1,
             activeTab: .terminal(editorTerminalID),
@@ -326,7 +339,7 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
             persistedSnapshot: snapshot
         )
 
-        XCTAssertEqual(state.tabs, [.info, .agent, .terminal(terminalID), .browser(browserID), .terminal(editorTerminalID)])
+        XCTAssertEqual(state.tabs, [.agent, .terminal(terminalID), .browser(browserID), .terminal(editorTerminalID)])
         XCTAssertEqual(state.terminalCount, 2)
         XCTAssertEqual(state.browserCount, 1)
         XCTAssertEqual(state.activeTab, .terminal(editorTerminalID))
@@ -338,10 +351,10 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         XCTAssertTrue(state.runStoppedManually)
     }
 
-    func testStartupStateFallsBackToInfoWhenPersistedActiveTabIsMissing() {
+    func testStartupStateFallsBackToAgentWhenPersistedActiveTabIsMissing() {
         let terminalID = UUID()
         let snapshot = WorkspaceTabSnapshot(
-            tabs: [.info, .agent],
+            tabs: [.agent],
             terminalCount: 0,
             browserCount: 0,
             activeTab: .terminal(terminalID),
@@ -356,8 +369,8 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
             persistedSnapshot: snapshot
         )
 
-        XCTAssertEqual(state.tabs, [.info, .agent])
-        XCTAssertEqual(state.activeTab, .info)
+        XCTAssertEqual(state.tabs, [.agent])
+        XCTAssertEqual(state.activeTab, .agent)
     }
 
     func testLegacyEditorTabDecodingIsSafelySkipped() throws {
@@ -389,8 +402,8 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         let data = Data(legacyJSON.utf8)
         let restored = try JSONDecoder().decode(WorkspaceTabSnapshot.self, from: data)
 
-        // Legacy editor tab should be skipped, leaving info, agent, and terminal
-        XCTAssertEqual(restored.tabs, [.info, .agent, .terminal(terminalID)])
+        // Legacy editor and info tabs should be skipped, leaving agent and terminal
+        XCTAssertEqual(restored.tabs, [.agent, .terminal(terminalID)])
         // Active tab was the legacy editor tab, which was dropped, so it falls back to .agent
         XCTAssertEqual(restored.activeTab, .agent)
         XCTAssertEqual(restored.terminalTitles[terminalID], "zsh")
@@ -432,7 +445,7 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
 
     private func makeSnapshot(activeTab: WorkspaceTab) -> WorkspaceTabSnapshot {
         WorkspaceTabSnapshot(
-            tabs: [.info, .agent],
+            tabs: [.agent],
             terminalCount: 0,
             browserCount: 0,
             activeTab: activeTab,
@@ -478,11 +491,11 @@ final class WorkspaceTabStateTests: XCTestCase {
         let terminalA = try WorkspaceTab.terminal(XCTUnwrap(UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")))
         let browserB = try WorkspaceTab.browser(XCTUnwrap(UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB")))
         let terminalC = try WorkspaceTab.terminal(XCTUnwrap(UUID(uuidString: "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC")))
-        let tabs: [WorkspaceTab] = [.info, .agent, terminalA, browserB, terminalC]
+        let tabs: [WorkspaceTab] = [.agent, terminalA, browserB, terminalC]
 
         let reordered = reorderedCustomTabs(tabs, dragging: terminalC, to: terminalA)
 
-        XCTAssertEqual(reordered, [.info, .agent, terminalC, terminalA, browserB])
+        XCTAssertEqual(reordered, [.agent, terminalC, terminalA, browserB])
     }
 
     func testRenderableWorkstreamIDKeepsOnlySelectedReadyWorkstream() throws {

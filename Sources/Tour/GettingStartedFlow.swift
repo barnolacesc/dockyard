@@ -34,7 +34,7 @@ enum GettingStartedFlow {
                 id: "workspace-tabs",
                 anchor: .workspaceTabBar,
                 titleKey: "Your workspace",
-                bodyKey: "Every workstream has an Info tab and a Coding Agent tab. Add terminals, browsers, and editors on demand — they all live here.",
+                bodyKey: "Every workstream has a Coding Agent tab and an integrated top bar. Add terminals, browsers, and editors on demand — they all live here.",
                 advance: .manual
             ),
             TourStep(

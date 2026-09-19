@@ -205,8 +205,8 @@ struct WorkspaceTabSnapshot: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let rawTabs = try container.decode([DecodedWorkspaceTab].self, forKey: .tabs)
-        let filteredTabs = rawTabs.compactMap { $0.toWorkspaceTab }
-        self.tabs = filteredTabs.isEmpty ? [.info, .agent] : filteredTabs
+        let filteredTabs = rawTabs.compactMap { $0.toWorkspaceTab }.filter { $0 != .info }
+        self.tabs = filteredTabs.isEmpty ? [.agent] : filteredTabs
         self.terminalCount = try container.decode(Int.self, forKey: .terminalCount)
         self.browserCount = try container.decode(Int.self, forKey: .browserCount)
         let rawActiveTab = try container.decode(DecodedWorkspaceTab.self, forKey: .activeTab)
@@ -226,15 +226,17 @@ struct WorkspaceTabSnapshot: Codable {
     /// Browser tabs are kept regardless (they don't use terminal surfaces).
     func reconciled(liveSurfaceIDs: Set<UUID>) -> WorkspaceTabSnapshot {
         let filteredTabs = tabs.filter { tab in
+            if case .info = tab { return false }
             if case let .terminal(id) = tab {
                 return liveSurfaceIDs.contains(id)
             }
             return true
         }
-        let resolvedActiveTab = filteredTabs.contains(activeTab) ? activeTab : .agent
+        let finalTabs = filteredTabs.isEmpty ? [.agent] : filteredTabs
+        let resolvedActiveTab = finalTabs.contains(activeTab) ? activeTab : .agent
         let liveTerminalEditorCommands = terminalEditorCommands.filter { liveSurfaceIDs.contains($0.key) }
         return WorkspaceTabSnapshot(
-            tabs: filteredTabs,
+            tabs: finalTabs,
             terminalCount: terminalCount,
             browserCount: browserCount,
             activeTab: resolvedActiveTab,
@@ -328,10 +330,10 @@ func startupWorkspaceTabState(snapshot: WorkspaceTabSnapshot?, persistedSnapshot
 
 private func defaultWorkspaceTabSnapshot() -> WorkspaceTabSnapshot {
     WorkspaceTabSnapshot(
-        tabs: [.info, .agent],
+        tabs: [.agent],
         terminalCount: 0,
         browserCount: 0,
-        activeTab: .info,
+        activeTab: .agent,
         browserTitles: [:],
         terminalTitles: [:],
         runStarted: false,
@@ -343,15 +345,15 @@ private func defaultWorkspaceTabSnapshot() -> WorkspaceTabSnapshot {
 private func sanitizedWorkspaceTabSnapshot(_ snapshot: WorkspaceTabSnapshot) -> WorkspaceTabSnapshot {
     var cleaned = snapshot
     var tabs: [WorkspaceTab] = []
-    for requiredTab in [WorkspaceTab.info, .agent] where !snapshot.tabs.contains(requiredTab) {
-        tabs.append(requiredTab)
+    if !snapshot.tabs.contains(.agent) {
+        tabs.append(.agent)
     }
-    for tab in snapshot.tabs where !tabs.contains(tab) {
+    for tab in snapshot.tabs where tab != .info && !tabs.contains(tab) {
         tabs.append(tab)
     }
-    cleaned.tabs = tabs
+    cleaned.tabs = tabs.isEmpty ? [.agent] : tabs
     if !cleaned.tabs.contains(cleaned.activeTab) {
-        cleaned.activeTab = .info
+        cleaned.activeTab = .agent
     }
     return cleaned
 }
@@ -428,10 +430,11 @@ struct TerminalContainerView: View {
     @AppStorage("dockyard.allowOutsideWorktree") private var allowOutsideWorktree: Bool = false
     @AppStorage("dockyard.quickActionDebug") private var quickActionDebug: Bool = false
     @AppStorage("dockyard.terminalEditorCommand") private var terminalEditorCommand: String = "nvim ."
-    @State private var activeTab: WorkspaceTab = .info
+    @State private var activeTab: WorkspaceTab = .agent
     @State private var splitTab: WorkspaceTab?
     @AppStorage("dockyard.splitOrientation") private var splitOrientation: String = "horizontal"
-    @State private var tabs: [WorkspaceTab] = [.info, .agent]
+    @State private var tabs: [WorkspaceTab] = [.agent]
+    @State private var showWorkstreamInfo = false
     @State private var terminalCount = 0
     @State private var browserCount = 0
     @State private var unreadTabs = Set<WorkspaceTab>()
@@ -648,8 +651,8 @@ struct TerminalContainerView: View {
     }
 
     private var tabBar: some View {
-        HStack(spacing: 0) {
-            // Fixed tabs (Info, Agent)
+        HStack(spacing: 8) {
+            // Fixed tabs (Agent)
             ForEach(fixedTabs, id: \.self) { tab in
                 tabButton(for: tab)
                     .tourAnchor(tab == .info ? .infoTab : .agentTab)
@@ -665,8 +668,6 @@ struct TerminalContainerView: View {
                 .layoutPriority(-1)
             }
 
-            Spacer()
-
             // Quick actions to add tabs
             HStack(spacing: 2) {
                 TabBarActionButton(icon: "terminal", shortcut: "\u{2318}T", tooltip: "New Terminal (\u{2318}T)", action: addTerminal)
@@ -678,32 +679,81 @@ struct TerminalContainerView: View {
             }
             .fixedSize()
 
-            if let pr = branchPR, let url = URL(string: pr.url) {
-                let prColor: Color = pr.state == "MERGED" ? DesignColor.statusMerged : DesignColor.statusSuccess
-                Button(action: { NSWorkspace.shared.open(url) }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: pr.state == "MERGED" ? "arrow.triangle.merge" : "arrow.triangle.pull")
-                            .font(.system(size: 11))
-                        Text(verbatim: "#\(pr.number)")
-                            .font(.system(size: 11, weight: .medium, design: .monospaced))
-                            .tabularNumbers()
+            Spacer()
+
+            // Center: Workstream Lifecycle Status Pill
+            WorkstreamLifecyclePill(
+                branchPR: branchPR,
+                worktreeState: appEnv.worktreeState(for: workingDirectory),
+                isRunningSetup: setupRunner.state == .running,
+                directory: projectDirectory,
+                onOpenPR: {
+                    if let pr = branchPR, let url = URL(string: pr.url) {
+                        NSWorkspace.shared.open(url)
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(prColor.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
-                    .foregroundStyle(prColor)
-                    .frame(minHeight: 40)
+                },
+                onAddressFindings: {
+                    activeTab = .agent
+                    if let prompt = QuickAction.addressReviewFindings.prompt {
+                        surfaceCache.sendText(to: agentID, text: prompt + "\r")
+                    }
                 }
-                .pressable()
-                .help(pr.title)
-                .accessibilityLabel(Text(verbatim: "Pull request #\(pr.number)"))
-                .accessibilityHint(pr.title)
-                PRChecksBadge(pr: pr, directory: projectDirectory, compact: true)
+            )
+
+            Spacer()
+
+            // Right: Dev Server + GitHub Action Menu + Workstream Info
+            HStack(spacing: 8) {
+                if let port = portDetector.selectedPort {
+                    Button(action: addBrowser) {
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(DesignColor.statusSuccess)
+                                .frame(width: 6, height: 6)
+                            Text(verbatim: ":\(port)")
+                                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        }
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 4)
+                        .background(DesignColor.statusSuccess.opacity(0.12))
+                        .foregroundStyle(DesignColor.statusSuccess)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .help(String(format: NSLocalizedString("Open localhost:%d in browser (⌘B)", comment: ""), port))
+                }
+
+                GitHubActionMenu(
+                    runner: quickActionRunner,
+                    ghPath: appEnv.toolStatus.gh.path,
+                    workingDirectory: workingDirectory,
+                    branchName: appEnv.branchName(for: workingDirectory),
+                    worktreeState: appEnv.worktreeState(for: workingDirectory),
+                    hasGitHubRemote: appEnv.hasGitHubRemote(projectDirectory),
+                    branchPR: branchPR,
+                    onSendToAgent: { action in
+                        guard let prompt = action.prompt else { return }
+                        activeTab = .agent
+                        surfaceCache.sendText(to: agentID, text: prompt + "\r")
+                    }
+                )
+
+                Button {
+                    showWorkstreamInfo.toggle()
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .padding(4)
+                .contentShape(Rectangle())
+                .help(NSLocalizedString("Workstream Info (⌘I)", comment: ""))
             }
+            .fixedSize()
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 2)
+        .padding(.vertical, 3)
         .background(.bar)
         .tourAnchor(.workspaceTabBar)
     }
@@ -739,38 +789,40 @@ struct TerminalContainerView: View {
     }
 
     @ViewBuilder
+    private var workstreamInfoView: some View {
+        WorkstreamInfoView(
+            workstreamID: workstreamID,
+            workstreamName: workstreamName,
+            workingDirectory: workingDirectory,
+            projectName: projectName,
+            projectDirectory: projectDirectory,
+            scriptConfig: scriptConfig,
+            useTmux: useTmux,
+            environmentVars: terminalEnvVars,
+            workstreamCodingCLI: $workstreamCodingCLI,
+            bypassPermissions: $bypassPermissions,
+            runStoppedManually: $runStoppedManually,
+            runStarted: $runStarted,
+            sessionMode: sessionMode,
+            setupRunner: setupRunner,
+            livePermissionControlAvailable: supportsLivePermissionControl,
+            livePermissionHint: livePermissionHint,
+            onRunSetupInTerminal: { runSetupInNewTerminal() },
+            onConfigGenerated: {
+                scriptConfig = ScriptConfig.load(from: workingDirectory, fallbackDirectory: projectDirectory)
+                NotificationCenter.default.post(name: .configGenerated, object: nil)
+            },
+            onChangeLivePermissions: {
+                openLivePermissionControl()
+            }
+        )
+    }
+
+    @ViewBuilder
     private func paneContent(for tab: WorkspaceTab) -> some View {
         switch tab {
         case .info:
-            WorkstreamInfoView(
-                workstreamID: workstreamID,
-                workstreamName: workstreamName,
-                workingDirectory: workingDirectory,
-                projectName: projectName,
-                projectDirectory: projectDirectory,
-                scriptConfig: scriptConfig,
-                useTmux: useTmux,
-                environmentVars: terminalEnvVars,
-                workstreamCodingCLI: $workstreamCodingCLI,
-                bypassPermissions: $bypassPermissions,
-                runStoppedManually: $runStoppedManually,
-                runStarted: $runStarted,
-                sessionMode: sessionMode,
-                setupRunner: setupRunner,
-                livePermissionControlAvailable: supportsLivePermissionControl,
-                livePermissionHint: livePermissionHint,
-                onRunSetupInTerminal: { runSetupInNewTerminal() },
-                onConfigGenerated: {
-                    scriptConfig = ScriptConfig.load(from: workingDirectory, fallbackDirectory: projectDirectory)
-                    if scriptConfig.hasAnyScript, !tabs.contains(.info) {
-                        tabs.insert(.info, at: 0)
-                    }
-                    NotificationCenter.default.post(name: .configGenerated, object: nil)
-                },
-                onChangeLivePermissions: {
-                    openLivePermissionControl()
-                }
-            )
+            workstreamInfoView
         case .agent:
             if sessionMode == .waitingForTools || appEnv.isDetecting {
                 terminalLoadingView(message: "Checking terminal tools...")
@@ -862,7 +914,7 @@ struct TerminalContainerView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .toggleInfo)) { _ in
                 guard isActive else { return }
-                activeTab = .info
+                showWorkstreamInfo.toggle()
             }
             .sheet(isPresented: $showScriptApproval) {
                 ScriptApprovalSheet(
@@ -884,7 +936,7 @@ struct TerminalContainerView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .rerunScript)) { _ in
                 guard isActive else { return }
-                activeTab = .info
+                showWorkstreamInfo = true
             }
             .onReceive(NotificationCenter.default.publisher(for: .toggleTerminal)) { _ in
                 guard isActive else { return }
@@ -946,13 +998,6 @@ struct TerminalContainerView: View {
             surfaceCache.respawnableIDs.insert(agentID)
             if let snapshot = surfaceCache.restoreTabSnapshot(for: workstreamID) {
                 applyTabSnapshot(snapshot)
-                if scriptConfig.hasAnyScript && !tabs.contains(.info) {
-                    tabs.insert(.info, at: 0)
-                }
-            } else {
-                if scriptConfig.hasAnyScript && !tabs.contains(.info) {
-                    tabs.insert(.info, at: 0)
-                }
             }
             splitTab = surfaceCache.splitTabs[workstreamID]
         }
@@ -986,6 +1031,27 @@ struct TerminalContainerView: View {
 
     var body: some View {
         mainContent
+            .sheet(isPresented: $showWorkstreamInfo) {
+                VStack(spacing: 0) {
+                    HStack {
+                        Text(NSLocalizedString("Workstream Info", comment: ""))
+                            .font(.headline)
+                        Spacer()
+                        Button(NSLocalizedString("Done", comment: "")) {
+                            showWorkstreamInfo = false
+                        }
+                        .keyboardShortcut(.defaultAction)
+                    }
+                    .padding()
+                    Divider()
+                    workstreamInfoView
+                }
+                .frame(minWidth: 540, idealWidth: 620, minHeight: 460, idealHeight: 580)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .toggleInfo)) { _ in
+                guard isActive else { return }
+                showWorkstreamInfo.toggle()
+            }
             .onReceive(NotificationCenter.default.publisher(for: .switchByNumber)) { notification in
                 guard isActive else { return }
                 guard let n = notification.object as? Int, n >= 1 else { return }
@@ -1043,21 +1109,6 @@ struct TerminalContainerView: View {
                             }
                             .help("Open on GitHub")
                         }
-
-                        GitHubActionMenu(
-                            runner: quickActionRunner,
-                            ghPath: appEnv.toolStatus.gh.path,
-                            workingDirectory: workingDirectory,
-                            branchName: appEnv.branchName(for: workingDirectory),
-                            worktreeState: appEnv.worktreeState(for: workingDirectory),
-                            hasGitHubRemote: appEnv.hasGitHubRemote(projectDirectory),
-                            branchPR: branchPR,
-                            onSendToAgent: { action in
-                                guard let prompt = action.prompt else { return }
-                                activeTab = .agent
-                                surfaceCache.sendText(to: agentID, text: prompt + "\r")
-                            }
-                        )
                     }
                 }
             }
@@ -1273,10 +1324,11 @@ struct TerminalContainerView: View {
     }
 
     private func applyTabSnapshot(_ snapshot: WorkspaceTabSnapshot) {
-        tabs = snapshot.tabs
+        tabs = snapshot.tabs.filter { $0 != .info }
+        if tabs.isEmpty { tabs = [.agent] }
         terminalCount = snapshot.terminalCount
         browserCount = snapshot.browserCount
-        activeTab = snapshot.activeTab
+        activeTab = (snapshot.activeTab == .info || !tabs.contains(snapshot.activeTab)) ? .agent : snapshot.activeTab
         browserTitles = snapshot.browserTitles
         terminalTitles = snapshot.terminalTitles
         runStarted = snapshot.runStarted
@@ -1576,6 +1628,142 @@ private struct WorkspaceTabDropDelegate: DropDelegate {
     }
 }
 
+struct WorkstreamLifecyclePill: View {
+    let branchPR: GitHubPR?
+    let worktreeState: WorktreeState
+    let isRunningSetup: Bool
+    let directory: String
+    let onOpenPR: () -> Void
+    let onAddressFindings: () -> Void
+
+    var body: some View {
+        if isRunningSetup {
+            HStack(spacing: 5) {
+                ProgressView()
+                    .controlSize(.mini)
+                Text(NSLocalizedString("Running setup...", comment: ""))
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(DesignColor.statusInfo.opacity(0.12))
+            .foregroundStyle(DesignColor.statusInfo)
+            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+        } else if let pr = branchPR {
+            if pr.state == "MERGED" {
+                Button(action: onOpenPR) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "arrow.triangle.merge")
+                            .font(.system(size: 11))
+                        Text(verbatim: "#\(pr.number)")
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .tabularNumbers()
+                        Text(NSLocalizedString("Merged", comment: ""))
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(DesignColor.statusMerged.opacity(0.14))
+                    .foregroundStyle(DesignColor.statusMerged)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .help(pr.title)
+            } else if pr.hasReviewFindings || pr.reviewDecision == "CHANGES_REQUESTED" {
+                Button(action: onAddressFindings) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 11))
+                        Text(verbatim: "#\(pr.number)")
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .tabularNumbers()
+                        Text(NSLocalizedString("Review Findings", comment: ""))
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(DesignColor.statusWarning.opacity(0.14))
+                    .foregroundStyle(DesignColor.statusWarning)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .help(NSLocalizedString("Review findings detected. Click to address with agent.", comment: ""))
+            } else if pr.reviewDecision == "APPROVED" {
+                HStack(spacing: 4) {
+                    Button(action: onOpenPR) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 11))
+                            Text(verbatim: "#\(pr.number)")
+                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                .tabularNumbers()
+                            Text(NSLocalizedString("Approved", comment: ""))
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(DesignColor.statusSuccess.opacity(0.14))
+                        .foregroundStyle(DesignColor.statusSuccess)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .help(pr.title)
+
+                    PRChecksBadge(pr: pr, directory: directory, compact: true)
+                }
+            } else if pr.state == "OPEN" {
+                HStack(spacing: 4) {
+                    Button(action: onOpenPR) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "arrow.triangle.pull")
+                                .font(.system(size: 11))
+                            Text(verbatim: "#\(pr.number)")
+                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                .tabularNumbers()
+                            Text(NSLocalizedString("In Review", comment: ""))
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(DesignColor.statusInfo.opacity(0.12))
+                        .foregroundStyle(DesignColor.statusInfo)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .help(pr.title)
+
+                    PRChecksBadge(pr: pr, directory: directory, compact: true)
+                }
+            }
+        } else if !worktreeState.hasUncommittedChanges && worktreeState.hasBranchCommits {
+            HStack(spacing: 5) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 10, weight: .semibold))
+                Text(NSLocalizedString("Changes Committed", comment: ""))
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(DesignColor.statusInfo.opacity(0.10))
+            .foregroundStyle(DesignColor.statusInfo)
+            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+        } else if worktreeState.hasUncommittedChanges {
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(DesignColor.statusWarning)
+                    .frame(width: 6, height: 6)
+                Text(NSLocalizedString("Agent Working", comment: ""))
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(DesignColor.statusWarning.opacity(0.10))
+            .foregroundStyle(DesignColor.statusWarning)
+            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+        }
+    }
+}
+
 private struct GitHubActionMenu: View {
     @ObservedObject var runner: QuickActionRunner
     let ghPath: String?
@@ -1604,6 +1792,9 @@ private struct GitHubActionMenu: View {
             return nil
         }
         if hasOpenPR {
+            if branchPR?.hasReviewFindings == true {
+                return .quickAction(.addressReviewFindings)
+            }
             if worktreeState.hasUncommittedChanges {
                 return .quickAction(.commit)
             }
@@ -1642,6 +1833,7 @@ private struct GitHubActionMenu: View {
         }
         if let pr = branchPR, hasOpenPR {
             actions.append(.openPR(pr))
+            actions.append(.quickAction(.addressReviewFindings))
             actions.append(.quickAction(.closePR))
         }
 
