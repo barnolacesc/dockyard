@@ -1,6 +1,7 @@
 // ABOUTME: Agent lifecycle state model and on-disk snapshot format.
 // ABOUTME: Written by the dy-agent-state helper, read by AgentStateStore.
 
+import Darwin
 import Foundation
 
 /// The lifecycle state of a workstream's Coding Agent.
@@ -119,7 +120,7 @@ enum AgentSubagentFiles {
 
     static func load(from url: URL) -> AgentSubagentSnapshot? {
         guard isSubagentFile(url),
-              let data = try? Data(contentsOf: url),
+              let data = AgentStateFiles.readBoundedSnapshotData(from: url),
               let snapshot = try? decoder.decode(AgentSubagentSnapshot.self, from: data),
               let canonicalURL = fileURL(
                   for: snapshot.workstreamID,
@@ -198,6 +199,8 @@ enum AgentSubagentFiles {
 /// watches the directory and publishes changes is `AgentStateStore` (added in
 /// the next task).
 enum AgentStateFiles {
+    static let maximumSnapshotBytes = 1_048_576
+
     static var directoryURL: URL {
         AppConstants.cacheDirectory.appendingPathComponent("agent-state", isDirectory: true)
     }
@@ -207,7 +210,11 @@ enum AgentStateFiles {
     }
 
     static func load(for workstreamID: UUID) -> AgentStateSnapshot? {
-        guard let data = try? Data(contentsOf: fileURL(for: workstreamID)) else { return nil }
+        load(from: fileURL(for: workstreamID))
+    }
+
+    static func load(from url: URL) -> AgentStateSnapshot? {
+        guard let data = readBoundedSnapshotData(from: url) else { return nil }
         return try? decoder.decode(AgentStateSnapshot.self, from: data)
     }
 
@@ -230,6 +237,40 @@ enum AgentStateFiles {
     static func remove(for workstreamID: UUID) {
         try? FileManager.default.removeItem(at: fileURL(for: workstreamID))
         AgentSubagentFiles.removeAll(for: workstreamID)
+    }
+
+    static func readBoundedSnapshotData(from url: URL) -> Data? {
+        let descriptor = open(url.path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK)
+        guard descriptor >= 0 else { return nil }
+        defer { close(descriptor) }
+
+        var metadata = stat()
+        guard fstat(descriptor, &metadata) == 0,
+              (metadata.st_mode & S_IFMT) == S_IFREG,
+              metadata.st_size >= 0,
+              metadata.st_size <= off_t(maximumSnapshotBytes)
+        else {
+            return nil
+        }
+
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: false)
+        var data = Data()
+        data.reserveCapacity(Int(metadata.st_size))
+
+        do {
+            while data.count <= maximumSnapshotBytes {
+                let remaining = maximumSnapshotBytes + 1 - data.count
+                let chunkSize = min(64 * 1024, remaining)
+                guard chunkSize > 0 else { break }
+                guard let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty else { break }
+                data.append(chunk)
+            }
+        } catch {
+            return nil
+        }
+
+        guard data.count <= maximumSnapshotBytes else { return nil }
+        return data
     }
 
     private static let encoder: JSONEncoder = {

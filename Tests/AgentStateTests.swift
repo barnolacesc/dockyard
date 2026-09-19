@@ -46,6 +46,59 @@ final class AgentStateTests: XCTestCase {
         XCTAssertFalse(snapshot.chromeActive)
     }
 
+    func testAgentStateFileAtByteCeilingLoads() throws {
+        let directory = temporaryStateDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let file = directory.appendingPathComponent("state.json")
+        let snapshot = makeAgentStateSnapshot()
+        var data = try encodedAgentStateSnapshot(snapshot)
+        XCTAssertLessThan(data.count, AgentStateFiles.maximumSnapshotBytes)
+        data.append(Data(repeating: 0x20, count: AgentStateFiles.maximumSnapshotBytes - data.count))
+        try data.write(to: file)
+
+        XCTAssertEqual(AgentStateFiles.load(from: file), snapshot)
+        XCTAssertEqual(data.count, AgentStateFiles.maximumSnapshotBytes)
+    }
+
+    func testAgentStateFileRejectsOversizedPayloadWithoutModifyingIt() throws {
+        let directory = temporaryStateDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let file = directory.appendingPathComponent("state.json")
+        var data = try encodedAgentStateSnapshot(makeAgentStateSnapshot())
+        data.append(Data(repeating: 0x20, count: AgentStateFiles.maximumSnapshotBytes - data.count + 1))
+        try data.write(to: file)
+
+        XCTAssertNil(AgentStateFiles.load(from: file))
+        XCTAssertEqual(try Data(contentsOf: file), data)
+    }
+
+    func testAgentStateFileRejectsSymbolicLinkAndNonRegularCandidates() throws {
+        let directory = temporaryStateDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let target = directory.appendingPathComponent("target.json")
+        let link = directory.appendingPathComponent("state.json")
+        try encodedAgentStateSnapshot(makeAgentStateSnapshot()).write(to: target)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+
+        XCTAssertNil(AgentStateFiles.load(from: link))
+        XCTAssertNil(AgentStateFiles.load(from: directory))
+    }
+
+    func testAgentStateFileRejectsMalformedPayloadWithoutModifyingIt() throws {
+        let directory = temporaryStateDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let file = directory.appendingPathComponent("state.json")
+        let data = Data("{not-json".utf8)
+        try data.write(to: file)
+
+        XCTAssertNil(AgentStateFiles.load(from: file))
+        XCTAssertEqual(try Data(contentsOf: file), data)
+    }
+
     func testSubagentHookInputDecodesOnlyBoundedLifecycleFields() {
         let data = Data(#"{"hook_event_name":"SubagentStart","agent_id":"agent-123","agent_type":"Explore","last_assistant_message":"ignored"}"#.utf8)
 
@@ -136,6 +189,52 @@ final class AgentStateTests: XCTestCase {
 
         XCTAssertNil(AgentSubagentFiles.load(from: spoofedURL))
     }
+
+    func testSubagentSnapshotRejectsOversizedPayloadWithoutModifyingIt() throws {
+        let directory = temporaryStateDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let snapshot = AgentSubagentSnapshot(
+            workstreamID: UUID(),
+            agentID: "agent-one",
+            agentType: "Explore",
+            updatedAt: Date(timeIntervalSince1970: 1_800_000_000),
+            pid: Int32(getpid())
+        )
+        let file = try XCTUnwrap(AgentSubagentFiles.fileURL(
+            for: snapshot.workstreamID,
+            agentID: snapshot.agentID,
+            directoryURL: directory
+        ))
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        var data = try encoder.encode(snapshot)
+        data.append(Data(repeating: 0x20, count: AgentStateFiles.maximumSnapshotBytes - data.count + 1))
+        try data.write(to: file)
+
+        XCTAssertNil(AgentSubagentFiles.load(from: file))
+        XCTAssertEqual(try Data(contentsOf: file), data)
+    }
+
+    private func temporaryStateDirectory() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("dockyard-agent-state-read-tests-\(UUID().uuidString)")
+    }
+
+    private func makeAgentStateSnapshot() -> AgentStateSnapshot {
+        AgentStateSnapshot(
+            state: .working,
+            updatedAt: Date(timeIntervalSince1970: 1_800_000_000),
+            pid: Int32(getpid()),
+            chromeActive: true
+        )
+    }
+
+    private func encodedAgentStateSnapshot(_ snapshot: AgentStateSnapshot) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(snapshot)
+    }
 }
 
 @MainActor
@@ -225,6 +324,29 @@ final class AgentStateStoreTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
         XCTAssertEqual(store.agentState(for: id), .working)
+    }
+
+    func testInitialScanIgnoresOversizedAgentStateFile() throws {
+        let id = UUID()
+        try writeSnapshot(.working, pid: Int32(getpid()), for: id)
+        let file = tempDir.appendingPathComponent("\(id.uuidString.lowercased()).json")
+        let handle = try FileHandle(forWritingTo: file)
+        defer { try? handle.close() }
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data(
+            repeating: 0x20,
+            count: AgentStateFiles.maximumSnapshotBytes + 1
+        ))
+
+        let store = AgentStateStore(directoryURL: tempDir)
+        store.refresh()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertNil(store.agentState(for: id))
+        XCTAssertGreaterThan(
+            try Data(contentsOf: file).count,
+            AgentStateFiles.maximumSnapshotBytes
+        )
     }
 
     func testReturnsUnknownForStalePid() throws {
