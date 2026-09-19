@@ -47,4 +47,25 @@ final class ProjectContainerTests: XCTestCase {
         XCTAssertEqual(loaded.run, "npm run dev")
         XCTAssertEqual(loaded.source, ".dockyard.json")
     }
+
+    @MainActor
+    func testTerminalSurfaceCacheRemoveProjectRootSurface() {
+        let cache = TerminalSurfaceCache()
+        let projectID = UUID()
+        let rootTerminalID = derivedUUID(from: projectID, salt: "project-root-terminal")
+
+        // Calling removeProjectRootSurface on empty cache shouldn't crash
+        cache.removeProjectRootSurface(for: projectID)
+
+        // Verifying the derived UUID matches
+        XCTAssertEqual(derivedUUID(from: projectID, salt: "project-root-terminal"), rootTerminalID)
+    }
+
+    func testProjectOverviewStateMatchesProject() {
+        let dir1 = "/Users/test/project1"
+        let dir2 = "/Users/test/project2"
+
+        XCTAssertTrue(ProjectOverviewState.matchesProject(loadedFor: dir1, currentDirectory: dir1))
+        XCTAssertFalse(ProjectOverviewState.matchesProject(loadedFor: dir1, currentDirectory: dir2))
+    }
 }

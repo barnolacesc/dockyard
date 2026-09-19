@@ -23,6 +23,7 @@ struct ProjectOverviewView: View {
 
     @State private var scriptConfig: ScriptConfig = .empty
     @State private var configDraft: DockyardConfigDraft?
+    @State private var configDraftDirectory: String?
     @State private var existingConfigText: String?
     @State private var writeError: String?
     @State private var isEditingConfig = false
@@ -366,6 +367,11 @@ struct ProjectOverviewView: View {
             docFiles = []
             selectedDoc = nil
             isEditingConfig = false
+            isDetectingStack = false
+            showGenerateSheet = false
+            configDraft = nil
+            configDraftDirectory = nil
+            existingConfigText = nil
             reloadProjectOverview()
         }
         .sheet(isPresented: $showGenerateSheet) {
@@ -650,7 +656,9 @@ struct ProjectOverviewView: View {
             let path = URL(fileURLWithPath: dir).appendingPathComponent(".dockyard.json").path
             let existing = try? String(contentsOfFile: path, encoding: .utf8)
             await MainActor.run {
+                guard ProjectOverviewState.matchesProject(loadedFor: dir, currentDirectory: project.directory) else { return }
                 configDraft = draft
+                configDraftDirectory = dir
                 existingConfigText = existing
                 isDetectingStack = false
                 showGenerateSheet = true
@@ -703,13 +711,17 @@ struct ProjectOverviewView: View {
     }
 
     private func confirmWrite() {
-        guard let draft = configDraft, !draft.isEmpty else {
+        guard let draft = configDraft,
+              let configDraftDirectory,
+              ProjectOverviewState.matchesProject(loadedFor: configDraftDirectory, currentDirectory: project.directory),
+              !draft.isEmpty
+        else {
             showGenerateSheet = false
             return
         }
         do {
-            try DockyardConfigWriter.write(draft, to: project.directory)
-            ScriptTrustStore.trust(projectDirectory: project.directory, setup: draft.setup, run: draft.run, teardown: draft.teardown)
+            try DockyardConfigWriter.write(draft, to: configDraftDirectory)
+            ScriptTrustStore.trust(projectDirectory: configDraftDirectory, setup: draft.setup, run: draft.run, teardown: draft.teardown)
             writeError = nil
             showGenerateSheet = false
             loadScriptConfig()

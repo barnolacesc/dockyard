@@ -379,45 +379,17 @@ struct ContentView: View {
     }
 
     var body: some View {
+        applyAlerts(to: mainContent)
+    }
+
+    private var mainContent: some View {
         navigationView
-            .overlay(alignment: .bottomTrailing) {
-                if appUpdater.shouldPromptUpdateReady {
-                    UpdateInstalledNotice(
-                        onRestart: { appUpdater.restartToApplyUpdate() },
-                        onDismiss: { appUpdater.shouldPromptUpdateReady = false }
-                    )
-                    .padding(16)
-                    .transition(reduceMotion ? .identity : .move(edge: .bottom).combined(with: .opacity))
-                } else if appUpdater.shouldPromptUpdate {
-                    UpdateAvailableNotice(
-                        commitsAhead: appUpdater.commitsAhead,
-                        onUpdate: {
-                            appUpdater.shouldPromptUpdate = false
-                            appUpdater.applyUpdate()
-                        },
-                        onDismiss: { appUpdater.shouldPromptUpdate = false }
-                    )
-                    .padding(16)
-                    .transition(reduceMotion ? .identity : .move(edge: .bottom).combined(with: .opacity))
-                }
-            }
+            .overlay(alignment: .bottomTrailing) { updateNotices }
             .animation(reduceMotion ? nil : DesignMotion.interaction, value: appUpdater.shouldPromptUpdate)
             .animation(reduceMotion ? nil : DesignMotion.interaction, value: appUpdater.shouldPromptUpdateReady)
             .shortcutHintOverlay()
             .tourOverlay()
-            .sheet(isPresented: $showWhatsNew) {
-                WhatsNewView(
-                    releases: whatsNewReleases,
-                    onShowTour: { flowID in
-                        showWhatsNew = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            guard let flow = TourFlowCatalog.make(flowID: flowID) else { return }
-                            TourController.shared.start(flow)
-                        }
-                    },
-                    onClose: { showWhatsNew = false }
-                )
-            }
+            .sheet(isPresented: $showWhatsNew) { whatsNewSheet }
             .onReceive(NotificationCenter.default.publisher(for: .openWhatsNew)) { _ in
                 whatsNewReleases = WhatsNewCatalog.releases
                 showWhatsNew = true
@@ -432,42 +404,120 @@ struct ContentView: View {
                 toggleSidebarWidth()
             }
             .onReceive(NotificationCenter.default.publisher(for: .openHelp)) { _ in
-                if selection == .help {
-                    selection = selectionBeforeSettings
-                } else {
-                    selectionBeforeSettings = selection
-                    selection = .help
-                }
+                handleOpenHelp()
             }
             .onReceive(NotificationCenter.default.publisher(for: .openSettings)) { _ in
-                if selection == .settings {
-                    selection = selectionBeforeSettings
-                } else {
-                    selection = .settings
-                }
+                handleOpenSettings()
             }
             .onReceive(NotificationCenter.default.publisher(for: .clearProjects)) { _ in
-                for project in projects {
-                    for ws in project.workstreams {
-                        surfaceCache.removeWorkstreamSurfaces(for: ws.id)
-                    }
-                }
-                projects.removeAll()
-                selectionBeforeSettings = nil
-                selection = .settings
-                ProjectStore.save([])
+                handleClearProjects()
             }
             .onReceive(NotificationCenter.default.publisher(for: .openExternalTerminal)) { _ in
                 openExternalTerminal()
             }
-            .onChange(of: projectList.items) { _, newValue in
-                // Debounce saves to avoid rapid I/O from activity updates
-                saveWork?.cancel()
-                let work = DispatchWorkItem { ProjectStore.save(newValue) }
-                saveWork = work
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: work)
-                syncSelectedUsageProvider()
+            .onReceive(NotificationCenter.default.publisher(for: .terminalTabExited)) { notification in
+                if let exitedSurfaceID = notification.object as? UUID {
+                    handleTerminalTabExited(exitedSurfaceID)
+                }
             }
+            .onChange(of: projectList.items) { _, newValue in
+                handleProjectsChanged(newValue)
+            }
+    }
+
+    @ViewBuilder
+    private var updateNotices: some View {
+        if appUpdater.shouldPromptUpdateReady {
+            UpdateInstalledNotice(
+                onRestart: { appUpdater.restartToApplyUpdate() },
+                onDismiss: { appUpdater.shouldPromptUpdateReady = false }
+            )
+            .padding(16)
+            .transition(reduceMotion ? .identity : .move(edge: .bottom).combined(with: .opacity))
+        } else if appUpdater.shouldPromptUpdate {
+            UpdateAvailableNotice(
+                commitsAhead: appUpdater.commitsAhead,
+                onUpdate: {
+                    appUpdater.shouldPromptUpdate = false
+                    appUpdater.applyUpdate()
+                },
+                onDismiss: { appUpdater.shouldPromptUpdate = false }
+            )
+            .padding(16)
+            .transition(reduceMotion ? .identity : .move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+
+    private var whatsNewSheet: some View {
+        WhatsNewView(
+            releases: whatsNewReleases,
+            onShowTour: { flowID in
+                showWhatsNew = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    guard let flow = TourFlowCatalog.make(flowID: flowID) else { return }
+                    TourController.shared.start(flow)
+                }
+            },
+            onClose: { showWhatsNew = false }
+        )
+    }
+
+    private func handleOpenHelp() {
+        if selection == .help {
+            selection = selectionBeforeSettings
+        } else {
+            selectionBeforeSettings = selection
+            selection = .help
+        }
+    }
+
+    private func handleOpenSettings() {
+        if selection == .settings {
+            selection = selectionBeforeSettings
+        } else {
+            selection = .settings
+        }
+    }
+
+    private func handleClearProjects() {
+        for project in projects {
+            for ws in project.workstreams {
+                surfaceCache.removeWorkstreamSurfaces(for: ws.id)
+            }
+            surfaceCache.removeProjectRootSurface(for: project.id)
+        }
+        openProjectTerminalIDs.removeAll()
+        projectActiveTabs.removeAll()
+        projects.removeAll()
+        selectionBeforeSettings = nil
+        selection = .settings
+        ProjectStore.save([])
+    }
+
+    private func handleTerminalTabExited(_ exitedSurfaceID: UUID) {
+        for project in projects {
+            let rootTerminalID = derivedUUID(from: project.id, salt: "project-root-terminal")
+            if rootTerminalID == exitedSurfaceID {
+                openProjectTerminalIDs.remove(project.id)
+                projectActiveTabs[project.id] = .overview
+                break
+            }
+        }
+    }
+
+    private func handleProjectsChanged(_ newValue: [Project]) {
+        let projectIDs = Set(newValue.map(\.id))
+        openProjectTerminalIDs = openProjectTerminalIDs.intersection(projectIDs)
+        projectActiveTabs = projectActiveTabs.filter { projectIDs.contains($0.key) }
+        saveWork?.cancel()
+        let work = DispatchWorkItem { ProjectStore.save(newValue) }
+        saveWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: work)
+        syncSelectedUsageProvider()
+    }
+
+    private func applyAlerts<Content: View>(to content: Content) -> some View {
+        content
             .alert(
                 "Remove Workstream",
                 isPresented: Binding(
@@ -526,6 +576,9 @@ struct ContentView: View {
                             surfaceCache.removeWorkstreamSurfaces(for: ws.id)
                         }
                     }
+                    surfaceCache.removeProjectRootSurface(for: id)
+                    openProjectTerminalIDs.remove(id)
+                    projectActiveTabs.removeValue(forKey: id)
                 }
                 projects.removeAll { missing.contains($0.id) }
                 if let sel = selection, case let .project(pid) = sel, missing.contains(pid) {

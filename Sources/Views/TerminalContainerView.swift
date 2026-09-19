@@ -2422,6 +2422,11 @@ final class TerminalSurfaceCache: ObservableObject {
         }
     }
 
+    func removeProjectRootSurface(for projectID: UUID) {
+        let rootTerminalID = derivedUUID(from: projectID, salt: "project-root-terminal")
+        removeSurface(for: rootTerminalID)
+    }
+
     private func handleSurfaceClosed(_ closedView: TerminalView) {
         guard let (id, _) = surfaces.first(where: { $0.value === closedView }) else { return }
 

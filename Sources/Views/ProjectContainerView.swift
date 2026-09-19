@@ -76,8 +76,7 @@ struct ProjectContainerView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .closeTerminal)) { _ in
             if activeTab == .terminal {
-                isTerminalOpen = false
-                activeTab = .overview
+                closeTerminal()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .prevTab)) { _ in
@@ -88,8 +87,7 @@ struct ProjectContainerView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .terminalTabExited)) { notification in
             guard notification.object as? UUID == surfaceID else { return }
-            isTerminalOpen = false
-            activeTab = .overview
+            closeTerminal()
         }
     }
 
@@ -111,10 +109,7 @@ struct ProjectContainerView: View {
                     shortcut: "2",
                     isActive: activeTab == .terminal,
                     onSelect: { activeTab = .terminal },
-                    onClose: {
-                        isTerminalOpen = false
-                        activeTab = .overview
-                    }
+                    onClose: { closeTerminal() }
                 )
             }
 
@@ -133,6 +128,12 @@ struct ProjectContainerView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 2)
         .background(.bar)
+    }
+
+    private func closeTerminal() {
+        isTerminalOpen = false
+        activeTab = .overview
+        surfaceCache.removeProjectRootSurface(for: project.id)
     }
 
     private func cycleTab() {
