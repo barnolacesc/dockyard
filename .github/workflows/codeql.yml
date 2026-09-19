@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Cheap, interpreted-language scans: workflow files and editor/website JS.
+  # Cheap, interpreted-language scans: workflow files and website JS.
   # These run on every push, PR, and the weekly schedule.
   analyze-quick:
     name: Analyze (${{ matrix.language }})

@@ -13,20 +13,12 @@ APP_PATH="$BUILD_DIR/Build/Products/Debug/$APP_NAME.app"
 SPM_CACHE="$HOME/Library/Caches/dockyard/spm"
 BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 GHOSTTY_RESOURCES="ghostty/zig-out/share"
-MONACO_OUTPUT="Resources/MonacoEditor/index.html"
 
 ensure_ghostty_resources() {
   if [ ! -d "$GHOSTTY_RESOURCES/terminfo" ] || [ ! -d "$GHOSTTY_RESOURCES/ghostty" ]; then
     echo "error: Ghostty resources not found at $GHOSTTY_RESOURCES/"
     echo "       Build the xcframework first: cd ghostty && zig build"
     exit 1
-  fi
-}
-
-ensure_monaco_editor() {
-  if [ ! -f "$MONACO_OUTPUT" ]; then
-    echo "info: Monaco editor not built, running scripts/build-editor.sh..."
-    bash scripts/build-editor.sh
   fi
 }
 
@@ -39,7 +31,6 @@ ensure_appcommit() {
 case "${1:-build}" in
   build)
     ensure_ghostty_resources
-    ensure_monaco_editor
     ensure_appcommit
     [ -x "$(command -v xcodegen)" ] && xcodegen generate
     xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Debug \
@@ -74,7 +65,6 @@ case "${1:-build}" in
   br)
     shift 2>/dev/null || true
     ensure_ghostty_resources
-    ensure_monaco_editor
     ensure_appcommit
     [ -x "$(command -v xcodegen)" ] && xcodegen generate
     xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Debug \
@@ -105,7 +95,6 @@ case "${1:-build}" in
     ;;
   test)
     ensure_ghostty_resources
-    ensure_monaco_editor
     ensure_appcommit
     xcodegen generate
     xcodebuild -project "$PROJECT" -scheme "$TEST_SCHEME" -configuration Debug \
@@ -116,7 +105,6 @@ case "${1:-build}" in
     RELEASE_DIR="build/release-local/derived"
     COMMIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "dev")
     ensure_ghostty_resources
-    ensure_monaco_editor
     ensure_appcommit
     xcodegen generate
     xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Release \

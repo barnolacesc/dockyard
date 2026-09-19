@@ -163,10 +163,6 @@ other = "Canvia de via de treball (globalment)"
 other = "Cicla projectes"
 [sc_editor]
 other = "Nou Editor"
-[sc_save]
-other = "Desa (Editor)"
-[sc_save_as]
-other = "Desa com a (Editor)"
 [sc_ext_browser]
 other = "Browser extern"
 [sc_ext_terminal]

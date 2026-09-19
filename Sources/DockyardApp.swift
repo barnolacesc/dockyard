@@ -190,8 +190,6 @@ struct DockyardApp: App {
     @StateObject private var updater = Updater()
     @StateObject private var shortcutHints = ShortcutHintController.shared
     @StateObject private var tourController = TourController.shared
-    @AppStorage("dockyard.editorTabActive") private var isEditorActive = false
-    @AppStorage("dockyard.editorFileDirty") private var isEditorDirty = false
     @State private var pendingURLDirectory: String?
 
     init() {
@@ -246,6 +244,9 @@ struct DockyardApp: App {
                         // Telemetry was removed; clear identifiers persisted by older versions.
                         UserDefaults.standard.removeObject(forKey: "dockyard.telemetryEnabled")
                         UserDefaults.standard.removeObject(forKey: "dockyard.installationID")
+                        UserDefaults.standard.removeObject(forKey: "dockyard.editorTabActive")
+                        UserDefaults.standard.removeObject(forKey: "dockyard.editorFileDirty")
+                        UserDefaults.standard.removeObject(forKey: "dockyard.useTerminalEditor")
                         if let dir = Self.launchDirectory {
                             DispatchQueue.main.async {
                                 NotificationCenter.default.post(name: .openDirectory, object: dir)
@@ -299,20 +300,6 @@ struct DockyardApp: App {
                     NotificationCenter.default.post(name: .addProject, object: nil)
                 }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
-            }
-            CommandGroup(replacing: .saveItem) {
-                if isEditorActive {
-                    Button("Save") {
-                        NotificationCenter.default.post(name: .saveEditor, object: nil)
-                    }
-                    .keyboardShortcut("s", modifiers: .command)
-                    .disabled(!isEditorDirty)
-
-                    Button("Save As...") {
-                        NotificationCenter.default.post(name: .saveEditorAs, object: nil)
-                    }
-                    .keyboardShortcut("s", modifiers: [.command, .shift])
-                }
             }
             // Cmd+,: toggle settings
             CommandGroup(after: .appSettings) {
@@ -373,16 +360,6 @@ struct DockyardApp: App {
                     NotificationCenter.default.post(name: .toggleBrowser, object: nil)
                 }
                 .keyboardShortcut("b", modifiers: .command)
-
-                Button("Split Browser") {
-                    NotificationCenter.default.post(name: .splitBrowser, object: nil)
-                }
-                .keyboardShortcut("b", modifiers: [.command, .shift])
-
-                Button("New Editor") {
-                    NotificationCenter.default.post(name: .toggleEditor, object: nil)
-                }
-                .keyboardShortcut("o", modifiers: .command)
 
                 Button("Split Browser") {
                     NotificationCenter.default.post(name: .splitBrowser, object: nil)
