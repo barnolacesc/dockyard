@@ -65,7 +65,6 @@ case "${1:-build}" in
   br)
     shift 2>/dev/null || true
     ensure_ghostty_resources
-    ensure_monaco_editor
     ensure_appcommit
     [ -x "$(command -v xcodegen)" ] && xcodegen generate
     xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Debug \
