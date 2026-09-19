@@ -368,6 +368,7 @@
 "Push" = "Push";
 "Create PR" = "Create PR";
 "Close PR" = "Close PR";
+"Address Review Findings" = "Address Review Findings";
 "Open #%d" = "Open #%d";
 "This branch has been merged." = "This branch has been merged.";
 "gh CLI is not installed." = "gh CLI is not installed.";
@@ -378,6 +379,17 @@
 "No GitHub remote found for this project." = "No GitHub remote found for this project.";
 "Quick action debug" = "Quick action debug";
 "Show a debug panel with command output from quick actions." = "Show a debug panel with command output from quick actions.";
+
+/* Workstream Lifecycle & Top Bar */
+"Agent Working" = "Agent Working";
+"Changes Committed" = "Changes Committed";
+"Review Findings" = "Review Findings";
+"In Review" = "In Review";
+"Approved" = "Approved";
+"Workstream Info" = "Workstream Info";
+"Addressing review findings..." = "Addressing review findings...";
+"Review findings detected. Click to address with agent." = "Review findings detected. Click to address with agent.";
+"Open localhost:%d in browser (⌘B)" = "Open localhost:%d in browser (⌘B)";
 
 /* Workstream Info Git Stats */
 "Ahead" = "Ahead";
@@ -534,7 +546,7 @@
 "Create a workstream" = "Create a workstream";
 "Hover over your project and click its + button. A workstream is an isolated git worktree with its own branch, terminal, and Coding Agent." = "Hover over your project and click its + button. A workstream is an isolated git worktree with its own branch, terminal, and Coding Agent.";
 "Your workspace" = "Your workspace";
-"Every workstream has an Info tab and a Coding Agent tab. Add terminals, browsers, and editors on demand — they all live here." = "Every workstream has an Info tab and a Coding Agent tab. Add terminals, browsers, and editors on demand — they all live here.";
+"Every workstream has a Coding Agent tab and an integrated top bar. Add terminals, browsers, and editors on demand — they all live here." = "Every workstream has a Coding Agent tab and an integrated top bar. Add terminals, browsers, and editors on demand — they all live here.";
 "Choose your Coding Agent" = "Choose your Coding Agent";
 "Pick Claude Code or Codex for this workstream, or keep the default from Settings." = "Pick Claude Code or Codex for this workstream, or keep the default from Settings.";
 "Prompt the agent" = "Prompt the agent";

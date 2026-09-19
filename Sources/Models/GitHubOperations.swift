@@ -25,6 +25,7 @@ struct GitHubPR: Equatable, Sendable {
     var reviewDecision: String? = nil
     var mergeStateStatus: String? = nil
     var fetchedAt: Date? = nil
+    var hasReviewFindings: Bool = false
 }
 
 enum GitHubPRLookupResult: Equatable, Sendable {
@@ -202,7 +203,7 @@ let defaultGitHubReadProcessFactory: GitHubReadProcessFactory = {
 }
 
 enum GitHubOperations {
-    static let prFields = "number,title,state,headRefName,url,headRefOid,statusCheckRollup,isDraft,reviewDecision,mergeStateStatus"
+    static let prFields = "number,title,state,headRefName,url,headRefOid,statusCheckRollup,isDraft,reviewDecision,mergeStateStatus,latestReviews"
     static let probeTimeout: TimeInterval = 10
     static let probeTerminationGrace: TimeInterval = 1
     static let maximumProbeOutputBytes = 256 * 1024

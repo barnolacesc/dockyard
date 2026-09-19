@@ -97,9 +97,9 @@ struct HelpView: View {
                     }
 
                     Section {
-                        ShortcutRow(keys: "1", description: "Info")
-                        ShortcutRow(keys: "2", description: "Coding Agent")
-                        ShortcutRow(keys: "3-9", description: "Switch tab")
+                        ShortcutRow(keys: "1", description: "Coding Agent")
+                        ShortcutRow(keys: "2-9", description: "Switch tab")
+                        ShortcutRow(keys: "I", description: "Workstream Info")
                         ShortcutRow(keys: "Return", description: "Focus Coding Agent")
                         ShortcutRow(keys: "Return", shift: true, description: "Start/Rerun script")
                         ShortcutRow(keys: "Return", option: true, description: "Split Agent pane")
@@ -115,7 +115,6 @@ struct HelpView: View {
                         ShortcutRow(keys: "R", shift: true, description: "Hard reload browser")
                         ShortcutRow(keys: "L", description: "Address bar (browser)")
                         ShortcutRow(keys: "0", description: "Back to project")
-                        ShortcutRow(keys: "1-9", description: "Switch tab")
                         ShortcutRow(keys: "[", shift: true, description: "Previous tab")
                         ShortcutRow(keys: "]", shift: true, description: "Next tab")
                     } header: {

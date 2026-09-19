@@ -346,6 +346,11 @@ struct DockyardApp: App {
                 }
                 .keyboardShortcut(.return, modifiers: .command)
 
+                Button("Workstream Info") {
+                    NotificationCenter.default.post(name: .toggleInfo, object: nil)
+                }
+                .keyboardShortcut("i", modifiers: .command)
+
                 Button("New Terminal") {
                     NotificationCenter.default.post(name: .toggleTerminal, object: nil)
                 }
