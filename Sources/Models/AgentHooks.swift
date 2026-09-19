@@ -43,7 +43,12 @@ enum AgentHooks {
 
     /// Returns hook invocation data for the given CLI, or nil if the CLI does
     /// not support hooks in a way we can target.
-    static func hookInvocation(for cli: CodingCLI, workstreamID: UUID, helperPath: String) throws -> AgentHookInvocation? {
+    static func hookInvocation(
+        for cli: CodingCLI,
+        workstreamID: UUID,
+        helperPath: String,
+        workingDirectory: String? = nil
+    ) throws -> AgentHookInvocation? {
         switch cli.capabilities.stateReportingStrategy {
         case .claudeHooks:
             let url = try writeClaudeSettings(workstreamID: workstreamID, helperPath: helperPath)
@@ -54,8 +59,143 @@ enum AgentHooks {
             )
         case .codexHooks:
             return codexHookInvocation(workstreamID: workstreamID, helperPath: helperPath)
+        case .agyHooks:
+            guard let workingDirectory else { return nil }
+            let url = try writeAgyHooks(workingDirectory: workingDirectory, workstreamID: workstreamID, helperPath: helperPath)
+            return AgentHookInvocation(
+                generatedConfigURL: url,
+                commandConfigOverrides: [],
+                commandFlags: []
+            )
         case .unavailable:
             return nil
+        }
+    }
+
+    /// Writes `<workingDirectory>/.agents/hooks.json` for the workstream,
+    /// embedding the bundled helper's absolute path and the workstream UUID.
+    /// Preserves any existing non-dockyard hooks. Returns the file URL.
+    @discardableResult
+    static func writeAgyHooks(workingDirectory: String, workstreamID: UUID, helperPath: String) throws -> URL {
+        let id = workstreamID.uuidString.lowercased()
+        let quotedHelper = shellSingleQuote(helperPath)
+
+        let agentsDir = URL(fileURLWithPath: workingDirectory).appendingPathComponent(".agents", isDirectory: true)
+        try FileManager.default.createDirectory(at: agentsDir, withIntermediateDirectories: true)
+        let hooksURL = agentsDir.appendingPathComponent("hooks.json")
+
+        var existingHooks: [String: Any] = [:]
+        if let data = try? Data(contentsOf: hooksURL),
+           let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        {
+            existingHooks = json
+        }
+
+        let dockyardHooks: [String: Any] = [
+            "PreInvocation": [
+                [
+                    "type": "command",
+                    "command": "\(quotedHelper) --workstream-id \(id) --state working",
+                ],
+            ],
+            "PreToolUse": [
+                [
+                    "matcher": "ask_question",
+                    "hooks": [
+                        [
+                            "type": "command",
+                            "command": "\(quotedHelper) --workstream-id \(id) --state waiting",
+                        ],
+                    ],
+                ],
+            ],
+            "PostToolUse": [
+                [
+                    "matcher": "ask_question",
+                    "hooks": [
+                        [
+                            "type": "command",
+                            "command": "\(quotedHelper) --workstream-id \(id) --state working",
+                        ],
+                    ],
+                ],
+            ],
+            "Stop": [
+                [
+                    "type": "command",
+                    "command": "\(quotedHelper) --workstream-id \(id) --state idle",
+                ],
+            ],
+        ]
+
+        existingHooks["dockyard-state"] = dockyardHooks
+
+        let data = try JSONSerialization.data(withJSONObject: existingHooks, options: [.prettyPrinted, .sortedKeys])
+        try FilePersistence.writeAtomically(data, to: hooksURL)
+
+        excludeFromGitIfPossible(workingDirectory: workingDirectory, relativePath: ".agents/hooks.json")
+
+        return hooksURL
+    }
+
+    /// Removes the `dockyard-state` hook entry from `<workingDirectory>/.agents/hooks.json`.
+    /// If no other hooks remain, deletes `hooks.json`.
+    static func removeAgyHooks(workingDirectory: String) {
+        let hooksURL = URL(fileURLWithPath: workingDirectory)
+            .appendingPathComponent(".agents", isDirectory: true)
+            .appendingPathComponent("hooks.json")
+        guard FileManager.default.fileExists(atPath: hooksURL.path),
+              let data = try? Data(contentsOf: hooksURL),
+              var json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        else { return }
+
+        json.removeValue(forKey: "dockyard-state")
+        if json.isEmpty {
+            try? FileManager.default.removeItem(at: hooksURL)
+        } else if let updatedData = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]) {
+            try? FilePersistence.writeAtomically(updatedData, to: hooksURL)
+        }
+    }
+
+    static func excludeFromGitIfPossible(workingDirectory: String, relativePath: String) {
+        guard let gitPath = CommandLineTools.path(for: "git") else { return }
+        let process = Process()
+        let pipe = Pipe()
+        process.executableURL = URL(fileURLWithPath: gitPath)
+        process.arguments = ["rev-parse", "--git-path", "info/exclude"]
+        process.currentDirectoryURL = URL(fileURLWithPath: workingDirectory)
+        process.standardOutput = pipe
+        do {
+            try process.run()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else { return }
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            guard let rawPath = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !rawPath.isEmpty else { return }
+
+            let excludeURL: URL
+            if rawPath.hasPrefix("/") {
+                excludeURL = URL(fileURLWithPath: rawPath)
+            } else {
+                excludeURL = URL(fileURLWithPath: workingDirectory).appendingPathComponent(rawPath)
+            }
+
+            var content = ""
+            if let existingData = try? Data(contentsOf: excludeURL),
+               let existing = String(data: existingData, encoding: .utf8)
+            {
+                content = existing
+            }
+
+            let lines = content.components(separatedBy: .newlines)
+            if !lines.contains(where: { $0.trimmingCharacters(in: .whitespaces) == relativePath }) {
+                let prefix = content.isEmpty || content.hasSuffix("\n") ? "" : "\n"
+                let updated = content + prefix + "\(relativePath)\n"
+                try FileManager.default.createDirectory(at: excludeURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try FilePersistence.writeAtomically(Data(updated.utf8), to: excludeURL)
+            }
+        } catch {
+            // Best effort; ignore failure if git exclude cannot be updated.
         }
     }
 

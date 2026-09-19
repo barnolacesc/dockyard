@@ -16,11 +16,97 @@ final class AgentHooksTests: XCTestCase {
         super.tearDown()
     }
 
-    func testHookInvocationReturnsNilForOpenCodeAndAgy() throws {
+    func testHookInvocationReturnsNilForOpenCode() throws {
         let helperPath = "/Applications/Dockyard.app/Contents/Helpers/dy-agent-state"
 
         XCTAssertNil(try AgentHooks.hookInvocation(for: .opencode, workstreamID: UUID(), helperPath: helperPath))
+    }
+
+    func testHookInvocationForAgyWithoutWorkingDirectoryReturnsNil() throws {
+        let helperPath = "/Applications/Dockyard.app/Contents/Helpers/dy-agent-state"
+
         XCTAssertNil(try AgentHooks.hookInvocation(for: .agy, workstreamID: UUID(), helperPath: helperPath))
+    }
+
+    func testHookInvocationForAgyWithWorkingDirectoryWritesHooks() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let id = try XCTUnwrap(UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC"))
+        let helperPath = "/Applications/Dockyard's Debug.app/Contents/Helpers/dy-agent-state"
+        let invocation = try XCTUnwrap(AgentHooks.hookInvocation(
+            for: .agy,
+            workstreamID: id,
+            helperPath: helperPath,
+            workingDirectory: tempDir.path
+        ))
+
+        let expectedURL = tempDir.appendingPathComponent(".agents/hooks.json")
+        XCTAssertEqual(invocation.generatedConfigURL, expectedURL)
+        XCTAssertEqual(invocation.commandConfigOverrides, [])
+        XCTAssertEqual(invocation.commandFlags, [])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedURL.path))
+
+        let data = try Data(contentsOf: expectedURL)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let dockyardState = try XCTUnwrap(json["dockyard-state"] as? [String: Any])
+
+        let preInvocation = try XCTUnwrap((dockyardState["PreInvocation"] as? [[String: Any]])?.first)
+        XCTAssertEqual(preInvocation["type"] as? String, "command")
+        let preInvocationCmd = try XCTUnwrap(preInvocation["command"] as? String)
+        XCTAssertTrue(preInvocationCmd.contains("'/Applications/Dockyard'\\''s Debug.app/Contents/Helpers/dy-agent-state'"))
+        XCTAssertTrue(preInvocationCmd.contains("--workstream-id aabbccdd-1122-3344-5566-778899aabbcc"))
+        XCTAssertTrue(preInvocationCmd.contains("--state working"))
+
+        let preToolUse = try XCTUnwrap((dockyardState["PreToolUse"] as? [[String: Any]])?.first)
+        XCTAssertEqual(preToolUse["matcher"] as? String, "ask_question")
+        let preToolHook = try XCTUnwrap((preToolUse["hooks"] as? [[String: Any]])?.first)
+        let preToolCmd = try XCTUnwrap(preToolHook["command"] as? String)
+        XCTAssertTrue(preToolCmd.contains("--state waiting"))
+
+        let postToolUse = try XCTUnwrap((dockyardState["PostToolUse"] as? [[String: Any]])?.first)
+        XCTAssertEqual(postToolUse["matcher"] as? String, "ask_question")
+        let postToolHook = try XCTUnwrap((postToolUse["hooks"] as? [[String: Any]])?.first)
+        let postToolCmd = try XCTUnwrap(postToolHook["command"] as? String)
+        XCTAssertTrue(postToolCmd.contains("--state working"))
+
+        let stop = try XCTUnwrap((dockyardState["Stop"] as? [[String: Any]])?.first)
+        XCTAssertEqual(stop["type"] as? String, "command")
+        let stopCmd = try XCTUnwrap(stop["command"] as? String)
+        XCTAssertTrue(stopCmd.contains("--state idle"))
+    }
+
+    func testWriteAgyHooksPreservesExistingHooksAndRemoveCleansUp() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir.appendingPathComponent(".agents"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let hooksURL = tempDir.appendingPathComponent(".agents/hooks.json")
+        let customHooks: [String: Any] = [
+            "custom-linter": [
+                "PostToolUse": [
+                    ["matcher": "write_to_file", "hooks": [["type": "command", "command": "./lint.sh"]]],
+                ],
+            ],
+        ]
+        let customData = try JSONSerialization.data(withJSONObject: customHooks)
+        try customData.write(to: hooksURL)
+
+        let id = UUID()
+        try AgentHooks.writeAgyHooks(workingDirectory: tempDir.path, workstreamID: id, helperPath: "/path/to/dy-agent-state")
+
+        let mergedData = try Data(contentsOf: hooksURL)
+        let mergedJson = try XCTUnwrap(JSONSerialization.jsonObject(with: mergedData) as? [String: Any])
+        XCTAssertNotNil(mergedJson["custom-linter"])
+        XCTAssertNotNil(mergedJson["dockyard-state"])
+
+        AgentHooks.removeAgyHooks(workingDirectory: tempDir.path)
+
+        let cleanedData = try Data(contentsOf: hooksURL)
+        let cleanedJson = try XCTUnwrap(JSONSerialization.jsonObject(with: cleanedData) as? [String: Any])
+        XCTAssertNotNil(cleanedJson["custom-linter"])
+        XCTAssertNil(cleanedJson["dockyard-state"])
     }
 
     func testOpenCodeAutoRenameConfigurationReferencesGeneratedInstructionFile() throws {

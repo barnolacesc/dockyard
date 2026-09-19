@@ -67,11 +67,12 @@ if let eventString = value(for: "--subagent-event") {
 guard requestedState != nil || requestedChromeActive != nil || requestedSubagentEvent != nil else {
     usage()
 }
+
 guard requestedSubagentEvent == nil || (requestedState == nil && requestedChromeActive == nil) else { usage() }
 
-// Record the parent agent process pid rather than our own. The helper exits
-// immediately, but the agent process stays alive. The store's loadValidated()
-// uses this for liveness checks.
+/// Record the parent agent process pid rather than our own. The helper exits
+/// immediately, but the agent process stays alive. The store's loadValidated()
+/// uses this for liveness checks.
 let agentPID = getppid()
 
 if let requestedSubagentEvent {
@@ -104,6 +105,7 @@ if let requestedSubagentEvent {
         case .stop:
             try AgentSubagentFiles.remove(workstreamID: id, agentID: input.agentID)
         }
+        FileHandle.standardOutput.write(Data("{}\n".utf8))
         exit(0)
     } catch {
         FileHandle.standardError.write(Data("dy-agent-state: subagent state failed: \(error.localizedDescription)\n".utf8))
@@ -122,6 +124,11 @@ let snapshot = AgentStateSnapshot(
 do {
     try FileManager.default.createDirectory(at: AgentStateFiles.directoryURL, withIntermediateDirectories: true)
     try AgentStateFiles.write(snapshot, for: id)
+    if requestedState == .waiting {
+        FileHandle.standardOutput.write(Data("{\"decision\": \"ask\"}\n".utf8))
+    } else {
+        FileHandle.standardOutput.write(Data("{}\n".utf8))
+    }
     exit(0)
 } catch {
     FileHandle.standardError.write(Data("dy-agent-state: write failed: \(error.localizedDescription)\n".utf8))
