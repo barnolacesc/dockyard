@@ -13,7 +13,9 @@ struct OpenPRItem: Identifiable, Equatable {
     let projectName: String
     let projectDirectory: String
     let workstreamID: UUID?
-    var id: String { "\(projectDirectory)#\(pr.number)" }
+    var id: String {
+        "\(projectDirectory)#\(pr.number)"
+    }
 }
 
 struct WorktreeState {
@@ -299,7 +301,7 @@ final class AppEnvironment: ObservableObject {
         } else if let ghURL = githubRepoCache[directory]?.url {
             base = ghURL
         }
-        
+
         guard let base else { return nil }
         if let branch, !branch.isEmpty {
             let encodedBranch = branch.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? branch
@@ -318,9 +320,10 @@ final class AppEnvironment: ObservableObject {
     /// Refresh working tree state for a single worktree path. Throttled to once
     /// every `worktreeStateRefreshInterval` seconds per path so chatty terminal
     /// activity doesn't spawn git subprocesses on every keystroke.
-    func refreshWorktreeState(for worktreePath: String, projectDirectory: String) {
+    func refreshWorktreeState(for worktreePath: String, projectDirectory: String, force: Bool = false) {
         let now = Date()
-        if let last = worktreeStateTimestamps[worktreePath],
+        if !force,
+           let last = worktreeStateTimestamps[worktreePath],
            now.timeIntervalSince(last) < Self.worktreeStateRefreshInterval
         {
             return
@@ -502,7 +505,7 @@ final class AppEnvironment: ObservableObject {
     // MARK: - GitHub
 
     var ghAvailable: Bool {
-        toolStatus.gh.isInstalled 
+        toolStatus.gh.isInstalled
     }
 
     func githubRepo(for directory: String) -> GitHubRepoInfo? {

@@ -101,11 +101,11 @@
 "Prune" = "Neteja";
 "Prune Merged" = "Neteja fusionats";
 "Clean" = "Net";
-"Uncommitted" = "Sense confirmar";
 "Uncommitted changes" = "Canvis sense confirmar";
 "Uncommitted Changes" = "Canvis sense confirmar";
 "%d untracked file" = "%d fitxer no seguit";
 "%d untracked files" = "%d fitxers no seguits";
+"%d untracked (singular)" = "%d no seguit";
 "%d untracked" = "%d no seguits";
 "Commits ahead" = "Commits per endavant";
 "PR status unavailable" = "Estat de la PR no disponible";
@@ -385,7 +385,7 @@
 
 /* Workstream Info Git Stats */
 "Ahead" = "Ahead";
-"Uncommitted" = "Uncommitted";
+"Uncommitted" = "Sense confirmar";
 "Base" = "Base";
 "Worktree Age" = "Worktree Age";
 "Clean" = "Clean";

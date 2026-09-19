@@ -105,7 +105,7 @@ struct UncommittedChangesPopover: View {
                         }
                         .buttonStyle(.plain)
                         .pressable()
-                        .disabled(isDiscarding)
+                        .disabled(isDiscarding || isLoading)
                     }
 
                     Button(role: .destructive, action: { showingDiscardAlert = true }) {
@@ -115,7 +115,7 @@ struct UncommittedChangesPopover: View {
                     }
                     .buttonStyle(.plain)
                     .pressable()
-                    .disabled(isDiscarding)
+                    .disabled(isDiscarding || isLoading)
                 }
             }
         }

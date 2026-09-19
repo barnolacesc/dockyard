@@ -101,11 +101,11 @@
 "Prune" = "Prune";
 "Prune Merged" = "Prune Merged";
 "Clean" = "Clean";
-"Uncommitted" = "Uncommitted";
 "Uncommitted changes" = "Uncommitted changes";
 "Uncommitted Changes" = "Uncommitted Changes";
 "%d untracked file" = "%d untracked file";
 "%d untracked files" = "%d untracked files";
+"%d untracked (singular)" = "%d untracked";
 "%d untracked" = "%d untracked";
 "Commits ahead" = "Commits ahead";
 "PR status unavailable" = "PR status unavailable";

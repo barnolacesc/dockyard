@@ -72,6 +72,7 @@ struct ProjectOverviewView: View {
     @State private var showingPruneMergedConfirm = false
     @State private var isPruning = false
     @State private var isPruningMerged = false
+    @State private var confirmedMergedRevisions: [String: String] = [:]
     @State private var worktreeFilter: WorktreeFilter = .all
     @State private var showingRepoChanges = false
     @State private var worktreeToDelete: WorktreeInfo?
@@ -339,7 +340,14 @@ struct ProjectOverviewView: View {
                         }
 
                         if prunableMergedCount > 0 {
-                            Button(action: { showingPruneMergedConfirm = true }) {
+                            Button(action: {
+                                confirmedMergedRevisions = Dictionary(
+                                    uniqueKeysWithValues: prunableMergedWorktrees.compactMap { wt in
+                                        GitOperations.headRevision(at: wt.path).map { (Self.standardizedPath(wt.path), $0) }
+                                    }
+                                )
+                                showingPruneMergedConfirm = true
+                            }) {
                                 HStack {
                                     Image(systemName: "arrow.triangle.merge")
                                         .font(.system(size: 12))
@@ -518,6 +526,7 @@ struct ProjectOverviewView: View {
     private var prunableCleanWorktrees: [WorktreeInfo] {
         worktrees.filter { worktree in
             guard !worktree.isMain, !worktree.isDirty, !worktree.hasBranchCommits else { return false }
+            guard !isWorktreeMerged(worktree) else { return false }
             return !workstreamPaths.contains(Self.standardizedPath(worktree.path))
         }
     }
@@ -606,8 +615,9 @@ struct ProjectOverviewView: View {
         isPruningMerged = true
         let dir = project.directory
         let pathsToPrune = prunableMergedPaths
+        let revisions = confirmedMergedRevisions
         Task.detached {
-            GitOperations.pruneMergedWorktrees(at: dir, onlyPaths: pathsToPrune)
+            GitOperations.pruneMergedWorktrees(at: dir, onlyPaths: pathsToPrune, confirmedRevisions: revisions)
             await applyPrunedWorktrees(pathsToPrune, loadedFor: dir)
         }
     }
@@ -681,6 +691,7 @@ struct ProjectOverviewView: View {
     private func applyPrunedWorktrees(_ prunablePaths: Set<String>, loadedFor directory: String) {
         guard ProjectOverviewState.matchesProject(loadedFor: directory, currentDirectory: project.directory) else {
             isPruning = false
+            isPruningMerged = false
             return
         }
         project.workstreams.removeAll { ws in
@@ -689,6 +700,7 @@ struct ProjectOverviewView: View {
         }
         onProjectChanged()
         isPruning = false
+        isPruningMerged = false
         refreshWorktrees()
     }
 
@@ -919,7 +931,7 @@ private struct WorktreeInfoRow: View {
                                                 .fill(DesignColor.statusWarning)
                                                 .frame(width: 5, height: 5)
                                             Text(untrackedOnly
-                                                ? String(format: NSLocalizedString(count == 1 ? "%d untracked" : "%d untracked", comment: ""), count)
+                                                ? String(format: NSLocalizedString(count == 1 ? "%d untracked (singular)" : "%d untracked", comment: ""), count)
                                                 : NSLocalizedString("Uncommitted", comment: ""))
                                                 .font(.caption)
                                                 .foregroundStyle(DesignColor.statusWarning)

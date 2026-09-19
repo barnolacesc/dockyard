@@ -155,10 +155,10 @@ struct WorkstreamInfoView: View {
                                         path: workingDirectory,
                                         title: workstreamName,
                                         onDiscard: {
-                                            appEnv.refreshWorktreeState(for: workingDirectory, projectDirectory: projectDirectory)
+                                            appEnv.refreshWorktreeState(for: workingDirectory, projectDirectory: projectDirectory, force: true)
                                         },
                                         onCleanUntracked: {
-                                            appEnv.refreshWorktreeState(for: workingDirectory, projectDirectory: projectDirectory)
+                                            appEnv.refreshWorktreeState(for: workingDirectory, projectDirectory: projectDirectory, force: true)
                                         }
                                     )
                                 }

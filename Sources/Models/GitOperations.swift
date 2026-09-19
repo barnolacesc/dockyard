@@ -677,14 +677,28 @@ enum GitOperations {
     }
 
     /// Remove merged worktrees along with their local branches.
+    /// Validates that the worktree is not dirty and (if an expected revision is provided)
+    /// that its current HEAD revision matches the confirmed revision.
     @discardableResult
-    static func pruneMergedWorktrees(at projectPath: String, onlyPaths: Set<String>) -> Int {
+    static func pruneMergedWorktrees(
+        at projectPath: String,
+        onlyPaths: Set<String>,
+        confirmedRevisions: [String: String] = [:]
+    ) -> Int {
         let worktrees = listWorktreesWithInfo(at: projectPath)
         let allowedPaths = Set(onlyPaths.map { URL(fileURLWithPath: $0).standardizedFileURL.path })
         var pruned = 0
         for wt in worktrees where !wt.isMain {
             let standardizedPath = URL(fileURLWithPath: wt.path).standardizedFileURL.path
             guard allowedPaths.contains(standardizedPath) else { continue }
+            // Skip pruning if worktree has uncommitted changes
+            if wt.isDirty { continue }
+            // Skip pruning if current HEAD has changed from what was confirmed
+            if let expectedRevision = confirmedRevisions[standardizedPath] {
+                guard let currentRevision = headRevision(at: wt.path), currentRevision == expectedRevision else {
+                    continue
+                }
+            }
             if removeWorktree(projectPath: projectPath, worktreePath: wt.path) {
                 pruned += 1
                 if let branch = wt.branch {
@@ -728,6 +742,11 @@ enum GitOperations {
     /// Return the current branch name, or nil if detached or not a repo.
     static func currentBranch(at path: String) -> String? {
         run(args: ["rev-parse", "--abbrev-ref", "HEAD"], in: path)?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Return the HEAD commit hash, or nil if not a repo.
+    static func headRevision(at path: String) -> String? {
+        run(args: ["rev-parse", "HEAD"], in: path)?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Rename the current branch.
