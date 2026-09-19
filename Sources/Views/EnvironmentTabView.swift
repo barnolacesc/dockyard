@@ -28,6 +28,7 @@ struct EnvironmentTabView: View {
     let environmentVars: [String: String]
     @Binding var runStoppedManually: Bool
     @Binding var runStarted: Bool
+    @Binding var isExpanded: Bool
 
     @EnvironmentObject var surfaceCache: TerminalSurfaceCache
     @EnvironmentObject var appEnv: AppEnvironment
@@ -57,6 +58,9 @@ struct EnvironmentTabView: View {
         runPane()
             .onReceive(NotificationCenter.default.publisher(for: .rerunScript)) { _ in
                 if scriptConfig.run != nil {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isExpanded = true
+                    }
                     if runStarted {
                         restartRun()
                     } else {
@@ -78,6 +82,9 @@ struct EnvironmentTabView: View {
                         showScriptApproval = false
                         runStoppedManually = false
                         runStarted = true
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isExpanded = true
+                        }
                         NotificationCenter.default.post(name: .runScriptStarted, object: nil)
                     },
                     onDecline: { showScriptApproval = false }
@@ -85,34 +92,40 @@ struct EnvironmentTabView: View {
             }
     }
 
+    @State private var isChevronHovering = false
+
     @ViewBuilder
     private func runPane() -> some View {
         let title = NSLocalizedString("Run", comment: "")
         let shortcut = "⌘⇧⏎"
         VStack(spacing: 0) {
-            HStack {
-                if scriptConfig.run != nil, !runStarted {
-                    Button(action: {
-                        requestRunStart()
-                    }) {
-                        Image(systemName: "play.fill")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isExpanded.toggle()
                     }
-                    .pressable()
-                    .help(NSLocalizedString("Start", comment: ""))
-                    .shortcutHint(ShortcutHint(commandShift: "↩"))
-                } else {
-                    Image(systemName: "play")
-                        .font(.system(size: 11))
+                }) {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.up")
+                        .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.secondary)
+                        .frame(width: 18, height: 18)
+                        .background(isChevronHovering ? Color.primary.opacity(0.08) : Color.clear)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
                 }
+                .buttonStyle(.plain)
+                .onHover { isChevronHovering = $0 }
+                .help(isExpanded ? NSLocalizedString("Collapse run console", comment: "") : NSLocalizedString("Expand run console", comment: ""))
+
+                Circle()
+                    .fill(runStarted ? DesignColor.statusSuccess : Color.secondary.opacity(0.4))
+                    .frame(width: 7, height: 7)
+
                 Text(title)
                     .font(.system(size: 12, weight: .semibold))
 
                 if let script = scriptConfig.run {
                     Text(script)
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(.tertiary)
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -139,57 +152,65 @@ struct EnvironmentTabView: View {
                 }
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .frame(height: 32)
             .background(.bar)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
+                }
+            }
             .tourAnchor(.startRunButton)
 
-            Divider()
+            if isExpanded {
+                Divider()
 
-            if let script = scriptConfig.run {
-                if runStarted && !runRestarting {
-                    SingleTerminalView(
-                        surfaceID: runID,
-                        workstreamID: workstreamID,
-                        workingDirectory: workingDirectory,
-                        command: envCommand(script: script, role: "run"),
-                        isFocused: false,
-                        environmentVars: environmentVars
-                    )
-                    .id(runID)
-                } else if !runStarted {
-                    VStack(spacing: 12) {
-                        Button(action: {
-                            requestRunStart()
-                        }) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "play.fill")
-                                    .font(.system(size: 14))
-                                Text("Start")
-                                    .font(.system(size: 13, weight: .medium))
+                if let script = scriptConfig.run {
+                    if runStarted && !runRestarting {
+                        SingleTerminalView(
+                            surfaceID: runID,
+                            workstreamID: workstreamID,
+                            workingDirectory: workingDirectory,
+                            command: envCommand(script: script, role: "run"),
+                            isFocused: false,
+                            environmentVars: environmentVars
+                        )
+                        .id(runID)
+                    } else if !runStarted {
+                        VStack(spacing: 12) {
+                            Button(action: {
+                                requestRunStart()
+                            }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "play.fill")
+                                        .font(.system(size: 14))
+                                    Text("Start")
+                                        .font(.system(size: 13, weight: .medium))
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(Color.accentColor)
+                                .foregroundStyle(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                                .frame(minHeight: 40)
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.accentColor)
-                            .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
-                            .frame(minHeight: 40)
+                            .pressable()
+                            .shortcutHint(ShortcutHint(commandShift: "↩"))
+                            Text(script)
+                                .font(.system(size: 12, design: .monospaced))
+                                .foregroundStyle(.tertiary)
+                            Text(shortcut)
+                                .font(.system(size: 13, design: .monospaced))
+                                .foregroundStyle(.secondary)
                         }
-                        .pressable()
-                        .shortcutHint(ShortcutHint(commandShift: "↩"))
-                        Text(script)
-                            .font(.system(size: 12, design: .monospaced))
-                            .foregroundStyle(.tertiary)
-                        Text(shortcut)
-                            .font(.system(size: 13, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    Color.clear
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        Color.clear
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                } else {
+                    scriptInstructions(title: title)
                 }
-            } else {
-                scriptInstructions(title: title)
             }
         }
     }
@@ -311,6 +332,9 @@ struct EnvironmentTabView: View {
         }
         runStoppedManually = false
         runStarted = true
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isExpanded = true
+        }
         NotificationCenter.default.post(name: .runScriptStarted, object: nil)
     }
 
@@ -364,21 +388,22 @@ private struct EnvActionButton: View {
         Button(action: action) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 10))
+                    .font(.system(size: 9))
                 Text(label)
-                    .font(.system(size: 11))
-                Text(shortcut)
-                    .font(.system(size: 9, design: .monospaced))
-                    .tabularNumbers()
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11, weight: .medium))
+                if !shortcut.isEmpty {
+                    Text(shortcut)
+                        .font(.system(size: 9, design: .monospaced))
+                        .tabularNumbers()
+                        .foregroundStyle(.secondary)
+                }
             }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
             .background(isHovering ? Color.primary.opacity(0.08) : Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
-            .frame(minHeight: 40)
         }
-        .pressable()
+        .buttonStyle(.plain)
         .onHover { isHovering = $0 }
         .accessibilityLabel(label)
         .shortcutHint(ShortcutHint(commandShift: shortcut.isEmpty ? nil : "↩"))

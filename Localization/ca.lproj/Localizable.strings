@@ -728,3 +728,6 @@
 "Codex will bypass approvals and sandboxing." = "Codex ometrà les aprovacions i el sandboxing.";
 "Antigravity CLI will start with --dangerously-skip-permissions (YOLO mode)." = "Antigravity CLI s'iniciarà amb --dangerously-skip-permissions (mode YOLO).";
 "Dangerous permission mode is not supported by %@." = "El mode de permisos perillós no és compatible amb %@.";
+"Collapse run console" = "Replega la consola d'execució";
+"Expand run console" = "Desplega la consola d'execució";
+"Permissions" = "Permisos";
