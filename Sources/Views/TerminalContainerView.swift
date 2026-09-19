@@ -435,6 +435,7 @@ struct TerminalContainerView: View {
     @AppStorage("dockyard.splitOrientation") private var splitOrientation: String = "horizontal"
     @State private var tabs: [WorkspaceTab] = [.agent]
     @State private var showWorkstreamInfo = false
+    @State private var isAddressingFindings = false
     @State private var terminalCount = 0
     @State private var browserCount = 0
     @State private var unreadTabs = Set<WorkspaceTab>()
@@ -686,6 +687,7 @@ struct TerminalContainerView: View {
                 branchPR: branchPR,
                 worktreeState: appEnv.worktreeState(for: workingDirectory),
                 isRunningSetup: setupRunner.state == .running,
+                isAddressingFindings: isAddressingFindings,
                 directory: projectDirectory,
                 onOpenPR: {
                     if let pr = branchPR, let url = URL(string: pr.url) {
@@ -693,10 +695,7 @@ struct TerminalContainerView: View {
                     }
                 },
                 onAddressFindings: {
-                    activeTab = .agent
-                    if let prompt = QuickAction.addressReviewFindings.prompt {
-                        surfaceCache.sendText(to: agentID, text: prompt + "\r")
-                    }
+                    handleAddressReviewFindings()
                 }
             )
 
@@ -731,10 +730,14 @@ struct TerminalContainerView: View {
                     worktreeState: appEnv.worktreeState(for: workingDirectory),
                     hasGitHubRemote: appEnv.hasGitHubRemote(projectDirectory),
                     branchPR: branchPR,
+                    isAddressingFindings: isAddressingFindings,
                     onSendToAgent: { action in
-                        guard let prompt = action.prompt else { return }
-                        activeTab = .agent
-                        surfaceCache.sendText(to: agentID, text: prompt + "\r")
+                        if action == .addressReviewFindings {
+                            handleAddressReviewFindings()
+                        } else if let prompt = action.prompt {
+                            activeTab = .agent
+                            surfaceCache.sendText(to: agentID, text: prompt + "\r")
+                        }
                     }
                 )
 
@@ -1048,10 +1051,6 @@ struct TerminalContainerView: View {
                 }
                 .frame(minWidth: 540, idealWidth: 620, minHeight: 460, idealHeight: 580)
             }
-            .onReceive(NotificationCenter.default.publisher(for: .toggleInfo)) { _ in
-                guard isActive else { return }
-                showWorkstreamInfo.toggle()
-            }
             .onReceive(NotificationCenter.default.publisher(for: .switchByNumber)) { notification in
                 guard isActive else { return }
                 guard let n = notification.object as? Int, n >= 1 else { return }
@@ -1257,6 +1256,17 @@ struct TerminalContainerView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
+        }
+    }
+
+    private func handleAddressReviewFindings() {
+        guard !isAddressingFindings else { return }
+        guard let prompt = QuickAction.addressReviewFindings.prompt else { return }
+        isAddressingFindings = true
+        activeTab = .agent
+        surfaceCache.sendText(to: agentID, text: prompt + "\r")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            isAddressingFindings = false
         }
     }
 
@@ -1632,6 +1642,7 @@ struct WorkstreamLifecyclePill: View {
     let branchPR: GitHubPR?
     let worktreeState: WorktreeState
     let isRunningSetup: Bool
+    let isAddressingFindings: Bool
     let directory: String
     let onOpenPR: () -> Void
     let onAddressFindings: () -> Void
@@ -1672,8 +1683,13 @@ struct WorkstreamLifecyclePill: View {
             } else if pr.hasReviewFindings || pr.reviewDecision == "CHANGES_REQUESTED" {
                 Button(action: onAddressFindings) {
                     HStack(spacing: 5) {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 11))
+                        if isAddressingFindings {
+                            ProgressView()
+                                .controlSize(.mini)
+                        } else {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 11))
+                        }
                         Text(verbatim: "#\(pr.number)")
                             .font(.system(size: 11, weight: .semibold, design: .monospaced))
                             .tabularNumbers()
@@ -1687,6 +1703,7 @@ struct WorkstreamLifecyclePill: View {
                     .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
                 }
                 .buttonStyle(.plain)
+                .disabled(isAddressingFindings)
                 .help(NSLocalizedString("Review findings detected. Click to address with agent.", comment: ""))
             } else if pr.reviewDecision == "APPROVED" {
                 HStack(spacing: 4) {
@@ -1772,6 +1789,7 @@ private struct GitHubActionMenu: View {
     let worktreeState: WorktreeState
     let hasGitHubRemote: Bool
     let branchPR: GitHubPR?
+    let isAddressingFindings: Bool
     let onSendToAgent: (QuickAction) -> Void
 
     private var prState: String? {
@@ -1841,11 +1859,13 @@ private struct GitHubActionMenu: View {
     }
 
     private var isRunning: Bool {
+        if isAddressingFindings { return true }
         if case .running = runner.state { return true }
         return false
     }
 
     private func isRunningAction(_ action: QuickAction) -> Bool {
+        if action == .addressReviewFindings && isAddressingFindings { return true }
         if case let .running(a) = runner.state { return a == action }
         return false
     }
@@ -1859,7 +1879,10 @@ private struct GitHubActionMenu: View {
     }
 
     private func disabledReason(for action: QuickAction) -> String? {
-        action.disabledReason(ghPath: ghPath)
+        if action == .addressReviewFindings && isAddressingFindings {
+            return NSLocalizedString("Addressing review findings...", comment: "")
+        }
+        return action.disabledReason(ghPath: ghPath)
     }
 
     private func runAction(_ action: QuickAction) {

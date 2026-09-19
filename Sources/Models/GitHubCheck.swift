@@ -96,7 +96,8 @@ extension GitHubPR {
                 let reviewState = review["state"] as? String
                 let author = review["author"] as? [String: Any]
                 let login = (author?["login"] as? String) ?? ""
-                if reviewState == "CHANGES_REQUESTED" || login.localizedCaseInsensitiveContains("coderabbit") {
+                if reviewState == "CHANGES_REQUESTED"
+                    || (reviewState == "COMMENTED" && login.localizedCaseInsensitiveContains("coderabbit")) {
                     hasReviewFindings = true
                     break
                 }

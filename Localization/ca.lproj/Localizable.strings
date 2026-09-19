@@ -386,8 +386,8 @@
 "Review Findings" = "Observacions de revisió";
 "In Review" = "En revisió";
 "Approved" = "Aprovat";
-"Merged" = "Fusionat";
 "Workstream Info" = "Informació del workstream";
+"Addressing review findings..." = "Resolent observacions de revisió...";
 "Review findings detected. Click to address with agent." = "S'han detectat observacions de revisió. Fes clic per resoldre-les amb l'agent.";
 "Open localhost:%d in browser (⌘B)" = "Obre localhost:%d al navegador (⌘B)";
 

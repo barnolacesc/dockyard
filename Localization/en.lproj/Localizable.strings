@@ -386,8 +386,8 @@
 "Review Findings" = "Review Findings";
 "In Review" = "In Review";
 "Approved" = "Approved";
-"Merged" = "Merged";
 "Workstream Info" = "Workstream Info";
+"Addressing review findings..." = "Addressing review findings...";
 "Review findings detected. Click to address with agent." = "Review findings detected. Click to address with agent.";
 "Open localhost:%d in browser (⌘B)" = "Open localhost:%d in browser (⌘B)";
 
