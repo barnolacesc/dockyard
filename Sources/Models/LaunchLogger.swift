@@ -9,8 +9,18 @@ struct LaunchLogEntry: Codable {
         let agentCLI: String?
         let claude: String?
         let codex: String?
+        let agy: String?
         let tmux: String?
         let ffRun: String?
+
+        init(agentCLI: String?, claude: String?, codex: String?, agy: String? = nil, tmux: String?, ffRun: String?) {
+            self.agentCLI = agentCLI
+            self.claude = claude
+            self.codex = codex
+            self.agy = agy
+            self.tmux = tmux
+            self.ffRun = ffRun
+        }
     }
 
     struct Settings: Codable {

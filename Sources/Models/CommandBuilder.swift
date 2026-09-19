@@ -293,6 +293,12 @@ enum CodingCLICommandBuilder {
                 autoRenameBranch: autoRenameBranch,
                 hookInvocation: hookInvocation
             )
+        case .agy:
+            command = buildAgyAgentCommand(
+                cliPath: cliPath,
+                workingDirectory: workingDirectory,
+                bypassPermissions: bypassPermissions
+            )
         case .generic:
             command = buildGenericAgentCommand(
                 cliPath: cliPath,
@@ -425,6 +431,38 @@ enum CodingCLICommandBuilder {
             finalCommand: finalCommand,
             intermediateCommands: [resume.command, fresh.command, finalCommand]
         )
+    }
+
+    private static func buildAgyAgentCommand(
+        cliPath: String,
+        workingDirectory _: String,
+        bypassPermissions: Bool
+    ) -> AgentLaunchCommand {
+        var resume = CommandBuilder(cliPath)
+        resume.flag("--continue")
+        applyAgyPermissionOptions(to: &resume, bypassPermissions: bypassPermissions)
+
+        var fresh = CommandBuilder(cliPath)
+        applyAgyPermissionOptions(to: &fresh, bypassPermissions: bypassPermissions)
+
+        let finalCommand = CommandBuilder.withFallback(
+            resume.command,
+            fresh.command,
+            message: "Starting new session..."
+        )
+        return AgentLaunchCommand(
+            finalCommand: finalCommand,
+            intermediateCommands: [resume.command, fresh.command, finalCommand]
+        )
+    }
+
+    private static func applyAgyPermissionOptions(
+        to command: inout CommandBuilder,
+        bypassPermissions: Bool
+    ) {
+        if bypassPermissions {
+            command.flag("--dangerously-skip-permissions")
+        }
     }
 
     private static func buildGenericAgentCommand(

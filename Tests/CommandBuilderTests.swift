@@ -422,8 +422,34 @@ final class CommandBuilderTests: XCTestCase {
             envVars: [:],
             supportsSessionName: false
         )
-        XCTAssertEqual(command.finalCommand, "/usr/local/bin/agy")
-        XCTAssertEqual(command.intermediateCommands, ["/usr/local/bin/agy"])
+        XCTAssertEqual(command.intermediateCommands.count, 3)
+        XCTAssertEqual(command.intermediateCommands[0], "/usr/local/bin/agy --continue")
+        XCTAssertEqual(command.intermediateCommands[1], "/usr/local/bin/agy")
+        XCTAssertTrue(command.finalCommand.contains("/usr/local/bin/agy --continue"))
+        XCTAssertTrue(command.finalCommand.contains("/usr/local/bin/agy"))
+        XCTAssertFalse(command.finalCommand.contains("--dangerously-skip-permissions"))
+    }
+
+    func testBuildAgentCommandForAgyWithBypassPermissions() {
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .agy,
+            cliPath: "/usr/local/bin/agy",
+            workingDirectory: "/tmp/dockyard worktree",
+            projectName: "dockyard",
+            workstreamName: "agy-contract",
+            workstreamID: UUID(),
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: true,
+            allowOutsideWorktree: false,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: false
+        )
+        XCTAssertEqual(command.intermediateCommands.count, 3)
+        XCTAssertEqual(command.intermediateCommands[0], "/usr/local/bin/agy --continue --dangerously-skip-permissions")
+        XCTAssertEqual(command.intermediateCommands[1], "/usr/local/bin/agy --dangerously-skip-permissions")
+        XCTAssertTrue(command.finalCommand.contains("--dangerously-skip-permissions"))
     }
 
     func testBuildCodexAgentCommandBypassUsesDangerousFullAccessFlag() throws {

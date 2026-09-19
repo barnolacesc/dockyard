@@ -4,17 +4,19 @@
 enum CodingAgentCommandStrategy: Equatable {
     case claude
     case codex
+    case agy
     case generic
 }
 
 enum CodingAgentStateReportingStrategy: Equatable {
     case claudeHooks
     case codexHooks
+    case agyHooks
     case unavailable
 }
 
 struct CodingAgentCapabilities: Equatable {
-    static let contractVersion = 3
+    static let contractVersion = 4
 
     let commandStrategy: CodingAgentCommandStrategy
     let stateReportingStrategy: CodingAgentStateReportingStrategy
@@ -76,14 +78,14 @@ extension CodingCLI {
             )
         case .agy:
             return CodingAgentCapabilities(
-                commandStrategy: .generic,
-                stateReportingStrategy: .unavailable,
+                commandStrategy: .agy,
+                stateReportingStrategy: .agyHooks,
                 supportsDirectLaunch: true,
-                supportsCLISessionResume: false,
+                supportsCLISessionResume: true,
                 supportsDockyardTmuxPersistence: true,
-                reportsMainAgentState: false,
+                reportsMainAgentState: true,
                 reportsSubagentState: false,
-                supportsDangerousPermissionBypass: false,
+                supportsDangerousPermissionBypass: true,
                 supportsLivePermissionControl: false,
                 supportsAutoRenameBranch: false,
                 supportsAgentTeams: false

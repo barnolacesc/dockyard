@@ -580,7 +580,8 @@ struct TerminalContainerView: View {
                 hookInvocation = try AgentHooks.hookInvocation(
                     for: selectedCodingCLI,
                     workstreamID: workstreamID,
-                    helperPath: helperPath
+                    helperPath: helperPath,
+                    workingDirectory: workingDirectory
                 )
             } catch {
                 // Falling back to no hooks is acceptable; indicator stays unknown.
@@ -617,6 +618,7 @@ struct TerminalContainerView: View {
                 agentCLI: selectedCodingCLI.rawValue,
                 claude: appEnv.toolStatus.claude.path,
                 codex: appEnv.toolStatus.codex.path,
+                agy: appEnv.toolStatus.agy.path,
                 tmux: appEnv.toolStatus.tmux.path,
                 ffRun: RunLauncher.executableURL()?.path
             ),

@@ -5,8 +5,8 @@
 import XCTest
 
 final class CodingAgentCapabilitiesTests: XCTestCase {
-    func testContractVersionIsThree() {
-        XCTAssertEqual(CodingAgentCapabilities.contractVersion, 3)
+    func testContractVersionIsFour() {
+        XCTAssertEqual(CodingAgentCapabilities.contractVersion, 4)
     }
 
     func testClaudeCapabilitiesMatchSpecializedAdapter() {
@@ -52,9 +52,23 @@ final class CodingAgentCapabilitiesTests: XCTestCase {
         XCTAssertEqual(CodingCLI.opencode.capabilities.commandStrategy, .generic)
     }
 
-    func testAgyCapabilitiesDoNotClaimAutoRename() {
-        XCTAssertFalse(CodingCLI.agy.supportsAutoRenameBranch)
-        XCTAssertEqual(CodingCLI.agy.capabilities.commandStrategy, .generic)
+    func testAgyCapabilitiesMatchSpecializedAdapter() {
+        XCTAssertEqual(
+            CodingCLI.agy.capabilities,
+            CodingAgentCapabilities(
+                commandStrategy: .agy,
+                stateReportingStrategy: .agyHooks,
+                supportsDirectLaunch: true,
+                supportsCLISessionResume: true,
+                supportsDockyardTmuxPersistence: true,
+                reportsMainAgentState: true,
+                reportsSubagentState: false,
+                supportsDangerousPermissionBypass: true,
+                supportsLivePermissionControl: false,
+                supportsAutoRenameBranch: false,
+                supportsAgentTeams: false
+            )
+        )
     }
 
     func testOnlyClaudeClaimsSubagentStatus() {
