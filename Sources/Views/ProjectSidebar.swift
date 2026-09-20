@@ -1696,11 +1696,12 @@ private struct WorkstreamRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 rowContent
-                if isSelected, agentState != nil || !activeSubagents.isEmpty {
+                if (isSelected && (agentState != nil || !activeSubagents.isEmpty)) || !activeSubagents.isEmpty {
                     agentFleet
                 }
             }
             .padding(.leading, isSelected ? 6 : 0)
+            .padding(.vertical, isSelected ? 4 : (activeSubagents.isEmpty ? 0 : 2))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())

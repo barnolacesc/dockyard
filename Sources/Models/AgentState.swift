@@ -62,14 +62,68 @@ struct AgentSubagentHookInput: Codable, Equatable {
     }
 
     static func decodeValidated(from data: Data) -> AgentSubagentHookInput? {
-        guard !data.isEmpty, data.count <= maximumInputBytes,
-              let input = try? JSONDecoder().decode(AgentSubagentHookInput.self, from: data),
-              isValidField(input.agentID),
-              isValidField(input.agentType)
-        else {
-            return nil
+        decodeAllValidated(from: data).first
+    }
+
+    static func decodeAllValidated(from data: Data) -> [AgentSubagentHookInput] {
+        guard !data.isEmpty, data.count <= maximumInputBytes else { return [] }
+
+        // 1. Direct format (Claude Code: {"agent_id": "...", "agent_type": "..."})
+        if let input = try? JSONDecoder().decode(AgentSubagentHookInput.self, from: data),
+           isValidField(input.agentID),
+           isValidField(input.agentType)
+        {
+            return [input]
         }
-        return input
+
+        // 2. Tool-call format (Antigravity CLI: {"toolCall": ...})
+        guard let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return []
+        }
+
+        if let toolCall = jsonObject["toolCall"] as? [String: Any],
+           let name = toolCall["name"] as? String,
+           let args = toolCall["args"] as? [String: Any]
+        {
+            if name == "invoke_subagent" {
+                let subagentsList = (args["Subagents"] as? [[String: Any]])
+                    ?? (args["subagents"] as? [[String: Any]])
+                    ?? []
+                var results: [AgentSubagentHookInput] = []
+                for (index, subagent) in subagentsList.enumerated() {
+                    let role = (subagent["Role"] as? String) ?? (subagent["role"] as? String)
+                    let typeName = (subagent["TypeName"] as? String)
+                        ?? (subagent["typeName"] as? String)
+                        ?? (subagent["type_name"] as? String)
+                        ?? (subagent["type"] as? String)
+                    let resolvedType = role ?? typeName ?? "Subagent"
+                    guard isValidField(resolvedType) else { continue }
+
+                    let idField = (subagent["agentID"] as? String)
+                        ?? (subagent["agentId"] as? String)
+                        ?? (subagent["agent_id"] as? String)
+                        ?? (subagent["conversationId"] as? String)
+                        ?? (subagent["conversation_id"] as? String)
+                        ?? "\(typeName ?? "subagent")-\(index + 1)"
+                    guard isValidField(idField) else { continue }
+
+                    results.append(AgentSubagentHookInput(agentID: idField, agentType: resolvedType))
+                }
+                return results
+            } else if name == "manage_subagents" {
+                let action = (args["Action"] as? String) ?? (args["action"] as? String)
+                if action == "kill_all" {
+                    return [AgentSubagentHookInput(agentID: "*", agentType: "all")]
+                }
+                if let ids = (args["ConversationIds"] as? [String]) ?? (args["conversationIds"] as? [String]) {
+                    return ids.compactMap { id in
+                        isValidField(id) ? AgentSubagentHookInput(agentID: id, agentType: "Subagent") : nil
+                    }
+                }
+            }
+        }
+
+        return []
     }
 
     private static func isValidField(_ value: String) -> Bool {

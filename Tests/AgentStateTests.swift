@@ -60,6 +60,73 @@ final class AgentStateTests: XCTestCase {
         ))
     }
 
+    func testSubagentHookInputDecodesAgyInvokeSubagentPayload() throws {
+        let payload = Data("""
+        {
+          "toolCall": {
+            "name": "invoke_subagent",
+            "args": {
+              "Subagents": [
+                {
+                  "Role": "Codebase Researcher",
+                  "TypeName": "research",
+                  "Prompt": "Explore the codebase",
+                  "Model": "flash"
+                },
+                {
+                  "TypeName": "tester",
+                  "Prompt": "Run tests"
+                }
+              ]
+            }
+          }
+        }
+        """.utf8)
+
+        let items = AgentSubagentHookInput.decodeAllValidated(from: payload)
+        XCTAssertEqual(items.count, 2)
+        XCTAssertEqual(items[0].agentType, "Codebase Researcher")
+        XCTAssertEqual(items[0].agentID, "research-1")
+        XCTAssertEqual(items[1].agentType, "tester")
+        XCTAssertEqual(items[1].agentID, "tester-2")
+
+        XCTAssertEqual(AgentSubagentHookInput.decodeValidated(from: payload), items[0])
+    }
+
+    func testSubagentHookInputDecodesAgyManageSubagentsPayload() throws {
+        let killAllPayload = Data("""
+        {
+          "toolCall": {
+            "name": "manage_subagents",
+            "args": {
+              "Action": "kill_all"
+            }
+          }
+        }
+        """.utf8)
+
+        let killAllItems = AgentSubagentHookInput.decodeAllValidated(from: killAllPayload)
+        XCTAssertEqual(killAllItems.count, 1)
+        XCTAssertEqual(killAllItems[0].agentID, "*")
+
+        let killPayload = Data("""
+        {
+          "toolCall": {
+            "name": "manage_subagents",
+            "args": {
+              "Action": "kill",
+              "ConversationIds": ["subagent-1", "subagent-2"]
+            }
+          }
+        }
+        """.utf8)
+
+        let killItems = AgentSubagentHookInput.decodeAllValidated(from: killPayload)
+        XCTAssertEqual(killItems.count, 2)
+        XCTAssertEqual(killItems[0].agentID, "subagent-1")
+        XCTAssertEqual(killItems[1].agentID, "subagent-2")
+    }
+
     func testSubagentFileNameDoesNotExposeUntrustedAgentIDAsAPath() throws {
         let workstreamID = try XCTUnwrap(UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC"))
         let directory = URL(fileURLWithPath: "/tmp/agent-state", isDirectory: true)
@@ -368,5 +435,29 @@ final class AgentStateStoreTests: XCTestCase {
         )
 
         XCTAssertEqual(AgentStateStore.decayedState(snapshot, now: now), .idle)
+    }
+
+    func testSubagentDecaysAfterThirtyMinutes() throws {
+        let id = UUID()
+        let staleDate = Date().addingTimeInterval(-31 * 60)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        try AgentSubagentFiles.write(
+            AgentSubagentSnapshot(
+                workstreamID: id,
+                agentID: "stale-agent",
+                agentType: "Explore",
+                updatedAt: staleDate,
+                pid: Int32(getpid())
+            ),
+            directoryURL: tempDir
+        )
+
+        let store = AgentStateStore(directoryURL: tempDir)
+        store.refresh()
+
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(store.activeSubagentCount(for: id), 0)
+        XCTAssertTrue(store.activeSubagents(for: id).isEmpty)
     }
 }

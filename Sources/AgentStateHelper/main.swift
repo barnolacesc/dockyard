@@ -83,7 +83,8 @@ if let requestedSubagentEvent {
             FileHandle.standardError.write(Data("dy-agent-state: subagent hook input is too large\n".utf8))
             exit(2)
         }
-        guard let input = AgentSubagentHookInput.decodeValidated(from: inputData) else {
+        let inputs = AgentSubagentHookInput.decodeAllValidated(from: inputData)
+        guard !inputs.isEmpty else {
             FileHandle.standardError.write(Data("dy-agent-state: invalid subagent hook input\n".utf8))
             exit(2)
         }
@@ -91,21 +92,27 @@ if let requestedSubagentEvent {
             at: AgentStateFiles.directoryURL,
             withIntermediateDirectories: true
         )
-        switch requestedSubagentEvent {
-        case .start:
-            try AgentSubagentFiles.write(
-                AgentSubagentSnapshot(
-                    workstreamID: id,
-                    agentID: input.agentID,
-                    agentType: input.agentType,
-                    updatedAt: Date(),
-                    pid: agentPID
+        for input in inputs {
+            switch requestedSubagentEvent {
+            case .start:
+                try AgentSubagentFiles.write(
+                    AgentSubagentSnapshot(
+                        workstreamID: id,
+                        agentID: input.agentID,
+                        agentType: input.agentType,
+                        updatedAt: Date(),
+                        pid: agentPID
+                    )
                 )
-            )
-        case .stop:
-            try AgentSubagentFiles.remove(workstreamID: id, agentID: input.agentID)
+            case .stop:
+                if input.agentID == "*" {
+                    AgentSubagentFiles.removeAll(for: id)
+                } else {
+                    try AgentSubagentFiles.remove(workstreamID: id, agentID: input.agentID)
+                }
+            }
         }
-        FileHandle.standardOutput.write(Data("{}\n".utf8))
+        FileHandle.standardOutput.write(Data("{\"decision\": \"allow\"}\n".utf8))
         exit(0)
     } catch {
         FileHandle.standardError.write(Data("dy-agent-state: subagent state failed: \(error.localizedDescription)\n".utf8))
@@ -124,6 +131,9 @@ let snapshot = AgentStateSnapshot(
 do {
     try FileManager.default.createDirectory(at: AgentStateFiles.directoryURL, withIntermediateDirectories: true)
     try AgentStateFiles.write(snapshot, for: id)
+    if requestedState == .idle {
+        AgentSubagentFiles.removeAll(for: id)
+    }
     if requestedState == .waiting {
         FileHandle.standardOutput.write(Data("{\"decision\": \"allow\"}\n".utf8))
     } else {

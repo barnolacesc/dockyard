@@ -755,3 +755,8 @@
 "Changes" = "Canvis";
 "Approved" = "Aprovat";
 "Keep Mac awake: %@ (click to cycle)" = "Mantén el Mac despert: %@ (fes clic per alternar)";
+
+/* Subagents */
+"%d active subagents" = "%d subagents actius";
+"Subagents in Sidebar and Tabs" = "Subagents a la barra lateral i pestanyes";
+"See active subagents invoked across your workspaces directly in the sidebar and on the Agent tab." = "Consulta els subagents actius invocats a tots els espais de treball directament a la barra lateral i a la pestanya de l'agent.";

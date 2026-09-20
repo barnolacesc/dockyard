@@ -755,3 +755,8 @@
 "Changes" = "Changes";
 "Approved" = "Approved";
 "Keep Mac awake: %@ (click to cycle)" = "Keep Mac awake: %@ (click to cycle)";
+
+/* Subagents */
+"%d active subagents" = "%d active subagents";
+"Subagents in Sidebar and Tabs" = "Subagents in Sidebar and Tabs";
+"See active subagents invoked across your workspaces directly in the sidebar and on the Agent tab." = "See active subagents invoked across your workspaces directly in the sidebar and on the Agent tab.";

@@ -772,6 +772,7 @@ struct TerminalContainerView: View {
     @ViewBuilder
     private func tabButton(for tab: WorkspaceTab) -> some View {
         let shortcut = tabShortcut(tab) ?? closeableTabShortcut(tab)
+        let subagentCount = tab == .agent ? agentStateStore.activeSubagentCount(for: workstreamID) : 0
         let button = WorkspaceTabButton(
             tab: tab,
             label: tabLabel(tab),
@@ -780,6 +781,7 @@ struct TerminalContainerView: View {
             isActive: activeTab == tab,
             isUnread: unreadTabs.contains(tab),
             isChromeActive: tab == .agent && agentStateStore.isChromeActive(for: workstreamID),
+            subagentCount: subagentCount,
             onSelect: { activeTab = tab },
             onClose: tab.isCloseable ? { closeTab(tab) } : nil
         )
@@ -1581,6 +1583,7 @@ private struct WorkspaceTabButton: View {
     let isActive: Bool
     var isUnread: Bool = false
     var isChromeActive: Bool = false
+    var subagentCount: Int = 0
     let onSelect: () -> Void
     var onClose: (() -> Void)?
 
@@ -1607,6 +1610,22 @@ private struct WorkspaceTabButton: View {
                     Text(label)
                         .font(.system(size: 12, weight: isActive ? .semibold : .regular))
                         .lineLimit(1)
+                }
+                if subagentCount > 0 {
+                    HStack(spacing: 2) {
+                        Image(systemName: "point.3.connected.trianglepath.dotted")
+                            .font(.system(size: 8, weight: .medium))
+                        Text("\(subagentCount)")
+                            .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                            .tabularNumbers()
+                    }
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(DesignColor.statusSuccess.opacity(0.14))
+                    .foregroundStyle(DesignColor.statusSuccess)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
+                    .help(String(format: NSLocalizedString("%d active subagents", comment: ""), subagentCount))
+                    .accessibilityLabel(String(format: NSLocalizedString("%d active subagents", comment: ""), subagentCount))
                 }
                 if let shortcut {
                     (Text(Image(systemName: "command")) + Text(shortcut))
