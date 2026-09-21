@@ -50,6 +50,7 @@ struct WorkstreamStagePillStyle: Equatable {
     let prNumber: Int?
     let showsManualMark: Bool
     var tintColor: Color? = nil
+    var foregroundColor: Color? = nil
 }
 
 extension GitHubPR {
@@ -76,7 +77,8 @@ extension GitHubPR {
                 titleKey: title,
                 prNumber: numberToDisplay,
                 showsManualMark: isManuallySet,
-                tintColor: DesignColor.statusWarning
+                tintColor: DesignColor.statusWarning,
+                foregroundColor: DesignColor.badgeForeground
             )
         case .reviewing:
             return WorkstreamStagePillStyle(
@@ -1985,8 +1987,14 @@ private struct StagePill: View {
     }
 
     private var foregroundColor: Color {
+        if let customForeground = style.foregroundColor {
+            return customForeground
+        }
         switch style.appearance {
         case .filled:
+            if style.tintColor == DesignColor.statusWarning || style.tintColor == .yellow {
+                return DesignColor.badgeForeground
+            }
             return .white
         case .outline, .bare:
             return baseColor.opacity(0.85)

@@ -694,6 +694,7 @@ struct TerminalContainerView: View {
             WorkstreamLifecyclePill(
                 branchPR: branchPR,
                 worktreeState: appEnv.worktreeState(for: workingDirectory),
+                agentState: agentStateStore.agentState(for: workstreamID),
                 isRunningSetup: setupRunner.state == .running,
                 isAddressingFindings: isAddressingFindings,
                 directory: projectDirectory,
@@ -704,6 +705,9 @@ struct TerminalContainerView: View {
                 },
                 onAddressFindings: {
                     handleAddressReviewFindings()
+                },
+                onFocusAgent: {
+                    activeTab = .agent
                 }
             )
 
@@ -1706,11 +1710,13 @@ private struct WorkspaceTabDropDelegate: DropDelegate {
 struct WorkstreamLifecyclePill: View {
     let branchPR: GitHubPR?
     let worktreeState: WorktreeState
+    let agentState: AgentState?
     let isRunningSetup: Bool
     let isAddressingFindings: Bool
     let directory: String
     let onOpenPR: () -> Void
     let onAddressFindings: () -> Void
+    var onFocusAgent: (() -> Void)? = nil
 
     var body: some View {
         if isRunningSetup {
@@ -1726,26 +1732,77 @@ struct WorkstreamLifecyclePill: View {
             .foregroundStyle(DesignColor.statusInfo)
             .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
         } else if let pr = branchPR {
-            if pr.state == "MERGED" {
+            prPill(pr)
+        } else {
+            localStatePill
+        }
+    }
+
+    @ViewBuilder
+    private func prPill(_ pr: GitHubPR) -> some View {
+        if pr.state == "MERGED" {
+            Button(action: onOpenPR) {
+                HStack(spacing: 5) {
+                    Image(systemName: "arrow.triangle.merge")
+                        .font(.system(size: 11))
+                    Text(verbatim: "#\(pr.number)")
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .tabularNumbers()
+                    Text(NSLocalizedString("Merged", comment: ""))
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(DesignColor.statusMerged.opacity(0.14))
+                .foregroundStyle(DesignColor.statusMerged)
+                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .help(pr.title)
+        } else if pr.state == "CLOSED" {
+            Button(action: onOpenPR) {
+                HStack(spacing: 5) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11))
+                    Text(verbatim: "#\(pr.number)")
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .tabularNumbers()
+                    Text(NSLocalizedString("Closed", comment: ""))
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.secondary.opacity(0.12))
+                .foregroundStyle(.secondary)
+                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .help(pr.title)
+        } else if pr.hasConflicts {
+            HStack(spacing: 4) {
                 Button(action: onOpenPR) {
                     HStack(spacing: 5) {
-                        Image(systemName: "arrow.triangle.merge")
+                        Image(systemName: "exclamationmark.triangle.fill")
                             .font(.system(size: 11))
                         Text(verbatim: "#\(pr.number)")
                             .font(.system(size: 11, weight: .semibold, design: .monospaced))
                             .tabularNumbers()
-                        Text(NSLocalizedString("Merged", comment: ""))
+                        Text(NSLocalizedString("Conflicts", comment: ""))
                             .font(.system(size: 11, weight: .medium))
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(DesignColor.statusMerged.opacity(0.14))
-                    .foregroundStyle(DesignColor.statusMerged)
+                    .background(DesignColor.statusError.opacity(0.14))
+                    .foregroundStyle(DesignColor.statusError)
                     .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
                 }
                 .buttonStyle(.plain)
-                .help(pr.title)
-            } else if pr.hasReviewFindings || pr.reviewDecision == "CHANGES_REQUESTED" {
+                .help(NSLocalizedString("Merge conflicts with base branch. Click to view on GitHub.", comment: ""))
+
+                PRChecksBadge(pr: pr, directory: directory, compact: true)
+            }
+        } else if case .hasFindings(let count) = pr.codeRabbitStatus {
+            HStack(spacing: 4) {
                 Button(action: onAddressFindings) {
                     HStack(spacing: 5) {
                         if isAddressingFindings {
@@ -1758,8 +1815,13 @@ struct WorkstreamLifecyclePill: View {
                         Text(verbatim: "#\(pr.number)")
                             .font(.system(size: 11, weight: .semibold, design: .monospaced))
                             .tabularNumbers()
-                        Text(NSLocalizedString("Review Findings", comment: ""))
-                            .font(.system(size: 11, weight: .medium))
+                        if let count {
+                            Text(String(format: NSLocalizedString("Address AI Comments (%d)", comment: ""), count))
+                                .font(.system(size: 11, weight: .medium))
+                        } else {
+                            Text(NSLocalizedString("Address AI Reviewer Comments", comment: ""))
+                                .font(.system(size: 11, weight: .medium))
+                        }
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -1769,78 +1831,193 @@ struct WorkstreamLifecyclePill: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(isAddressingFindings)
-                .help(NSLocalizedString("Review findings detected. Click to address with agent.", comment: ""))
-            } else if pr.reviewDecision == "APPROVED" {
-                HStack(spacing: 4) {
-                    Button(action: onOpenPR) {
-                        HStack(spacing: 5) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 11))
-                            Text(verbatim: "#\(pr.number)")
-                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                                .tabularNumbers()
-                            Text(NSLocalizedString("Approved", comment: ""))
-                                .font(.system(size: 11, weight: .medium))
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(DesignColor.statusSuccess.opacity(0.14))
-                        .foregroundStyle(DesignColor.statusSuccess)
-                        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                    .help(pr.title)
+                .help(NSLocalizedString("AI review comments detected. Click to address with agent.", comment: ""))
 
-                    PRChecksBadge(pr: pr, directory: directory, compact: true)
-                }
-            } else if pr.state == "OPEN" {
-                HStack(spacing: 4) {
-                    Button(action: onOpenPR) {
-                        HStack(spacing: 5) {
-                            Image(systemName: "arrow.triangle.pull")
+                PRChecksBadge(pr: pr, directory: directory, compact: true)
+            }
+        } else if pr.reviewDecision == "CHANGES_REQUESTED" {
+            HStack(spacing: 4) {
+                Button(action: onAddressFindings) {
+                    HStack(spacing: 5) {
+                        if isAddressingFindings {
+                            ProgressView()
+                                .controlSize(.mini)
+                        } else {
+                            Image(systemName: "exclamationmark.bubble.fill")
                                 .font(.system(size: 11))
-                            Text(verbatim: "#\(pr.number)")
-                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                                .tabularNumbers()
-                            Text(NSLocalizedString("In Review", comment: ""))
-                                .font(.system(size: 11, weight: .medium))
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(DesignColor.statusInfo.opacity(0.12))
-                        .foregroundStyle(DesignColor.statusInfo)
-                        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                        Text(verbatim: "#\(pr.number)")
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .tabularNumbers()
+                        Text(NSLocalizedString("Address Review Changes", comment: ""))
+                            .font(.system(size: 11, weight: .medium))
                     }
-                    .buttonStyle(.plain)
-                    .help(pr.title)
-
-                    PRChecksBadge(pr: pr, directory: directory, compact: true)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(DesignColor.statusError.opacity(0.14))
+                    .foregroundStyle(DesignColor.statusError)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
                 }
+                .buttonStyle(.plain)
+                .disabled(isAddressingFindings)
+                .help(NSLocalizedString("Review changes requested. Click to address with agent.", comment: ""))
+
+                PRChecksBadge(pr: pr, directory: directory, compact: true)
             }
-        } else if !worktreeState.hasUncommittedChanges && worktreeState.hasBranchCommits {
-            HStack(spacing: 5) {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 10, weight: .semibold))
-                Text(NSLocalizedString("Changes Committed", comment: ""))
-                    .font(.system(size: 11, weight: .medium))
+        } else if pr.reviewDecision == "APPROVED" {
+            HStack(spacing: 4) {
+                Button(action: onOpenPR) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 11))
+                        Text(verbatim: "#\(pr.number)")
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .tabularNumbers()
+                        Text(NSLocalizedString("Approved", comment: ""))
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(DesignColor.statusSuccess.opacity(0.14))
+                    .foregroundStyle(DesignColor.statusSuccess)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .help(pr.title)
+
+                PRChecksBadge(pr: pr, directory: directory, compact: true)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(DesignColor.statusInfo.opacity(0.10))
-            .foregroundStyle(DesignColor.statusInfo)
-            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+        } else if pr.isDraft {
+            HStack(spacing: 4) {
+                Button(action: onOpenPR) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "doc.text")
+                            .font(.system(size: 11))
+                        Text(verbatim: "#\(pr.number)")
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .tabularNumbers()
+                        Text(NSLocalizedString("Draft PR", comment: ""))
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.secondary.opacity(0.12))
+                    .foregroundStyle(.secondary)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .help(pr.title)
+
+                PRChecksBadge(pr: pr, directory: directory, compact: true)
+            }
+        } else if pr.codeRabbitStatus == .reviewing {
+            HStack(spacing: 4) {
+                Button(action: onOpenPR) {
+                    HStack(spacing: 5) {
+                        ProgressView()
+                            .controlSize(.mini)
+                        Text(verbatim: "#\(pr.number)")
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .tabularNumbers()
+                        Text(NSLocalizedString("AI Reviewing...", comment: ""))
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(DesignColor.statusInfo.opacity(0.12))
+                    .foregroundStyle(DesignColor.statusInfo)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .help(pr.title)
+
+                PRChecksBadge(pr: pr, directory: directory, compact: true)
+            }
+        } else if pr.state == "OPEN" {
+            HStack(spacing: 4) {
+                Button(action: onOpenPR) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "arrow.triangle.pull")
+                            .font(.system(size: 11))
+                        Text(verbatim: "#\(pr.number)")
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .tabularNumbers()
+                        Text(NSLocalizedString("Awaiting Review", comment: ""))
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(DesignColor.statusInfo.opacity(0.12))
+                    .foregroundStyle(DesignColor.statusInfo)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .help(pr.title)
+
+                PRChecksBadge(pr: pr, directory: directory, compact: true)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var localStatePill: some View {
+        if agentState == .working {
+            Button { onFocusAgent?() } label: {
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(DesignColor.statusSuccess)
+                        .frame(width: 6, height: 6)
+                    Text(NSLocalizedString("Agent Working", comment: ""))
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(DesignColor.statusSuccess.opacity(0.12))
+                .foregroundStyle(DesignColor.statusSuccess)
+                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .help(NSLocalizedString("Agent is actively processing. Click to view terminal.", comment: ""))
+        } else if agentState == .waiting {
+            Button { onFocusAgent?() } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "bell.fill")
+                        .font(.system(size: 10))
+                    Text(NSLocalizedString("Waiting for Input", comment: ""))
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(DesignColor.statusInfo.opacity(0.12))
+                .foregroundStyle(DesignColor.statusInfo)
+                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .help(NSLocalizedString("Agent is waiting for your response. Click to view terminal.", comment: ""))
         } else if worktreeState.hasUncommittedChanges {
             HStack(spacing: 5) {
                 Circle()
                     .fill(DesignColor.statusWarning)
                     .frame(width: 6, height: 6)
-                Text(NSLocalizedString("Agent Working", comment: ""))
+                Text(NSLocalizedString("Uncommitted Changes", comment: ""))
                     .font(.system(size: 11, weight: .medium))
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(DesignColor.statusWarning.opacity(0.10))
             .foregroundStyle(DesignColor.statusWarning)
+            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+        } else if worktreeState.hasBranchCommits {
+            HStack(spacing: 5) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 10, weight: .semibold))
+                Text(NSLocalizedString("Ready for PR", comment: ""))
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(DesignColor.statusInfo.opacity(0.10))
+            .foregroundStyle(DesignColor.statusInfo)
             .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
         }
     }

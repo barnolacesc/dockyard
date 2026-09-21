@@ -395,6 +395,19 @@
 "Addressing review findings..." = "Addressing review findings...";
 "Review findings detected. Click to address with agent." = "Review findings detected. Click to address with agent.";
 "Open localhost:%d in browser (⌘B)" = "Open localhost:%d in browser (⌘B)";
+"Address AI Reviewer Comments" = "Address AI Reviewer Comments";
+"Address AI Comments (%d)" = "Address AI Comments (%d)";
+"Address Review Changes" = "Address Review Changes";
+"Awaiting Review" = "Awaiting Review";
+"Draft PR" = "Draft PR";
+"AI Reviewing..." = "AI Reviewing...";
+"Waiting for Input" = "Waiting for Input";
+"Ready for PR" = "Ready for PR";
+"AI review comments detected. Click to address with agent." = "AI review comments detected. Click to address with agent.";
+"Review changes requested. Click to address with agent." = "Review changes requested. Click to address with agent.";
+"Merge conflicts with base branch. Click to view on GitHub." = "Merge conflicts with base branch. Click to view on GitHub.";
+"Agent is actively processing. Click to view terminal." = "Agent is actively processing. Click to view terminal.";
+"Agent is waiting for your response. Click to view terminal." = "Agent is waiting for your response. Click to view terminal.";
 
 /* Workstream Info Git Stats */
 "Ahead" = "Ahead";
