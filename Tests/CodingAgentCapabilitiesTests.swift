@@ -5,8 +5,8 @@
 import XCTest
 
 final class CodingAgentCapabilitiesTests: XCTestCase {
-    func testContractVersionIsFour() {
-        XCTAssertEqual(CodingAgentCapabilities.contractVersion, 4)
+    func testContractVersionIsFive() {
+        XCTAssertEqual(CodingAgentCapabilities.contractVersion, 5)
     }
 
     func testClaudeCapabilitiesMatchSpecializedAdapter() {
@@ -59,7 +59,7 @@ final class CodingAgentCapabilitiesTests: XCTestCase {
                 commandStrategy: .agy,
                 stateReportingStrategy: .agyHooks,
                 supportsDirectLaunch: true,
-                supportsCLISessionResume: true,
+                supportsCLISessionResume: false,
                 supportsDockyardTmuxPersistence: true,
                 reportsMainAgentState: true,
                 reportsSubagentState: false,

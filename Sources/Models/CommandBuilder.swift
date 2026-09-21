@@ -438,21 +438,12 @@ enum CodingCLICommandBuilder {
         workingDirectory _: String,
         bypassPermissions: Bool
     ) -> AgentLaunchCommand {
-        var resume = CommandBuilder(cliPath)
-        resume.flag("--continue")
-        applyAgyPermissionOptions(to: &resume, bypassPermissions: bypassPermissions)
+        var command = CommandBuilder(cliPath)
+        applyAgyPermissionOptions(to: &command, bypassPermissions: bypassPermissions)
 
-        var fresh = CommandBuilder(cliPath)
-        applyAgyPermissionOptions(to: &fresh, bypassPermissions: bypassPermissions)
-
-        let finalCommand = CommandBuilder.withFallback(
-            resume.command,
-            fresh.command,
-            message: "Starting new session..."
-        )
         return AgentLaunchCommand(
-            finalCommand: finalCommand,
-            intermediateCommands: [resume.command, fresh.command, finalCommand]
+            finalCommand: command.command,
+            intermediateCommands: [command.command]
         )
     }
 
