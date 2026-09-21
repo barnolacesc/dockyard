@@ -318,6 +318,24 @@ enum GitHubOperations {
         return GitHubIssueTaskPreview.parse(jsonData: Data(json.utf8))
     }
 
+    /// Fetch open issues for this repo as bounded, validated task previews.
+    /// nil is a failed lookup; an empty array is a successful lookup with no issues.
+    static func openIssues(
+        ghPath: String,
+        at path: String,
+        limit: Int = 30,
+        processFactory: GitHubReadProcessFactory = defaultGitHubReadProcessFactory
+    ) -> [GitHubIssueTaskPreview]? {
+        guard let json = runCommand(
+            ghPath,
+            args: ["issue", "list", "--json", "number,title,url,body", "--limit", "\(limit)"],
+            in: path,
+            maximumOutputBytes: 4 * 1024 * 1024,
+            processFactory: processFactory
+        ) else { return nil }
+        return GitHubIssueTaskPreview.parseList(jsonData: Data(json.utf8))
+    }
+
     /// Fetch open PRs for this repo.
     static func openPRs(ghPath: String, at path: String, limit: Int = 5) -> [GitHubPR] {
         openPRSnapshot(ghPath: ghPath, at: path, limit: limit) ?? []

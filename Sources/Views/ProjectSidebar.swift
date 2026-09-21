@@ -197,6 +197,10 @@ struct ProjectSidebar: View {
     @State private var newWorkstreamIssuePreview: GitHubIssueTaskPreview?
     @State private var newWorkstreamIssueError = ""
     @State private var isLoadingWorkstreamIssue = false
+    @State private var newWorkstreamOpenIssues: [GitHubIssueTaskPreview] = []
+    @State private var isLoadingOpenIssues = false
+    @State private var openIssuesError = ""
+    @State private var issueLookupToken = 0
     @State private var newProjectName = ""
     @State private var newProjectError = ""
     @State private var isDropTargeted = false
@@ -667,19 +671,25 @@ struct ProjectSidebar: View {
                     name: $configuredWorkstreamName,
                     codingCLI: $newWorkstreamCodingCLI,
                     bypassPermissions: $newWorkstreamBypassPermissions,
-                    issueReference: Binding(
-                        get: { newWorkstreamIssue },
-                        set: {
-                            newWorkstreamIssue = $0
-                            newWorkstreamIssuePreview = nil
-                            newWorkstreamIssueError = ""
-                        }
-                    ),
+                    issueReference: $newWorkstreamIssue,
                     issuePreview: newWorkstreamIssuePreview,
                     issueError: newWorkstreamIssueError,
                     isLoadingIssue: isLoadingWorkstreamIssue,
+                    openIssues: newWorkstreamOpenIssues,
+                    isLoadingOpenIssues: isLoadingOpenIssues,
+                    openIssuesError: openIssuesError,
                     canUseGitHub: appEnv.ghAvailable,
+                    hasGitHubRemote: newWorkstreamProjectID.flatMap { pid in
+                        projects.first(where: { $0.id == pid }).map { appEnv.hasGitHubRemote($0.directory) }
+                    } ?? false,
                     onLoadIssue: loadNewWorkstreamIssue,
+                    onRetryLoadIssues: {
+                        if let pid = newWorkstreamProjectID, let project = projects.first(where: { $0.id == pid }) {
+                            loadOpenIssues(for: project)
+                        }
+                    },
+                    onSelectIssue: selectWorkstreamIssue,
+                    onDeselectIssue: deselectWorkstreamIssue,
                     onCreate: createConfiguredWorkstream,
                     onCancel: { showingNewWorkstream = false }
                 )
@@ -853,7 +863,12 @@ struct ProjectSidebar: View {
         newWorkstreamIssue = ""
         newWorkstreamIssuePreview = nil
         newWorkstreamIssueError = ""
+        newWorkstreamOpenIssues = []
+        isLoadingOpenIssues = false
+        openIssuesError = ""
+        issueLookupToken += 1
         showingNewWorkstream = true
+        loadOpenIssues(for: project)
     }
 
     /// Creates and registers a workstream with the configured name, Coding Agent,
@@ -876,6 +891,10 @@ struct ProjectSidebar: View {
             if issue.isBodyTruncated { text += "\n\n[Issue body truncated by Dockyard.]" }
             return text
         }
+        if let prompt {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(prompt, forType: .string)
+        }
         showingNewWorkstream = false
         addWorkstream(
             for: projectID,
@@ -896,14 +915,24 @@ struct ProjectSidebar: View {
         }
         let reference = newWorkstreamIssue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !reference.isEmpty else { return }
+
+        let cleanRef = reference.hasPrefix("#") ? String(reference.dropFirst()) : reference
+        if let cached = newWorkstreamOpenIssues.first(where: { String($0.number) == cleanRef || $0.url.absoluteString == reference }) {
+            selectWorkstreamIssue(cached)
+            return
+        }
+
         let repositoryURL = GitOperations.repoInfo(at: project.directory).remoteURL
             .flatMap(GitHubOperations.browserURL(from:))?
             .absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        issueLookupToken += 1
+        let currentToken = issueLookupToken
         isLoadingWorkstreamIssue = true
         newWorkstreamIssueError = ""
         DispatchQueue.global(qos: .userInitiated).async {
             let preview = GitHubOperations.issueTaskPreview(ghPath: ghPath, issue: reference, at: project.directory)
             DispatchQueue.main.async {
+                guard issueLookupToken == currentToken else { return }
                 isLoadingWorkstreamIssue = false
                 guard let preview,
                       let repositoryURL,
@@ -916,6 +945,51 @@ struct ProjectSidebar: View {
                 newWorkstreamIssuePreview = preview
                 configuredWorkstreamName = workstreamName(from: preview.title, issueNumber: preview.number)
             }
+        }
+    }
+
+    private func loadOpenIssues(for project: Project) {
+        guard let ghPath = appEnv.toolStatus.gh.path, appEnv.ghAvailable else { return }
+        guard appEnv.hasGitHubRemote(project.directory) else { return }
+        let projectID = project.id
+        isLoadingOpenIssues = true
+        openIssuesError = ""
+        let repositoryURL = GitOperations.repoInfo(at: project.directory).remoteURL
+            .flatMap(GitHubOperations.browserURL(from:))?
+            .absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        DispatchQueue.global(qos: .userInitiated).async {
+            let issues = GitHubOperations.openIssues(ghPath: ghPath, at: project.directory, limit: 30)
+            DispatchQueue.main.async {
+                guard newWorkstreamProjectID == projectID else { return }
+                isLoadingOpenIssues = false
+                guard let issues else {
+                    openIssuesError = NSLocalizedString("Could not load open issues.", comment: "")
+                    return
+                }
+                let filtered = issues.filter { issue in
+                    guard let repositoryURL else { return true }
+                    return issue.url.absoluteString.hasPrefix(repositoryURL + "/issues/")
+                }
+                newWorkstreamOpenIssues = filtered
+            }
+        }
+    }
+
+    private func selectWorkstreamIssue(_ issue: GitHubIssueTaskPreview) {
+        issueLookupToken += 1
+        isLoadingWorkstreamIssue = false
+        newWorkstreamIssuePreview = issue
+        newWorkstreamIssueError = ""
+        configuredWorkstreamName = workstreamName(from: issue.title, issueNumber: issue.number)
+    }
+
+    private func deselectWorkstreamIssue() {
+        issueLookupToken += 1
+        isLoadingWorkstreamIssue = false
+        newWorkstreamIssuePreview = nil
+        newWorkstreamIssueError = ""
+        if let projectID = newWorkstreamProjectID, let project = projects.first(where: { $0.id == projectID }) {
+            configuredWorkstreamName = NameGenerator.generate(avoiding: Set(project.workstreams.map(\.name)))
         }
     }
 
@@ -2147,8 +2221,15 @@ private struct NewWorkstreamSheet: View {
     let issuePreview: GitHubIssueTaskPreview?
     let issueError: String
     let isLoadingIssue: Bool
+    let openIssues: [GitHubIssueTaskPreview]
+    let isLoadingOpenIssues: Bool
+    let openIssuesError: String
     let canUseGitHub: Bool
+    let hasGitHubRemote: Bool
     let onLoadIssue: () -> Void
+    let onRetryLoadIssues: () -> Void
+    let onSelectIssue: (GitHubIssueTaskPreview) -> Void
+    let onDeselectIssue: () -> Void
     let onCreate: () -> Void
     let onCancel: () -> Void
 
@@ -2164,8 +2245,6 @@ private struct NewWorkstreamSheet: View {
         effectiveCodingCLI.capabilities.supportsDangerousPermissionBypass
     }
 
-    /// Returns a localized description of the dangerous permission bypass behavior
-    /// specific to the given Coding Agent CLI.
     private func permissionDescription(for cli: CodingCLI) -> String {
         switch cli {
         case .claude:
@@ -2176,6 +2255,19 @@ private struct NewWorkstreamSheet: View {
             return NSLocalizedString("Antigravity CLI will start with --dangerously-skip-permissions (YOLO mode).", comment: "")
         case .opencode:
             return ""
+        }
+    }
+
+    private var filteredIssues: [GitHubIssueTaskPreview] {
+        let trimmed = issueReference.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return openIssues }
+
+        let cleanNumber = trimmed.hasPrefix("#") ? String(trimmed.dropFirst()) : trimmed
+        return openIssues.filter { issue in
+            if String(issue.number) == cleanNumber || String(issue.number).contains(cleanNumber) {
+                return true
+            }
+            return issue.title.localizedCaseInsensitiveContains(trimmed)
         }
     }
 
@@ -2212,32 +2304,138 @@ private struct NewWorkstreamSheet: View {
                 }
 
                 Section("GitHub Issue") {
-                    HStack {
-                        TextField("Issue number or URL", text: $issueReference)
-                            .onSubmit(onLoadIssue)
-                        Button("Load", action: onLoadIssue)
-                            .disabled(issueReference.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoadingIssue || !canUseGitHub)
-                    }
-                    if isLoadingIssue {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else if let issuePreview {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("#\(issuePreview.number) · \(issuePreview.title)")
-                                .fontWeight(.medium)
-                            Text(issuePreview.body.isEmpty ? NSLocalizedString("No description", comment: "") : issuePreview.body)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(5)
-                        }
-                    } else if !issueError.isEmpty {
-                        Text(issueError)
-                            .font(.caption)
-                            .foregroundStyle(.red)
-                    } else if !canUseGitHub {
+                    if !canUseGitHub {
                         Text("Install and authenticate the GitHub CLI to link an issue.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    } else if !hasGitHubRemote {
+                        Text("This repository does not have a GitHub remote.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        HStack(spacing: 6) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundStyle(.tertiary)
+                                    .font(.system(size: 11))
+                                TextField("Search issues or enter # / URL", text: $issueReference)
+                                    .textFieldStyle(.plain)
+                                    .onSubmit(onLoadIssue)
+                                if !issueReference.isEmpty {
+                                    Button {
+                                        issueReference = ""
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundStyle(.tertiary)
+                                            .font(.system(size: 11))
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous)
+                                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                            )
+
+                            if isLoadingIssue {
+                                ProgressView()
+                                    .controlSize(.small)
+                            } else {
+                                Button("Load", action: onLoadIssue)
+                                    .disabled(issueReference.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            }
+                        }
+
+                        if isLoadingOpenIssues {
+                            HStack(spacing: 6) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Loading open issues...")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 4)
+                        } else if !openIssuesError.isEmpty {
+                            HStack(spacing: 6) {
+                                Text(openIssuesError)
+                                    .font(.caption)
+                                    .foregroundStyle(.red)
+                                Spacer()
+                                Button("Retry", action: onRetryLoadIssues)
+                                    .font(.caption)
+                                    .buttonStyle(.link)
+                            }
+                            .padding(.vertical, 4)
+                        } else if !openIssues.isEmpty {
+                            let filtered = filteredIssues
+                            if filtered.isEmpty {
+                                Text("No matching issues")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.vertical, 4)
+                            } else {
+                                ScrollView {
+                                    LazyVStack(spacing: 2) {
+                                        ForEach(filtered) { issue in
+                                            IssueRowView(
+                                                issue: issue,
+                                                isSelected: issuePreview?.number == issue.number,
+                                                onSelect: {
+                                                    if issuePreview?.number == issue.number {
+                                                        onDeselectIssue()
+                                                    } else {
+                                                        onSelectIssue(issue)
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
+                                    .padding(2)
+                                }
+                                .frame(minHeight: 0, maxHeight: 130)
+                            }
+                        } else {
+                            Text("No open issues found")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 4)
+                        }
+
+                        if let issuePreview {
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text("#\(issuePreview.number) · \(issuePreview.title)")
+                                        .fontWeight(.medium)
+                                        .lineLimit(1)
+                                    Spacer()
+                                    Button(action: onDeselectIssue) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .help(Text("Clear issue"))
+                                }
+                                if !issuePreview.body.isEmpty {
+                                    Text(issuePreview.body)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(3)
+                                }
+                            }
+                            .padding(8)
+                            .background(Color.primary.opacity(0.04))
+                            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
+                        } else if !issueError.isEmpty {
+                            Text(issueError)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
                     }
                 }
             }
@@ -2253,7 +2451,56 @@ private struct NewWorkstreamSheet: View {
             }
         }
         .padding(20)
-        .frame(width: 460, height: 440)
+        .frame(width: 480, height: 560)
+    }
+}
+
+private struct IssueRowView: View {
+    let issue: GitHubIssueTaskPreview
+    let isSelected: Bool
+    let onSelect: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack(spacing: 6) {
+                Text("#\(issue.number)")
+                    .font(.system(.caption, design: .monospaced))
+                    .fontWeight(.semibold)
+                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+
+                Text(issue.title)
+                    .font(.caption)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .foregroundStyle(.primary)
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous)
+                    .fill(isSelected ? Color.accentColor.opacity(0.12) : (isHovering ? Color.primary.opacity(0.05) : Color.clear))
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovering = hovering
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
     }
 }
 

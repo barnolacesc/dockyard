@@ -723,7 +723,14 @@
 "Project Default" = "Project Default";
 "GitHub Issue" = "GitHub Issue";
 "Issue number or URL" = "Issue number or URL";
+"Search issues or enter # / URL" = "Search issues or enter # / URL";
 "Load" = "Load";
+"Loading open issues..." = "Loading open issues...";
+"Could not load open issues." = "Could not load open issues.";
+"No open issues found" = "No open issues found";
+"No matching issues" = "No matching issues";
+"Clear issue" = "Clear issue";
+"This repository does not have a GitHub remote." = "This repository does not have a GitHub remote.";
 "No description" = "No description";
 "GitHub CLI is not available." = "GitHub CLI is not available.";
 "Could not load that issue from the current project." = "Could not load that issue from the current project.";
