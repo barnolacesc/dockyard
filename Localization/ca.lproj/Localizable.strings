@@ -776,6 +776,7 @@
 "Changes" = "Canvis";
 "Approved" = "Aprovat";
 "Keep Mac awake: %@ (click to cycle)" = "Mantén el Mac despert: %@ (fes clic per alternar)";
+"Starting new session..." = "Iniciant una nova sessió...";
 
 /* Subagents */
 "1 active subagent" = "1 subagent actiu";

@@ -2,6 +2,9 @@
 // ABOUTME: Replaces ad-hoc string concatenation for claude/tmux commands.
 
 import Foundation
+import SQLite3
+
+private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
 struct CommandBuilder {
     private var parts: [String] = []
@@ -384,7 +387,7 @@ enum CodingCLICommandBuilder {
         let finalCommand = CommandBuilder.withFallback(
             resume.command,
             fresh.command,
-            message: "Starting new session..."
+            message: NSLocalizedString("Starting new session...", comment: "")
         )
         return AgentLaunchCommand(
             finalCommand: finalCommand,
@@ -425,7 +428,7 @@ enum CodingCLICommandBuilder {
         let finalCommand = CommandBuilder.withFallback(
             resume.command,
             fresh.command,
-            message: "Starting new session..."
+            message: NSLocalizedString("Starting new session...", comment: "")
         )
         return AgentLaunchCommand(
             finalCommand: finalCommand,
@@ -433,27 +436,92 @@ enum CodingCLICommandBuilder {
         )
     }
 
-    private static func buildAgyAgentCommand(
+    /// Checks Antigravity CLI's SQLite metadata store (`conversation_summaries.db`) to determine
+    /// if a conversation has already been recorded for the given working directory.
+    ///
+    /// - Parameters:
+    ///   - workingDirectory: The filesystem path of the workspace / worktree.
+    ///   - dbPath: Optional custom path to `conversation_summaries.db` (used for testing).
+    /// - Returns: `true` if a matching conversation exists for this workspace; `false` otherwise.
+    static func hasExistingAgyConversation(
+        workingDirectory: String,
+        dbPath: String? = nil
+    ) -> Bool {
+        let path = dbPath ?? FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".gemini/antigravity-cli/conversation_summaries.db").path
+        guard FileManager.default.fileExists(atPath: path) else { return false }
+
+        var db: OpaquePointer?
+        guard sqlite3_open(path, &db) == SQLITE_OK else {
+            return false
+        }
+        defer { sqlite3_close(db) }
+
+        let standardPath = (workingDirectory as NSString).standardizingPath
+        var targetURI = URL(fileURLWithPath: standardPath).absoluteString
+        while targetURI.hasSuffix("/") {
+            targetURI.removeLast()
+        }
+
+        let query = "SELECT 1 FROM conversation_summaries WHERE workspace_uris LIKE ? LIMIT 1;"
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, query, -1, &stmt, nil) == SQLITE_OK else {
+            return false
+        }
+        defer { sqlite3_finalize(stmt) }
+
+        let pattern = "%\(targetURI)%"
+        sqlite3_bind_text(stmt, 1, pattern, -1, SQLITE_TRANSIENT)
+
+        return sqlite3_step(stmt) == SQLITE_ROW
+    }
+
+    /// Builds the launch command for Antigravity CLI (`agy`).
+    ///
+    /// If an existing conversation is detected for `workingDirectory`, attempts `agy --continue`
+    /// with fallback to a fresh session. If no conversation exists for the workspace, launches
+    /// fresh directly without `--continue` to avoid traversing up to `$HOME` and capturing stale sessions.
+    ///
+    /// - Parameters:
+    ///   - cliPath: Absolute path to the `agy` binary.
+    ///   - workingDirectory: The filesystem path of the workspace.
+    ///   - bypassPermissions: Whether to auto-approve tool execution (`--dangerously-skip-permissions`).
+    ///   - hasExistingConversation: Explicit override for whether an existing conversation exists (for testing).
+    /// - Returns: An `AgentLaunchCommand` configured for direct launch or continuation with fallback.
+    static func buildAgyAgentCommand(
         cliPath: String,
-        workingDirectory _: String,
-        bypassPermissions: Bool
+        workingDirectory: String,
+        bypassPermissions: Bool,
+        hasExistingConversation: Bool? = nil
     ) -> AgentLaunchCommand {
-        var resume = CommandBuilder(cliPath)
-        resume.flag("--continue")
-        applyAgyPermissionOptions(to: &resume, bypassPermissions: bypassPermissions)
+        let shouldResume = hasExistingConversation ?? hasExistingAgyConversation(workingDirectory: workingDirectory)
 
-        var fresh = CommandBuilder(cliPath)
-        applyAgyPermissionOptions(to: &fresh, bypassPermissions: bypassPermissions)
+        if shouldResume {
+            var resume = CommandBuilder(cliPath)
+            resume.flag("--continue")
+            applyAgyPermissionOptions(to: &resume, bypassPermissions: bypassPermissions)
 
-        let finalCommand = CommandBuilder.withFallback(
-            resume.command,
-            fresh.command,
-            message: "Starting new session..."
-        )
-        return AgentLaunchCommand(
-            finalCommand: finalCommand,
-            intermediateCommands: [resume.command, fresh.command, finalCommand]
-        )
+            var fresh = CommandBuilder(cliPath)
+            applyAgyPermissionOptions(to: &fresh, bypassPermissions: bypassPermissions)
+
+            let finalCommand = CommandBuilder.withFallback(
+                resume.command,
+                fresh.command,
+                message: NSLocalizedString("Starting new session...", comment: "")
+            )
+            return AgentLaunchCommand(
+                finalCommand: finalCommand,
+                intermediateCommands: [resume.command, fresh.command, finalCommand]
+            )
+        } else {
+            var command = CommandBuilder(cliPath)
+            applyAgyPermissionOptions(to: &command, bypassPermissions: bypassPermissions)
+
+            return AgentLaunchCommand(
+                finalCommand: command.command,
+                intermediateCommands: [command.command]
+            )
+        }
     }
 
     private static func applyAgyPermissionOptions(

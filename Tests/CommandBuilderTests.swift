@@ -422,12 +422,11 @@ final class CommandBuilderTests: XCTestCase {
             envVars: [:],
             supportsSessionName: false
         )
-        XCTAssertEqual(command.intermediateCommands.count, 3)
-        XCTAssertEqual(command.intermediateCommands[0], "/usr/local/bin/agy --continue")
-        XCTAssertEqual(command.intermediateCommands[1], "/usr/local/bin/agy")
-        XCTAssertTrue(command.finalCommand.contains("/usr/local/bin/agy --continue"))
-        XCTAssertTrue(command.finalCommand.contains("/usr/local/bin/agy"))
+        XCTAssertEqual(command.intermediateCommands.count, 1)
+        XCTAssertEqual(command.intermediateCommands[0], "/usr/local/bin/agy")
+        XCTAssertEqual(command.finalCommand, "/usr/local/bin/agy")
         XCTAssertFalse(command.finalCommand.contains("--dangerously-skip-permissions"))
+        XCTAssertFalse(command.finalCommand.contains("--continue"))
     }
 
     func testBuildAgentCommandForAgyWithBypassPermissions() {
@@ -446,10 +445,48 @@ final class CommandBuilderTests: XCTestCase {
             envVars: [:],
             supportsSessionName: false
         )
+        XCTAssertEqual(command.intermediateCommands.count, 1)
+        XCTAssertEqual(command.intermediateCommands[0], "/usr/local/bin/agy --dangerously-skip-permissions")
+        XCTAssertEqual(command.finalCommand, "/usr/local/bin/agy --dangerously-skip-permissions")
+        XCTAssertTrue(command.finalCommand.contains("--dangerously-skip-permissions"))
+        XCTAssertFalse(command.finalCommand.contains("--continue"))
+    }
+
+    func testBuildAgentCommandForAgyExistingWorkspaceResumes() {
+        let command = CodingCLICommandBuilder.buildAgyAgentCommand(
+            cliPath: "/usr/local/bin/agy",
+            workingDirectory: "/tmp/dockyard worktree",
+            bypassPermissions: false,
+            hasExistingConversation: true
+        )
+        XCTAssertEqual(command.intermediateCommands.count, 3)
+        XCTAssertEqual(command.intermediateCommands[0], "/usr/local/bin/agy --continue")
+        XCTAssertEqual(command.intermediateCommands[1], "/usr/local/bin/agy")
+        XCTAssertTrue(command.finalCommand.contains("/usr/local/bin/agy --continue"))
+        XCTAssertTrue(command.finalCommand.contains("/usr/local/bin/agy"))
+    }
+
+    func testBuildAgentCommandForAgyExistingWorkspaceResumesWithBypassPermissions() {
+        let command = CodingCLICommandBuilder.buildAgyAgentCommand(
+            cliPath: "/usr/local/bin/agy",
+            workingDirectory: "/tmp/dockyard worktree",
+            bypassPermissions: true,
+            hasExistingConversation: true
+        )
         XCTAssertEqual(command.intermediateCommands.count, 3)
         XCTAssertEqual(command.intermediateCommands[0], "/usr/local/bin/agy --continue --dangerously-skip-permissions")
         XCTAssertEqual(command.intermediateCommands[1], "/usr/local/bin/agy --dangerously-skip-permissions")
         XCTAssertTrue(command.finalCommand.contains("--dangerously-skip-permissions"))
+    }
+
+    func testHasExistingAgyConversationReturnsFalseWhenDBMissing() {
+        let missingDBPath = "/tmp/non_existent_path_to_db_\(UUID().uuidString)/conversation_summaries.db"
+        XCTAssertFalse(
+            CodingCLICommandBuilder.hasExistingAgyConversation(
+                workingDirectory: "/tmp/some-worktree",
+                dbPath: missingDBPath
+            )
+        )
     }
 
     func testBuildCodexAgentCommandBypassUsesDangerousFullAccessFlag() throws {

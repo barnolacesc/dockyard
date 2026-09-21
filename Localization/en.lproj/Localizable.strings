@@ -776,6 +776,7 @@
 "Changes" = "Changes";
 "Approved" = "Approved";
 "Keep Mac awake: %@ (click to cycle)" = "Keep Mac awake: %@ (click to cycle)";
+"Starting new session..." = "Starting new session...";
 
 /* Subagents */
 "1 active subagent" = "1 active subagent";
