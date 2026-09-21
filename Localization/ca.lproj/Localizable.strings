@@ -395,6 +395,22 @@
 "Addressing review findings..." = "Resolent observacions de revisió...";
 "Review findings detected. Click to address with agent." = "S'han detectat observacions de revisió. Fes clic per resoldre-les amb l'agent.";
 "Open localhost:%d in browser (⌘B)" = "Obre localhost:%d al navegador (⌘B)";
+"Address AI Reviewer Comments" = "Resoldre comentaris del revisor d'IA";
+"Address AI Comments (%d)" = "Resoldre comentaris d'IA (%d)";
+"Address Review Changes" = "Resoldre canvis de la revisió";
+"Awaiting Review" = "Esperant revisió";
+"Draft PR" = "PR en esborrany";
+"AI Reviewing..." = "Revisió d'IA en curs...";
+"Conflicts" = "Conflictes";
+"Closed" = "Tancat";
+"Waiting for Input" = "Esperant resposta";
+"Uncommitted Changes" = "Canvis pendents de confirmar";
+"Ready for PR" = "A punt per a la PR";
+"AI review comments detected. Click to address with agent." = "Comentaris de revisió d'IA detectats. Fes clic per resoldre'ls amb l'agent.";
+"Review changes requested. Click to address with agent." = "S'han sol·licitat canvis a la revisió. Fes clic per resoldre'ls amb l'agent.";
+"Merge conflicts with base branch. Click to view on GitHub." = "Conflictes de fusió amb la branca base. Fes clic per veure'ls a GitHub.";
+"Agent is actively processing. Click to view terminal." = "L'agent està processant activament. Fes clic per veure el terminal.";
+"Agent is waiting for your response. Click to view terminal." = "L'agent està esperant la teva resposta. Fes clic per veure el terminal.";
 
 /* Workstream Info Git Stats */
 "Ahead" = "Ahead";
