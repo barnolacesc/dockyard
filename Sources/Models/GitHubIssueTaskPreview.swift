@@ -3,10 +3,11 @@
 
 import Foundation
 
-struct GitHubIssueTaskPreview: Equatable, Sendable {
+struct GitHubIssueTaskPreview: Equatable, Sendable, Identifiable {
     static let maximumPayloadBytes = 1_048_576
     static let maximumBodyCharacters = 16_384
 
+    var id: Int { number }
     let number: Int
     let title: String
     let url: URL
@@ -35,6 +36,32 @@ struct GitHubIssueTaskPreview: Equatable, Sendable {
             body: String(retainedBody.prefix(maximumBodyCharacters)),
             isBodyTruncated: isBodyTruncated
         )
+    }
+
+    static func parseList(jsonData: Data) -> [GitHubIssueTaskPreview] {
+        guard jsonData.count <= maximumPayloadBytes * 4,
+              let payloads = try? JSONDecoder().decode([Payload].self, from: jsonData)
+        else { return [] }
+
+        return payloads.compactMap { payload in
+            guard payload.number > 0 else { return nil }
+            let title = normalizeTitle(payload.title)
+            guard !title.isEmpty,
+                  let url = canonicalIssueURL(payload.url, issueNumber: payload.number)
+            else { return nil }
+
+            let normalizedBody = normalizeBody(payload.body ?? "")
+            let retainedBody = normalizedBody.prefix(maximumBodyCharacters + 1)
+            let isBodyTruncated = retainedBody.count > maximumBodyCharacters
+
+            return GitHubIssueTaskPreview(
+                number: payload.number,
+                title: title,
+                url: url,
+                body: String(retainedBody.prefix(maximumBodyCharacters)),
+                isBodyTruncated: isBodyTruncated
+            )
+        }
     }
 
     private static func normalizeTitle(_ title: String) -> String {

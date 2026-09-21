@@ -63,6 +63,31 @@ final class GitHubOperationsTests: XCTestCase {
         XCTAssertNil(GitHubOperations.openPRSnapshot(ghPath: "/tmp/gh", at: "/tmp") { _, _, _, _ in malformed })
     }
 
+    func testOpenIssuesParsesOutput() {
+        let json = """
+        [
+          {
+            "number": 42,
+            "title": "Fix crash on startup",
+            "url": "https://github.com/owner/repo/issues/42",
+            "body": "Steps to reproduce..."
+          }
+        ]
+        """
+        let process = GitHubReadProcessDouble(output: Data(json.utf8))
+        let issues = GitHubOperations.openIssues(ghPath: "/tmp/gh", at: "/tmp") { _, _, _, _ in process }
+        XCTAssertEqual(issues.count, 1)
+        XCTAssertEqual(issues.first?.number, 42)
+        XCTAssertEqual(issues.first?.title, "Fix crash on startup")
+    }
+
+    func testOpenIssuesHandlesFailureAndEmpty() {
+        let failed = GitHubReadProcessDouble(terminationStatus: 1)
+        XCTAssertEqual(GitHubOperations.openIssues(ghPath: "/tmp/gh", at: "/tmp") { _, _, _, _ in failed }, [])
+        let empty = GitHubReadProcessDouble(output: Data("[]".utf8))
+        XCTAssertEqual(GitHubOperations.openIssues(ghPath: "/tmp/gh", at: "/tmp") { _, _, _, _ in empty }, [])
+    }
+
     func testCheckExitCodesAreOptIn() {
         for status in [Int32(1), 8] {
             let rejected = GitHubReadProcessDouble(output: Data("[]".utf8), terminationStatus: status)
