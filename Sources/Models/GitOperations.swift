@@ -1,6 +1,7 @@
 // ABOUTME: Git operations for project and workstream management.
 // ABOUTME: Handles repo detection, init, worktree create/remove, and repo info.
 
+import Darwin
 import Foundation
 import OSLog
 
@@ -143,6 +144,7 @@ let defaultGitPushProcessFactory: GitPushProcessFactory = {
 }
 
 enum GitOperations {
+    static let maximumExcludeFileBytes = 64 * 1024
     static let maximumPushOutputBytes = 64 * 1024
 
     private static var gitPath: String? {
@@ -331,25 +333,83 @@ enum GitOperations {
     }
 
     /// Append a pattern to .git/info/exclude if not already present.
-    private static func addExcludeEntry(at repoPath: String, pattern: String) {
+    /// Returns false without modifying existing bytes when the candidate cannot
+    /// be read safely within the fixed resource ceiling.
+    @discardableResult
+    static func addExcludeEntry(at repoPath: String, pattern: String) -> Bool {
         let excludeURL = URL(fileURLWithPath: repoPath).appendingPathComponent(".git/info/exclude")
         let fm = FileManager.default
 
         // Ensure the info directory exists
         let infoDir = excludeURL.deletingLastPathComponent()
-        try? fm.createDirectory(at: infoDir, withIntermediateDirectories: true)
+        do {
+            try fm.createDirectory(at: infoDir, withIntermediateDirectories: true)
+        } catch {
+            return false
+        }
 
-        let existing = (try? String(contentsOf: excludeURL, encoding: .utf8)) ?? ""
+        let descriptor = open(
+            excludeURL.path,
+            O_RDWR | O_CREAT | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK,
+            mode_t(0o644)
+        )
+        guard descriptor >= 0 else { return false }
+        defer { close(descriptor) }
+
+        var metadata = stat()
+        guard fstat(descriptor, &metadata) == 0,
+              (metadata.st_mode & S_IFMT) == S_IFREG,
+              metadata.st_size >= 0,
+              metadata.st_size <= off_t(maximumExcludeFileBytes)
+        else {
+            return false
+        }
+
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: false)
+        var data = Data()
+        data.reserveCapacity(Int(metadata.st_size))
+        do {
+            while data.count <= maximumExcludeFileBytes {
+                let remaining = maximumExcludeFileBytes + 1 - data.count
+                let chunkSize = min(64 * 1024, remaining)
+                guard chunkSize > 0 else { break }
+                guard let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty else { break }
+                data.append(chunk)
+            }
+        } catch {
+            return false
+        }
+
+        guard data.count <= maximumExcludeFileBytes,
+              let existing = String(data: data, encoding: .utf8)
+        else {
+            return false
+        }
         let lines = existing.components(separatedBy: .newlines)
-        if lines.contains(pattern) { return }
+        if lines.contains(pattern) { return true }
 
         let entry = existing.hasSuffix("\n") || existing.isEmpty ? pattern + "\n" : "\n" + pattern + "\n"
-        if let data = entry.data(using: .utf8), let handle = try? FileHandle(forWritingTo: excludeURL) {
-            handle.seekToEndOfFile()
-            handle.write(data)
-            handle.closeFile()
-        } else {
-            try? (existing + entry).write(to: excludeURL, atomically: true, encoding: .utf8)
+        guard let entryData = entry.data(using: .utf8),
+              lseek(descriptor, 0, SEEK_END) >= 0
+        else { return false }
+        return writeAll(entryData, to: descriptor)
+    }
+
+    private static func writeAll(_ data: Data, to descriptor: Int32) -> Bool {
+        data.withUnsafeBytes { bytes in
+            guard let baseAddress = bytes.baseAddress else { return true }
+            var written = 0
+            while written < data.count {
+                let count = Darwin.write(
+                    descriptor,
+                    baseAddress.advanced(by: written),
+                    data.count - written
+                )
+                if count < 0, errno == EINTR { continue }
+                guard count > 0 else { return false }
+                written += count
+            }
+            return true
         }
     }
 
