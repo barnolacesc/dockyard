@@ -62,7 +62,7 @@ final class CodingAgentCapabilitiesTests: XCTestCase {
                 supportsCLISessionResume: true,
                 supportsDockyardTmuxPersistence: true,
                 reportsMainAgentState: true,
-                reportsSubagentState: false,
+                reportsSubagentState: true,
                 supportsDangerousPermissionBypass: true,
                 supportsLivePermissionControl: false,
                 supportsAutoRenameBranch: false,
@@ -71,9 +71,10 @@ final class CodingAgentCapabilitiesTests: XCTestCase {
         )
     }
 
-    func testOnlyClaudeClaimsSubagentStatus() {
+    func testClaudeAndAgyClaimSubagentStatus() {
         XCTAssertTrue(CodingCLI.claude.capabilities.reportsSubagentState)
-        XCTAssertTrue([CodingCLI.codex, .opencode, .agy].allSatisfy {
+        XCTAssertTrue(CodingCLI.agy.capabilities.reportsSubagentState)
+        XCTAssertTrue([CodingCLI.codex, .opencode].allSatisfy {
             !$0.capabilities.reportsSubagentState
         })
     }

@@ -149,6 +149,24 @@ enum AgentHooks {
                         ],
                     ],
                 ],
+                [
+                    "matcher": "invoke_subagent",
+                    "hooks": [
+                        [
+                            "type": "command",
+                            "command": "\(quotedHelper) --workstream-id \(id) --subagent-event start",
+                        ],
+                    ],
+                ],
+                [
+                    "matcher": "manage_subagents",
+                    "hooks": [
+                        [
+                            "type": "command",
+                            "command": "\(quotedHelper) --workstream-id \(id) --subagent-event stop",
+                        ],
+                    ],
+                ],
             ],
             "Stop": [
                 [

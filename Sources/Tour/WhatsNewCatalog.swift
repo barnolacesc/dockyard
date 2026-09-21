@@ -9,6 +9,11 @@ enum WhatsNewCatalog {
     static let releases: [WhatsNewRelease] = [
         WhatsNewRelease(version: "0.2.5", entries: [
             WhatsNewEntry(
+                symbol: "point.3.connected.trianglepath.dotted",
+                titleKey: "Subagents in Sidebar and Tabs",
+                bodyKey: "See active subagents invoked across your workspaces directly in the sidebar and on the Agent tab."
+            ),
+            WhatsNewEntry(
                 symbol: "globe",
                 titleKey: "Enhanced In-App Browser",
                 bodyKey: "Logins and cache now persist across browser tabs and restarts. Choose whether links open in-app, in your external browser, or prompt you each time."

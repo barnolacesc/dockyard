@@ -109,6 +109,30 @@ final class AgentHooksTests: XCTestCase {
         XCTAssertNil(cleanedJson["dockyard-state"])
     }
 
+    func testWriteAgyHooksIncludesSubagentHooks() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir.appendingPathComponent(".agents"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let id = UUID()
+        let url = try XCTUnwrap(AgentHooks.writeAgyHooks(workingDirectory: tempDir.path, workstreamID: id, helperPath: "/path/to/dy-agent-state"))
+
+        let data = try Data(contentsOf: url)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let dockyardState = try XCTUnwrap(json["dockyard-state"] as? [String: Any])
+        let postToolUse = try XCTUnwrap(dockyardState["PostToolUse"] as? [[String: Any]])
+
+        let invokeSubagentHook = postToolUse.first { ($0["matcher"] as? String) == "invoke_subagent" }
+        XCTAssertNotNil(invokeSubagentHook)
+        let invokeCommand = ((invokeSubagentHook?["hooks"] as? [[String: Any]])?.first?["command"] as? String)
+        XCTAssertTrue(invokeCommand?.contains("--subagent-event start") == true)
+
+        let manageSubagentsHook = postToolUse.first { ($0["matcher"] as? String) == "manage_subagents" }
+        XCTAssertNotNil(manageSubagentsHook)
+        let manageCommand = ((manageSubagentsHook?["hooks"] as? [[String: Any]])?.first?["command"] as? String)
+        XCTAssertTrue(manageCommand?.contains("--subagent-event stop") == true)
+    }
+
     func testOpenCodeAutoRenameConfigurationReferencesGeneratedInstructionFile() throws {
         let id = try XCTUnwrap(UUID(uuidString: "AABBCCDD-1122-3344-5566-778899AABBCC"))
         let content = try AgentHooks.openCodeAutoRenameConfiguration(workstreamID: id)

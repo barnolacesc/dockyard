@@ -1696,11 +1696,12 @@ private struct WorkstreamRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 rowContent
-                if isSelected, agentState != nil || !activeSubagents.isEmpty {
+                if (isSelected && (agentState != nil || !activeSubagents.isEmpty)) || !activeSubagents.isEmpty {
                     agentFleet
                 }
             }
             .padding(.leading, isSelected ? 6 : 0)
+            .padding(.vertical, isSelected ? 4 : (activeSubagents.isEmpty ? 0 : 2))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
@@ -1886,15 +1887,17 @@ private struct WorkstreamRow: View {
                 )
             }
             if activeSubagents.count > 4 {
-                Text(
-                    String(
+                let remainingCount = activeSubagents.count - 4
+                let remainingText = remainingCount == 1
+                    ? NSLocalizedString("1 more agent", comment: "One more active subagent")
+                    : String(
                         format: NSLocalizedString("%d more agents", comment: "Additional active subagents in selected workstream"),
-                        activeSubagents.count - 4
+                        remainingCount
                     )
-                )
-                .font(.system(size: 9))
-                .foregroundStyle(.secondary)
-                .padding(.leading, 16)
+                Text(remainingText)
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 16)
             }
         }
         .padding(.leading, 16)

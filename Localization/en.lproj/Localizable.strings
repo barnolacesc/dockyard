@@ -648,6 +648,7 @@
 "Open workstream" = "Open workstream";
 "Waiting" = "Waiting";
 "Ready" = "Ready";
+"1 more agent" = "1 more agent";
 "%d more agents" = "%d more agents";
 "%d unread" = "%d unread";
 "%d need attention" = "%d need attention";
@@ -755,3 +756,9 @@
 "Changes" = "Changes";
 "Approved" = "Approved";
 "Keep Mac awake: %@ (click to cycle)" = "Keep Mac awake: %@ (click to cycle)";
+
+/* Subagents */
+"1 active subagent" = "1 active subagent";
+"%d active subagents" = "%d active subagents";
+"Subagents in Sidebar and Tabs" = "Subagents in Sidebar and Tabs";
+"See active subagents invoked across your workspaces directly in the sidebar and on the Agent tab." = "See active subagents invoked across your workspaces directly in the sidebar and on the Agent tab.";
