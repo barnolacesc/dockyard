@@ -81,6 +81,42 @@ final class GitHubIssueTaskPreviewTests: XCTestCase {
         XCTAssertNil(GitHubIssueTaskPreview.parse(jsonData: oversizedData))
     }
 
+    func testParsesListAndSkipsInvalid() throws {
+        let listData = try JSONSerialization.data(withJSONObject: [
+            [
+                "number": 10,
+                "title": "First issue",
+                "url": "https://github.com/owner/repo/issues/10",
+                "body": "First body",
+            ],
+            [
+                "number": 0,
+                "title": "Invalid number",
+                "url": "https://github.com/owner/repo/issues/0",
+            ],
+            [
+                "number": 20,
+                "title": "Second issue",
+                "url": "https://github.com/owner/repo/issues/20",
+                "body": NSNull(),
+            ],
+        ])
+
+        let previews = GitHubIssueTaskPreview.parseList(jsonData: listData)
+        XCTAssertEqual(previews.count, 2)
+        XCTAssertEqual(previews[0].number, 10)
+        XCTAssertEqual(previews[0].title, "First issue")
+        XCTAssertEqual(previews[0].body, "First body")
+        XCTAssertEqual(previews[1].number, 20)
+        XCTAssertEqual(previews[1].title, "Second issue")
+        XCTAssertEqual(previews[1].body, "")
+    }
+
+    func testParseListRejectsOversizedPayload() {
+        let oversizedData = Data(repeating: 0x20, count: GitHubIssueTaskPreview.maximumPayloadBytes * 4 + 1)
+        XCTAssertEqual(GitHubIssueTaskPreview.parseList(jsonData: oversizedData), [])
+    }
+
     private func preview(
         number: Int = 12,
         title: String = "Issue title",

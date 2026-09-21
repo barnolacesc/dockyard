@@ -84,7 +84,7 @@ extension CodingCLI {
                 supportsCLISessionResume: true,
                 supportsDockyardTmuxPersistence: true,
                 reportsMainAgentState: true,
-                reportsSubagentState: false,
+                reportsSubagentState: true,
                 supportsDangerousPermissionBypass: true,
                 supportsLivePermissionControl: false,
                 supportsAutoRenameBranch: false,

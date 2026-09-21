@@ -395,6 +395,19 @@
 "Addressing review findings..." = "Resolent observacions de revisió...";
 "Review findings detected. Click to address with agent." = "S'han detectat observacions de revisió. Fes clic per resoldre-les amb l'agent.";
 "Open localhost:%d in browser (⌘B)" = "Obre localhost:%d al navegador (⌘B)";
+"Address AI Reviewer Comments" = "Resoldre comentaris del revisor d'IA";
+"Address AI Comments (%d)" = "Resoldre comentaris d'IA (%d)";
+"Address Review Changes" = "Resoldre canvis de la revisió";
+"Awaiting Review" = "Esperant revisió";
+"Draft PR" = "PR en esborrany";
+"AI Reviewing..." = "Revisió d'IA en curs...";
+"Waiting for Input" = "Esperant resposta";
+"Ready for PR" = "A punt per a la PR";
+"AI review comments detected. Click to address with agent." = "Comentaris de revisió d'IA detectats. Fes clic per resoldre'ls amb l'agent.";
+"Review changes requested. Click to address with agent." = "S'han sol·licitat canvis a la revisió. Fes clic per resoldre'ls amb l'agent.";
+"Merge conflicts with base branch. Click to view on GitHub." = "Conflictes de fusió amb la branca base. Fes clic per veure'ls a GitHub.";
+"Agent is actively processing. Click to view terminal." = "L'agent està processant activament. Fes clic per veure el terminal.";
+"Agent is waiting for your response. Click to view terminal." = "L'agent està esperant la teva resposta. Fes clic per veure el terminal.";
 
 /* Workstream Info Git Stats */
 "Ahead" = "Ahead";
@@ -648,6 +661,7 @@
 "Open workstream" = "Obre el flux de treball";
 "Waiting" = "En espera";
 "Ready" = "A punt";
+"1 more agent" = "1 agent més";
 "%d more agents" = "%d agents més";
 "%d unread" = "%d sense llegir";
 "%d need attention" = "%d requereixen atenció";
@@ -722,7 +736,14 @@
 "Project Default" = "Predeterminat del projecte";
 "GitHub Issue" = "Incidència de GitHub";
 "Issue number or URL" = "Número o URL de la incidència";
+"Search issues or enter # / URL" = "Cerca incidències o introdueix el núm. o URL";
 "Load" = "Carrega";
+"Loading open issues..." = "Carregant incidències obertes...";
+"Could not load open issues." = "No s'han pogut carregar les incidències obertes.";
+"No open issues found" = "No s'han trobat incidències obertes";
+"No matching issues" = "Cap incidència coincideix";
+"Clear issue" = "Neteja la incidència";
+"This repository does not have a GitHub remote." = "Aquest repositori no té cap remot de GitHub.";
 "No description" = "Sense descripció";
 "GitHub CLI is not available." = "El GitHub CLI no està disponible.";
 "Could not load that issue from the current project." = "No s'ha pogut carregar aquesta incidència del projecte actual.";
@@ -756,3 +777,9 @@
 "Approved" = "Aprovat";
 "Keep Mac awake: %@ (click to cycle)" = "Mantén el Mac despert: %@ (fes clic per alternar)";
 "Starting new session..." = "Iniciant una nova sessió...";
+
+/* Subagents */
+"1 active subagent" = "1 subagent actiu";
+"%d active subagents" = "%d subagents actius";
+"Subagents in Sidebar and Tabs" = "Subagents a la barra lateral i pestanyes";
+"See active subagents invoked across your workspaces directly in the sidebar and on the Agent tab." = "Consulta els subagents actius invocats a tots els espais de treball directament a la barra lateral i a la pestanya de l'agent.";

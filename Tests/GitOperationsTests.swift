@@ -379,6 +379,95 @@ final class GitOperationsTests: XCTestCase {
         )
     }
 
+    // MARK: - repository exclude entries
+
+    func testAddExcludeEntryAppendsAtReadCeilingAndPreservesExistingContent() throws {
+        let repoDir = makeRepository(named: "exclude-at-limit")
+        let excludeURL = repoDir.appendingPathComponent(".git/info/exclude")
+        let existing = Data(repeating: 0x61, count: GitOperations.maximumExcludeFileBytes)
+        try existing.write(to: excludeURL)
+
+        XCTAssertTrue(GitOperations.addExcludeEntry(at: repoDir.path, pattern: ".dockyard-state/"))
+
+        let updated = try Data(contentsOf: excludeURL)
+        XCTAssertEqual(updated.prefix(existing.count), existing)
+        XCTAssertEqual(
+            String(data: updated.dropFirst(existing.count), encoding: .utf8),
+            "\n.dockyard-state/\n"
+        )
+    }
+
+    func testAddExcludeEntryDoesNotDuplicateExistingPattern() throws {
+        let repoDir = makeRepository(named: "exclude-existing")
+        let excludeURL = repoDir.appendingPathComponent(".git/info/exclude")
+        let existing = Data("# local ignores\n.dockyard-state/\n".utf8)
+        try existing.write(to: excludeURL)
+
+        XCTAssertTrue(GitOperations.addExcludeEntry(at: repoDir.path, pattern: ".dockyard-state/"))
+        XCTAssertEqual(try Data(contentsOf: excludeURL), existing)
+    }
+
+    func testAddExcludeEntryCreatesMissingFile() throws {
+        let repoDir = makeRepository(named: "exclude-missing")
+        let excludeURL = repoDir.appendingPathComponent(".git/info/exclude")
+        try FileManager.default.removeItem(at: excludeURL)
+
+        XCTAssertTrue(GitOperations.addExcludeEntry(at: repoDir.path, pattern: ".dockyard-state/"))
+        XCTAssertEqual(
+            try String(contentsOf: excludeURL, encoding: .utf8),
+            ".dockyard-state/\n"
+        )
+    }
+
+    func testAddExcludeEntryRejectsOversizedFileWithoutModification() throws {
+        let repoDir = makeRepository(named: "exclude-oversized")
+        let excludeURL = repoDir.appendingPathComponent(".git/info/exclude")
+        let existing = Data(repeating: 0x61, count: GitOperations.maximumExcludeFileBytes + 1)
+        try existing.write(to: excludeURL)
+
+        XCTAssertFalse(GitOperations.addExcludeEntry(at: repoDir.path, pattern: ".dockyard-state/"))
+        XCTAssertEqual(try Data(contentsOf: excludeURL), existing)
+    }
+
+    func testAddExcludeEntryRejectsMalformedUTF8WithoutModification() throws {
+        let repoDir = makeRepository(named: "exclude-malformed")
+        let excludeURL = repoDir.appendingPathComponent(".git/info/exclude")
+        let existing = Data([0xFF, 0xFE])
+        try existing.write(to: excludeURL)
+
+        XCTAssertFalse(GitOperations.addExcludeEntry(at: repoDir.path, pattern: ".dockyard-state/"))
+        XCTAssertEqual(try Data(contentsOf: excludeURL), existing)
+    }
+
+    func testAddExcludeEntryRejectsSymbolicLinkWithoutChangingTarget() throws {
+        let repoDir = makeRepository(named: "exclude-symlink")
+        let excludeURL = repoDir.appendingPathComponent(".git/info/exclude")
+        let targetURL = tempDir.appendingPathComponent("exclude-target")
+        let existing = Data("keep target unchanged\n".utf8)
+        try existing.write(to: targetURL)
+        try FileManager.default.removeItem(at: excludeURL)
+        try FileManager.default.createSymbolicLink(at: excludeURL, withDestinationURL: targetURL)
+
+        XCTAssertFalse(GitOperations.addExcludeEntry(at: repoDir.path, pattern: ".dockyard-state/"))
+        XCTAssertEqual(try Data(contentsOf: targetURL), existing)
+        XCTAssertEqual(
+            try FileManager.default.destinationOfSymbolicLink(atPath: excludeURL.path),
+            targetURL.path
+        )
+    }
+
+    func testAddExcludeEntryRejectsNonRegularFile() throws {
+        let repoDir = makeRepository(named: "exclude-directory")
+        let excludeURL = repoDir.appendingPathComponent(".git/info/exclude")
+        try FileManager.default.removeItem(at: excludeURL)
+        try FileManager.default.createDirectory(at: excludeURL, withIntermediateDirectories: false)
+
+        XCTAssertFalse(GitOperations.addExcludeEntry(at: repoDir.path, pattern: ".dockyard-state/"))
+        var isDirectory: ObjCBool = false
+        XCTAssertTrue(FileManager.default.fileExists(atPath: excludeURL.path, isDirectory: &isDirectory))
+        XCTAssertTrue(isDirectory.boolValue)
+    }
+
     // MARK: - fetchDefaultBranch
 
     func testFetchDefaultBranchDoesNotCrashWithoutRemote() throws {

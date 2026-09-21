@@ -190,6 +190,35 @@ final class SidebarRailTests: XCTestCase {
         XCTAssertEqual(style.stagePill?.showsManualMark, true)
     }
 
+    func testGitHubPRStagePillWithCodeRabbitFindingsUsesWarningTintAndBadgeForeground() throws {
+        let payload: [String: Any] = [
+            "number": 212,
+            "title": "PR",
+            "state": "OPEN",
+            "headRefName": "feat",
+            "url": "https://example.com/212",
+            "statusCheckRollup": [
+                ["name": "CodeRabbit", "status": "COMPLETED", "conclusion": "SUCCESS"]
+            ],
+            "latestReviews": [
+                [
+                    "author": ["login": "coderabbitai[bot]"],
+                    "state": "COMMENTED",
+                    "body": "**Actionable comments posted: 1**\n\n---\n<!-- autofix_checkbox_start -->"
+                ]
+            ]
+        ]
+        let pr = try XCTUnwrap(GitHubPR.decode(payload))
+        let pill = try XCTUnwrap(pr.stagePill(isManuallySet: false))
+
+        XCTAssertEqual(pill.appearance, .filled)
+        XCTAssertEqual(pill.iconSystemName, "sparkles")
+        XCTAssertEqual(pill.titleKey, "1")
+        XCTAssertEqual(pill.prNumber, 212)
+        XCTAssertEqual(pill.tintColor, DesignColor.statusWarning)
+        XCTAssertEqual(pill.foregroundColor, DesignColor.badgeForeground)
+    }
+
     func testSidebarModePersistenceRoundTripsAndKeepsLastVisibleMode() {
         SidebarMode.save(.collapsed, defaults: defaults)
         SidebarMode.save(.hidden, defaults: defaults)

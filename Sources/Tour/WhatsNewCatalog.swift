@@ -7,7 +7,12 @@ enum WhatsNewCatalog {
     /// Newest first. The version string must match the release that ships it
     /// (release-please owns version numbers; adjust when the release PR is cut).
     static let releases: [WhatsNewRelease] = [
-        WhatsNewRelease(version: "0.2.5", entries: [
+        WhatsNewRelease(version: "0.2.6", entries: [
+            WhatsNewEntry(
+                symbol: "point.3.connected.trianglepath.dotted",
+                titleKey: "Subagents in Sidebar and Tabs",
+                bodyKey: "See active subagents invoked across your workspaces directly in the sidebar and on the Agent tab."
+            ),
             WhatsNewEntry(
                 symbol: "globe",
                 titleKey: "Enhanced In-App Browser",

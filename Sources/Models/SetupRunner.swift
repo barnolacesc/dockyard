@@ -7,6 +7,108 @@ import os
 
 private let logger = Logger(subsystem: "dockyard", category: "setup-runner")
 
+final class SetupOutputCollector: @unchecked Sendable {
+    private let inputLock = NSLock()
+    private let stateLock = NSLock()
+    private let maximumBytes: Int
+    private var pending = Data()
+    private var deliveryScheduled = false
+    private var isTerminal = false
+
+    init(maximumBytes: Int) {
+        self.maximumBytes = max(0, maximumBytes)
+    }
+
+    /// Returns true only when the caller needs to schedule a delivery.
+    @discardableResult
+    func append(_ data: Data) -> Bool {
+        guard !data.isEmpty else { return false }
+
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        guard !isTerminal else { return false }
+
+        retainLatest(data)
+        guard !deliveryScheduled else { return false }
+        deliveryScheduled = true
+        return true
+    }
+
+    /// Serializes reads from the shared pipe with the completion drain.
+    func readAndAppend(from handle: FileHandle, maximumReadBytes: Int) -> Bool {
+        inputLock.lock()
+        defer { inputLock.unlock() }
+
+        guard maximumReadBytes > 0,
+              let data = try? handle.read(upToCount: maximumReadBytes),
+              !data.isEmpty
+        else { return false }
+        return append(data)
+    }
+
+    func drain() -> Data {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+
+        let output = pending
+        pending = Data()
+        deliveryScheduled = false
+        return output
+    }
+
+    func finish(appending finalData: Data = Data()) -> Data? {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        guard !isTerminal else { return nil }
+
+        retainLatest(finalData)
+        isTerminal = true
+        deliveryScheduled = false
+        let output = pending
+        pending = Data()
+        return output
+    }
+
+    func finish(draining handle: FileHandle, readChunkBytes: Int) -> Data? {
+        inputLock.lock()
+        defer { inputLock.unlock() }
+
+        if readChunkBytes > 0 {
+            while let data = try? handle.read(upToCount: readChunkBytes),
+                  !data.isEmpty
+            {
+                append(data)
+            }
+        }
+        return finish()
+    }
+
+    func cancel() {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+
+        isTerminal = true
+        deliveryScheduled = false
+        pending = Data()
+    }
+
+    private func retainLatest(_ data: Data) {
+        guard maximumBytes > 0 else {
+            pending = Data()
+            return
+        }
+        if data.count >= maximumBytes {
+            pending = Data(data.suffix(maximumBytes))
+            return
+        }
+
+        pending.append(data)
+        if pending.count > maximumBytes {
+            pending = Data(pending.suffix(maximumBytes))
+        }
+    }
+}
+
 @MainActor
 final class SetupRunner: ObservableObject {
     enum State: Equatable {
@@ -21,8 +123,10 @@ final class SetupRunner: ObservableObject {
 
     private let workstreamID: UUID
     private var process: Process?
+    private var outputCollector: SetupOutputCollector?
     private var outputBuffer = Data()
     private static let maxLogBytes = 4096
+    nonisolated private static let readChunkBytes = 64 * 1024
 
     init(workstreamID: UUID) {
         self.workstreamID = workstreamID
@@ -54,30 +158,39 @@ final class SetupRunner: ObservableObject {
         let pipe = Pipe()
         process.standardOutput = pipe
         process.standardError = pipe
+        let outputCollector = SetupOutputCollector(maximumBytes: Self.maxLogBytes)
+        self.outputCollector = outputCollector
 
         let workstreamID = self.workstreamID
 
-        pipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
-            let data = handle.availableData
-            guard !data.isEmpty else { return }
+        pipe.fileHandleForReading.readabilityHandler = { [weak self, outputCollector] handle in
+            guard outputCollector.readAndAppend(
+                from: handle,
+                maximumReadBytes: SetupRunner.readChunkBytes
+            ) else { return }
 
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                self.appendOutput(data)
+            Task { @MainActor [weak self, outputCollector] in
+                guard let self,
+                      self.outputCollector === outputCollector
+                else { return }
+                self.appendOutput(outputCollector.drain())
             }
         }
 
-        process.terminationHandler = { [weak self] terminatedProcess in
+        process.terminationHandler = { [weak self, outputCollector] terminatedProcess in
             let exitCode = terminatedProcess.terminationStatus
-            var remainingOutput = Data()
+            guard let outputPipe = terminatedProcess.standardOutput as? Pipe else { return }
+            let outputHandle = outputPipe.fileHandleForReading
+            outputHandle.readabilityHandler = nil
+            guard let remainingOutput = outputCollector.finish(
+                draining: outputHandle,
+                readChunkBytes: SetupRunner.readChunkBytes
+            ) else { return }
 
-            if let outputPipe = terminatedProcess.standardOutput as? Pipe {
-                outputPipe.fileHandleForReading.readabilityHandler = nil
-                remainingOutput = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            }
-
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
+            Task { @MainActor [weak self, outputCollector] in
+                guard let self,
+                      self.outputCollector === outputCollector
+                else { return }
                 self.appendOutput(remainingOutput)
                 if exitCode == 0 {
                     self.state = .succeeded
@@ -86,15 +199,18 @@ final class SetupRunner: ObservableObject {
                     self.state = .failed(exitCode: exitCode)
                 }
                 self.process = nil
+                self.outputCollector = nil
             }
         }
 
         do {
             try process.run()
         } catch {
+            outputCollector.cancel()
             state = .failed(exitCode: -1)
             logTail = error.localizedDescription
             self.process = nil
+            self.outputCollector = nil
         }
     }
 
@@ -115,6 +231,7 @@ final class SetupRunner: ObservableObject {
         if let pipe = process.standardOutput as? Pipe {
             pipe.fileHandleForReading.readabilityHandler = nil
         }
+        outputCollector?.cancel()
 
         if process.isRunning {
             process.terminate()
@@ -122,5 +239,6 @@ final class SetupRunner: ObservableObject {
 
         state = .idle
         self.process = nil
+        outputCollector = nil
     }
 }

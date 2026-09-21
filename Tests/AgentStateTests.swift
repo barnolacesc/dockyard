@@ -46,6 +46,59 @@ final class AgentStateTests: XCTestCase {
         XCTAssertFalse(snapshot.chromeActive)
     }
 
+    func testAgentStateFileAtByteCeilingLoads() throws {
+        let directory = temporaryStateDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let file = directory.appendingPathComponent("state.json")
+        let snapshot = makeAgentStateSnapshot()
+        var data = try encodedAgentStateSnapshot(snapshot)
+        XCTAssertLessThan(data.count, AgentStateFiles.maximumSnapshotBytes)
+        data.append(Data(repeating: 0x20, count: AgentStateFiles.maximumSnapshotBytes - data.count))
+        try data.write(to: file)
+
+        XCTAssertEqual(AgentStateFiles.load(from: file), snapshot)
+        XCTAssertEqual(data.count, AgentStateFiles.maximumSnapshotBytes)
+    }
+
+    func testAgentStateFileRejectsOversizedPayloadWithoutModifyingIt() throws {
+        let directory = temporaryStateDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let file = directory.appendingPathComponent("state.json")
+        var data = try encodedAgentStateSnapshot(makeAgentStateSnapshot())
+        data.append(Data(repeating: 0x20, count: AgentStateFiles.maximumSnapshotBytes - data.count + 1))
+        try data.write(to: file)
+
+        XCTAssertNil(AgentStateFiles.load(from: file))
+        XCTAssertEqual(try Data(contentsOf: file), data)
+    }
+
+    func testAgentStateFileRejectsSymbolicLinkAndNonRegularCandidates() throws {
+        let directory = temporaryStateDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let target = directory.appendingPathComponent("target.json")
+        let link = directory.appendingPathComponent("state.json")
+        try encodedAgentStateSnapshot(makeAgentStateSnapshot()).write(to: target)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+
+        XCTAssertNil(AgentStateFiles.load(from: link))
+        XCTAssertNil(AgentStateFiles.load(from: directory))
+    }
+
+    func testAgentStateFileRejectsMalformedPayloadWithoutModifyingIt() throws {
+        let directory = temporaryStateDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let file = directory.appendingPathComponent("state.json")
+        let data = Data("{not-json".utf8)
+        try data.write(to: file)
+
+        XCTAssertNil(AgentStateFiles.load(from: file))
+        XCTAssertEqual(try Data(contentsOf: file), data)
+    }
+
     func testSubagentHookInputDecodesOnlyBoundedLifecycleFields() {
         let data = Data(#"{"hook_event_name":"SubagentStart","agent_id":"agent-123","agent_type":"Explore","last_assistant_message":"ignored"}"#.utf8)
 
@@ -58,6 +111,145 @@ final class AgentStateTests: XCTestCase {
         XCTAssertNil(AgentSubagentHookInput.decodeValidated(
             from: Data(#"{"agent_id":"agent\n123","agent_type":"Explore"}"#.utf8)
         ))
+    }
+
+    func testSubagentHookInputDecodesAgyInvokeSubagentPayload() throws {
+        let payload = Data("""
+        {
+          "toolCall": {
+            "name": "invoke_subagent",
+            "args": {
+              "Subagents": [
+                {
+                  "Role": "Codebase Researcher",
+                  "TypeName": "research",
+                  "Prompt": "Explore the codebase",
+                  "Model": "flash"
+                },
+                {
+                  "TypeName": "tester",
+                  "Prompt": "Run tests"
+                }
+              ]
+            }
+          }
+        }
+        """.utf8)
+
+        let items = AgentSubagentHookInput.decodeAllValidated(from: payload)
+        XCTAssertEqual(items.count, 2)
+        XCTAssertEqual(items[0].agentType, "Codebase Researcher")
+        XCTAssertEqual(items[0].agentID, "research-1")
+        XCTAssertEqual(items[1].agentType, "tester")
+        XCTAssertEqual(items[1].agentID, "tester-2")
+
+        XCTAssertEqual(AgentSubagentHookInput.decodeValidated(from: payload), items[0])
+    }
+
+    func testSubagentHookInputDecodesReturnedConversationIDsFromResult() throws {
+        let jsonResultPayload = Data("""
+        {
+          "toolCall": {
+            "name": "invoke_subagent",
+            "args": {
+              "Subagents": [
+                {
+                  "Role": "Codebase Researcher",
+                  "TypeName": "research"
+                },
+                {
+                  "TypeName": "tester"
+                }
+              ]
+            }
+          },
+          "result": "[{\\"conversationId\\": \\"11111111-2222-3333-4444-555555555555\\"}, {\\"conversationId\\": \\"66666666-7777-8888-9999-000000000000\\"}]"
+        }
+        """.utf8)
+
+        let jsonItems = AgentSubagentHookInput.decodeAllValidated(from: jsonResultPayload)
+        XCTAssertEqual(jsonItems.count, 2)
+        XCTAssertEqual(jsonItems[0].agentID, "11111111-2222-3333-4444-555555555555")
+        XCTAssertEqual(jsonItems[0].agentType, "Codebase Researcher")
+        XCTAssertEqual(jsonItems[1].agentID, "66666666-7777-8888-9999-000000000000")
+        XCTAssertEqual(jsonItems[1].agentType, "tester")
+
+        let textResultPayload = Data("""
+        {
+          "toolCall": {
+            "name": "invoke_subagent",
+            "args": {
+              "Subagents": [
+                {
+                  "Role": "Explorer",
+                  "TypeName": "explore"
+                }
+              ]
+            }
+          },
+          "result": "Subagent spawned successfully with conversation ID: aabbccdd-1122-3344-5566-778899aabbcc"
+        }
+        """.utf8)
+
+        let textItems = AgentSubagentHookInput.decodeAllValidated(from: textResultPayload)
+        XCTAssertEqual(textItems.count, 1)
+        XCTAssertEqual(textItems[0].agentID, "aabbccdd-1122-3344-5566-778899aabbcc")
+        XCTAssertEqual(textItems[0].agentType, "Explorer")
+    }
+
+    func testSubagentHookInputReturnsEmptyOnError() throws {
+        let errorPayload = Data("""
+        {
+          "toolCall": {
+            "name": "invoke_subagent",
+            "args": {
+              "Subagents": [
+                {
+                  "TypeName": "research"
+                }
+              ]
+            }
+          },
+          "error": "failed to launch subagent: invalid argument"
+        }
+        """.utf8)
+
+        let items = AgentSubagentHookInput.decodeAllValidated(from: errorPayload)
+        XCTAssertTrue(items.isEmpty)
+    }
+
+    func testSubagentHookInputDecodesAgyManageSubagentsPayload() throws {
+        let killAllPayload = Data("""
+        {
+          "toolCall": {
+            "name": "manage_subagents",
+            "args": {
+              "Action": "kill_all"
+            }
+          }
+        }
+        """.utf8)
+
+        let killAllItems = AgentSubagentHookInput.decodeAllValidated(from: killAllPayload)
+        XCTAssertEqual(killAllItems.count, 1)
+        XCTAssertEqual(killAllItems[0].agentID, "*")
+
+        let killPayload = Data("""
+        {
+          "toolCall": {
+            "name": "manage_subagents",
+            "args": {
+              "Action": "kill",
+              "ConversationIds": ["subagent-1", "subagent-2"]
+            }
+          }
+        }
+        """.utf8)
+
+        let killItems = AgentSubagentHookInput.decodeAllValidated(from: killPayload)
+        XCTAssertEqual(killItems.count, 2)
+        XCTAssertEqual(killItems[0].agentID, "subagent-1")
+        XCTAssertEqual(killItems[1].agentID, "subagent-2")
     }
 
     func testSubagentFileNameDoesNotExposeUntrustedAgentIDAsAPath() throws {
@@ -135,6 +327,52 @@ final class AgentStateTests: XCTestCase {
         try encoder.encode(snapshot).write(to: spoofedURL)
 
         XCTAssertNil(AgentSubagentFiles.load(from: spoofedURL))
+    }
+
+    func testSubagentSnapshotRejectsOversizedPayloadWithoutModifyingIt() throws {
+        let directory = temporaryStateDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let snapshot = AgentSubagentSnapshot(
+            workstreamID: UUID(),
+            agentID: "agent-one",
+            agentType: "Explore",
+            updatedAt: Date(timeIntervalSince1970: 1_800_000_000),
+            pid: Int32(getpid())
+        )
+        let file = try XCTUnwrap(AgentSubagentFiles.fileURL(
+            for: snapshot.workstreamID,
+            agentID: snapshot.agentID,
+            directoryURL: directory
+        ))
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        var data = try encoder.encode(snapshot)
+        data.append(Data(repeating: 0x20, count: AgentStateFiles.maximumSnapshotBytes - data.count + 1))
+        try data.write(to: file)
+
+        XCTAssertNil(AgentSubagentFiles.load(from: file))
+        XCTAssertEqual(try Data(contentsOf: file), data)
+    }
+
+    private func temporaryStateDirectory() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("dockyard-agent-state-read-tests-\(UUID().uuidString)")
+    }
+
+    private func makeAgentStateSnapshot() -> AgentStateSnapshot {
+        AgentStateSnapshot(
+            state: .working,
+            updatedAt: Date(timeIntervalSince1970: 1_800_000_000),
+            pid: Int32(getpid()),
+            chromeActive: true
+        )
+    }
+
+    private func encodedAgentStateSnapshot(_ snapshot: AgentStateSnapshot) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(snapshot)
     }
 }
 
@@ -225,6 +463,29 @@ final class AgentStateStoreTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
         XCTAssertEqual(store.agentState(for: id), .working)
+    }
+
+    func testInitialScanIgnoresOversizedAgentStateFile() throws {
+        let id = UUID()
+        try writeSnapshot(.working, pid: Int32(getpid()), for: id)
+        let file = tempDir.appendingPathComponent("\(id.uuidString.lowercased()).json")
+        let handle = try FileHandle(forWritingTo: file)
+        defer { try? handle.close() }
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data(
+            repeating: 0x20,
+            count: AgentStateFiles.maximumSnapshotBytes + 1
+        ))
+
+        let store = AgentStateStore(directoryURL: tempDir)
+        store.refresh()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertNil(store.agentState(for: id))
+        XCTAssertGreaterThan(
+            try Data(contentsOf: file).count,
+            AgentStateFiles.maximumSnapshotBytes
+        )
     }
 
     func testReturnsUnknownForStalePid() throws {
@@ -368,5 +629,52 @@ final class AgentStateStoreTests: XCTestCase {
         )
 
         XCTAssertEqual(AgentStateStore.decayedState(snapshot, now: now), .idle)
+    }
+
+    func testSubagentRemainsActiveWhileProcessIsRunning() throws {
+        let id = UUID()
+        let staleDate = Date().addingTimeInterval(-31 * 60)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        try AgentSubagentFiles.write(
+            AgentSubagentSnapshot(
+                workstreamID: id,
+                agentID: "running-agent",
+                agentType: "Explore",
+                updatedAt: staleDate,
+                pid: Int32(getpid())
+            ),
+            directoryURL: tempDir
+        )
+
+        let store = AgentStateStore(directoryURL: tempDir)
+        store.refresh()
+
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(store.activeSubagentCount(for: id), 1)
+        XCTAssertEqual(store.activeSubagents(for: id).first?.agentID, "running-agent")
+    }
+
+    func testSubagentIgnoredWhenProcessNotRunning() throws {
+        let id = UUID()
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        try AgentSubagentFiles.write(
+            AgentSubagentSnapshot(
+                workstreamID: id,
+                agentID: "dead-agent",
+                agentType: "Explore",
+                updatedAt: Date(),
+                pid: 999_999
+            ),
+            directoryURL: tempDir
+        )
+
+        let store = AgentStateStore(directoryURL: tempDir)
+        store.refresh()
+
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(store.activeSubagentCount(for: id), 0)
+        XCTAssertTrue(store.activeSubagents(for: id).isEmpty)
     }
 }

@@ -29,6 +29,14 @@ func readBoundedStandardInput(maximumBytes: Int) throws -> Data? {
     return nil
 }
 
+func readBoundedStandardInputIfAvailable(maximumBytes: Int) throws -> Data? {
+    guard isatty(STDIN_FILENO) == 0 else { return nil }
+    var fds = pollfd(fd: STDIN_FILENO, events: Int16(POLLIN), revents: 0)
+    let pollResult = poll(&fds, 1, 50)
+    guard pollResult > 0, (fds.revents & Int16(POLLIN)) != 0 else { return nil }
+    return try readBoundedStandardInput(maximumBytes: maximumBytes)
+}
+
 guard let idString = value(for: "--workstream-id"),
       let id = UUID(uuidString: idString)
 else {
@@ -83,7 +91,14 @@ if let requestedSubagentEvent {
             FileHandle.standardError.write(Data("dy-agent-state: subagent hook input is too large\n".utf8))
             exit(2)
         }
-        guard let input = AgentSubagentHookInput.decodeValidated(from: inputData) else {
+        if let jsonObject = try? JSONSerialization.jsonObject(with: inputData) as? [String: Any],
+           let error = jsonObject["error"] as? String,
+           !error.isEmpty {
+            FileHandle.standardOutput.write(Data("{}\n".utf8))
+            exit(0)
+        }
+        let inputs = AgentSubagentHookInput.decodeAllValidated(from: inputData)
+        guard !inputs.isEmpty else {
             FileHandle.standardError.write(Data("dy-agent-state: invalid subagent hook input\n".utf8))
             exit(2)
         }
@@ -91,19 +106,25 @@ if let requestedSubagentEvent {
             at: AgentStateFiles.directoryURL,
             withIntermediateDirectories: true
         )
-        switch requestedSubagentEvent {
-        case .start:
-            try AgentSubagentFiles.write(
-                AgentSubagentSnapshot(
-                    workstreamID: id,
-                    agentID: input.agentID,
-                    agentType: input.agentType,
-                    updatedAt: Date(),
-                    pid: agentPID
+        for input in inputs {
+            switch requestedSubagentEvent {
+            case .start:
+                try AgentSubagentFiles.write(
+                    AgentSubagentSnapshot(
+                        workstreamID: id,
+                        agentID: input.agentID,
+                        agentType: input.agentType,
+                        updatedAt: Date(),
+                        pid: agentPID
+                    )
                 )
-            )
-        case .stop:
-            try AgentSubagentFiles.remove(workstreamID: id, agentID: input.agentID)
+            case .stop:
+                if input.agentID == "*" {
+                    AgentSubagentFiles.removeAll(for: id)
+                } else {
+                    try AgentSubagentFiles.remove(workstreamID: id, agentID: input.agentID)
+                }
+            }
         }
         FileHandle.standardOutput.write(Data("{}\n".utf8))
         exit(0)
@@ -124,6 +145,17 @@ let snapshot = AgentStateSnapshot(
 do {
     try FileManager.default.createDirectory(at: AgentStateFiles.directoryURL, withIntermediateDirectories: true)
     try AgentStateFiles.write(snapshot, for: id)
+    if requestedState == .idle {
+        var shouldRemoveSubagents = true
+        if let stopData = try? readBoundedStandardInputIfAvailable(maximumBytes: AgentSubagentHookInput.maximumInputBytes),
+           let jsonObject = try? JSONSerialization.jsonObject(with: stopData) as? [String: Any],
+           let fullyIdle = jsonObject["fullyIdle"] as? Bool {
+            shouldRemoveSubagents = fullyIdle
+        }
+        if shouldRemoveSubagents {
+            AgentSubagentFiles.removeAll(for: id)
+        }
+    }
     if requestedState == .waiting {
         FileHandle.standardOutput.write(Data("{\"decision\": \"allow\"}\n".utf8))
     } else {
