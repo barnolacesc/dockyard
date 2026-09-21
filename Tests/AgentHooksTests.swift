@@ -120,14 +120,14 @@ final class AgentHooksTests: XCTestCase {
         let data = try Data(contentsOf: url)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         let dockyardState = try XCTUnwrap(json["dockyard-state"] as? [String: Any])
-        let preToolUse = try XCTUnwrap(dockyardState["PreToolUse"] as? [[String: Any]])
+        let postToolUse = try XCTUnwrap(dockyardState["PostToolUse"] as? [[String: Any]])
 
-        let invokeSubagentHook = preToolUse.first { ($0["matcher"] as? String) == "invoke_subagent" }
+        let invokeSubagentHook = postToolUse.first { ($0["matcher"] as? String) == "invoke_subagent" }
         XCTAssertNotNil(invokeSubagentHook)
         let invokeCommand = ((invokeSubagentHook?["hooks"] as? [[String: Any]])?.first?["command"] as? String)
         XCTAssertTrue(invokeCommand?.contains("--subagent-event start") == true)
 
-        let manageSubagentsHook = preToolUse.first { ($0["matcher"] as? String) == "manage_subagents" }
+        let manageSubagentsHook = postToolUse.first { ($0["matcher"] as? String) == "manage_subagents" }
         XCTAssertNotNil(manageSubagentsHook)
         let manageCommand = ((manageSubagentsHook?["hooks"] as? [[String: Any]])?.first?["command"] as? String)
         XCTAssertTrue(manageCommand?.contains("--subagent-event stop") == true)

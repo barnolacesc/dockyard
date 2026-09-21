@@ -93,6 +93,78 @@ final class AgentStateTests: XCTestCase {
         XCTAssertEqual(AgentSubagentHookInput.decodeValidated(from: payload), items[0])
     }
 
+    func testSubagentHookInputDecodesReturnedConversationIDsFromResult() throws {
+        let jsonResultPayload = Data("""
+        {
+          "toolCall": {
+            "name": "invoke_subagent",
+            "args": {
+              "Subagents": [
+                {
+                  "Role": "Codebase Researcher",
+                  "TypeName": "research"
+                },
+                {
+                  "TypeName": "tester"
+                }
+              ]
+            }
+          },
+          "result": "[{\\"conversationId\\": \\"11111111-2222-3333-4444-555555555555\\"}, {\\"conversationId\\": \\"66666666-7777-8888-9999-000000000000\\"}]"
+        }
+        """.utf8)
+
+        let jsonItems = AgentSubagentHookInput.decodeAllValidated(from: jsonResultPayload)
+        XCTAssertEqual(jsonItems.count, 2)
+        XCTAssertEqual(jsonItems[0].agentID, "11111111-2222-3333-4444-555555555555")
+        XCTAssertEqual(jsonItems[0].agentType, "Codebase Researcher")
+        XCTAssertEqual(jsonItems[1].agentID, "66666666-7777-8888-9999-000000000000")
+        XCTAssertEqual(jsonItems[1].agentType, "tester")
+
+        let textResultPayload = Data("""
+        {
+          "toolCall": {
+            "name": "invoke_subagent",
+            "args": {
+              "Subagents": [
+                {
+                  "Role": "Explorer",
+                  "TypeName": "explore"
+                }
+              ]
+            }
+          },
+          "result": "Subagent spawned successfully with conversation ID: aabbccdd-1122-3344-5566-778899aabbcc"
+        }
+        """.utf8)
+
+        let textItems = AgentSubagentHookInput.decodeAllValidated(from: textResultPayload)
+        XCTAssertEqual(textItems.count, 1)
+        XCTAssertEqual(textItems[0].agentID, "aabbccdd-1122-3344-5566-778899aabbcc")
+        XCTAssertEqual(textItems[0].agentType, "Explorer")
+    }
+
+    func testSubagentHookInputReturnsEmptyOnError() throws {
+        let errorPayload = Data("""
+        {
+          "toolCall": {
+            "name": "invoke_subagent",
+            "args": {
+              "Subagents": [
+                {
+                  "TypeName": "research"
+                }
+              ]
+            }
+          },
+          "error": "failed to launch subagent: invalid argument"
+        }
+        """.utf8)
+
+        let items = AgentSubagentHookInput.decodeAllValidated(from: errorPayload)
+        XCTAssertTrue(items.isEmpty)
+    }
+
     func testSubagentHookInputDecodesAgyManageSubagentsPayload() throws {
         let killAllPayload = Data("""
         {
@@ -437,17 +509,40 @@ final class AgentStateStoreTests: XCTestCase {
         XCTAssertEqual(AgentStateStore.decayedState(snapshot, now: now), .idle)
     }
 
-    func testSubagentDecaysAfterThirtyMinutes() throws {
+    func testSubagentRemainsActiveWhileProcessIsRunning() throws {
         let id = UUID()
         let staleDate = Date().addingTimeInterval(-31 * 60)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
         try AgentSubagentFiles.write(
             AgentSubagentSnapshot(
                 workstreamID: id,
-                agentID: "stale-agent",
+                agentID: "running-agent",
                 agentType: "Explore",
                 updatedAt: staleDate,
                 pid: Int32(getpid())
+            ),
+            directoryURL: tempDir
+        )
+
+        let store = AgentStateStore(directoryURL: tempDir)
+        store.refresh()
+
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(store.activeSubagentCount(for: id), 1)
+        XCTAssertEqual(store.activeSubagents(for: id).first?.agentID, "running-agent")
+    }
+
+    func testSubagentIgnoredWhenProcessNotRunning() throws {
+        let id = UUID()
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        try AgentSubagentFiles.write(
+            AgentSubagentSnapshot(
+                workstreamID: id,
+                agentID: "dead-agent",
+                agentType: "Explore",
+                updatedAt: Date(),
+                pid: 999_999
             ),
             directoryURL: tempDir
         )

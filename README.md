@@ -75,7 +75,7 @@ that the CLI itself supports resume after that session exits.
 | Direct launch in a workstream | Yes | Yes | Yes | Yes |
 | Dockyard tmux persistence | Yes | Yes | Yes | Yes |
 | CLI session resume after tmux exits | Yes | Yes | No | No |
-| Dockyard agent-status hooks | Yes | Yes | No | No |
+| Dockyard agent-status hooks | Yes | Yes | No | Yes |
 | Active subagent status | Aggregated | No | No | Aggregated |
 | Dangerous permission bypass | Yes | Yes | No | No |
 | Automatic branch rename | Yes | Yes | Yes | No |

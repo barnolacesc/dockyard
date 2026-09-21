@@ -1887,15 +1887,17 @@ private struct WorkstreamRow: View {
                 )
             }
             if activeSubagents.count > 4 {
-                Text(
-                    String(
+                let remainingCount = activeSubagents.count - 4
+                let remainingText = remainingCount == 1
+                    ? NSLocalizedString("1 more agent", comment: "One more active subagent")
+                    : String(
                         format: NSLocalizedString("%d more agents", comment: "Additional active subagents in selected workstream"),
-                        activeSubagents.count - 4
+                        remainingCount
                     )
-                )
-                .font(.system(size: 9))
-                .foregroundStyle(.secondary)
-                .padding(.leading, 16)
+                Text(remainingText)
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 16)
             }
         }
         .padding(.leading, 16)

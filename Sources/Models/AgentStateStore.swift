@@ -174,8 +174,7 @@ final class AgentStateStore: ObservableObject, @unchecked Sendable {
         for url in entries where url.pathExtension == "json" {
             if AgentSubagentFiles.isSubagentFile(url) {
                 guard let snapshot = AgentSubagentFiles.load(from: url),
-                      RunStateStore.isProcessRunning(pid: snapshot.pid),
-                      now.timeIntervalSince(snapshot.updatedAt) <= 30 * 60
+                      RunStateStore.isProcessRunning(pid: snapshot.pid)
                 else {
                     continue
                 }

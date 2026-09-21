@@ -1612,6 +1612,9 @@ private struct WorkspaceTabButton: View {
                         .lineLimit(1)
                 }
                 if subagentCount > 0 {
+                    let subagentAccessibility = subagentCount == 1
+                        ? NSLocalizedString("1 active subagent", comment: "")
+                        : String(format: NSLocalizedString("%d active subagents", comment: ""), subagentCount)
                     HStack(spacing: 2) {
                         Image(systemName: "point.3.connected.trianglepath.dotted")
                             .font(.system(size: 8, weight: .medium))
@@ -1624,8 +1627,8 @@ private struct WorkspaceTabButton: View {
                     .background(DesignColor.statusSuccess.opacity(0.14))
                     .foregroundStyle(DesignColor.statusSuccess)
                     .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
-                    .help(String(format: NSLocalizedString("%d active subagents", comment: ""), subagentCount))
-                    .accessibilityLabel(String(format: NSLocalizedString("%d active subagents", comment: ""), subagentCount))
+                    .help(subagentAccessibility)
+                    .accessibilityLabel(subagentAccessibility)
                 }
                 if let shortcut {
                     (Text(Image(systemName: "command")) + Text(shortcut))

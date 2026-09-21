@@ -138,6 +138,17 @@ enum AgentHooks {
                         ],
                     ],
                 ],
+            ],
+            "PostToolUse": [
+                [
+                    "matcher": "ask_question",
+                    "hooks": [
+                        [
+                            "type": "command",
+                            "command": "\(quotedHelper) --workstream-id \(id) --state working",
+                        ],
+                    ],
+                ],
                 [
                     "matcher": "invoke_subagent",
                     "hooks": [
@@ -153,17 +164,6 @@ enum AgentHooks {
                         [
                             "type": "command",
                             "command": "\(quotedHelper) --workstream-id \(id) --subagent-event stop",
-                        ],
-                    ],
-                ],
-            ],
-            "PostToolUse": [
-                [
-                    "matcher": "ask_question",
-                    "hooks": [
-                        [
-                            "type": "command",
-                            "command": "\(quotedHelper) --workstream-id \(id) --state working",
                         ],
                     ],
                 ],

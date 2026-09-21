@@ -648,6 +648,7 @@
 "Open workstream" = "Obre el flux de treball";
 "Waiting" = "En espera";
 "Ready" = "A punt";
+"1 more agent" = "1 agent més";
 "%d more agents" = "%d agents més";
 "%d unread" = "%d sense llegir";
 "%d need attention" = "%d requereixen atenció";
@@ -757,6 +758,7 @@
 "Keep Mac awake: %@ (click to cycle)" = "Mantén el Mac despert: %@ (fes clic per alternar)";
 
 /* Subagents */
+"1 active subagent" = "1 subagent actiu";
 "%d active subagents" = "%d subagents actius";
 "Subagents in Sidebar and Tabs" = "Subagents a la barra lateral i pestanyes";
 "See active subagents invoked across your workspaces directly in the sidebar and on the Agent tab." = "Consulta els subagents actius invocats a tots els espais de treball directament a la barra lateral i a la pestanya de l'agent.";

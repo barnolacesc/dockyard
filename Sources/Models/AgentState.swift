@@ -81,6 +81,10 @@ struct AgentSubagentHookInput: Codable, Equatable {
             return []
         }
 
+        if let error = jsonObject["error"] as? String, !error.isEmpty {
+            return []
+        }
+
         if let toolCall = jsonObject["toolCall"] as? [String: Any],
            let name = toolCall["name"] as? String,
            let args = toolCall["args"] as? [String: Any]
@@ -89,6 +93,7 @@ struct AgentSubagentHookInput: Codable, Equatable {
                 let subagentsList = (args["Subagents"] as? [[String: Any]])
                     ?? (args["subagents"] as? [[String: Any]])
                     ?? []
+                let returnedIDs = extractConversationIDs(from: jsonObject)
                 var results: [AgentSubagentHookInput] = []
                 for (index, subagent) in subagentsList.enumerated() {
                     let role = (subagent["Role"] as? String) ?? (subagent["role"] as? String)
@@ -99,12 +104,14 @@ struct AgentSubagentHookInput: Codable, Equatable {
                     let resolvedType = role ?? typeName ?? "Subagent"
                     guard isValidField(resolvedType) else { continue }
 
-                    let idField = (subagent["agentID"] as? String)
+                    let returnedID = index < returnedIDs.count ? returnedIDs[index] : nil
+                    let explicitID = (subagent["agentID"] as? String)
                         ?? (subagent["agentId"] as? String)
                         ?? (subagent["agent_id"] as? String)
-                        ?? (subagent["conversationId"] as? String)
+                    let convID = (subagent["conversationId"] as? String)
                         ?? (subagent["conversation_id"] as? String)
-                        ?? "\(typeName ?? "subagent")-\(index + 1)"
+                    let fallbackID = "\(typeName ?? "subagent")-\(index + 1)"
+                    let idField = explicitID ?? convID ?? returnedID ?? fallbackID
                     guard isValidField(idField) else { continue }
 
                     results.append(AgentSubagentHookInput(agentID: idField, agentType: resolvedType))
@@ -123,6 +130,57 @@ struct AgentSubagentHookInput: Codable, Equatable {
             }
         }
 
+        return []
+    }
+
+    private static func extractConversationIDs(from jsonObject: [String: Any]) -> [String] {
+        guard let result = jsonObject["result"] else { return [] }
+        return extractIDs(from: result)
+    }
+
+    private static func extractIDs(from obj: Any) -> [String] {
+        if let str = obj as? String {
+            if let data = str.data(using: .utf8),
+               let json = try? JSONSerialization.jsonObject(with: data) {
+                let fromJSON = extractIDs(from: json)
+                if !fromJSON.isEmpty {
+                    return fromJSON
+                }
+            }
+            let pattern = #"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"#
+            if let regex = try? NSRegularExpression(pattern: pattern) {
+                let range = NSRange(str.startIndex..<str.endIndex, in: str)
+                let matches = regex.matches(in: str, range: range)
+                let uuids = matches.compactMap { match -> String? in
+                    guard let r = Range(match.range, in: str) else { return nil }
+                    let matched = String(str[r])
+                    return isValidField(matched) ? matched : nil
+                }
+                if !uuids.isEmpty {
+                    return uuids
+                }
+            }
+        } else if let dict = obj as? [String: Any] {
+            let candidateKeys = ["conversationId", "conversationID", "conversation_id", "agentID", "agentId", "agent_id"]
+            for key in candidateKeys {
+                if let id = dict[key] as? String, isValidField(id) {
+                    return [id]
+                }
+            }
+            for key in ["subagents", "Subagents", "items", "results"] {
+                if let list = dict[key] as? [Any] {
+                    let fromList = list.flatMap { extractIDs(from: $0) }
+                    if !fromList.isEmpty {
+                        return fromList
+                    }
+                }
+            }
+        } else if let arr = obj as? [Any] {
+            let fromArr = arr.flatMap { extractIDs(from: $0) }
+            if !fromArr.isEmpty {
+                return fromArr
+            }
+        }
         return []
     }
 
