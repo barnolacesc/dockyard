@@ -2,6 +2,42 @@ import XCTest
 import Combine
 @testable import Dockyard
 
+final class SetupOutputCollectorTests: XCTestCase {
+    func test_coalescesPendingDeliveryAndRetainsLatestBytes() {
+        let collector = SetupOutputCollector(maximumBytes: 4)
+
+        XCTAssertTrue(collector.append(Data("ab".utf8)))
+        XCTAssertFalse(collector.append(Data("cdef".utf8)))
+        XCTAssertEqual(String(decoding: collector.drain(), as: UTF8.self), "cdef")
+
+        XCTAssertTrue(collector.append(Data("gh".utf8)))
+        XCTAssertEqual(String(decoding: collector.drain(), as: UTF8.self), "gh")
+    }
+
+    func test_finishDrainsBoundedTailExactlyOnce() {
+        let collector = SetupOutputCollector(maximumBytes: 4)
+        XCTAssertTrue(collector.append(Data("abc".utf8)))
+
+        let finalOutput = collector.finish(appending: Data("def".utf8))
+
+        XCTAssertEqual(finalOutput.map { String(decoding: $0, as: UTF8.self) }, "cdef")
+        XCTAssertNil(collector.finish())
+        XCTAssertTrue(collector.drain().isEmpty)
+        XCTAssertFalse(collector.append(Data("late".utf8)))
+    }
+
+    func test_cancelDiscardsPendingAndFutureOutput() {
+        let collector = SetupOutputCollector(maximumBytes: 4)
+        XCTAssertTrue(collector.append(Data("abc".utf8)))
+
+        collector.cancel()
+
+        XCTAssertTrue(collector.drain().isEmpty)
+        XCTAssertFalse(collector.append(Data("late".utf8)))
+        XCTAssertNil(collector.finish())
+    }
+}
+
 @MainActor
 final class SetupRunnerTests: XCTestCase {
     private var tmpDir: URL!
@@ -101,6 +137,21 @@ final class SetupRunnerTests: XCTestCase {
         
         SetupStateStore.remove(for: id1)
         SetupStateStore.remove(for: id2)
+    }
+
+    func test_cancel_keeps_idle_when_termination_callback_arrives() async throws {
+        let workstreamID = UUID()
+        let runner = SetupRunner(workstreamID: workstreamID)
+        runner.start(script: "sleep 0.2; exit 0", workingDirectory: tmpDir.path)
+        XCTAssertEqual(runner.state, .running)
+
+        runner.cancel()
+        XCTAssertEqual(runner.state, .idle)
+        try await Task.sleep(nanoseconds: 500_000_000)
+
+        XCTAssertEqual(runner.state, .idle)
+        XCTAssertFalse(SetupStateStore.isCompleted(for: workstreamID))
+        SetupStateStore.remove(for: workstreamID)
     }
 }
 

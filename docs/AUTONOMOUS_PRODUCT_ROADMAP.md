@@ -704,6 +704,112 @@ Project item or status is inferred.
   Cesc must approve the fork workflow runs before native CI can execute; no
   merge or release action was taken.
 
+## Live reconciliation — 2026-09-14 16:30 CEST
+
+This section supersedes older item statuses and is deliberately placed outside
+the roadmap hunks changed by open PRs #224 and #228, so their implementations
+and this run can merge in either order. `origin/main` is `e7c236c`; CI run
+`34785476006`, CodeQL run `34785476077` and Release run `34785476231` are green
+at that head. The latest published release is v0.2.5. Release-please PR #212
+remains approval-gated and is not modified. R71 / PR #224 and R62 / PR #228
+are clean, green on macOS `build-and-test` and **awaiting Cesc review**. Their
+agent-state and file-tree paths are disjoint from the setup-runner scope here.
+
+GitHub Projects v2 returned `INSUFFICIENT_SCOPES`: the automation token has
+`repo` and `workflow` but lacks `read:project`. No Project item or status is
+inferred. Current code, `TODO.md`, issues and all open PR paths were reconciled
+before issue #229 was created. Issues #196, #202 and #204 describe behavior
+already integrated by PR #209. Issue #214 is obsolete after PR #216 removed
+persisted Attention history. Issue #43 appears implemented by PRs #215 and
+#227 but remains open; issue #54 has subagent-state plumbing on `main` and
+still needs its remaining product expectation reconciled. Issue #41 requires
+native quit-performance profiling.
+
+### R72 — Bound setup-output delivery backlog
+
+- Status: **Awaiting Cesc review in PR #230** on
+  `fix/bound-setup-output-backlog-r72-20260914` for issue #229. Final native
+  evidence is tracked on the PR. Never auto-merge.
+- User outcome: a noisy setup script cannot enqueue an unbounded number of
+  retained output chunks while Dockyard's main actor is busy.
+- Success signal: background ingestion retains only the latest 4 KiB,
+  coalesces repeated notifications into one pending main-actor delivery and
+  drains the bounded final tail exactly once before terminal state is shown.
+- macOS impact: setup progress and its existing log tail only; no UI strings,
+  layout, accessibility, shortcuts or localization change.
+- Persistence/security impact: bounds transient output crossing from a setup
+  subprocess into the app. Script content, shell invocation, trust decisions,
+  completion markers, worktrees, entitlements, privacy and releases are
+  unchanged.
+- Scope: `SetupRunner`, focused `SetupRunnerTests` and this roadmap record.
+- Dependencies: none. PR #224 owns agent-state source/tests, PR #228 owns the
+  editor file tree/tests and PR #212 owns release metadata. R72 owns disjoint
+  implementation paths, so all can merge in any order.
+- Risk: command-adjacent and reversible. Full GitHub macOS CI is mandatory and
+  Cesc must review the tested PR.
+- Acceptance criteria:
+  1. The background collector retains no more than the latest 4 KiB.
+  2. Repeated output chunks coalesce while a delivery is pending.
+  3. Process completion drains the final bounded tail exactly once before
+     publishing success or failure.
+  4. Cancellation discards queued output and a late termination callback
+     cannot replace the idle state.
+  5. Existing setup command, trust, completion-marker and displayed-tail
+     behavior remains green.
+  6. Focused XCTest and the full GitHub macOS build/test pass.
+- Required evidence: focused collector and runner XCTest, localization
+  resource/key checks, XcodeGen/native build, full XCTest, repository script
+  tests, `git diff --check`, added-line secret review and configured CodeQL.
+- Evidence so far: all 38 repository Python script tests pass; localization
+  checks pass with 561 app keys, 15 privacy keys and four declared resources
+  across English and Catalan. `git diff --check`, conflict-marker review,
+  changed-file review and the added-line secret scan pass. `./scripts/dev.sh
+  test` stops before compilation because this Linux host has neither built
+  Ghostty macOS resources nor Xcode, so GitHub macOS CI remains mandatory
+  native evidence. CI runs `34858074398` and `34858318756` failed before
+  XcodeGen, build or XCTest because the pinned XcodeGen action's
+  `releases/latest` download returned a non-ZIP response; the automation token
+  could not rerun the upstream workflow. The endpoint subsequently returned a
+  valid ZIP signature again, so a final evidence-only push requests a fresh
+  native run without changing application or workflow behavior. At repaired
+  implementation head `55a6618`, macOS CI run `34859314096` passed XcodeGen,
+  native build, bundled-helper verification and all 668 XCTest cases (two
+  skipped), including three `SetupOutputCollectorTests` and six
+  `SetupRunnerTests`. CodeQL run `34859314167` passed its configured Actions
+  and JavaScript analyses; Swift analysis was skipped by the PR workflow. The
+  final evidence-only head must also remain green.
+
+### Independent Ready queue while R62, R71 and R72 await review
+
+- **R73 — Bound installed-CLI validation reads.** User outcome: Settings can
+  verify `/usr/local/bin/dockyard` without loading an unexpectedly large or
+  non-regular candidate. Success: bounded regular fixtures validate while
+  oversized and symbolic-link candidates report not installed. Scope:
+  Settings CLI validation and focused tests; no privileged install script,
+  entitlement or destination change. Approval-gated because it borders the
+  CLI installation path.
+- **R74 — Bound repository exclude-file reads.** User outcome: workstream
+  creation cannot load an unexpectedly large `.git/info/exclude` before adding
+  Dockyard's local ignore entry. Success: bounded fixtures preserve existing
+  lines and over-limit candidates fail without replacement. Scope:
+  `GitOperations.addExcludeEntry` and focused tests; no worktree command or
+  cleanup change. Approval-gated because it touches repository metadata.
+- **R75 — Bound Claude transcript traversal.** User outcome: opening Dockyard
+  with an unexpectedly large Claude transcript tree cannot enumerate and
+  retain an unbounded number of usage records. Success: deterministic fixtures
+  prove fixed file/entry ceilings while recent eligible transcripts still
+  produce the same five-hour and seven-day totals. Scope: `ClaudeUsageParser`
+  and focused tests; no CLI invocation, transcript writes, telemetry, UI or
+  entitlement change.
+
+R73-R75 own distinct source and test paths from R62, R71 and R72, so each can
+be selected from a fresh `origin/main` branch and merge in any order.
+
+- **2026-09-14 16:30 CEST:** reconciled current main, `TODO.md`, issues,
+  releases, every open PR path/check and Projects v2 scope. Selected R72 /
+  issue #229 from a fresh `origin/main` worktree. No prior PR was modified or
+  commented on, and no merge, release or Project mutation occurred.
+
 ## Live reconciliation — 2026-08-09 09:30 CEST
 
 This section supersedes older statuses above while roadmap-bearing PRs await
