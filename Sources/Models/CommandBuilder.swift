@@ -2,6 +2,9 @@
 // ABOUTME: Replaces ad-hoc string concatenation for claude/tmux commands.
 
 import Foundation
+import SQLite3
+
+private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
 struct CommandBuilder {
     private var parts: [String] = []
@@ -433,18 +436,73 @@ enum CodingCLICommandBuilder {
         )
     }
 
-    private static func buildAgyAgentCommand(
-        cliPath: String,
-        workingDirectory _: String,
-        bypassPermissions: Bool
-    ) -> AgentLaunchCommand {
-        var command = CommandBuilder(cliPath)
-        applyAgyPermissionOptions(to: &command, bypassPermissions: bypassPermissions)
+    static func hasExistingAgyConversation(
+        workingDirectory: String,
+        dbPath: String? = nil
+    ) -> Bool {
+        let path = dbPath ?? FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".gemini/antigravity-cli/conversation_summaries.db").path
+        guard FileManager.default.fileExists(atPath: path) else { return false }
 
-        return AgentLaunchCommand(
-            finalCommand: command.command,
-            intermediateCommands: [command.command]
-        )
+        var db: OpaquePointer?
+        guard sqlite3_open(path, &db) == SQLITE_OK else {
+            return false
+        }
+        defer { sqlite3_close(db) }
+
+        let standardPath = (workingDirectory as NSString).standardizingPath
+        var targetURI = URL(fileURLWithPath: standardPath).absoluteString
+        while targetURI.hasSuffix("/") {
+            targetURI.removeLast()
+        }
+
+        let query = "SELECT 1 FROM conversation_summaries WHERE workspace_uris LIKE ? LIMIT 1;"
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, query, -1, &stmt, nil) == SQLITE_OK else {
+            return false
+        }
+        defer { sqlite3_finalize(stmt) }
+
+        let pattern = "%\(targetURI)%"
+        sqlite3_bind_text(stmt, 1, pattern, -1, SQLITE_TRANSIENT)
+
+        return sqlite3_step(stmt) == SQLITE_ROW
+    }
+
+    static func buildAgyAgentCommand(
+        cliPath: String,
+        workingDirectory: String,
+        bypassPermissions: Bool,
+        hasExistingConversation: Bool? = nil
+    ) -> AgentLaunchCommand {
+        let shouldResume = hasExistingConversation ?? hasExistingAgyConversation(workingDirectory: workingDirectory)
+
+        if shouldResume {
+            var resume = CommandBuilder(cliPath)
+            resume.flag("--continue")
+            applyAgyPermissionOptions(to: &resume, bypassPermissions: bypassPermissions)
+
+            var fresh = CommandBuilder(cliPath)
+            applyAgyPermissionOptions(to: &fresh, bypassPermissions: bypassPermissions)
+
+            let finalCommand = CommandBuilder.withFallback(
+                resume.command,
+                fresh.command,
+                message: "Starting new session..."
+            )
+            return AgentLaunchCommand(
+                finalCommand: finalCommand,
+                intermediateCommands: [resume.command, fresh.command, finalCommand]
+            )
+        } else {
+            var command = CommandBuilder(cliPath)
+            applyAgyPermissionOptions(to: &command, bypassPermissions: bypassPermissions)
+
+            return AgentLaunchCommand(
+                finalCommand: command.command,
+                intermediateCommands: [command.command]
+            )
+        }
     }
 
     private static func applyAgyPermissionOptions(
