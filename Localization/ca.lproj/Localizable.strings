@@ -401,10 +401,7 @@
 "Awaiting Review" = "Esperant revisió";
 "Draft PR" = "PR en esborrany";
 "AI Reviewing..." = "Revisió d'IA en curs...";
-"Conflicts" = "Conflictes";
-"Closed" = "Tancat";
 "Waiting for Input" = "Esperant resposta";
-"Uncommitted Changes" = "Canvis pendents de confirmar";
 "Ready for PR" = "A punt per a la PR";
 "AI review comments detected. Click to address with agent." = "Comentaris de revisió d'IA detectats. Fes clic per resoldre'ls amb l'agent.";
 "Review changes requested. Click to address with agent." = "S'han sol·licitat canvis a la revisió. Fes clic per resoldre'ls amb l'agent.";

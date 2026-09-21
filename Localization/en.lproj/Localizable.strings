@@ -401,10 +401,7 @@
 "Awaiting Review" = "Awaiting Review";
 "Draft PR" = "Draft PR";
 "AI Reviewing..." = "AI Reviewing...";
-"Conflicts" = "Conflicts";
-"Closed" = "Closed";
 "Waiting for Input" = "Waiting for Input";
-"Uncommitted Changes" = "Uncommitted Changes";
 "Ready for PR" = "Ready for PR";
 "AI review comments detected. Click to address with agent." = "AI review comments detected. Click to address with agent.";
 "Review changes requested. Click to address with agent." = "Review changes requested. Click to address with agent.";
