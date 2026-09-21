@@ -726,6 +726,7 @@
 "Search issues or enter # / URL" = "Cerca incidències o introdueix el núm. o URL";
 "Load" = "Carrega";
 "Loading open issues..." = "Carregant incidències obertes...";
+"Could not load open issues." = "No s'han pogut carregar les incidències obertes.";
 "No open issues found" = "No s'han trobat incidències obertes";
 "No matching issues" = "Cap incidència coincideix";
 "Clear issue" = "Neteja la incidència";

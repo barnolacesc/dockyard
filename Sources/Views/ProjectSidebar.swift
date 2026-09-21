@@ -199,6 +199,8 @@ struct ProjectSidebar: View {
     @State private var isLoadingWorkstreamIssue = false
     @State private var newWorkstreamOpenIssues: [GitHubIssueTaskPreview] = []
     @State private var isLoadingOpenIssues = false
+    @State private var openIssuesError = ""
+    @State private var issueLookupToken = 0
     @State private var newProjectName = ""
     @State private var newProjectError = ""
     @State private var isDropTargeted = false
@@ -675,11 +677,17 @@ struct ProjectSidebar: View {
                     isLoadingIssue: isLoadingWorkstreamIssue,
                     openIssues: newWorkstreamOpenIssues,
                     isLoadingOpenIssues: isLoadingOpenIssues,
+                    openIssuesError: openIssuesError,
                     canUseGitHub: appEnv.ghAvailable,
                     hasGitHubRemote: newWorkstreamProjectID.flatMap { pid in
                         projects.first(where: { $0.id == pid }).map { appEnv.hasGitHubRemote($0.directory) }
                     } ?? false,
                     onLoadIssue: loadNewWorkstreamIssue,
+                    onRetryLoadIssues: {
+                        if let pid = newWorkstreamProjectID, let project = projects.first(where: { $0.id == pid }) {
+                            loadOpenIssues(for: project)
+                        }
+                    },
                     onSelectIssue: selectWorkstreamIssue,
                     onDeselectIssue: deselectWorkstreamIssue,
                     onCreate: createConfiguredWorkstream,
@@ -857,6 +865,8 @@ struct ProjectSidebar: View {
         newWorkstreamIssueError = ""
         newWorkstreamOpenIssues = []
         isLoadingOpenIssues = false
+        openIssuesError = ""
+        issueLookupToken += 1
         showingNewWorkstream = true
         loadOpenIssues(for: project)
     }
@@ -915,11 +925,14 @@ struct ProjectSidebar: View {
         let repositoryURL = GitOperations.repoInfo(at: project.directory).remoteURL
             .flatMap(GitHubOperations.browserURL(from:))?
             .absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        issueLookupToken += 1
+        let currentToken = issueLookupToken
         isLoadingWorkstreamIssue = true
         newWorkstreamIssueError = ""
         DispatchQueue.global(qos: .userInitiated).async {
             let preview = GitHubOperations.issueTaskPreview(ghPath: ghPath, issue: reference, at: project.directory)
             DispatchQueue.main.async {
+                guard issueLookupToken == currentToken else { return }
                 isLoadingWorkstreamIssue = false
                 guard let preview,
                       let repositoryURL,
@@ -938,30 +951,41 @@ struct ProjectSidebar: View {
     private func loadOpenIssues(for project: Project) {
         guard let ghPath = appEnv.toolStatus.gh.path, appEnv.ghAvailable else { return }
         guard appEnv.hasGitHubRemote(project.directory) else { return }
+        let projectID = project.id
         isLoadingOpenIssues = true
+        openIssuesError = ""
         let repositoryURL = GitOperations.repoInfo(at: project.directory).remoteURL
             .flatMap(GitHubOperations.browserURL(from:))?
             .absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         DispatchQueue.global(qos: .userInitiated).async {
             let issues = GitHubOperations.openIssues(ghPath: ghPath, at: project.directory, limit: 30)
-            let filtered = issues.filter { issue in
-                guard let repositoryURL else { return true }
-                return issue.url.absoluteString.hasPrefix(repositoryURL + "/issues/")
-            }
             DispatchQueue.main.async {
+                guard newWorkstreamProjectID == projectID else { return }
                 isLoadingOpenIssues = false
+                guard let issues else {
+                    openIssuesError = NSLocalizedString("Could not load open issues.", comment: "")
+                    return
+                }
+                let filtered = issues.filter { issue in
+                    guard let repositoryURL else { return true }
+                    return issue.url.absoluteString.hasPrefix(repositoryURL + "/issues/")
+                }
                 newWorkstreamOpenIssues = filtered
             }
         }
     }
 
     private func selectWorkstreamIssue(_ issue: GitHubIssueTaskPreview) {
+        issueLookupToken += 1
+        isLoadingWorkstreamIssue = false
         newWorkstreamIssuePreview = issue
         newWorkstreamIssueError = ""
         configuredWorkstreamName = workstreamName(from: issue.title, issueNumber: issue.number)
     }
 
     private func deselectWorkstreamIssue() {
+        issueLookupToken += 1
+        isLoadingWorkstreamIssue = false
         newWorkstreamIssuePreview = nil
         newWorkstreamIssueError = ""
         if let projectID = newWorkstreamProjectID, let project = projects.first(where: { $0.id == projectID }) {
@@ -2199,9 +2223,11 @@ private struct NewWorkstreamSheet: View {
     let isLoadingIssue: Bool
     let openIssues: [GitHubIssueTaskPreview]
     let isLoadingOpenIssues: Bool
+    let openIssuesError: String
     let canUseGitHub: Bool
     let hasGitHubRemote: Bool
     let onLoadIssue: () -> Void
+    let onRetryLoadIssues: () -> Void
     let onSelectIssue: (GitHubIssueTaskPreview) -> Void
     let onDeselectIssue: () -> Void
     let onCreate: () -> Void
@@ -2332,6 +2358,17 @@ private struct NewWorkstreamSheet: View {
                                     .foregroundStyle(.secondary)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 4)
+                        } else if !openIssuesError.isEmpty {
+                            HStack(spacing: 6) {
+                                Text(openIssuesError)
+                                    .font(.caption)
+                                    .foregroundStyle(.red)
+                                Spacer()
+                                Button("Retry", action: onRetryLoadIssues)
+                                    .font(.caption)
+                                    .buttonStyle(.link)
+                            }
                             .padding(.vertical, 4)
                         } else if !openIssues.isEmpty {
                             let filtered = filteredIssues

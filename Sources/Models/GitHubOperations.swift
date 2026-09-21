@@ -319,19 +319,20 @@ enum GitHubOperations {
     }
 
     /// Fetch open issues for this repo as bounded, validated task previews.
+    /// nil is a failed lookup; an empty array is a successful lookup with no issues.
     static func openIssues(
         ghPath: String,
         at path: String,
         limit: Int = 30,
         processFactory: GitHubReadProcessFactory = defaultGitHubReadProcessFactory
-    ) -> [GitHubIssueTaskPreview] {
+    ) -> [GitHubIssueTaskPreview]? {
         guard let json = runCommand(
             ghPath,
             args: ["issue", "list", "--json", "number,title,url,body", "--limit", "\(limit)"],
             in: path,
             maximumOutputBytes: 4 * 1024 * 1024,
             processFactory: processFactory
-        ) else { return [] }
+        ) else { return nil }
         return GitHubIssueTaskPreview.parseList(jsonData: Data(json.utf8))
     }
 

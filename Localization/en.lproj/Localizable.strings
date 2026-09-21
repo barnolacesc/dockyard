@@ -726,6 +726,7 @@
 "Search issues or enter # / URL" = "Search issues or enter # / URL";
 "Load" = "Load";
 "Loading open issues..." = "Loading open issues...";
+"Could not load open issues." = "Could not load open issues.";
 "No open issues found" = "No open issues found";
 "No matching issues" = "No matching issues";
 "Clear issue" = "Clear issue";

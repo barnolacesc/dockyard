@@ -76,14 +76,14 @@ final class GitHubOperationsTests: XCTestCase {
         """
         let process = GitHubReadProcessDouble(output: Data(json.utf8))
         let issues = GitHubOperations.openIssues(ghPath: "/tmp/gh", at: "/tmp") { _, _, _, _ in process }
-        XCTAssertEqual(issues.count, 1)
-        XCTAssertEqual(issues.first?.number, 42)
-        XCTAssertEqual(issues.first?.title, "Fix crash on startup")
+        XCTAssertEqual(issues?.count, 1)
+        XCTAssertEqual(issues?.first?.number, 42)
+        XCTAssertEqual(issues?.first?.title, "Fix crash on startup")
     }
 
     func testOpenIssuesHandlesFailureAndEmpty() {
         let failed = GitHubReadProcessDouble(terminationStatus: 1)
-        XCTAssertEqual(GitHubOperations.openIssues(ghPath: "/tmp/gh", at: "/tmp") { _, _, _, _ in failed }, [])
+        XCTAssertNil(GitHubOperations.openIssues(ghPath: "/tmp/gh", at: "/tmp") { _, _, _, _ in failed })
         let empty = GitHubReadProcessDouble(output: Data("[]".utf8))
         XCTAssertEqual(GitHubOperations.openIssues(ghPath: "/tmp/gh", at: "/tmp") { _, _, _, _ in empty }, [])
     }
