@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.7](https://github.com/barnolacesc/dockyard/compare/v0.2.6...v0.2.7) (2026-09-21)
+
+
+### Features
+
+* **sidebar:** auto-load scrollable GitHub issues and copy prompt on creation ([#249](https://github.com/barnolacesc/dockyard/issues/249)) ([d4ff128](https://github.com/barnolacesc/dockyard/commit/d4ff128d35fd70f05377917ba392a77273e46c8b))
+* **ui:** refine workstream lifecycle states and fix warning pill contrast ([#251](https://github.com/barnolacesc/dockyard/issues/251)) ([840d582](https://github.com/barnolacesc/dockyard/commit/840d582cfadf576ff7bda137ee0c06f37163b390))
+
+
+### Bug Fixes
+
+* **agent:** scope agy session continuation to workspaces with existing conversations ([#252](https://github.com/barnolacesc/dockyard/issues/252)) ([801bd70](https://github.com/barnolacesc/dockyard/commit/801bd70ca337b5c5b68f126a7a855c2c2a7a33d3))
+
 ## [0.2.6](https://github.com/barnolacesc/dockyard/compare/v0.2.5...v0.2.6) (2026-09-21)
 
 
