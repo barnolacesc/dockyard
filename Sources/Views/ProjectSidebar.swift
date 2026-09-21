@@ -214,7 +214,6 @@ struct ProjectSidebar: View {
     @State private var showWorktreeError = false
     @State private var showNotGitRepoError = false
     @AppStorage("dockyard.showOpenPRs") private var showOpenPRs: Bool = true
-    @AppStorage("dockyard.showRecent") private var showRecent: Bool = true
     @AppStorage(SidebarMode.storageKey) private var sidebarModeRaw = SidebarMode.expanded.rawValue
     @AppStorage(SidebarMode.lastVisibleStorageKey) private var lastVisibleSidebarModeRaw = SidebarMode.expanded.rawValue
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -319,12 +318,6 @@ struct ProjectSidebar: View {
     private func toggleOpenPRs() {
         animateNavigationChange {
             showOpenPRs.toggle()
-        }
-    }
-
-    private func toggleRecent() {
-        animateNavigationChange {
-            showRecent.toggle()
         }
     }
 
@@ -493,51 +486,6 @@ struct ProjectSidebar: View {
         }
     }
 
-    /// Collapsible "Recent" section with the most recently touched workstreams for fast
-    /// switching, independent of project grouping. Rendered outside the scrolling List and
-    /// pinned above the bottom bar, so Recent stays put and is visually separated from the
-    /// live project tree.
-    @ViewBuilder
-    private var pinnedRecentSection: some View {
-        let recents = recentWorkstreams(limit: 4)
-        if recents.count > 1 {
-            VStack(spacing: 0) {
-                Divider()
-                SidebarSectionHeader(
-                    title: NSLocalizedString("Recent", comment: "Sidebar recent workstreams section"),
-                    systemImage: "clock",
-                    count: nil,
-                    isExpanded: showRecent,
-                    onToggle: toggleRecent
-                )
-                .padding(.horizontal, 8)
-                if showRecent {
-                    ForEach(recents, id: \.workstream.id) { entry in
-                        RecentRow(
-                            name: entry.workstream.name,
-                            projectName: entry.project.name,
-                            onSelect: { selection = .workstream(entry.workstream.id) }
-                        )
-                        .padding(.horizontal, 8)
-                    }
-                }
-            }
-        }
-    }
-
-    /// Workstreams (with a usable worktree path) across all projects, most recently
-    /// accessed first, capped at `limit`.
-    private func recentWorkstreams(limit: Int) -> [(project: Project, workstream: Workstream)] {
-        var all: [(project: Project, workstream: Workstream)] = []
-        for project in projects {
-            for ws in project.workstreams where ws.worktreePath != nil {
-                all.append((project: project, workstream: ws))
-            }
-        }
-        return Array(
-            all.sorted { $0.workstream.lastAccessedAt > $1.workstream.lastAccessedAt }.prefix(limit)
-        )
-    }
 
     private var bottomBar: some View {
         VStack(spacing: 4) {
@@ -849,9 +797,6 @@ struct ProjectSidebar: View {
                     }
                 } // ScrollViewReader
 
-                // Recent is pinned to the bottom (separated from the live project tree)
-                // so it stays reachable without scrolling.
-                pinnedRecentSection
 
                 // Bottom bar (always visible)
                 bottomBar
@@ -2057,7 +2002,7 @@ struct ActivityIndicator: View {
     }
 }
 
-/// Collapsible header row for an auxiliary sidebar section (Open PRs, Recent).
+/// Collapsible header row for an auxiliary sidebar section (Open PRs).
 private struct SidebarSectionHeader: View {
     let title: String
     let systemImage: String
@@ -2141,33 +2086,6 @@ private struct GlobalPRRow: View {
     }
 }
 
-/// A single "Recent" workstream row: click to select it.
-private struct RecentRow: View {
-    let name: String
-    let projectName: String
-    let onSelect: () -> Void
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 11))
-                .foregroundStyle(.tertiary)
-            Text(name)
-                .font(.system(size: 12))
-                .lineLimit(1)
-            Text(projectName)
-                .font(.system(size: 11))
-                .foregroundStyle(.tertiary)
-                .lineLimit(1)
-            Spacer()
-        }
-        .padding(.leading, 16)
-        .frame(minHeight: 40)
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onSelect)
-        .hoverHighlight(radius: DesignRadius.md)
-    }
-}
 
 private struct SidebarIconButton: View {
     let icon: String
