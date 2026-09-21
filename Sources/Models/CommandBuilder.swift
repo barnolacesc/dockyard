@@ -387,7 +387,7 @@ enum CodingCLICommandBuilder {
         let finalCommand = CommandBuilder.withFallback(
             resume.command,
             fresh.command,
-            message: "Starting new session..."
+            message: NSLocalizedString("Starting new session...", comment: "")
         )
         return AgentLaunchCommand(
             finalCommand: finalCommand,
@@ -428,7 +428,7 @@ enum CodingCLICommandBuilder {
         let finalCommand = CommandBuilder.withFallback(
             resume.command,
             fresh.command,
-            message: "Starting new session..."
+            message: NSLocalizedString("Starting new session...", comment: "")
         )
         return AgentLaunchCommand(
             finalCommand: finalCommand,
@@ -436,6 +436,13 @@ enum CodingCLICommandBuilder {
         )
     }
 
+    /// Checks Antigravity CLI's SQLite metadata store (`conversation_summaries.db`) to determine
+    /// if a conversation has already been recorded for the given working directory.
+    ///
+    /// - Parameters:
+    ///   - workingDirectory: The filesystem path of the workspace / worktree.
+    ///   - dbPath: Optional custom path to `conversation_summaries.db` (used for testing).
+    /// - Returns: `true` if a matching conversation exists for this workspace; `false` otherwise.
     static func hasExistingAgyConversation(
         workingDirectory: String,
         dbPath: String? = nil
@@ -469,6 +476,18 @@ enum CodingCLICommandBuilder {
         return sqlite3_step(stmt) == SQLITE_ROW
     }
 
+    /// Builds the launch command for Antigravity CLI (`agy`).
+    ///
+    /// If an existing conversation is detected for `workingDirectory`, attempts `agy --continue`
+    /// with fallback to a fresh session. If no conversation exists for the workspace, launches
+    /// fresh directly without `--continue` to avoid traversing up to `$HOME` and capturing stale sessions.
+    ///
+    /// - Parameters:
+    ///   - cliPath: Absolute path to the `agy` binary.
+    ///   - workingDirectory: The filesystem path of the workspace.
+    ///   - bypassPermissions: Whether to auto-approve tool execution (`--dangerously-skip-permissions`).
+    ///   - hasExistingConversation: Explicit override for whether an existing conversation exists (for testing).
+    /// - Returns: An `AgentLaunchCommand` configured for direct launch or continuation with fallback.
     static func buildAgyAgentCommand(
         cliPath: String,
         workingDirectory: String,
@@ -488,7 +507,7 @@ enum CodingCLICommandBuilder {
             let finalCommand = CommandBuilder.withFallback(
                 resume.command,
                 fresh.command,
-                message: "Starting new session..."
+                message: NSLocalizedString("Starting new session...", comment: "")
             )
             return AgentLaunchCommand(
                 finalCommand: finalCommand,
