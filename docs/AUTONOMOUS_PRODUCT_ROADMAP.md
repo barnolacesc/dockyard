@@ -488,7 +488,7 @@ await review.
 
 ### R79 — Add an agent-controlled Terminal Browser surface
 
-- Status: **Awaiting Cesc review in PR pending** for issue #253; do not auto-merge.
+- Status: **Awaiting Cesc review in PR #254** for issue #253; do not auto-merge.
 - User outcome: humans keep the native WKWebView preview while Claude Code and Codex can inspect and control an explicitly opened Chromium browser for the current workstream.
 - Success signal: Terminal Browser detection, tab lifecycle, scoped agent instructions and missing-tool guidance are covered by tests and full macOS CI.
 - macOS impact: one optional libghostty-backed workspace tab; no replacement of WKWebView.
