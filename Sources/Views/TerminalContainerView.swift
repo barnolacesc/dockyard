@@ -407,10 +407,7 @@ func resolvedTerminalEditorCommand(_ raw: String) -> String {
 }
 
 func terminalBrowserLaunchCommand(path: String, url: String) -> String {
-    var command = CommandBuilder(path)
-    command.arg("open")
-    command.arg(url)
-    return command.command
+    "\(CommandBuilder.shellQuote(path)) open \(CommandBuilder.shellQuote(url))"
 }
 
 enum TerminalSessionMode: Equatable {
