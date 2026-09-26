@@ -486,6 +486,20 @@ await review.
 
 ## Next
 
+### R79 — Add an agent-controlled Terminal Browser surface
+
+- Status: **Awaiting Cesc review in PR pending** for issue #253; do not auto-merge.
+- User outcome: humans keep the native WKWebView preview while Claude Code and Codex can inspect and control an explicitly opened Chromium browser for the current workstream.
+- Success signal: Terminal Browser detection, tab lifecycle, scoped agent instructions and missing-tool guidance are covered by tests and full macOS CI.
+- macOS impact: one optional libghostty-backed workspace tab; no replacement of WKWebView.
+- Persistence/security impact: no automatic downloads, upgrades, new entitlements or global agent configuration; agents are instructed to target only the current workstream URL.
+- Scope: optional tool detection, Agent Browser tab, prompt context, localization, docs and focused tests.
+- Dependencies: user-installed `terminal-browser`; native verification in Dockyard's embedded libghostty surface.
+- Risk: medium because a third-party Chromium process and agent-controlled web interaction cross a new trust boundary.
+- Acceptance criteria: existing browser behavior remains unchanged; missing/install states are truthful; tab cleanup is deterministic; Claude/Codex receive one composed instruction payload only when available.
+- Required tests: tool probing, command/prompt composition, workspace-tab persistence, full macOS CI and CodeQL.
+- Sources: issue #253 and Cesc's explicit 2026-09-26 request.
+
 ### R20 — Keep watcher-created state directories private
 
 - Status: **Awaiting Cesc review in PR #121** on

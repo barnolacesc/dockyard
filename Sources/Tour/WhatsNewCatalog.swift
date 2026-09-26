@@ -7,6 +7,13 @@ enum WhatsNewCatalog {
     /// Newest first. The version string must match the release that ships it
     /// (release-please owns version numbers; adjust when the release PR is cut).
     static let releases: [WhatsNewRelease] = [
+        WhatsNewRelease(version: "0.3.0", entries: [
+            WhatsNewEntry(
+                symbol: "globe.badge.chevron.backward",
+                titleKey: "Agent-Controlled Browser",
+                bodyKey: "Open a Chromium browser the Coding Agent can inspect and control while the regular in-app browser remains yours."
+            ),
+        ]),
         WhatsNewRelease(version: "0.2.6", entries: [
             WhatsNewEntry(
                 symbol: "point.3.connected.trianglepath.dotted",
