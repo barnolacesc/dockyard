@@ -410,6 +410,15 @@ func terminalBrowserLaunchCommand(path: String, url: String) -> String {
     "\(CommandBuilder.shellQuote(path)) open \(CommandBuilder.shellQuote(url))"
 }
 
+func terminalBackedSurfaceIDs(in snapshot: WorkspaceTabSnapshot?) -> Set<UUID> {
+    Set(snapshot?.tabs.compactMap { tab in
+        switch tab {
+        case let .terminal(id), let .agentBrowser(id): return id
+        case .info, .agent, .browser: return nil
+        }
+    } ?? [])
+}
+
 enum TerminalSessionMode: Equatable {
     case standard
     case tmux
@@ -979,6 +988,7 @@ struct TerminalContainerView: View {
             .onChange(of: allowOutsideWorktree) { rebuildAgentCommand() }
             .onChange(of: workstreamName) { rebuildAgentCommand() }
             .onChange(of: agentSessionName) { rebuildAgentCommand() }
+            .onChange(of: portDetector.selectedPort) { rebuildAgentCommand() }
             .onChange(of: effectiveCodingCLIStoredValue) {
                 livePermissionHint = nil
                 surfaceCache.removeSurface(for: agentID)
@@ -2788,6 +2798,8 @@ final class TerminalSurfaceCache: ObservableObject {
     }
 
     func removeWorkstreamSurfaces(for workstreamID: UUID) {
+        let snapshot = tabSnapshots[workstreamID] ?? WorkspaceTabSnapshotStore.load(for: workstreamID)
+        let recordedSurfaceIDs = terminalBackedSurfaceIDs(in: snapshot)
         tabSnapshots.removeValue(forKey: workstreamID)
         WorkspaceTabSnapshotStore.remove(for: workstreamID)
         if let runner = quickActionRunners.removeValue(forKey: workstreamID) {
@@ -2797,11 +2809,12 @@ final class TerminalSurfaceCache: ObservableObject {
         removeSurface(for: workstreamID)
         // Build a set of all possible derived IDs and remove matches
         var derivedIDs = Set<UUID>()
-        for prefix in ["terminal", "browser", "env-setup", "env-run"] {
+        for prefix in ["terminal", "browser", "agent-browser", "env-setup", "env-run"] {
             for i in 0 ... 99 {
                 derivedIDs.insert(derivedUUID(from: workstreamID, salt: "\(prefix)-\(i)"))
             }
         }
+        derivedIDs.formUnion(recordedSurfaceIDs)
         for id in derivedIDs {
             if surfaces[id] != nil { removeSurface(for: id) }
             if webViews[id] != nil { removeWebView(for: id) }

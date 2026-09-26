@@ -66,6 +66,24 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         XCTAssertEqual(stale.activeTab, .agent)
     }
 
+    func testTerminalBackedSurfaceIDsIncludesRecordedAgentBrowsers() {
+        let terminalID = UUID()
+        let browserID = UUID()
+        let agentBrowserID = UUID()
+        let snapshot = WorkspaceTabSnapshot(
+            tabs: [.agent, .terminal(terminalID), .browser(browserID), .agentBrowser(agentBrowserID)],
+            terminalCount: 1,
+            browserCount: 2,
+            activeTab: .agentBrowser(agentBrowserID)
+        )
+
+        XCTAssertEqual(
+            terminalBackedSurfaceIDs(in: snapshot),
+            [terminalID, agentBrowserID]
+        )
+        XCTAssertEqual(terminalBackedSurfaceIDs(in: nil), [])
+    }
+
     func testCodableRoundTripPreservesAllTabState() throws {
         let workstreamID = UUID()
         let terminalID = derivedUUID(from: workstreamID, salt: "terminal-1")
