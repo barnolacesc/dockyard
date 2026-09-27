@@ -57,6 +57,7 @@ Dockyard is a native macOS app built on [Ghostty](https://ghostty.org)'s GPU-ren
 - **Tmux Persistence** &mdash; Agent sessions survive app restarts via tmux on a dedicated socket.
 - **Setup & Run Scripts** &mdash; Configure setup, run, and teardown scripts per project via `.dockyard.json`. Environment tab with split-pane terminals, Start/Rerun (⌘⇧⏎).
 - **Embedded Browser** &mdash; WKWebView tab with automatic port detection. The browser navigates to the port your run script opens.
+- **Agent Browser** &mdash; Optional [Terminal Browser](https://terminal-browser.com/) tab that gives Claude Code or Codex a visible Chromium browser it can inspect and control. Install it separately with `brew install terminal-browser`; Dockyard never downloads or upgrades it automatically.
 - **Code Editor** &mdash; Launches your configured terminal editor (such as `nvim .`) directly in a native GPU-rendered terminal tab with ⌘O.
 - **Mac Dictation** &mdash; Press the Mac's Dictation key (F5/microphone) in Agent and Terminal tabs, just like in standalone Ghostty.
 - **GitHub Integration** &mdash; Repo info, open PRs, and branch PR status via the `gh` CLI.
@@ -90,6 +91,20 @@ the workstream status active while one or more subagents run, displaying active 
 subagent identities, transcripts, and status timelines are not shown, and no
 other CLI currently claims subagent reporting. Broader status work remains
 tracked in [issue #54](https://github.com/barnolacesc/dockyard/issues/54).
+
+### Agent Browser
+
+The regular Browser button (`Cmd+B`) remains a native WKWebView preview for
+you. The globe-with-chevron button opens Terminal Browser in its own Ghostty
+surface for the Coding Agent. When the optional `terminal-browser` executable
+is detected, Dockyard tells Claude Code and Codex how to discover the browser
+for the current workstream URL and control it through the agent-browser
+compatible `terminal-browser action` CLI.
+
+Dockyard does not install, configure, upgrade, or shut down Terminal Browser.
+Install it explicitly with `brew install terminal-browser`. The agent is
+instructed to avoid unrelated browser instances and to clear Terminal Browser's
+visible automation indicator when it finishes.
 
 ### Tmux Mode
 

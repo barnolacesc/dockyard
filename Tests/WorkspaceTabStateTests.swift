@@ -43,6 +43,47 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         XCTAssertEqual(snapshot.terminalTitles[terminalID], "zsh")
     }
 
+    func testAgentBrowserRoundTripsAndRequiresLiveTerminalSurface() throws {
+        let workstreamID = UUID()
+        let agentBrowserID = derivedUUID(from: workstreamID, salt: "agent-browser-1")
+        let snapshot = WorkspaceTabSnapshot(
+            tabs: [.agent, .agentBrowser(agentBrowserID)],
+            terminalCount: 0,
+            browserCount: 1,
+            activeTab: .agentBrowser(agentBrowserID)
+        )
+
+        let data = try JSONEncoder().encode(snapshot)
+        let decoded = try JSONDecoder().decode(WorkspaceTabSnapshot.self, from: data)
+        XCTAssertEqual(decoded.tabs, [.agent, .agentBrowser(agentBrowserID)])
+        XCTAssertEqual(decoded.activeTab, .agentBrowser(agentBrowserID))
+
+        let live = decoded.reconciled(liveSurfaceIDs: [agentBrowserID])
+        XCTAssertEqual(live.tabs, [.agent, .agentBrowser(agentBrowserID)])
+
+        let stale = decoded.reconciled(liveSurfaceIDs: [])
+        XCTAssertEqual(stale.tabs, [.agent])
+        XCTAssertEqual(stale.activeTab, .agent)
+    }
+
+    func testTerminalBackedSurfaceIDsIncludesRecordedAgentBrowsers() {
+        let terminalID = UUID()
+        let browserID = UUID()
+        let agentBrowserID = UUID()
+        let snapshot = WorkspaceTabSnapshot(
+            tabs: [.agent, .terminal(terminalID), .browser(browserID), .agentBrowser(agentBrowserID)],
+            terminalCount: 1,
+            browserCount: 2,
+            activeTab: .agentBrowser(agentBrowserID)
+        )
+
+        XCTAssertEqual(
+            terminalBackedSurfaceIDs(in: snapshot),
+            [terminalID, agentBrowserID]
+        )
+        XCTAssertEqual(terminalBackedSurfaceIDs(in: nil), [])
+    }
+
     func testCodableRoundTripPreservesAllTabState() throws {
         let workstreamID = UUID()
         let terminalID = derivedUUID(from: workstreamID, salt: "terminal-1")

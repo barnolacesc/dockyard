@@ -91,11 +91,12 @@ enum WorkspaceTab: Codable, Hashable {
     case agent
     case terminal(UUID)
     case browser(UUID)
+    case agentBrowser(UUID)
 
     var isCloseable: Bool {
         switch self {
         case .info, .agent: return false
-        case .terminal, .browser: return true
+        case .terminal, .browser, .agentBrowser: return true
         }
     }
 }
@@ -155,6 +156,7 @@ struct WorkspaceTabSnapshot: Codable {
         case agent
         case terminal(UUID)
         case browser(UUID)
+        case agentBrowser(UUID)
         case legacyEditor
 
         private enum CodingKeys: String, CodingKey {
@@ -162,6 +164,7 @@ struct WorkspaceTabSnapshot: Codable {
             case agent
             case terminal
             case browser
+            case agentBrowser
             case editor
         }
 
@@ -183,6 +186,10 @@ struct WorkspaceTabSnapshot: Codable {
                 let nested = try container.nestedContainer(keyedBy: AssociatedKeys.self, forKey: .browser)
                 let id = try nested.decode(UUID.self, forKey: ._0)
                 self = .browser(id)
+            } else if container.contains(.agentBrowser) {
+                let nested = try container.nestedContainer(keyedBy: AssociatedKeys.self, forKey: .agentBrowser)
+                let id = try nested.decode(UUID.self, forKey: ._0)
+                self = .agentBrowser(id)
             } else if container.contains(.editor) {
                 self = .legacyEditor
             } else {
@@ -201,6 +208,7 @@ struct WorkspaceTabSnapshot: Codable {
             case .agent: return .agent
             case let .terminal(id): return .terminal(id)
             case let .browser(id): return .browser(id)
+            case let .agentBrowser(id): return .agentBrowser(id)
             case .legacyEditor: return nil
             }
         }
@@ -228,11 +236,14 @@ struct WorkspaceTabSnapshot: Codable {
     }
 
     /// Returns a copy with dead terminal tabs removed.
-    /// Browser tabs are kept regardless (they don't use terminal surfaces).
+    /// Native browser tabs are kept regardless; terminal-backed tabs require a live surface.
     func reconciled(liveSurfaceIDs: Set<UUID>) -> WorkspaceTabSnapshot {
         let filteredTabs = tabs.filter { tab in
             if case .info = tab { return false }
             if case let .terminal(id) = tab {
+                return liveSurfaceIDs.contains(id)
+            }
+            if case let .agentBrowser(id) = tab {
                 return liveSurfaceIDs.contains(id)
             }
             return true
@@ -395,6 +406,19 @@ func resolvedTerminalEditorCommand(_ raw: String) -> String {
     return trimmed.isEmpty ? "nvim ." : trimmed
 }
 
+func terminalBrowserLaunchCommand(path: String, url: String) -> String {
+    "\(CommandBuilder.shellQuote(path)) open \(CommandBuilder.shellQuote(url))"
+}
+
+func terminalBackedSurfaceIDs(in snapshot: WorkspaceTabSnapshot?) -> Set<UUID> {
+    Set(snapshot?.tabs.compactMap { tab in
+        switch tab {
+        case let .terminal(id), let .agentBrowser(id): return id
+        case .info, .agent, .browser: return nil
+        }
+    } ?? [])
+}
+
 enum TerminalSessionMode: Equatable {
     case standard
     case tmux
@@ -512,6 +536,10 @@ struct TerminalContainerView: View {
         appEnv.toolStatus.path(for: selectedCodingCLI)
     }
 
+    private var terminalBrowserPath: String? {
+        appEnv.toolStatus.terminalBrowser.path
+    }
+
     private var supportsLivePermissionControl: Bool {
         selectedCodingCLI.capabilities.supportsLivePermissionControl
     }
@@ -536,6 +564,7 @@ struct TerminalContainerView: View {
             case .agent:
                 ids.insert(agentID)
             case let .terminal(id): ids.insert(id)
+            case let .agentBrowser(id): ids.insert(id)
             case .info, .browser: break
             }
         }
@@ -616,7 +645,9 @@ struct TerminalContainerView: View {
             autoRenameBranch: autoRenameBranch,
             envVars: agentEnvironmentVars,
             supportsSessionName: appEnv.toolStatus.supportsSessionName(for: selectedCodingCLI),
-            hookInvocation: hookInvocation
+            hookInvocation: hookInvocation,
+            terminalBrowserPath: terminalBrowserPath,
+            browserURL: terminalBrowserPath == nil ? nil : browserDefaultURL
         )
 
         LaunchLogger.log(LaunchLogEntry(
@@ -683,6 +714,12 @@ struct TerminalContainerView: View {
                     .shortcutHint(ShortcutHint(command: "T", commandShift: "T"))
                 TabBarActionButton(icon: "globe", shortcut: "\u{2318}B", tooltip: "New Browser (\u{2318}B)", action: addBrowser)
                     .shortcutHint(ShortcutHint(command: "B", commandShift: "B"))
+                TabBarActionButton(
+                    icon: "globe.badge.chevron.backward",
+                    shortcut: "",
+                    tooltip: "New Agent Browser",
+                    action: addAgentBrowser
+                )
                 TabBarActionButton(icon: "doc.text", shortcut: "\u{2318}O", tooltip: "New Editor (\u{2318}O)", action: openEditor)
                     .shortcutHint(ShortcutHint(command: "O"))
             }
@@ -888,6 +925,33 @@ struct TerminalContainerView: View {
                 webView: surfaceCache.webView(for: id)
             )
             .id(id)
+        case let .agentBrowser(id):
+            if appEnv.isDetecting {
+                terminalLoadingView(message: "Checking Terminal Browser...")
+            } else if let terminalBrowserPath {
+                SingleTerminalView(
+                    surfaceID: id,
+                    workstreamID: workstreamID,
+                    workingDirectory: workingDirectory,
+                    command: terminalBrowserLaunchCommand(path: terminalBrowserPath, url: browserDefaultURL),
+                    isFocused: true,
+                    environmentVars: terminalEnvVars
+                )
+            } else {
+                VStack(spacing: 16) {
+                    Image(systemName: "globe.badge.chevron.backward")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.tertiary)
+                    Text("Terminal Browser not found")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                    Text("Install Terminal Browser to give the Coding Agent a controllable browser.")
+                        .foregroundStyle(.tertiary)
+                    Link("Install Terminal Browser", destination: URL(string: "https://terminal-browser.com/")!)
+                        .buttonStyle(.bordered)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
     }
 
@@ -924,6 +988,7 @@ struct TerminalContainerView: View {
             .onChange(of: allowOutsideWorktree) { rebuildAgentCommand() }
             .onChange(of: workstreamName) { rebuildAgentCommand() }
             .onChange(of: agentSessionName) { rebuildAgentCommand() }
+            .onChange(of: portDetector.selectedPort) { rebuildAgentCommand() }
             .onChange(of: effectiveCodingCLIStoredValue) {
                 livePermissionHint = nil
                 surfaceCache.removeSurface(for: agentID)
@@ -1045,7 +1110,14 @@ struct TerminalContainerView: View {
         .onReceive(NotificationCenter.default.publisher(for: .terminalActivity)) { notification in
             guard let wsID = notification.object as? UUID, wsID == workstreamID else { return }
             if let surfaceID = notification.userInfo?["surfaceID"] as? UUID {
-                let tab: WorkspaceTab = surfaceID == agentID ? .agent : .terminal(surfaceID)
+                let tab: WorkspaceTab
+                if surfaceID == agentID {
+                    tab = .agent
+                } else if tabs.contains(.agentBrowser(surfaceID)) {
+                    tab = .agentBrowser(surfaceID)
+                } else {
+                    tab = .terminal(surfaceID)
+                }
                 if tab != activeTab {
                     unreadTabs.insert(tab)
                 }
@@ -1095,6 +1167,7 @@ struct TerminalContainerView: View {
                 guard let surfaceID = notification.object as? UUID else { return }
                 if let tab = tabs.first(where: {
                     if case let .terminal(id) = $0 { return id == surfaceID }
+                    if case let .agentBrowser(id) = $0 { return id == surfaceID }
                     return false
                 }) {
                     closeTab(tab)
@@ -1180,6 +1253,8 @@ struct TerminalContainerView: View {
             guard !useCompactTabs else { return nil }
             guard let title = browserTitles[id], !title.isEmpty else { return nil }
             return title.count > 20 ? String(title.prefix(20)) + "..." : title
+        case .agentBrowser:
+            return NSLocalizedString("Agent Browser", comment: "")
         }
     }
 
@@ -1189,6 +1264,7 @@ struct TerminalContainerView: View {
         case .agent: return "sparkle"
         case let .terminal(id): return terminalEditorCommands[id] != nil ? "doc.text" : "terminal"
         case .browser: return "globe"
+        case .agentBrowser: return "globe.badge.chevron.backward"
         }
     }
 
@@ -1218,7 +1294,7 @@ struct TerminalContainerView: View {
 
     private func tabDragIdentifier(_ tab: WorkspaceTab) -> String {
         switch tab {
-        case let .terminal(id), let .browser(id):
+        case let .terminal(id), let .browser(id), let .agentBrowser(id):
             return id.uuidString
         case .info:
             return "info"
@@ -1333,6 +1409,15 @@ struct TerminalContainerView: View {
         saveTabSnapshot()
     }
 
+    private func addAgentBrowser() {
+        browserCount += 1
+        let id = derivedUUID(from: workstreamID, salt: "agent-browser-\(browserCount)")
+        let tab = WorkspaceTab.agentBrowser(id)
+        tabs.append(tab)
+        activeTab = tab
+        saveTabSnapshot()
+    }
+
     private func openEditor() {
         terminalCount += 1
         let id = derivedUUID(from: workstreamID, salt: "terminal-\(terminalCount)")
@@ -1350,6 +1435,8 @@ struct TerminalContainerView: View {
         switch tab {
         case let .terminal(id):
             terminalEditorCommands.removeValue(forKey: id)
+            surfaceCache.removeSurface(for: id)
+        case let .agentBrowser(id):
             surfaceCache.removeSurface(for: id)
         case let .browser(id):
             browserURLs.removeValue(forKey: id)
@@ -2711,6 +2798,8 @@ final class TerminalSurfaceCache: ObservableObject {
     }
 
     func removeWorkstreamSurfaces(for workstreamID: UUID) {
+        let snapshot = tabSnapshots[workstreamID] ?? WorkspaceTabSnapshotStore.load(for: workstreamID)
+        let recordedSurfaceIDs = terminalBackedSurfaceIDs(in: snapshot)
         tabSnapshots.removeValue(forKey: workstreamID)
         WorkspaceTabSnapshotStore.remove(for: workstreamID)
         if let runner = quickActionRunners.removeValue(forKey: workstreamID) {
@@ -2720,11 +2809,12 @@ final class TerminalSurfaceCache: ObservableObject {
         removeSurface(for: workstreamID)
         // Build a set of all possible derived IDs and remove matches
         var derivedIDs = Set<UUID>()
-        for prefix in ["terminal", "browser", "env-setup", "env-run"] {
+        for prefix in ["terminal", "browser", "agent-browser", "env-setup", "env-run"] {
             for i in 0 ... 99 {
                 derivedIDs.insert(derivedUUID(from: workstreamID, salt: "\(prefix)-\(i)"))
             }
         }
+        derivedIDs.formUnion(recordedSurfaceIDs)
         for id in derivedIDs {
             if surfaces[id] != nil { removeSurface(for: id) }
             if webViews[id] != nil { removeWebView(for: id) }

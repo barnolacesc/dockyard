@@ -36,4 +36,18 @@ enum SystemPrompts {
     Example: if the user asks to "refactor(localization): support English and Catalan only", \
     rename the branch to `refactor/english-and-catalan-only` and write "Remove Other Languages" to the description file.
     """
+
+    static func terminalBrowserPrompt(executablePath: String, previewURL: String) -> String {
+        let executable = CommandBuilder.shellQuote(executablePath)
+        return """
+        DOCKYARD AGENT BROWSER: Terminal Browser is available as \(executable). Dockyard's regular Browser tabs \
+        are WKWebView previews intended for the human and are not agent-controlled. When browser interaction would \
+        materially help, ask the user to open an Agent Browser tab from the workspace tab bar. Discover only that \
+        workstream's browser with `\(executable) ls --all --json` and select the browser/tab whose URL is \
+        \(previewURL) or has the same localhost port. Control it with \
+        `\(executable) action --browser <key> --tab <id> -- <command>`. Take a snapshot before interacting, never \
+        operate on an unrelated browser instance, and run `\(executable) action --browser <key> --tab <id> done` \
+        when finished. Do not install, upgrade, configure, or shut down Terminal Browser unless the user explicitly asks.
+        """
+    }
 }

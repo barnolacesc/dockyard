@@ -270,7 +270,9 @@ enum CodingCLICommandBuilder {
         autoRenameBranch: Bool,
         envVars: [String: String],
         supportsSessionName: Bool,
-        hookInvocation: AgentHookInvocation? = nil
+        hookInvocation: AgentHookInvocation? = nil,
+        terminalBrowserPath: String? = nil,
+        browserURL: String? = nil
     ) -> AgentLaunchCommand {
         let command: AgentLaunchCommand
         switch cli.capabilities.commandStrategy {
@@ -285,7 +287,9 @@ enum CodingCLICommandBuilder {
                 allowOutsideWorktree: allowOutsideWorktree,
                 autoRenameBranch: autoRenameBranch,
                 supportsSessionName: supportsSessionName,
-                settingsPath: hookInvocation?.generatedConfigURL
+                settingsPath: hookInvocation?.generatedConfigURL,
+                terminalBrowserPath: terminalBrowserPath,
+                browserURL: browserURL
             )
         case .codex:
             command = buildCodexAgentCommand(
@@ -294,7 +298,9 @@ enum CodingCLICommandBuilder {
                 bypassPermissions: bypassPermissions,
                 allowOutsideWorktree: allowOutsideWorktree,
                 autoRenameBranch: autoRenameBranch,
-                hookInvocation: hookInvocation
+                hookInvocation: hookInvocation,
+                terminalBrowserPath: terminalBrowserPath,
+                browserURL: browserURL
             )
         case .agy:
             command = buildAgyAgentCommand(
@@ -337,7 +343,9 @@ enum CodingCLICommandBuilder {
         allowOutsideWorktree: Bool,
         autoRenameBranch: Bool,
         supportsSessionName: Bool,
-        settingsPath: URL?
+        settingsPath: URL?,
+        terminalBrowserPath: String?,
+        browserURL: String?
     ) -> AgentLaunchCommand {
         let sessionID = workstreamID.uuidString.lowercased()
 
@@ -347,6 +355,12 @@ enum CodingCLICommandBuilder {
         }
         if autoRenameBranch {
             systemPromptParts.append(SystemPrompts.autoRenameBranchPrompt)
+        }
+        if let terminalBrowserPath, let browserURL {
+            systemPromptParts.append(SystemPrompts.terminalBrowserPrompt(
+                executablePath: terminalBrowserPath,
+                previewURL: browserURL
+            ))
         }
         let combinedSystemPrompt = systemPromptParts.isEmpty ? nil : systemPromptParts.joined(separator: "\n\n")
 
@@ -401,7 +415,9 @@ enum CodingCLICommandBuilder {
         bypassPermissions: Bool,
         allowOutsideWorktree: Bool,
         autoRenameBranch: Bool,
-        hookInvocation: AgentHookInvocation?
+        hookInvocation: AgentHookInvocation?,
+        terminalBrowserPath: String?,
+        browserURL: String?
     ) -> AgentLaunchCommand {
         var resume = CommandBuilder(cliPath)
         resume.arg("resume")
@@ -412,7 +428,12 @@ enum CodingCLICommandBuilder {
             bypassPermissions: bypassPermissions,
             allowOutsideWorktree: allowOutsideWorktree
         )
-        applyCodexAutoRenameInstructions(to: &resume, enabled: autoRenameBranch)
+        applyCodexInstructions(
+            to: &resume,
+            autoRenameBranch: autoRenameBranch,
+            terminalBrowserPath: terminalBrowserPath,
+            browserURL: browserURL
+        )
         applyCodexHookOptions(to: &resume, hookInvocation: hookInvocation)
 
         var fresh = CommandBuilder(cliPath)
@@ -422,7 +443,12 @@ enum CodingCLICommandBuilder {
             bypassPermissions: bypassPermissions,
             allowOutsideWorktree: allowOutsideWorktree
         )
-        applyCodexAutoRenameInstructions(to: &fresh, enabled: autoRenameBranch)
+        applyCodexInstructions(
+            to: &fresh,
+            autoRenameBranch: autoRenameBranch,
+            terminalBrowserPath: terminalBrowserPath,
+            browserURL: browserURL
+        )
         applyCodexHookOptions(to: &fresh, hookInvocation: hookInvocation)
 
         let finalCommand = CommandBuilder.withFallback(
@@ -600,9 +626,27 @@ enum CodingCLICommandBuilder {
     /// Codex accepts a per-invocation TOML configuration override. This keeps
     /// Dockyard's instructions scoped to its own agent session rather than
     /// changing the user's global Codex configuration.
-    private static func applyCodexAutoRenameInstructions(to command: inout CommandBuilder, enabled: Bool) {
-        guard enabled else { return }
-        command.option("--config", "developer_instructions=\(tomlBasicString(SystemPrompts.autoRenameBranchPrompt))")
+    private static func applyCodexInstructions(
+        to command: inout CommandBuilder,
+        autoRenameBranch: Bool,
+        terminalBrowserPath: String?,
+        browserURL: String?
+    ) {
+        var instructions: [String] = []
+        if autoRenameBranch {
+            instructions.append(SystemPrompts.autoRenameBranchPrompt)
+        }
+        if let terminalBrowserPath, let browserURL {
+            instructions.append(SystemPrompts.terminalBrowserPrompt(
+                executablePath: terminalBrowserPath,
+                previewURL: browserURL
+            ))
+        }
+        guard !instructions.isEmpty else { return }
+        command.option(
+            "--config",
+            "developer_instructions=\(tomlBasicString(instructions.joined(separator: "\n\n")))"
+        )
     }
 
     private static func tomlBasicString(_ value: String) -> String {

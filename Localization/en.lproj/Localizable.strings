@@ -783,3 +783,13 @@
 "%d active subagents" = "%d active subagents";
 "Subagents in Sidebar and Tabs" = "Subagents in Sidebar and Tabs";
 "See active subagents invoked across your workspaces directly in the sidebar and on the Agent tab." = "See active subagents invoked across your workspaces directly in the sidebar and on the Agent tab.";
+
+/* Agent Browser */
+"Agent Browser" = "Agent Browser";
+"New Agent Browser" = "New Agent Browser";
+"Checking Terminal Browser..." = "Checking Terminal Browser...";
+"Terminal Browser not found" = "Terminal Browser not found";
+"Install Terminal Browser to give the Coding Agent a controllable browser." = "Install Terminal Browser to give the Coding Agent a controllable browser.";
+"Install Terminal Browser" = "Install Terminal Browser";
+"Agent-Controlled Browser" = "Agent-Controlled Browser";
+"Open a Chromium browser the Coding Agent can inspect and control while the regular in-app browser remains yours." = "Open a Chromium browser the Coding Agent can inspect and control while the regular in-app browser remains yours.";

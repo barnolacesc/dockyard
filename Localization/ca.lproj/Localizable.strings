@@ -783,3 +783,13 @@
 "%d active subagents" = "%d subagents actius";
 "Subagents in Sidebar and Tabs" = "Subagents a la barra lateral i pestanyes";
 "See active subagents invoked across your workspaces directly in the sidebar and on the Agent tab." = "Consulta els subagents actius invocats a tots els espais de treball directament a la barra lateral i a la pestanya de l'agent.";
+
+/* Agent Browser */
+"Agent Browser" = "Navegador de l'agent";
+"New Agent Browser" = "Navegador nou de l'agent";
+"Checking Terminal Browser..." = "Comprovant Terminal Browser...";
+"Terminal Browser not found" = "No s'ha trobat Terminal Browser";
+"Install Terminal Browser to give the Coding Agent a controllable browser." = "Instal·la Terminal Browser per donar a l'agent de codi un navegador controlable.";
+"Install Terminal Browser" = "Instal·la Terminal Browser";
+"Agent-Controlled Browser" = "Navegador controlat per l'agent";
+"Open a Chromium browser the Coding Agent can inspect and control while the regular in-app browser remains yours." = "Obre un navegador Chromium que l'agent de codi pugui inspeccionar i controlar mentre el navegador integrat habitual continua sent teu.";

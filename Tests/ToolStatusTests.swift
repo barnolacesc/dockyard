@@ -123,4 +123,19 @@ final class ToolStatusTests: XCTestCase {
 
         XCTAssertNil(version)
     }
+
+    func testTerminalBrowserVersionProbeUsesStandardVersionFlag() {
+        let process = ToolProbeProcessDouble(output: "terminal-browser 0.9.0\n")
+        let version = ToolStatus.runForVersion("/opt/homebrew/bin/terminal-browser", args: ["--version"]) {
+            executableURL,
+            arguments,
+            _,
+            _ in
+            XCTAssertEqual(executableURL.path, "/opt/homebrew/bin/terminal-browser")
+            XCTAssertEqual(arguments, ["--version"])
+            return process
+        }
+
+        XCTAssertEqual(version, "terminal-browser 0.9.0")
+    }
 }

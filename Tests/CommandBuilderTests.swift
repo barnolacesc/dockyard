@@ -278,6 +278,82 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertTrue(result.contains("'"))
     }
 
+    func testTerminalBrowserLaunchCommandQuotesExecutableAndURL() {
+        XCTAssertEqual(
+            terminalBrowserLaunchCommand(
+                path: "/Applications/Terminal Browser/bin/terminal-browser",
+                url: "http://localhost:43210/path?q=hello world"
+            ),
+            "'/Applications/Terminal Browser/bin/terminal-browser' open 'http://localhost:43210/path?q=hello world'"
+        )
+    }
+
+    func testTerminalBrowserPromptScopesAgentToWorkstreamURL() {
+        let prompt = SystemPrompts.terminalBrowserPrompt(
+            executablePath: "/opt/homebrew/bin/terminal-browser",
+            previewURL: "http://localhost:43210/"
+        )
+
+        XCTAssertTrue(prompt.contains("ls --all --json"))
+        XCTAssertTrue(prompt.contains("--browser <key> --tab <id>"))
+        XCTAssertTrue(prompt.contains("http://localhost:43210/"))
+        XCTAssertTrue(prompt.contains("never operate on an unrelated browser instance"))
+        XCTAssertTrue(prompt.contains("action --browser <key> --tab <id> done"))
+    }
+
+    func testClaudeAgentCommandIncludesTerminalBrowserContextOnce() {
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .claude,
+            cliPath: "/usr/local/bin/claude",
+            workingDirectory: "/tmp/worktree",
+            projectName: "dockyard",
+            workstreamName: "agent-browser",
+            workstreamID: UUID(),
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: false,
+            autoRenameBranch: true,
+            envVars: [:],
+            supportsSessionName: false,
+            terminalBrowserPath: "/opt/homebrew/bin/terminal-browser",
+            browserURL: "http://localhost:43210/"
+        )
+
+        XCTAssertEqual(command.intermediateCommands.count, 3)
+        for candidate in command.intermediateCommands.prefix(2) {
+            XCTAssertEqual(candidate.components(separatedBy: "DOCKYARD AGENT BROWSER").count - 1, 1)
+            XCTAssertEqual(candidate.components(separatedBy: "--append-system-prompt").count - 1, 1)
+        }
+    }
+
+    func testCodexAgentCommandComposesTerminalBrowserAndRenameInstructionsOnce() {
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .codex,
+            cliPath: "/usr/local/bin/codex",
+            workingDirectory: "/tmp/worktree",
+            projectName: "dockyard",
+            workstreamName: "agent-browser",
+            workstreamID: UUID(),
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: false,
+            autoRenameBranch: true,
+            envVars: [:],
+            supportsSessionName: false,
+            terminalBrowserPath: "/opt/homebrew/bin/terminal-browser",
+            browserURL: "http://localhost:43210/"
+        )
+
+        for candidate in command.intermediateCommands.prefix(2) {
+            XCTAssertEqual(candidate.components(separatedBy: "developer_instructions=").count - 1, 1)
+            XCTAssertEqual(candidate.components(separatedBy: "DOCKYARD AGENT BROWSER").count - 1, 1)
+            XCTAssertEqual(candidate.components(separatedBy: "AUTO_RENAME").count - 1, 0)
+            XCTAssertTrue(candidate.contains("git branch -m"))
+        }
+    }
+
     func testResolvedCodingCLIPrefersStoredValue() {
         var status = ToolStatus()
         status.claude = .found("/usr/local/bin/claude")
