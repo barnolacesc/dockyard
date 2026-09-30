@@ -38,6 +38,18 @@ final class SidebarRailTests: XCTestCase {
         XCTAssertEqual(sorted.indices.map(sidebarRailProjectLabel), ["1", "2", "3"])
     }
 
+    func testProjectIconMappingUsesIconWhenPresent() {
+        let withEmoji = Project(name: "dockyard", directory: "/dockyard", icon: "🚀")
+        let withSymbol = Project(name: "terminal", directory: "/terminal", icon: "terminal.fill")
+        let withoutIcon = Project(name: "plain", directory: "/plain")
+
+        let sorted = sidebarRailSortedProjects([withEmoji, withSymbol, withoutIcon])
+
+        XCTAssertEqual(sidebarRailProjectLabel(for: sorted[0], at: 0), "🚀")
+        XCTAssertEqual(sidebarRailProjectLabel(for: sorted[1], at: 1), "terminal.fill")
+        XCTAssertEqual(sidebarRailProjectLabel(for: sorted[2], at: 2), "3")
+    }
+
     func testWorkstreamLetterMappingUsesManualOrder() {
         let a = Workstream(name: "a", id: UUID(), lastAccessedAt: Date(timeIntervalSince1970: 10))
         let b = Workstream(name: "b", id: UUID(), lastAccessedAt: Date(timeIntervalSince1970: 30))
@@ -198,15 +210,15 @@ final class SidebarRailTests: XCTestCase {
             "headRefName": "feat",
             "url": "https://example.com/212",
             "statusCheckRollup": [
-                ["name": "CodeRabbit", "status": "COMPLETED", "conclusion": "SUCCESS"]
+                ["name": "CodeRabbit", "status": "COMPLETED", "conclusion": "SUCCESS"],
             ],
             "latestReviews": [
                 [
                     "author": ["login": "coderabbitai[bot]"],
                     "state": "COMMENTED",
-                    "body": "**Actionable comments posted: 1**\n\n---\n<!-- autofix_checkbox_start -->"
-                ]
-            ]
+                    "body": "**Actionable comments posted: 1**\n\n---\n<!-- autofix_checkbox_start -->",
+                ],
+            ],
         ]
         let pr = try XCTUnwrap(GitHubPR.decode(payload))
         let pill = try XCTUnwrap(pr.stagePill(isManuallySet: false))

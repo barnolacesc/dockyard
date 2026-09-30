@@ -12,6 +12,13 @@ func sidebarRailProjectLabel(at index: Int) -> String {
     "\(index + 1)"
 }
 
+func sidebarRailProjectLabel(for project: Project, at index: Int) -> String {
+    if let icon = project.displayIcon {
+        return icon
+    }
+    return sidebarRailProjectLabel(at: index)
+}
+
 func sidebarRailWorkstreamLabel(at index: Int) -> String {
     let alphabet = Array("abcdefghijklmnopqrstuvwxyz")
     guard index >= 0 else { return "" }
@@ -71,6 +78,9 @@ struct SidebarRail: View {
     let onExpand: () -> Void
     let onAddExistingDirectory: () -> Void
     let onCreateNewProject: () -> Void
+    var onSetProjectColor: ((UUID, ProjectColor?) -> Void)? = nil
+    var onSetProjectIcon: ((UUID, String?) -> Void)? = nil
+    var onDeleteProject: ((UUID) -> Void)? = nil
     var selectedUsageProvider: UsageMeterProvider = .claude
     var availableUsageProviders: [UsageMeterProvider] = [.claude]
 
@@ -81,6 +91,7 @@ struct SidebarRail: View {
     @EnvironmentObject private var codexUsageStore: CodexUsageStore
     @EnvironmentObject private var agyUsageStore: AgyUsageStore
     @AppStorage(CaffeinateMode.storageKey) private var caffeinateMode: String = CaffeinateMode.off.rawValue
+    @State private var projectForIconPicker: Project?
 
     private var currentCaffeinateMode: CaffeinateMode {
         CaffeinateMode(rawValue: caffeinateMode) ?? .off
@@ -132,12 +143,31 @@ struct SidebarRail: View {
                         let projectStatus = isSelectedProject ? SidebarRailStatus() : status(for: project)
 
                         RailProjectTile(
-                            label: sidebarRailProjectLabel(at: index),
+                            label: sidebarRailProjectLabel(for: project, at: index),
+                            icon: project.displayIcon,
                             tooltip: projectDirectoryName(project),
                             isSelected: isSelectedProject,
                             status: projectStatus,
                             projectColor: project.color,
-                            onSelect: { selection = .project(project.id) }
+                            onSelect: { selection = .project(project.id) },
+                            onSetIcon: { newIcon in
+                                onSetProjectIcon?(project.id, newIcon)
+                            },
+                            onSetColor: { newColor in
+                                onSetProjectColor?(project.id, newColor)
+                            },
+                            onOpenInFinder: {
+                                NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: project.directory)
+                            },
+                            onOpenInTerminal: {
+                                openDirectoryInTerminal(project.directory)
+                            },
+                            onOpenIconPicker: {
+                                projectForIconPicker = project
+                            },
+                            onDelete: {
+                                onDeleteProject?(project.id)
+                            }
                         )
 
                         if isSelectedProject {
@@ -220,6 +250,18 @@ struct SidebarRail: View {
             .padding(.bottom, 8)
         }
         .frame(width: 60)
+        .sheet(item: $projectForIconPicker) { project in
+            ProjectIconPickerSheet(
+                project: project,
+                onSave: { newIcon in
+                    onSetProjectIcon?(project.id, newIcon)
+                    projectForIconPicker = nil
+                },
+                onCancel: {
+                    projectForIconPicker = nil
+                }
+            )
+        }
     }
 
     private var selectedUsageStoreHasData: Bool {
@@ -372,15 +414,23 @@ struct SidebarRail: View {
 
 private struct RailProjectTile: View {
     let label: String
+    var icon: String? = nil
     let tooltip: String
     let isSelected: Bool
     let status: SidebarRailStatus
     let projectColor: ProjectColor?
     let onSelect: () -> Void
+    var onSetIcon: ((String?) -> Void)? = nil
+    var onSetColor: ((ProjectColor?) -> Void)? = nil
+    var onOpenInFinder: (() -> Void)? = nil
+    var onOpenInTerminal: (() -> Void)? = nil
+    var onOpenIconPicker: (() -> Void)? = nil
+    var onDelete: (() -> Void)? = nil
 
     var body: some View {
         RailTile(
             label: label,
+            icon: icon,
             tooltip: tooltip,
             isSelected: isSelected,
             isWorkstream: false,
@@ -388,6 +438,73 @@ private struct RailProjectTile: View {
             tint: projectColor?.swiftUIColor,
             onSelect: onSelect
         )
+        .contextMenu {
+            Button {
+                onOpenInFinder?()
+            } label: {
+                Label("Reveal in Finder", systemImage: "folder")
+            }
+            Button {
+                onOpenInTerminal?()
+            } label: {
+                Label("Open in External Terminal", systemImage: "terminal")
+            }
+            Divider()
+            Menu("Project Color") {
+                Button {
+                    onSetColor?(nil)
+                } label: {
+                    Label("No Color", systemImage: projectColor == nil ? "checkmark.circle.fill" : "circle")
+                }
+                Divider()
+                ForEach(ProjectColor.allCases) { color in
+                    Button {
+                        onSetColor?(color)
+                    } label: {
+                        Label {
+                            Text(color.localizedName)
+                        } icon: {
+                            Image(systemName: projectColor == color ? "checkmark.circle.fill" : "circle.fill")
+                                .foregroundStyle(color.swiftUIColor)
+                        }
+                    }
+                }
+            }
+            Menu("Project Icon") {
+                Button {
+                    onSetIcon?(nil)
+                } label: {
+                    Label("No Icon", systemImage: icon == nil ? "checkmark" : "")
+                }
+                Divider()
+                ForEach(ProjectIconCatalog.quickPicks, id: \.self) { item in
+                    Button {
+                        onSetIcon?(item)
+                    } label: {
+                        HStack {
+                            Text(item)
+                            if icon == item {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+                Divider()
+                Button {
+                    onOpenIconPicker?()
+                } label: {
+                    Label("Choose Icon…", systemImage: "ellipsis")
+                }
+            }
+            if onDelete != nil {
+                Divider()
+                Button(role: .destructive) {
+                    onDelete?()
+                } label: {
+                    Label("Remove Project", systemImage: "trash")
+                }
+            }
+        }
     }
 }
 
@@ -401,6 +518,7 @@ private struct RailWorkstreamTile: View {
     var body: some View {
         RailTile(
             label: label,
+            icon: nil,
             tooltip: tooltip,
             isSelected: isSelected,
             isWorkstream: true,
@@ -413,6 +531,7 @@ private struct RailWorkstreamTile: View {
 
 private struct RailTile: View {
     let label: String
+    var icon: String? = nil
     let tooltip: String
     let isSelected: Bool
     let isWorkstream: Bool
@@ -443,19 +562,25 @@ private struct RailTile: View {
     var body: some View {
         Button(action: onSelect) {
             ZStack(alignment: .topTrailing) {
-                Text(label)
-                    .font(.system(size: isWorkstream ? 13 : 14, weight: .semibold, design: .rounded))
-                    .tabularNumbers()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .foregroundStyle(foreground)
-                    .frame(width: 36, height: 32)
-                    .background(background, in: tileShape)
-                    .overlay {
-                        if isSelected {
-                            tileShape.stroke(outline, lineWidth: 1.5)
-                        }
+                Group {
+                    if let icon, !icon.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        ProjectIconView(icon: icon, size: 14, foreground: foreground)
+                    } else {
+                        Text(label)
+                            .font(.system(size: isWorkstream ? 13 : 14, weight: .semibold, design: .rounded))
+                            .tabularNumbers()
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .foregroundStyle(foreground)
                     }
+                }
+                .frame(width: 36, height: 32)
+                .background(background, in: tileShape)
+                .overlay {
+                    if isSelected {
+                        tileShape.stroke(outline, lineWidth: 1.5)
+                    }
+                }
 
                 ActivityIndicator(state: status.agentState, isPathValid: true)
                     .offset(x: 5, y: -4)

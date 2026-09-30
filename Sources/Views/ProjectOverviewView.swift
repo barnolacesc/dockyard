@@ -46,6 +46,16 @@ struct ProjectOverviewView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Header (outside Form to avoid row styling)
             VStack(spacing: 4) {
+                ProjectIconButton(
+                    icon: project.icon,
+                    color: project.color,
+                    size: 44
+                ) { newIcon in
+                    project.icon = newIcon
+                    onProjectChanged()
+                }
+                .padding(.bottom, 2)
+
                 TextField("", text: $project.name)
                     .font(.system(size: 22, weight: .bold))
                     .textFieldStyle(.plain)
