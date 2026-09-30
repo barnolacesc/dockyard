@@ -18,6 +18,7 @@ final class ProjectTests: XCTestCase {
         XCTAssertEqual(project.name, "myapp")
         XCTAssertEqual(project.directory, "/Users/test/myapp")
         XCTAssertNil(project.color)
+        XCTAssertNil(project.icon)
     }
 
     func testProjectColorRoundTrips() throws {
@@ -26,6 +27,15 @@ final class ProjectTests: XCTestCase {
         let decoded = try JSONDecoder().decode(Project.self, from: data)
 
         XCTAssertEqual(decoded.color, .purple)
+    }
+
+    func testProjectIconRoundTrips() throws {
+        let project = Project(name: "myapp", directory: "/Users/test/myapp", icon: "🚀")
+        let data = try JSONEncoder().encode(project)
+        let decoded = try JSONDecoder().decode(Project.self, from: data)
+
+        XCTAssertEqual(decoded.icon, "🚀")
+        XCTAssertEqual(decoded.displayIcon, "🚀")
     }
 
     func testProjectWithoutPersistedColorStillDecodes() throws {
@@ -38,6 +48,16 @@ final class ProjectTests: XCTestCase {
         let decoded = try decoder.decode(Project.self, from: Data(json.utf8))
 
         XCTAssertNil(decoded.color)
+        XCTAssertNil(decoded.icon)
+        XCTAssertNil(decoded.displayIcon)
+    }
+
+    func testProjectDisplayIconTrimsWhitespaceAndIgnoresEmpty() {
+        let empty = Project(name: "empty", directory: "/tmp", icon: "   ")
+        let populated = Project(name: "pop", directory: "/tmp", icon: " 🚀 ")
+
+        XCTAssertNil(empty.displayIcon)
+        XCTAssertEqual(populated.displayIcon, "🚀")
     }
 
     func testUniqueIDs() {

@@ -16,6 +16,11 @@ enum WhatsNewCatalog {
         ]),
         WhatsNewRelease(version: "0.2.6", entries: [
             WhatsNewEntry(
+                symbol: "face.smiling",
+                titleKey: "Project Icons and Emojis",
+                bodyKey: "Assign custom icons or emojis to projects for quick recognition in the minimized sidebar rail, project overview, and sidebar."
+            ),
+            WhatsNewEntry(
                 symbol: "point.3.connected.trianglepath.dotted",
                 titleKey: "Subagents in Sidebar and Tabs",
                 bodyKey: "See active subagents invoked across your workspaces directly in the sidebar and on the Agent tab."

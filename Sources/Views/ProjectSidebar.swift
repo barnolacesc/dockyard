@@ -69,7 +69,7 @@ extension GitHubPR {
         }
 
         switch codeRabbitStatus {
-        case .hasFindings(let count):
+        case let .hasFindings(count):
             let title = count != nil ? "\(count!)" : "Findings"
             return WorkstreamStagePillStyle(
                 appearance: .filled,
@@ -204,9 +204,11 @@ struct ProjectSidebar: View {
     @State private var openIssuesError = ""
     @State private var issueLookupToken = 0
     @State private var newProjectName = ""
+    @State private var newProjectIcon: String? = nil
     @State private var newProjectError = ""
     @State private var isDropTargeted = false
     @State private var projectToDelete: UUID?
+    @State private var projectForIconPicker: Project?
     @State private var workstreamToRename: UUID?
     @State private var newWorkstreamName = ""
     @State private var workstreamToRemove: UUID?
@@ -355,9 +357,17 @@ struct ProjectSidebar: View {
                 onAddWithoutPermissions: { addWorkstream(for: project.id, bypassPermissions: false) },
                 onOpenTerminal: { onOpenProjectTerminal(project.id) },
                 onSetColor: { color in
-                    guard let index = cachedProjectIndex[project.id], projects.indices.contains(index) else { return }
+                    guard let index = projects.firstIndex(where: { $0.id == project.id }) else { return }
                     projects[index].color = color
                     onProjectsChanged()
+                },
+                onSetIcon: { icon in
+                    guard let index = projects.firstIndex(where: { $0.id == project.id }) else { return }
+                    projects[index].icon = icon
+                    onProjectsChanged()
+                },
+                onOpenIconPicker: {
+                    projectForIconPicker = project
                 },
                 onDelete: { projectToDelete = project.id }
             )
@@ -491,7 +501,6 @@ struct ProjectSidebar: View {
             }
         }
     }
-
 
     private var bottomBar: some View {
         VStack(spacing: 4) {
@@ -699,10 +708,29 @@ struct ProjectSidebar: View {
             .sheet(isPresented: $showingNewProjectName) {
                 NewProjectSheet(
                     name: $newProjectName,
+                    icon: $newProjectIcon,
                     error: $newProjectError,
                     baseDirectory: baseDirectory,
                     onAdd: { createNewProject() },
-                    onCancel: { showingNewProjectName = false }
+                    onCancel: {
+                        showingNewProjectName = false
+                        newProjectIcon = nil
+                    }
+                )
+            }
+            .sheet(item: $projectForIconPicker) { project in
+                ProjectIconPickerSheet(
+                    project: project,
+                    onSave: { newIcon in
+                        if let index = projects.firstIndex(where: { $0.id == project.id }) {
+                            projects[index].icon = newIcon
+                            onProjectsChanged()
+                        }
+                        projectForIconPicker = nil
+                    },
+                    onCancel: {
+                        projectForIconPicker = nil
+                    }
                 )
             }
             .alert(
@@ -755,6 +783,19 @@ struct ProjectSidebar: View {
                 onExpand: { setVisibleSidebarMode(.expanded) },
                 onAddExistingDirectory: { openDirectoryPicker() },
                 onCreateNewProject: { presentNewProjectSheet() },
+                onSetProjectColor: { id, color in
+                    guard let index = projects.firstIndex(where: { $0.id == id }) else { return }
+                    projects[index].color = color
+                    onProjectsChanged()
+                },
+                onSetProjectIcon: { id, icon in
+                    guard let index = projects.firstIndex(where: { $0.id == id }) else { return }
+                    projects[index].icon = icon
+                    onProjectsChanged()
+                },
+                onDeleteProject: { id in
+                    projectToDelete = id
+                },
                 selectedUsageProvider: selectedUsageProvider,
                 availableUsageProviders: availableUsageProviders
             )
@@ -808,7 +849,6 @@ struct ProjectSidebar: View {
                         deferSelectionExpansion(sel, projectIDByWorkstreamID: projectIDByWorkstreamIDSnapshot(), scrollProxy: scrollProxy)
                     }
                 } // ScrollViewReader
-
 
                 // Bottom bar (always visible)
                 bottomBar
@@ -1194,6 +1234,7 @@ struct ProjectSidebar: View {
 
     private func presentNewProjectSheet() {
         newProjectName = ""
+        newProjectIcon = nil
         newProjectError = ""
         showingNewProjectName = true
     }
@@ -1232,11 +1273,13 @@ struct ProjectSidebar: View {
         // Initialize git repo in the new directory
         _ = GitOperations.initRepo(at: dirURL.path)
 
+        let icon = newProjectIcon
         showingNewProjectName = false
-        addProject(name: name, directory: dirURL.path)
+        newProjectIcon = nil
+        addProject(name: name, directory: dirURL.path, icon: icon)
     }
 
-    private func addProject(name: String, directory: String) {
+    private func addProject(name: String, directory: String, icon: String? = nil) {
         // Resolve worktree branches to their main repository
         let resolvedDirectory: String
         let resolvedName: String
@@ -1254,7 +1297,7 @@ struct ProjectSidebar: View {
         }
 
         let projectName = resolvedName.isEmpty ? URL(fileURLWithPath: resolvedDirectory).lastPathComponent : resolvedName
-        let project = Project(name: projectName, directory: resolvedDirectory)
+        let project = Project(name: projectName, directory: resolvedDirectory, icon: icon)
         NotificationCenter.default.post(
             name: .projectCreated,
             object: nil,
@@ -1301,6 +1344,8 @@ private struct ProjectHeaderRow: View {
     let onAddWithoutPermissions: () -> Void
     let onOpenTerminal: () -> Void
     let onSetColor: (ProjectColor?) -> Void
+    let onSetIcon: (String?) -> Void
+    let onOpenIconPicker: () -> Void
     let onDelete: () -> Void
 
     @State private var isHovering = false
@@ -1341,6 +1386,10 @@ private struct ProjectHeaderRow: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 4) {
+                    if let icon = project.displayIcon {
+                        ProjectIconView(icon: icon, size: 12, foreground: project.color?.swiftUIColor ?? .primary)
+                    }
+
                     Text(project.name)
                         .font(.system(size: 13, weight: .medium))
 
@@ -1436,6 +1485,32 @@ private struct ProjectHeaderRow: View {
                                 .foregroundStyle(color.swiftUIColor)
                         }
                     }
+                }
+            }
+            Menu("Project Icon") {
+                Button {
+                    onSetIcon(nil)
+                } label: {
+                    Label("No Icon", systemImage: project.icon == nil ? "checkmark" : "")
+                }
+                Divider()
+                ForEach(ProjectIconCatalog.quickPicks, id: \.self) { item in
+                    Button {
+                        onSetIcon(item)
+                    } label: {
+                        HStack {
+                            Text(item)
+                            if project.icon == item {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+                Divider()
+                Button {
+                    onOpenIconPicker()
+                } label: {
+                    Label("Choose Icon…", systemImage: "ellipsis")
                 }
             }
         }
@@ -2171,7 +2246,6 @@ private struct GlobalPRRow: View {
     }
 }
 
-
 private struct SidebarIconButton: View {
     let icon: String
     let action: () -> Void
@@ -2514,6 +2588,7 @@ private struct IssueRowView: View {
 
 private struct NewProjectSheet: View {
     @Binding var name: String
+    @Binding var icon: String?
     @Binding var error: String
     let baseDirectory: String
     let onAdd: () -> Void
@@ -2539,9 +2614,15 @@ private struct NewProjectSheet: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            TextField("Project Name", text: $name)
-                .textFieldStyle(.roundedBorder)
-                .onSubmit { if !name.trimmingCharacters(in: .whitespaces).isEmpty { onAdd() } }
+            HStack(spacing: 8) {
+                ProjectIconButton(icon: icon, size: 30) { newIcon in
+                    icon = newIcon
+                }
+
+                TextField("Project Name", text: $name)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { if !name.trimmingCharacters(in: .whitespaces).isEmpty { onAdd() } }
+            }
 
             if !error.isEmpty {
                 Text(error)

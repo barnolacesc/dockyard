@@ -131,14 +131,23 @@ struct Project: Identifiable, Hashable, Codable {
     var workstreams: [Workstream]
     var lastAccessedAt: Date
     var color: ProjectColor?
+    var icon: String?
 
-    init(name: String, directory: String, id: UUID = UUID(), workstreams: [Workstream] = [], lastAccessedAt: Date = Date(), color: ProjectColor? = nil) {
+    var displayIcon: String? {
+        guard let icon = icon?.trimmingCharacters(in: .whitespacesAndNewlines), !icon.isEmpty else {
+            return nil
+        }
+        return icon
+    }
+
+    init(name: String, directory: String, id: UUID = UUID(), workstreams: [Workstream] = [], lastAccessedAt: Date = Date(), color: ProjectColor? = nil, icon: String? = nil) {
         self.id = id
         self.name = name
         self.directory = directory
         self.workstreams = workstreams
         self.lastAccessedAt = lastAccessedAt
         self.color = color
+        self.icon = icon
     }
 
     static func == (lhs: Project, rhs: Project) -> Bool {
