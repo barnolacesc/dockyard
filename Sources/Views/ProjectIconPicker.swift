@@ -102,9 +102,6 @@ struct ProjectIconButton: View {
                     set: { onSelect($0) }
                 ),
                 projectColor: color,
-                onChange: { newIcon in
-                    onSelect(newIcon)
-                },
                 onDismiss: {
                     showingPicker = false
                 }
@@ -117,7 +114,6 @@ struct ProjectIconButton: View {
 struct ProjectIconPickerPopover: View {
     @Binding var selectedIcon: String?
     var projectColor: ProjectColor? = nil
-    var onChange: (String?) -> Void
     var onDismiss: (() -> Void)? = nil
 
     @State private var selectedTab: IconTab = .emoji
@@ -157,7 +153,6 @@ struct ProjectIconPickerPopover: View {
                 if selectedIcon != nil {
                     Button("Remove Icon") {
                         selectedIcon = nil
-                        onChange(nil)
                         onDismiss?()
                     }
                     .buttonStyle(.plain)
@@ -173,7 +168,6 @@ struct ProjectIconPickerPopover: View {
                         let isSelected = selectedIcon == item
                         Button {
                             selectedIcon = item
-                            onChange(item)
                             onDismiss?()
                         } label: {
                             ZStack {
@@ -232,7 +226,6 @@ struct ProjectIconPickerPopover: View {
         let trimmed = customText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         selectedIcon = trimmed
-        onChange(trimmed)
         onDismiss?()
     }
 }
@@ -258,8 +251,7 @@ struct ProjectIconPickerSheet: View {
 
             ProjectIconPickerPopover(
                 selectedIcon: $currentIcon,
-                projectColor: project.color,
-                onChange: { _ in }
+                projectColor: project.color
             )
 
             HStack {

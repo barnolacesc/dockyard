@@ -357,12 +357,12 @@ struct ProjectSidebar: View {
                 onAddWithoutPermissions: { addWorkstream(for: project.id, bypassPermissions: false) },
                 onOpenTerminal: { onOpenProjectTerminal(project.id) },
                 onSetColor: { color in
-                    guard let index = cachedProjectIndex[project.id], projects.indices.contains(index) else { return }
+                    guard let index = projects.firstIndex(where: { $0.id == project.id }) else { return }
                     projects[index].color = color
                     onProjectsChanged()
                 },
                 onSetIcon: { icon in
-                    guard let index = cachedProjectIndex[project.id], projects.indices.contains(index) else { return }
+                    guard let index = projects.firstIndex(where: { $0.id == project.id }) else { return }
                     projects[index].icon = icon
                     onProjectsChanged()
                 },
@@ -722,7 +722,7 @@ struct ProjectSidebar: View {
                 ProjectIconPickerSheet(
                     project: project,
                     onSave: { newIcon in
-                        if let index = cachedProjectIndex[project.id], projects.indices.contains(index) {
+                        if let index = projects.firstIndex(where: { $0.id == project.id }) {
                             projects[index].icon = newIcon
                             onProjectsChanged()
                         }
@@ -784,12 +784,12 @@ struct ProjectSidebar: View {
                 onAddExistingDirectory: { openDirectoryPicker() },
                 onCreateNewProject: { presentNewProjectSheet() },
                 onSetProjectColor: { id, color in
-                    guard let index = cachedProjectIndex[id], projects.indices.contains(index) else { return }
+                    guard let index = projects.firstIndex(where: { $0.id == id }) else { return }
                     projects[index].color = color
                     onProjectsChanged()
                 },
                 onSetProjectIcon: { id, icon in
-                    guard let index = cachedProjectIndex[id], projects.indices.contains(index) else { return }
+                    guard let index = projects.firstIndex(where: { $0.id == id }) else { return }
                     projects[index].icon = icon
                     onProjectsChanged()
                 },
