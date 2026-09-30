@@ -218,21 +218,21 @@ struct WorkspaceTabSnapshot: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let rawTabs = try container.decode([DecodedWorkspaceTab].self, forKey: .tabs)
         let filteredTabs = rawTabs.compactMap { $0.toWorkspaceTab }.filter { $0 != .info }
-        self.tabs = filteredTabs.isEmpty ? [.agent] : filteredTabs
-        self.terminalCount = try container.decode(Int.self, forKey: .terminalCount)
-        self.browserCount = try container.decode(Int.self, forKey: .browserCount)
+        tabs = filteredTabs.isEmpty ? [.agent] : filteredTabs
+        terminalCount = try container.decode(Int.self, forKey: .terminalCount)
+        browserCount = try container.decode(Int.self, forKey: .browserCount)
         let rawActiveTab = try container.decode(DecodedWorkspaceTab.self, forKey: .activeTab)
-        if let active = rawActiveTab.toWorkspaceTab, self.tabs.contains(active) {
-            self.activeTab = active
+        if let active = rawActiveTab.toWorkspaceTab, tabs.contains(active) {
+            activeTab = active
         } else {
-            self.activeTab = .agent
+            activeTab = .agent
         }
-        self.browserTitles = (try? container.decode([UUID: String].self, forKey: .browserTitles)) ?? [:]
-        self.terminalTitles = (try? container.decode([UUID: String].self, forKey: .terminalTitles)) ?? [:]
-        self.runStarted = (try? container.decode(Bool.self, forKey: .runStarted)) ?? false
-        self.runStoppedManually = (try? container.decode(Bool.self, forKey: .runStoppedManually)) ?? false
-        self.terminalEditorCommands = (try? container.decode([UUID: String].self, forKey: .terminalEditorCommands)) ?? [:]
-        self.browserURLs = (try? container.decode([UUID: String].self, forKey: .browserURLs)) ?? [:]
+        browserTitles = (try? container.decode([UUID: String].self, forKey: .browserTitles)) ?? [:]
+        terminalTitles = (try? container.decode([UUID: String].self, forKey: .terminalTitles)) ?? [:]
+        runStarted = (try? container.decode(Bool.self, forKey: .runStarted)) ?? false
+        runStoppedManually = (try? container.decode(Bool.self, forKey: .runStoppedManually)) ?? false
+        terminalEditorCommands = (try? container.decode([UUID: String].self, forKey: .terminalEditorCommands)) ?? [:]
+        browserURLs = (try? container.decode([UUID: String].self, forKey: .browserURLs)) ?? [:]
     }
 
     /// Returns a copy with dead terminal tabs removed.
@@ -647,7 +647,8 @@ struct TerminalContainerView: View {
             supportsSessionName: appEnv.toolStatus.supportsSessionName(for: selectedCodingCLI),
             hookInvocation: hookInvocation,
             terminalBrowserPath: terminalBrowserPath,
-            browserURL: terminalBrowserPath == nil ? nil : browserDefaultURL
+            browserURL: terminalBrowserPath == nil ? nil : browserDefaultURL,
+            initialPrompt: initialAgentPrompt
         )
 
         LaunchLogger.log(LaunchLogEntry(
@@ -842,7 +843,6 @@ struct TerminalContainerView: View {
         }
     }
 
-    @ViewBuilder
     private var workstreamInfoView: some View {
         WorkstreamInfoView(
             workstreamID: workstreamID,
@@ -900,7 +900,7 @@ struct TerminalContainerView: View {
                     workstreamID: workstreamID,
                     workingDirectory: workingDirectory,
                     command: agentCommand,
-                    initialInput: initialAgentPrompt.map { $0 + "\r" },
+                    consumesInitialPrompt: initialAgentPrompt != nil,
                     isFocused: true,
                     environmentVars: agentEnvironmentVars
                 )
@@ -989,6 +989,7 @@ struct TerminalContainerView: View {
             .onChange(of: workstreamName) { rebuildAgentCommand() }
             .onChange(of: agentSessionName) { rebuildAgentCommand() }
             .onChange(of: portDetector.selectedPort) { rebuildAgentCommand() }
+            .onChange(of: initialAgentPrompt) { rebuildAgentCommand() }
             .onChange(of: effectiveCodingCLIStoredValue) {
                 livePermissionHint = nil
                 surfaceCache.removeSurface(for: agentID)
@@ -1572,7 +1573,7 @@ struct TerminalContainerView: View {
                 app: app,
                 workingDirectory: workingDirectory,
                 command: cmd,
-                initialInput: initialAgentPrompt.map { $0 + "\r" },
+                consumesInitialPrompt: initialAgentPrompt != nil,
                 environmentVars: agentEnvironmentVars
             )
         }
@@ -1888,7 +1889,7 @@ struct WorkstreamLifecyclePill: View {
 
                 PRChecksBadge(pr: pr, directory: directory, compact: true)
             }
-        } else if case .hasFindings(let count) = pr.codeRabbitStatus {
+        } else if case let .hasFindings(count) = pr.codeRabbitStatus {
             HStack(spacing: 4) {
                 Button(action: onAddressFindings) {
                     HStack(spacing: 5) {
@@ -2208,7 +2209,7 @@ private struct GitHubActionMenu: View {
     }
 
     private func disabledReason(for action: QuickAction) -> String? {
-        if action == .addressReviewFindings && isAddressingFindings {
+        if action == .addressReviewFindings, isAddressingFindings {
             return NSLocalizedString("Addressing review findings...", comment: "")
         }
         return action.disabledReason(ghPath: ghPath)
@@ -2470,6 +2471,7 @@ struct SingleTerminalView: View {
     let workingDirectory: String
     var command: String?
     var initialInput: String? = nil
+    var consumesInitialPrompt: Bool = false
     var isFocused: Bool = true
     var environmentVars: [String: String] = [:]
 
@@ -2487,6 +2489,7 @@ struct SingleTerminalView: View {
                     workstreamID: workstreamID,
                     workingDirectory: workingDirectory,
                     command: command,
+                    consumesInitialPrompt: consumesInitialPrompt,
                     isFocused: isFocused,
                     environmentVars: environmentVars,
                     size: geo.size
@@ -2527,6 +2530,7 @@ private struct TerminalSurfaceView: NSViewRepresentable {
     let workingDirectory: String
     var command: String?
     var initialInput: String? = nil
+    var consumesInitialPrompt: Bool = false
     var isFocused: Bool = true
     var environmentVars: [String: String] = [:]
     var size: CGSize
@@ -2549,6 +2553,7 @@ private struct TerminalSurfaceView: NSViewRepresentable {
             workingDirectory: workingDirectory,
             command: command,
             initialInput: initialInput,
+            consumesInitialPrompt: consumesInitialPrompt,
             environmentVars: environmentVars
         )
 
@@ -2684,9 +2689,11 @@ final class TerminalSurfaceCache: ObservableObject {
     private static let healthCheckWindow: TimeInterval = 2.0
 
     struct SurfaceParams {
+        let workstreamID: UUID
         let workingDirectory: String
         var command: String?
         var initialInput: String?
+        var consumesInitialPrompt: Bool = false
         let environmentVars: [String: String]
         let waitAfterCommand: Bool
     }
@@ -2713,7 +2720,7 @@ final class TerminalSurfaceCache: ObservableObject {
         }
     }
 
-    func surface(for id: UUID, workstreamID: UUID, app: ghostty_app_t, workingDirectory: String, command: String? = nil, initialInput: String? = nil, environmentVars: [String: String] = [:], waitAfterCommand: Bool = true) -> TerminalView {
+    func surface(for id: UUID, workstreamID: UUID, app: ghostty_app_t, workingDirectory: String, command: String? = nil, initialInput: String? = nil, consumesInitialPrompt: Bool = false, environmentVars: [String: String] = [:], waitAfterCommand: Bool = true) -> TerminalView {
         if let existing = surfaces[id] {
             existing.surfaceID = id
             existing.workstreamID = workstreamID
@@ -2729,7 +2736,7 @@ final class TerminalSurfaceCache: ObservableObject {
         view.surfaceID = id
         view.workstreamID = workstreamID
         surfaces[id] = view
-        surfaceParams[id] = SurfaceParams(workingDirectory: workingDirectory, command: command, initialInput: initialInput, environmentVars: environmentVars, waitAfterCommand: waitAfterCommand)
+        surfaceParams[id] = SurfaceParams(workstreamID: workstreamID, workingDirectory: workingDirectory, command: command, initialInput: initialInput, consumesInitialPrompt: consumesInitialPrompt, environmentVars: environmentVars, waitAfterCommand: waitAfterCommand)
         if view.surface == nil {
             logger.error("Surface creation failed for \(id, privacy: .public) command=\(command ?? "<shell>", privacy: .public)")
             failedSurfaces[id] = command ?? "(default shell)"
@@ -2738,7 +2745,8 @@ final class TerminalSurfaceCache: ObservableObject {
             creationTimes[id] = Date()
             // Initial task text is a one-shot seed; never replay it on respawn.
             surfaceParams[id]?.initialInput = nil
-            if initialInput != nil {
+            surfaceParams[id]?.consumesInitialPrompt = false
+            if initialInput != nil || consumesInitialPrompt {
                 DispatchQueue.main.async {
                     NotificationCenter.default.post(name: .initialAgentPromptConsumed, object: workstreamID)
                 }
@@ -2757,13 +2765,20 @@ final class TerminalSurfaceCache: ObservableObject {
         }
         failedSurfaces.removeValue(forKey: id)
         let view = TerminalView(app: app, workingDirectory: params.workingDirectory, command: params.command, initialInput: params.initialInput, environmentVars: params.environmentVars, waitAfterCommand: params.waitAfterCommand)
-        view.workstreamID = id
+        view.surfaceID = id
+        view.workstreamID = params.workstreamID
         surfaces[id] = view
         if view.surface == nil {
             logger.error("Surface retry failed for \(id, privacy: .public)")
             failedSurfaces[id] = params.command ?? "(default shell)"
         } else {
             creationTimes[id] = Date()
+            if params.consumesInitialPrompt {
+                surfaceParams[id]?.consumesInitialPrompt = false
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: .initialAgentPromptConsumed, object: params.workstreamID)
+                }
+            }
         }
         objectWillChange.send()
     }

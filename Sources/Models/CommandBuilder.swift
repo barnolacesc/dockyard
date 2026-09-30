@@ -26,6 +26,10 @@ struct CommandBuilder {
         parts.append(Self.shellQuote(value))
     }
 
+    mutating func quotedArg(_ value: String) {
+        parts.append(Self.shellQuote(value))
+    }
+
     var command: String {
         parts.joined(separator: " ")
     }
@@ -272,7 +276,8 @@ enum CodingCLICommandBuilder {
         supportsSessionName: Bool,
         hookInvocation: AgentHookInvocation? = nil,
         terminalBrowserPath: String? = nil,
-        browserURL: String? = nil
+        browserURL: String? = nil,
+        initialPrompt: String? = nil
     ) -> AgentLaunchCommand {
         let command: AgentLaunchCommand
         switch cli.capabilities.commandStrategy {
@@ -289,7 +294,8 @@ enum CodingCLICommandBuilder {
                 supportsSessionName: supportsSessionName,
                 settingsPath: hookInvocation?.generatedConfigURL,
                 terminalBrowserPath: terminalBrowserPath,
-                browserURL: browserURL
+                browserURL: browserURL,
+                initialPrompt: initialPrompt
             )
         case .codex:
             command = buildCodexAgentCommand(
@@ -300,18 +306,22 @@ enum CodingCLICommandBuilder {
                 autoRenameBranch: autoRenameBranch,
                 hookInvocation: hookInvocation,
                 terminalBrowserPath: terminalBrowserPath,
-                browserURL: browserURL
+                browserURL: browserURL,
+                initialPrompt: initialPrompt
             )
         case .agy:
             command = buildAgyAgentCommand(
                 cliPath: cliPath,
                 workingDirectory: workingDirectory,
-                bypassPermissions: bypassPermissions
+                bypassPermissions: bypassPermissions,
+                initialPrompt: initialPrompt
             )
         case .generic:
             command = buildGenericAgentCommand(
+                cli: cli,
                 cliPath: cliPath,
-                workingDirectory: workingDirectory
+                workingDirectory: workingDirectory,
+                initialPrompt: initialPrompt
             )
         }
 
@@ -345,7 +355,8 @@ enum CodingCLICommandBuilder {
         supportsSessionName: Bool,
         settingsPath: URL?,
         terminalBrowserPath: String?,
-        browserURL: String?
+        browserURL: String?,
+        initialPrompt: String? = nil
     ) -> AgentLaunchCommand {
         let sessionID = workstreamID.uuidString.lowercased()
 
@@ -398,6 +409,12 @@ enum CodingCLICommandBuilder {
             fresh.option("--settings", settingsPath.path)
         }
 
+        let normalizedPrompt = initialPrompt?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let normalizedPrompt, !normalizedPrompt.isEmpty {
+            resume.quotedArg(normalizedPrompt)
+            fresh.quotedArg(normalizedPrompt)
+        }
+
         let finalCommand = CommandBuilder.withFallback(
             resume.command,
             fresh.command,
@@ -417,7 +434,8 @@ enum CodingCLICommandBuilder {
         autoRenameBranch: Bool,
         hookInvocation: AgentHookInvocation?,
         terminalBrowserPath: String?,
-        browserURL: String?
+        browserURL: String?,
+        initialPrompt: String? = nil
     ) -> AgentLaunchCommand {
         var resume = CommandBuilder(cliPath)
         resume.arg("resume")
@@ -450,6 +468,12 @@ enum CodingCLICommandBuilder {
             browserURL: browserURL
         )
         applyCodexHookOptions(to: &fresh, hookInvocation: hookInvocation)
+
+        let normalizedPrompt = initialPrompt?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let normalizedPrompt, !normalizedPrompt.isEmpty {
+            resume.quotedArg(normalizedPrompt)
+            fresh.quotedArg(normalizedPrompt)
+        }
 
         let finalCommand = CommandBuilder.withFallback(
             resume.command,
@@ -513,22 +537,31 @@ enum CodingCLICommandBuilder {
     ///   - workingDirectory: The filesystem path of the workspace.
     ///   - bypassPermissions: Whether to auto-approve tool execution (`--dangerously-skip-permissions`).
     ///   - hasExistingConversation: Explicit override for whether an existing conversation exists (for testing).
+    ///   - initialPrompt: Optional initial prompt to autofill into interactive session.
     /// - Returns: An `AgentLaunchCommand` configured for direct launch or continuation with fallback.
     static func buildAgyAgentCommand(
         cliPath: String,
         workingDirectory: String,
         bypassPermissions: Bool,
-        hasExistingConversation: Bool? = nil
+        hasExistingConversation: Bool? = nil,
+        initialPrompt: String? = nil
     ) -> AgentLaunchCommand {
         let shouldResume = hasExistingConversation ?? hasExistingAgyConversation(workingDirectory: workingDirectory)
+        let normalizedPrompt = initialPrompt?.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if shouldResume {
             var resume = CommandBuilder(cliPath)
             resume.flag("--continue")
             applyAgyPermissionOptions(to: &resume, bypassPermissions: bypassPermissions)
+            if let normalizedPrompt, !normalizedPrompt.isEmpty {
+                resume.option("--prompt-interactive", normalizedPrompt)
+            }
 
             var fresh = CommandBuilder(cliPath)
             applyAgyPermissionOptions(to: &fresh, bypassPermissions: bypassPermissions)
+            if let normalizedPrompt, !normalizedPrompt.isEmpty {
+                fresh.option("--prompt-interactive", normalizedPrompt)
+            }
 
             let finalCommand = CommandBuilder.withFallback(
                 resume.command,
@@ -542,6 +575,9 @@ enum CodingCLICommandBuilder {
         } else {
             var command = CommandBuilder(cliPath)
             applyAgyPermissionOptions(to: &command, bypassPermissions: bypassPermissions)
+            if let normalizedPrompt, !normalizedPrompt.isEmpty {
+                command.option("--prompt-interactive", normalizedPrompt)
+            }
 
             return AgentLaunchCommand(
                 finalCommand: command.command,
@@ -560,10 +596,16 @@ enum CodingCLICommandBuilder {
     }
 
     private static func buildGenericAgentCommand(
+        cli: CodingCLI,
         cliPath: String,
-        workingDirectory _: String
+        workingDirectory _: String,
+        initialPrompt: String? = nil
     ) -> AgentLaunchCommand {
-        let fresh = CommandBuilder(cliPath)
+        var fresh = CommandBuilder(cliPath)
+        let normalizedPrompt = initialPrompt?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if cli == .opencode, let normalizedPrompt, !normalizedPrompt.isEmpty {
+            fresh.option("--prompt", normalizedPrompt)
+        }
 
         return AgentLaunchCommand(
             finalCommand: fresh.command,

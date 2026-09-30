@@ -888,4 +888,154 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertFalse(command.intermediateCommands[0].contains("--config"))
         XCTAssertFalse(command.intermediateCommands[1].contains("--config"))
     }
+
+    func testBuildClaudeAgentCommandWithInitialPromptAppendsQuotedArgument() throws {
+        let workstreamID = try XCTUnwrap(UUID(uuidString: "12345678-1234-1234-1234-123456789abc"))
+        let prompt = "Implement GitHub issue #42: Fix \"auth\" & 'login'\n\nSource: https://github.com/test/repo/issues/42\n\nHandle $PATH & `cmd`."
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .claude,
+            cliPath: "/usr/local/bin/claude",
+            workingDirectory: "/tmp/worktree",
+            projectName: "dockyard",
+            workstreamName: "issue-42",
+            workstreamID: workstreamID,
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: false,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: false,
+            initialPrompt: prompt
+        )
+
+        let expectedQuoted = CommandBuilder.shellQuote(prompt)
+        XCTAssertTrue(command.intermediateCommands[0].hasSuffix(" " + expectedQuoted))
+        XCTAssertTrue(command.intermediateCommands[1].hasSuffix(" " + expectedQuoted))
+        XCTAssertTrue(command.finalCommand.contains("Implement GitHub issue #42"))
+        try assertShellCanParse(command.finalCommand)
+    }
+
+    func testBuildCodexAgentCommandWithInitialPromptAppendsQuotedArgument() throws {
+        let workstreamID = try XCTUnwrap(UUID(uuidString: "12345678-1234-1234-1234-123456789abc"))
+        let prompt = "Implement GitHub issue #42: Fix \"auth\" & 'login'\n\nSource: https://github.com/test/repo/issues/42"
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .codex,
+            cliPath: "/usr/local/bin/codex",
+            workingDirectory: "/tmp/worktree",
+            projectName: "dockyard",
+            workstreamName: "issue-42",
+            workstreamID: workstreamID,
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: false,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: false,
+            initialPrompt: prompt
+        )
+
+        let expectedQuoted = CommandBuilder.shellQuote(prompt)
+        XCTAssertTrue(command.intermediateCommands[0].hasSuffix(" " + expectedQuoted))
+        XCTAssertTrue(command.intermediateCommands[1].hasSuffix(" " + expectedQuoted))
+        XCTAssertTrue(command.finalCommand.contains("Implement GitHub issue #42"))
+        try assertShellCanParse(command.finalCommand)
+    }
+
+    func testBuildAgyAgentCommandFreshWorkspaceWithInitialPromptUsesInteractiveFlag() throws {
+        let workstreamID = try XCTUnwrap(UUID(uuidString: "12345678-1234-1234-1234-123456789abc"))
+        let prompt = "Implement GitHub issue #42: Fix crash"
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .agy,
+            cliPath: "/usr/local/bin/agy",
+            workingDirectory: "/tmp/non_existent_agy_dir_\(UUID().uuidString)",
+            projectName: "dockyard",
+            workstreamName: "issue-42",
+            workstreamID: workstreamID,
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: false,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: false,
+            initialPrompt: prompt
+        )
+
+        let expectedQuoted = CommandBuilder.shellQuote(prompt)
+        XCTAssertEqual(command.intermediateCommands.count, 1)
+        XCTAssertTrue(command.intermediateCommands[0].contains("--prompt-interactive \(expectedQuoted)"))
+        XCTAssertTrue(command.finalCommand.contains("--prompt-interactive \(expectedQuoted)"))
+    }
+
+    func testBuildAgyAgentCommandResumingWithInitialPromptPassesInteractiveFlag() throws {
+        let prompt = "Implement GitHub issue #42: Fix crash"
+        let command = CodingCLICommandBuilder.buildAgyAgentCommand(
+            cliPath: "/usr/local/bin/agy",
+            workingDirectory: "/tmp/dockyard worktree",
+            bypassPermissions: false,
+            hasExistingConversation: true,
+            initialPrompt: prompt
+        )
+
+        let expectedQuoted = CommandBuilder.shellQuote(prompt)
+        XCTAssertEqual(command.intermediateCommands.count, 3)
+        XCTAssertTrue(command.intermediateCommands[0].contains("--continue --prompt-interactive \(expectedQuoted)"))
+        XCTAssertTrue(command.intermediateCommands[1].contains("/usr/local/bin/agy --prompt-interactive \(expectedQuoted)"))
+        XCTAssertTrue(command.finalCommand.contains("--prompt-interactive"))
+        XCTAssertTrue(command.finalCommand.contains("Implement GitHub issue #42: Fix crash"))
+        try assertShellCanParse(command.finalCommand)
+    }
+
+    func testBuildOpenCodeAgentCommandWithInitialPromptPassesPromptFlag() throws {
+        let workstreamID = try XCTUnwrap(UUID(uuidString: "12345678-1234-1234-1234-123456789abc"))
+        let prompt = "Implement GitHub issue #42: Fix crash"
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .opencode,
+            cliPath: "/opt/homebrew/bin/opencode",
+            workingDirectory: "/tmp/worktree",
+            projectName: "dockyard",
+            workstreamName: "issue-42",
+            workstreamID: workstreamID,
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: false,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: false,
+            initialPrompt: prompt
+        )
+
+        let expectedQuoted = CommandBuilder.shellQuote(prompt)
+        XCTAssertEqual(command.intermediateCommands.count, 1)
+        XCTAssertEqual(command.intermediateCommands[0], "/opt/homebrew/bin/opencode --prompt \(expectedQuoted)")
+        XCTAssertEqual(command.finalCommand, "/opt/homebrew/bin/opencode --prompt \(expectedQuoted)")
+    }
+
+    func testBuildAgentCommandsWithEmptyOrWhitespacePromptIgnorePrompt() throws {
+        let workstreamID = try XCTUnwrap(UUID(uuidString: "12345678-1234-1234-1234-123456789abc"))
+        for cli in CodingCLI.allCases {
+            let command = CodingCLICommandBuilder.buildAgentCommand(
+                cli: cli,
+                cliPath: "/usr/local/bin/\(cli.rawValue)",
+                workingDirectory: "/tmp/non_existent_\(UUID().uuidString)",
+                projectName: "dockyard",
+                workstreamName: "issue-empty",
+                workstreamID: workstreamID,
+                tmuxPath: nil,
+                useTmux: false,
+                bypassPermissions: false,
+                allowOutsideWorktree: false,
+                autoRenameBranch: false,
+                envVars: [:],
+                supportsSessionName: false,
+                initialPrompt: "   \n\t  "
+            )
+
+            XCTAssertFalse(command.finalCommand.contains("--prompt"))
+            XCTAssertFalse(command.finalCommand.contains("issue-empty'"))
+        }
+    }
 }
