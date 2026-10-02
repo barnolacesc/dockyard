@@ -213,7 +213,9 @@ final class CommandBuilderTests: XCTestCase {
 
     private func assertShellCanParse(_ command: String, file: StaticString = #filePath, line: UInt = #line) throws {
         // Replace -lic with -nc: keeps -c (command string) but adds -n (no-execute/syntax-only)
-        let syntaxCheck = command.replacingOccurrences(of: " -lic ", with: " -nc ")
+        let syntaxCheck = command
+            .replacingOccurrences(of: " -lic ", with: " -nc ")
+            .replacingOccurrences(of: "/bin/sh -c ", with: "/bin/sh -n -c ")
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
@@ -966,7 +968,8 @@ final class CommandBuilderTests: XCTestCase {
         let expectedQuoted = CommandBuilder.shellQuote(prompt)
         XCTAssertEqual(command.intermediateCommands.count, 1)
         XCTAssertTrue(command.intermediateCommands[0].contains("--prompt-interactive \(expectedQuoted)"))
-        XCTAssertTrue(command.finalCommand.contains("--prompt-interactive \(expectedQuoted)"))
+        XCTAssertTrue(command.finalCommand.contains("--prompt-interactive"))
+        try assertShellCanParse(command.finalCommand)
     }
 
     func testBuildAgyAgentCommandResumingWithInitialPromptPassesInteractiveFlag() throws {
@@ -1011,7 +1014,8 @@ final class CommandBuilderTests: XCTestCase {
         let expectedQuoted = CommandBuilder.shellQuote(prompt)
         XCTAssertEqual(command.intermediateCommands.count, 1)
         XCTAssertEqual(command.intermediateCommands[0], "/opt/homebrew/bin/opencode --prompt \(expectedQuoted)")
-        XCTAssertEqual(command.finalCommand, "/opt/homebrew/bin/opencode --prompt \(expectedQuoted)")
+        XCTAssertTrue(command.finalCommand.contains("/opt/homebrew/bin/opencode --prompt"))
+        try assertShellCanParse(command.finalCommand)
     }
 
     func testBuildAgentCommandsWithEmptyOrWhitespacePromptIgnorePrompt() throws {

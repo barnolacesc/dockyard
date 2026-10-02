@@ -19,6 +19,7 @@
 
 ## Bugs
 
+- [x] Issue prompt launch lifecycle: persist a receipt after successful CLI exit so tmux respawns omit the original prompt and failed launches retain it for retry.
 - [x] Branch name doesn't appear in sidebar after workstream creation until the 15s refresh timer fires. Fixed: call `refreshPathValidity` immediately in the `.workstreamWorktreeReady` handler.
 - [x] Branch/workstream renames lagged up to 15s. Fixed: FSEvents `WorktreeHeadWatcher` syncs the name instantly on `.git/HEAD` change; 15s poll remains a backstop.
 - [x] `AppCommit.swift` dirtied the tree on every build. Fixed: gitignored + generated via `scripts/gen-appcommit.sh` prebuild on all consuming targets.

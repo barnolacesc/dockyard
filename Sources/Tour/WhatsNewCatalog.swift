@@ -9,6 +9,11 @@ enum WhatsNewCatalog {
     static let releases: [WhatsNewRelease] = [
         WhatsNewRelease(version: "0.3.0", entries: [
             WhatsNewEntry(
+                symbol: "text.bubble",
+                titleKey: "Issue Tasks Ready to Start",
+                bodyKey: "Workstreams created from GitHub issues pass the task directly to your Coding Agent. Failed launches keep the task available for retry."
+            ),
+            WhatsNewEntry(
                 symbol: "globe.badge.chevron.backward",
                 titleKey: "Agent-Controlled Browser",
                 bodyKey: "Open a Chromium browser the Coding Agent can inspect and control while the regular in-app browser remains yours."

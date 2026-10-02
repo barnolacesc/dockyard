@@ -2489,6 +2489,7 @@ struct SingleTerminalView: View {
                     workstreamID: workstreamID,
                     workingDirectory: workingDirectory,
                     command: command,
+                    initialInput: initialInput,
                     consumesInitialPrompt: consumesInitialPrompt,
                     isFocused: isFocused,
                     environmentVars: environmentVars,
@@ -2676,6 +2677,9 @@ final class TerminalSurfaceCache: ObservableObject {
     private var tabSnapshots: [UUID: WorkspaceTabSnapshot] = [:]
     private var webViews: [UUID: WKWebView] = [:]
     private var quickActionRunners: [UUID: QuickActionRunner] = [:]
+    private var pendingPromptReceipts: [UUID: URL] = [:]
+    private var consumedPromptWorkstreams: Set<UUID> = []
+    private var promptReceiptTask: Task<Void, Never>?
     /// Surface IDs that should respawn when closed (e.g., the agent).
     var respawnableIDs: Set<UUID> = []
     /// Guards against concurrent respawns for the same surface ID.
@@ -2693,7 +2697,6 @@ final class TerminalSurfaceCache: ObservableObject {
         let workingDirectory: String
         var command: String?
         var initialInput: String?
-        var consumesInitialPrompt: Bool = false
         let environmentVars: [String: String]
         let waitAfterCommand: Bool
     }
@@ -2721,6 +2724,9 @@ final class TerminalSurfaceCache: ObservableObject {
     }
 
     func surface(for id: UUID, workstreamID: UUID, app: ghostty_app_t, workingDirectory: String, command: String? = nil, initialInput: String? = nil, consumesInitialPrompt: Bool = false, environmentVars: [String: String] = [:], waitAfterCommand: Bool = true) -> TerminalView {
+        if consumesInitialPrompt {
+            trackInitialPrompt(for: workstreamID)
+        }
         if let existing = surfaces[id] {
             existing.surfaceID = id
             existing.workstreamID = workstreamID
@@ -2736,7 +2742,7 @@ final class TerminalSurfaceCache: ObservableObject {
         view.surfaceID = id
         view.workstreamID = workstreamID
         surfaces[id] = view
-        surfaceParams[id] = SurfaceParams(workstreamID: workstreamID, workingDirectory: workingDirectory, command: command, initialInput: initialInput, consumesInitialPrompt: consumesInitialPrompt, environmentVars: environmentVars, waitAfterCommand: waitAfterCommand)
+        surfaceParams[id] = SurfaceParams(workstreamID: workstreamID, workingDirectory: workingDirectory, command: command, initialInput: initialInput, environmentVars: environmentVars, waitAfterCommand: waitAfterCommand)
         if view.surface == nil {
             logger.error("Surface creation failed for \(id, privacy: .public) command=\(command ?? "<shell>", privacy: .public)")
             failedSurfaces[id] = command ?? "(default shell)"
@@ -2745,8 +2751,7 @@ final class TerminalSurfaceCache: ObservableObject {
             creationTimes[id] = Date()
             // Initial task text is a one-shot seed; never replay it on respawn.
             surfaceParams[id]?.initialInput = nil
-            surfaceParams[id]?.consumesInitialPrompt = false
-            if initialInput != nil || consumesInitialPrompt {
+            if initialInput != nil {
                 DispatchQueue.main.async {
                     NotificationCenter.default.post(name: .initialAgentPromptConsumed, object: workstreamID)
                 }
@@ -2773,14 +2778,46 @@ final class TerminalSurfaceCache: ObservableObject {
             failedSurfaces[id] = params.command ?? "(default shell)"
         } else {
             creationTimes[id] = Date()
-            if params.consumesInitialPrompt {
-                surfaceParams[id]?.consumesInitialPrompt = false
+            surfaceParams[id]?.initialInput = nil
+            if params.initialInput != nil {
                 DispatchQueue.main.async {
                     NotificationCenter.default.post(name: .initialAgentPromptConsumed, object: params.workstreamID)
                 }
             }
         }
         objectWillChange.send()
+    }
+
+    /// The shell writes a receipt only after a successful interactive session.
+    /// Polling also handles tmux sessions completing while Dockyard was closed.
+    func trackInitialPrompt(for workstreamID: UUID, receiptURL: URL? = nil) {
+        guard !consumedPromptWorkstreams.contains(workstreamID) else { return }
+        pendingPromptReceipts[workstreamID] = receiptURL ?? AgentInitialPrompt.receiptURL(for: workstreamID)
+        guard promptReceiptTask == nil else { return }
+        promptReceiptTask = Task { [weak self] in
+            while !Task.isCancelled {
+                do {
+                    try await Task.sleep(for: .milliseconds(500))
+                } catch {
+                    return
+                }
+                guard let self else { return }
+                checkPendingInitialPrompts()
+                if pendingPromptReceipts.isEmpty {
+                    promptReceiptTask = nil
+                    return
+                }
+            }
+        }
+    }
+
+    func checkPendingInitialPrompts() {
+        for (workstreamID, receiptURL) in pendingPromptReceipts {
+            guard FileManager.default.fileExists(atPath: receiptURL.path) else { continue }
+            pendingPromptReceipts.removeValue(forKey: workstreamID)
+            consumedPromptWorkstreams.insert(workstreamID)
+            NotificationCenter.default.post(name: .initialAgentPromptConsumed, object: workstreamID)
+        }
     }
 
     func webView(for id: UUID) -> WKWebView {
@@ -2813,6 +2850,11 @@ final class TerminalSurfaceCache: ObservableObject {
     }
 
     func removeWorkstreamSurfaces(for workstreamID: UUID) {
+        pendingPromptReceipts.removeValue(forKey: workstreamID)
+        if pendingPromptReceipts.isEmpty {
+            promptReceiptTask?.cancel()
+            promptReceiptTask = nil
+        }
         let snapshot = tabSnapshots[workstreamID] ?? WorkspaceTabSnapshotStore.load(for: workstreamID)
         let recordedSurfaceIDs = terminalBackedSurfaceIDs(in: snapshot)
         tabSnapshots.removeValue(forKey: workstreamID)
@@ -2875,7 +2917,8 @@ final class TerminalSurfaceCache: ObservableObject {
             respawning.insert(id)
             surfaces.removeValue(forKey: id)
             let newView = TerminalView(app: app, workingDirectory: params.workingDirectory, command: params.command, initialInput: params.initialInput, environmentVars: params.environmentVars, waitAfterCommand: params.waitAfterCommand)
-            newView.workstreamID = id
+            newView.surfaceID = id
+            newView.workstreamID = params.workstreamID
             surfaces[id] = newView
             respawning.remove(id)
             if newView.surface == nil {

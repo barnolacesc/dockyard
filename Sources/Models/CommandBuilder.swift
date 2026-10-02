@@ -279,7 +279,7 @@ enum CodingCLICommandBuilder {
         browserURL: String? = nil,
         initialPrompt: String? = nil
     ) -> AgentLaunchCommand {
-        let command: AgentLaunchCommand
+        var command: AgentLaunchCommand
         switch cli.capabilities.commandStrategy {
         case .claude:
             command = buildClaudeAgentCommand(
@@ -322,6 +322,36 @@ enum CodingCLICommandBuilder {
                 cliPath: cliPath,
                 workingDirectory: workingDirectory,
                 initialPrompt: initialPrompt
+            )
+        }
+
+        if let initialPrompt, !initialPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let continuation = buildAgentCommand(
+                cli: cli,
+                cliPath: cliPath,
+                workingDirectory: workingDirectory,
+                projectName: projectName,
+                workstreamName: workstreamName,
+                sessionName: sessionName,
+                workstreamID: workstreamID,
+                tmuxPath: nil,
+                useTmux: useTmux,
+                bypassPermissions: bypassPermissions,
+                allowOutsideWorktree: allowOutsideWorktree,
+                autoRenameBranch: autoRenameBranch,
+                envVars: envVars,
+                supportsSessionName: supportsSessionName,
+                hookInvocation: hookInvocation,
+                terminalBrowserPath: terminalBrowserPath,
+                browserURL: browserURL
+            )
+            command = AgentLaunchCommand(
+                finalCommand: AgentInitialPrompt.wrap(
+                    command: command.finalCommand,
+                    continuation: continuation.finalCommand,
+                    receiptURL: AgentInitialPrompt.receiptURL(for: workstreamID)
+                ),
+                intermediateCommands: command.intermediateCommands
             )
         }
 

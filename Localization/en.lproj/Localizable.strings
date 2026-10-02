@@ -807,4 +807,6 @@
 "Install Terminal Browser to give the Coding Agent a controllable browser." = "Install Terminal Browser to give the Coding Agent a controllable browser.";
 "Install Terminal Browser" = "Install Terminal Browser";
 "Agent-Controlled Browser" = "Agent-Controlled Browser";
+"Issue Tasks Ready to Start" = "Issue Tasks Ready to Start";
+"Workstreams created from GitHub issues pass the task directly to your Coding Agent. Failed launches keep the task available for retry." = "Workstreams created from GitHub issues pass the task directly to your Coding Agent. Failed launches keep the task available for retry.";
 "Open a Chromium browser the Coding Agent can inspect and control while the regular in-app browser remains yours." = "Open a Chromium browser the Coding Agent can inspect and control while the regular in-app browser remains yours.";
