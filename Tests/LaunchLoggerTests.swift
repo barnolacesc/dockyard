@@ -80,6 +80,27 @@ final class LaunchLoggerTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: logFile.path), "Log file should exist when detailed logging is enabled")
     }
 
+    func testLogEntryRedactsPromptArguments() throws {
+        let sensitivePrompt = "Fix proprietary auth token in repo"
+        let entry = LaunchLogEntry(
+            workstreamID: testWorkstreamID,
+            event: "agent-start",
+            finalCommand: "/bin/zsh -lic 'claude [REDACTED]'",
+            intermediateCommands: ["claude [REDACTED]"],
+            environmentVariables: [:],
+            workingDirectory: "/tmp/test",
+            toolPaths: LaunchLogEntry.ToolPaths(agentCLI: "claude", claude: "/usr/local/bin/claude", codex: nil, tmux: nil, ffRun: nil),
+            settings: LaunchLogEntry.Settings(tmuxMode: false, bypassPermissions: false, agentTeams: false, autoRenameBranch: false, allowOutsideWorktree: false),
+            shell: "/bin/zsh"
+        )
+        LaunchLogger.log(entry)
+
+        let logFile = LaunchLogger.logFileURL(for: testWorkstreamID)
+        let logContent = try String(contentsOf: logFile, encoding: .utf8)
+        XCTAssertFalse(logContent.contains(sensitivePrompt))
+        XCTAssertTrue(logContent.contains("[REDACTED]"))
+    }
+
     func testLogCreatesPrivateDirectoryAndFile() throws {
         LaunchLogger.log(makeEntry(event: "agent-start"))
 
@@ -182,7 +203,7 @@ final class LaunchLoggerTests: XCTestCase {
             marker: "discard-oversized-old",
             byteCount: LaunchLogger.maximumLogFileSize * 2
         )
-        let recentLine = jsonLine(marker: "preserve-oversized-recent", byteCount: 4_096)
+        let recentLine = jsonLine(marker: "preserve-oversized-recent", byteCount: 4096)
         try seedLog(with: oversizedOldLine + recentLine)
 
         LaunchLogger.log(makeEntry(event: "after-oversized-existing"))

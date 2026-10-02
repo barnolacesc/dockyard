@@ -218,21 +218,21 @@ struct WorkspaceTabSnapshot: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let rawTabs = try container.decode([DecodedWorkspaceTab].self, forKey: .tabs)
         let filteredTabs = rawTabs.compactMap { $0.toWorkspaceTab }.filter { $0 != .info }
-        self.tabs = filteredTabs.isEmpty ? [.agent] : filteredTabs
-        self.terminalCount = try container.decode(Int.self, forKey: .terminalCount)
-        self.browserCount = try container.decode(Int.self, forKey: .browserCount)
+        tabs = filteredTabs.isEmpty ? [.agent] : filteredTabs
+        terminalCount = try container.decode(Int.self, forKey: .terminalCount)
+        browserCount = try container.decode(Int.self, forKey: .browserCount)
         let rawActiveTab = try container.decode(DecodedWorkspaceTab.self, forKey: .activeTab)
-        if let active = rawActiveTab.toWorkspaceTab, self.tabs.contains(active) {
-            self.activeTab = active
+        if let active = rawActiveTab.toWorkspaceTab, tabs.contains(active) {
+            activeTab = active
         } else {
-            self.activeTab = .agent
+            activeTab = .agent
         }
-        self.browserTitles = (try? container.decode([UUID: String].self, forKey: .browserTitles)) ?? [:]
-        self.terminalTitles = (try? container.decode([UUID: String].self, forKey: .terminalTitles)) ?? [:]
-        self.runStarted = (try? container.decode(Bool.self, forKey: .runStarted)) ?? false
-        self.runStoppedManually = (try? container.decode(Bool.self, forKey: .runStoppedManually)) ?? false
-        self.terminalEditorCommands = (try? container.decode([UUID: String].self, forKey: .terminalEditorCommands)) ?? [:]
-        self.browserURLs = (try? container.decode([UUID: String].self, forKey: .browserURLs)) ?? [:]
+        browserTitles = (try? container.decode([UUID: String].self, forKey: .browserTitles)) ?? [:]
+        terminalTitles = (try? container.decode([UUID: String].self, forKey: .terminalTitles)) ?? [:]
+        runStarted = (try? container.decode(Bool.self, forKey: .runStarted)) ?? false
+        runStoppedManually = (try? container.decode(Bool.self, forKey: .runStoppedManually)) ?? false
+        terminalEditorCommands = (try? container.decode([UUID: String].self, forKey: .terminalEditorCommands)) ?? [:]
+        browserURLs = (try? container.decode([UUID: String].self, forKey: .browserURLs)) ?? [:]
     }
 
     /// Returns a copy with dead terminal tabs removed.
@@ -630,7 +630,59 @@ struct TerminalContainerView: View {
             }
         }
 
-        let command = CodingCLICommandBuilder.buildAgentCommand(
+        let command = buildAgentLaunchCommand(
+            cliPath: cliPath,
+            hookInvocation: hookInvocation,
+            initialPrompt: initialAgentPrompt
+        )
+
+        if UserDefaults.standard.bool(forKey: "dockyard.detailedLogging") {
+            let loggedCommand: AgentLaunchCommand
+            if let initialAgentPrompt, !initialAgentPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                loggedCommand = buildAgentLaunchCommand(
+                    cliPath: cliPath,
+                    hookInvocation: hookInvocation,
+                    initialPrompt: "[REDACTED]"
+                )
+            } else {
+                loggedCommand = command
+            }
+
+            LaunchLogger.log(LaunchLogEntry(
+                workstreamID: workstreamID,
+                event: "agent-start",
+                finalCommand: loggedCommand.finalCommand,
+                intermediateCommands: loggedCommand.intermediateCommands,
+                environmentVariables: agentEnvironmentVars,
+                workingDirectory: workingDirectory,
+                toolPaths: LaunchLogEntry.ToolPaths(
+                    agentCLI: selectedCodingCLI.rawValue,
+                    claude: appEnv.toolStatus.claude.path,
+                    codex: appEnv.toolStatus.codex.path,
+                    agy: appEnv.toolStatus.agy.path,
+                    tmux: appEnv.toolStatus.tmux.path,
+                    ffRun: RunLauncher.executableURL()?.path
+                ),
+                settings: LaunchLogEntry.Settings(
+                    tmuxMode: tmuxMode,
+                    bypassPermissions: bypassPermissions,
+                    agentTeams: agentTeams,
+                    autoRenameBranch: autoRenameBranch,
+                    allowOutsideWorktree: allowOutsideWorktree
+                ),
+                shell: CommandBuilder.userShell
+            ))
+        }
+
+        return command.finalCommand
+    }
+
+    private func buildAgentLaunchCommand(
+        cliPath: String,
+        hookInvocation: AgentHookInvocation?,
+        initialPrompt: String?
+    ) -> AgentLaunchCommand {
+        CodingCLICommandBuilder.buildAgentCommand(
             cli: selectedCodingCLI,
             cliPath: cliPath,
             workingDirectory: workingDirectory,
@@ -647,35 +699,9 @@ struct TerminalContainerView: View {
             supportsSessionName: appEnv.toolStatus.supportsSessionName(for: selectedCodingCLI),
             hookInvocation: hookInvocation,
             terminalBrowserPath: terminalBrowserPath,
-            browserURL: terminalBrowserPath == nil ? nil : browserDefaultURL
+            browserURL: terminalBrowserPath == nil ? nil : browserDefaultURL,
+            initialPrompt: initialPrompt
         )
-
-        LaunchLogger.log(LaunchLogEntry(
-            workstreamID: workstreamID,
-            event: "agent-start",
-            finalCommand: command.finalCommand,
-            intermediateCommands: command.intermediateCommands,
-            environmentVariables: agentEnvironmentVars,
-            workingDirectory: workingDirectory,
-            toolPaths: LaunchLogEntry.ToolPaths(
-                agentCLI: selectedCodingCLI.rawValue,
-                claude: appEnv.toolStatus.claude.path,
-                codex: appEnv.toolStatus.codex.path,
-                agy: appEnv.toolStatus.agy.path,
-                tmux: appEnv.toolStatus.tmux.path,
-                ffRun: RunLauncher.executableURL()?.path
-            ),
-            settings: LaunchLogEntry.Settings(
-                tmuxMode: tmuxMode,
-                bypassPermissions: bypassPermissions,
-                agentTeams: agentTeams,
-                autoRenameBranch: autoRenameBranch,
-                allowOutsideWorktree: allowOutsideWorktree
-            ),
-            shell: CommandBuilder.userShell
-        ))
-
-        return command.finalCommand
     }
 
     private func rebuildAgentCommand() {
@@ -842,7 +868,6 @@ struct TerminalContainerView: View {
         }
     }
 
-    @ViewBuilder
     private var workstreamInfoView: some View {
         WorkstreamInfoView(
             workstreamID: workstreamID,
@@ -900,7 +925,7 @@ struct TerminalContainerView: View {
                     workstreamID: workstreamID,
                     workingDirectory: workingDirectory,
                     command: agentCommand,
-                    initialInput: initialAgentPrompt.map { $0 + "\r" },
+                    consumesInitialPrompt: initialAgentPrompt != nil,
                     isFocused: true,
                     environmentVars: agentEnvironmentVars
                 )
@@ -989,6 +1014,7 @@ struct TerminalContainerView: View {
             .onChange(of: workstreamName) { rebuildAgentCommand() }
             .onChange(of: agentSessionName) { rebuildAgentCommand() }
             .onChange(of: portDetector.selectedPort) { rebuildAgentCommand() }
+            .onChange(of: initialAgentPrompt) { rebuildAgentCommand() }
             .onChange(of: effectiveCodingCLIStoredValue) {
                 livePermissionHint = nil
                 surfaceCache.removeSurface(for: agentID)
@@ -1572,7 +1598,7 @@ struct TerminalContainerView: View {
                 app: app,
                 workingDirectory: workingDirectory,
                 command: cmd,
-                initialInput: initialAgentPrompt.map { $0 + "\r" },
+                consumesInitialPrompt: initialAgentPrompt != nil,
                 environmentVars: agentEnvironmentVars
             )
         }
@@ -1888,7 +1914,7 @@ struct WorkstreamLifecyclePill: View {
 
                 PRChecksBadge(pr: pr, directory: directory, compact: true)
             }
-        } else if case .hasFindings(let count) = pr.codeRabbitStatus {
+        } else if case let .hasFindings(count) = pr.codeRabbitStatus {
             HStack(spacing: 4) {
                 Button(action: onAddressFindings) {
                     HStack(spacing: 5) {
@@ -2208,7 +2234,7 @@ private struct GitHubActionMenu: View {
     }
 
     private func disabledReason(for action: QuickAction) -> String? {
-        if action == .addressReviewFindings && isAddressingFindings {
+        if action == .addressReviewFindings, isAddressingFindings {
             return NSLocalizedString("Addressing review findings...", comment: "")
         }
         return action.disabledReason(ghPath: ghPath)
@@ -2470,6 +2496,7 @@ struct SingleTerminalView: View {
     let workingDirectory: String
     var command: String?
     var initialInput: String? = nil
+    var consumesInitialPrompt: Bool = false
     var isFocused: Bool = true
     var environmentVars: [String: String] = [:]
 
@@ -2487,6 +2514,8 @@ struct SingleTerminalView: View {
                     workstreamID: workstreamID,
                     workingDirectory: workingDirectory,
                     command: command,
+                    initialInput: initialInput,
+                    consumesInitialPrompt: consumesInitialPrompt,
                     isFocused: isFocused,
                     environmentVars: environmentVars,
                     size: geo.size
@@ -2527,6 +2556,7 @@ private struct TerminalSurfaceView: NSViewRepresentable {
     let workingDirectory: String
     var command: String?
     var initialInput: String? = nil
+    var consumesInitialPrompt: Bool = false
     var isFocused: Bool = true
     var environmentVars: [String: String] = [:]
     var size: CGSize
@@ -2549,6 +2579,7 @@ private struct TerminalSurfaceView: NSViewRepresentable {
             workingDirectory: workingDirectory,
             command: command,
             initialInput: initialInput,
+            consumesInitialPrompt: consumesInitialPrompt,
             environmentVars: environmentVars
         )
 
@@ -2671,6 +2702,9 @@ final class TerminalSurfaceCache: ObservableObject {
     private var tabSnapshots: [UUID: WorkspaceTabSnapshot] = [:]
     private var webViews: [UUID: WKWebView] = [:]
     private var quickActionRunners: [UUID: QuickActionRunner] = [:]
+    private var pendingPromptReceipts: [UUID: URL] = [:]
+    private var consumedPromptWorkstreams: Set<UUID> = []
+    private var promptReceiptTask: Task<Void, Never>?
     /// Surface IDs that should respawn when closed (e.g., the agent).
     var respawnableIDs: Set<UUID> = []
     /// Guards against concurrent respawns for the same surface ID.
@@ -2684,6 +2718,7 @@ final class TerminalSurfaceCache: ObservableObject {
     private static let healthCheckWindow: TimeInterval = 2.0
 
     struct SurfaceParams {
+        let workstreamID: UUID
         let workingDirectory: String
         var command: String?
         var initialInput: String?
@@ -2713,7 +2748,10 @@ final class TerminalSurfaceCache: ObservableObject {
         }
     }
 
-    func surface(for id: UUID, workstreamID: UUID, app: ghostty_app_t, workingDirectory: String, command: String? = nil, initialInput: String? = nil, environmentVars: [String: String] = [:], waitAfterCommand: Bool = true) -> TerminalView {
+    func surface(for id: UUID, workstreamID: UUID, app: ghostty_app_t, workingDirectory: String, command: String? = nil, initialInput: String? = nil, consumesInitialPrompt: Bool = false, environmentVars: [String: String] = [:], waitAfterCommand: Bool = true) -> TerminalView {
+        if consumesInitialPrompt {
+            trackInitialPrompt(for: workstreamID)
+        }
         if let existing = surfaces[id] {
             existing.surfaceID = id
             existing.workstreamID = workstreamID
@@ -2729,7 +2767,7 @@ final class TerminalSurfaceCache: ObservableObject {
         view.surfaceID = id
         view.workstreamID = workstreamID
         surfaces[id] = view
-        surfaceParams[id] = SurfaceParams(workingDirectory: workingDirectory, command: command, initialInput: initialInput, environmentVars: environmentVars, waitAfterCommand: waitAfterCommand)
+        surfaceParams[id] = SurfaceParams(workstreamID: workstreamID, workingDirectory: workingDirectory, command: command, initialInput: initialInput, environmentVars: environmentVars, waitAfterCommand: waitAfterCommand)
         if view.surface == nil {
             logger.error("Surface creation failed for \(id, privacy: .public) command=\(command ?? "<shell>", privacy: .public)")
             failedSurfaces[id] = command ?? "(default shell)"
@@ -2757,15 +2795,54 @@ final class TerminalSurfaceCache: ObservableObject {
         }
         failedSurfaces.removeValue(forKey: id)
         let view = TerminalView(app: app, workingDirectory: params.workingDirectory, command: params.command, initialInput: params.initialInput, environmentVars: params.environmentVars, waitAfterCommand: params.waitAfterCommand)
-        view.workstreamID = id
+        view.surfaceID = id
+        view.workstreamID = params.workstreamID
         surfaces[id] = view
         if view.surface == nil {
             logger.error("Surface retry failed for \(id, privacy: .public)")
             failedSurfaces[id] = params.command ?? "(default shell)"
         } else {
             creationTimes[id] = Date()
+            surfaceParams[id]?.initialInput = nil
+            if params.initialInput != nil {
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: .initialAgentPromptConsumed, object: params.workstreamID)
+                }
+            }
         }
         objectWillChange.send()
+    }
+
+    /// The shell writes a receipt only after a successful interactive session.
+    /// Polling also handles tmux sessions completing while Dockyard was closed.
+    func trackInitialPrompt(for workstreamID: UUID, receiptURL: URL? = nil) {
+        guard !consumedPromptWorkstreams.contains(workstreamID) else { return }
+        pendingPromptReceipts[workstreamID] = receiptURL ?? AgentInitialPrompt.receiptURL(for: workstreamID)
+        guard promptReceiptTask == nil else { return }
+        promptReceiptTask = Task { [weak self] in
+            while !Task.isCancelled {
+                do {
+                    try await Task.sleep(for: .milliseconds(500))
+                } catch {
+                    return
+                }
+                guard let self else { return }
+                checkPendingInitialPrompts()
+                if pendingPromptReceipts.isEmpty {
+                    promptReceiptTask = nil
+                    return
+                }
+            }
+        }
+    }
+
+    func checkPendingInitialPrompts() {
+        for (workstreamID, receiptURL) in pendingPromptReceipts {
+            guard FileManager.default.fileExists(atPath: receiptURL.path) else { continue }
+            pendingPromptReceipts.removeValue(forKey: workstreamID)
+            consumedPromptWorkstreams.insert(workstreamID)
+            NotificationCenter.default.post(name: .initialAgentPromptConsumed, object: workstreamID)
+        }
     }
 
     func webView(for id: UUID) -> WKWebView {
@@ -2798,6 +2875,11 @@ final class TerminalSurfaceCache: ObservableObject {
     }
 
     func removeWorkstreamSurfaces(for workstreamID: UUID) {
+        pendingPromptReceipts.removeValue(forKey: workstreamID)
+        if pendingPromptReceipts.isEmpty {
+            promptReceiptTask?.cancel()
+            promptReceiptTask = nil
+        }
         let snapshot = tabSnapshots[workstreamID] ?? WorkspaceTabSnapshotStore.load(for: workstreamID)
         let recordedSurfaceIDs = terminalBackedSurfaceIDs(in: snapshot)
         tabSnapshots.removeValue(forKey: workstreamID)
@@ -2860,7 +2942,8 @@ final class TerminalSurfaceCache: ObservableObject {
             respawning.insert(id)
             surfaces.removeValue(forKey: id)
             let newView = TerminalView(app: app, workingDirectory: params.workingDirectory, command: params.command, initialInput: params.initialInput, environmentVars: params.environmentVars, waitAfterCommand: params.waitAfterCommand)
-            newView.workstreamID = id
+            newView.surfaceID = id
+            newView.workstreamID = params.workstreamID
             surfaces[id] = newView
             respawning.remove(id)
             if newView.surface == nil {
