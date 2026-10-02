@@ -630,7 +630,59 @@ struct TerminalContainerView: View {
             }
         }
 
-        let command = CodingCLICommandBuilder.buildAgentCommand(
+        let command = buildAgentLaunchCommand(
+            cliPath: cliPath,
+            hookInvocation: hookInvocation,
+            initialPrompt: initialAgentPrompt
+        )
+
+        if UserDefaults.standard.bool(forKey: "dockyard.detailedLogging") {
+            let loggedCommand: AgentLaunchCommand
+            if let initialAgentPrompt, !initialAgentPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                loggedCommand = buildAgentLaunchCommand(
+                    cliPath: cliPath,
+                    hookInvocation: hookInvocation,
+                    initialPrompt: "[REDACTED]"
+                )
+            } else {
+                loggedCommand = command
+            }
+
+            LaunchLogger.log(LaunchLogEntry(
+                workstreamID: workstreamID,
+                event: "agent-start",
+                finalCommand: loggedCommand.finalCommand,
+                intermediateCommands: loggedCommand.intermediateCommands,
+                environmentVariables: agentEnvironmentVars,
+                workingDirectory: workingDirectory,
+                toolPaths: LaunchLogEntry.ToolPaths(
+                    agentCLI: selectedCodingCLI.rawValue,
+                    claude: appEnv.toolStatus.claude.path,
+                    codex: appEnv.toolStatus.codex.path,
+                    agy: appEnv.toolStatus.agy.path,
+                    tmux: appEnv.toolStatus.tmux.path,
+                    ffRun: RunLauncher.executableURL()?.path
+                ),
+                settings: LaunchLogEntry.Settings(
+                    tmuxMode: tmuxMode,
+                    bypassPermissions: bypassPermissions,
+                    agentTeams: agentTeams,
+                    autoRenameBranch: autoRenameBranch,
+                    allowOutsideWorktree: allowOutsideWorktree
+                ),
+                shell: CommandBuilder.userShell
+            ))
+        }
+
+        return command.finalCommand
+    }
+
+    private func buildAgentLaunchCommand(
+        cliPath: String,
+        hookInvocation: AgentHookInvocation?,
+        initialPrompt: String?
+    ) -> AgentLaunchCommand {
+        CodingCLICommandBuilder.buildAgentCommand(
             cli: selectedCodingCLI,
             cliPath: cliPath,
             workingDirectory: workingDirectory,
@@ -648,35 +700,8 @@ struct TerminalContainerView: View {
             hookInvocation: hookInvocation,
             terminalBrowserPath: terminalBrowserPath,
             browserURL: terminalBrowserPath == nil ? nil : browserDefaultURL,
-            initialPrompt: initialAgentPrompt
+            initialPrompt: initialPrompt
         )
-
-        LaunchLogger.log(LaunchLogEntry(
-            workstreamID: workstreamID,
-            event: "agent-start",
-            finalCommand: command.finalCommand,
-            intermediateCommands: command.intermediateCommands,
-            environmentVariables: agentEnvironmentVars,
-            workingDirectory: workingDirectory,
-            toolPaths: LaunchLogEntry.ToolPaths(
-                agentCLI: selectedCodingCLI.rawValue,
-                claude: appEnv.toolStatus.claude.path,
-                codex: appEnv.toolStatus.codex.path,
-                agy: appEnv.toolStatus.agy.path,
-                tmux: appEnv.toolStatus.tmux.path,
-                ffRun: RunLauncher.executableURL()?.path
-            ),
-            settings: LaunchLogEntry.Settings(
-                tmuxMode: tmuxMode,
-                bypassPermissions: bypassPermissions,
-                agentTeams: agentTeams,
-                autoRenameBranch: autoRenameBranch,
-                allowOutsideWorktree: allowOutsideWorktree
-            ),
-            shell: CommandBuilder.userShell
-        ))
-
-        return command.finalCommand
     }
 
     private func rebuildAgentCommand() {
