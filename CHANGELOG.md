@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.7](https://github.com/barnolacesc/dockyard/compare/v0.2.6...v0.2.7) (2026-10-03)
+
+
+### Features
+
+* add icons and emojis for projects ([#255](https://github.com/barnolacesc/dockyard/issues/255)) ([3db01db](https://github.com/barnolacesc/dockyard/commit/3db01dbbbe1ad9c691d6bb64a853d71f688f9ce6))
+* **agent:** autofill issue contents when starting issue workstream ([#256](https://github.com/barnolacesc/dockyard/issues/256)) ([ce10e59](https://github.com/barnolacesc/dockyard/commit/ce10e59ebdfbfb5137c1b4e760842237a30aa116))
+* **browser:** add agent-controlled Terminal Browser ([#254](https://github.com/barnolacesc/dockyard/issues/254)) ([4885906](https://github.com/barnolacesc/dockyard/commit/4885906c373cf0f930720b2548c04ef69945f18b))
+* **sidebar:** auto-load scrollable GitHub issues and copy prompt on creation ([#249](https://github.com/barnolacesc/dockyard/issues/249)) ([d4ff128](https://github.com/barnolacesc/dockyard/commit/d4ff128d35fd70f05377917ba392a77273e46c8b))
+* **ui:** improve workstream status lifecycle and active action tracking ([#258](https://github.com/barnolacesc/dockyard/issues/258)) ([7d1a3cf](https://github.com/barnolacesc/dockyard/commit/7d1a3cf967a577f502dca06dcf0a36f6961a5681))
+* **ui:** refine workstream lifecycle states and fix warning pill contrast ([#251](https://github.com/barnolacesc/dockyard/issues/251)) ([840d582](https://github.com/barnolacesc/dockyard/commit/840d582cfadf576ff7bda137ee0c06f37163b390))
+
+
+### Bug Fixes
+
+* **agent:** scope agy session continuation to workspaces with existing conversations ([#252](https://github.com/barnolacesc/dockyard/issues/252)) ([801bd70](https://github.com/barnolacesc/dockyard/commit/801bd70ca337b5c5b68f126a7a855c2c2a7a33d3))
+
 ## [0.2.6](https://github.com/barnolacesc/dockyard/compare/v0.2.5...v0.2.6) (2026-09-21)
 
 
