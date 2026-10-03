@@ -810,3 +810,11 @@
 "Issue Tasks Ready to Start" = "Tasques d'incidències a punt per començar";
 "Workstreams created from GitHub issues pass the task directly to your Coding Agent. Failed launches keep the task available for retry." = "Els fluxos de treball creats a partir d'incidències de GitHub passen la tasca directament a l'agent de codi. Si l'inici falla, la tasca es conserva per tornar-ho a provar.";
 "Open a Chromium browser the Coding Agent can inspect and control while the regular in-app browser remains yours." = "Obre un navegador Chromium que l'agent de codi pugui inspeccionar i controlar mentre el navegador integrat habitual continua sent teu.";
+
+/* Quick Actions & Statuses */
+"Committing..." = "Fent commit...";
+"Pushing..." = "Fent push...";
+"Creating PR..." = "Creant PR...";
+"Closing PR..." = "Tancant PR...";
+"Unpushed Commits" = "Commits pendents de pujar";
+"Coding Agent terminal is not ready" = "El terminal de l'agent de codi no està a punt";

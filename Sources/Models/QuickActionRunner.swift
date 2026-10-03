@@ -71,6 +71,16 @@ enum QuickAction: String, CaseIterable, Identifiable {
         }
         return nil
     }
+
+    var inProgressTitle: String {
+        switch self {
+        case .commit: return NSLocalizedString("Committing...", comment: "")
+        case .push: return NSLocalizedString("Pushing...", comment: "")
+        case .createPR: return NSLocalizedString("Creating PR...", comment: "")
+        case .closePR: return NSLocalizedString("Closing PR...", comment: "")
+        case .addressReviewFindings: return NSLocalizedString("Addressing review findings...", comment: "")
+        }
+    }
 }
 
 enum QuickActionState: Equatable {
@@ -78,6 +88,16 @@ enum QuickActionState: Equatable {
     case running(QuickAction)
     case succeeded(QuickAction)
     case failed(QuickAction)
+
+    var isRunning: Bool {
+        if case .running = self { return true }
+        return false
+    }
+
+    var runningAction: QuickAction? {
+        if case let .running(action) = self { return action }
+        return nil
+    }
 }
 
 struct QuickActionLogEntry: Identifiable {
@@ -89,7 +109,7 @@ struct QuickActionLogEntry: Identifiable {
     var exitCode: Int32?
 }
 
-struct QuickActionProcessResult: Sendable {
+struct QuickActionProcessResult {
     let output: String
     let exitCode: Int32
 }
@@ -191,6 +211,15 @@ final class QuickActionRunner: ObservableObject {
     @Published var state: QuickActionState = .idle
     @Published var log: [QuickActionLogEntry] = []
     var onSuccess: ((QuickAction) -> Void)?
+
+    var isRunning: Bool {
+        state.isRunning
+    }
+
+    var runningAction: QuickAction? {
+        state.runningAction
+    }
+
     private let processFactory: QuickActionProcessFactory
     private let maximumOutputBytes: Int
     private var runningProcess: (any QuickActionProcess)?

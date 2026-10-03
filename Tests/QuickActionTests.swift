@@ -33,9 +33,10 @@ private final class QuickActionProcessDouble: QuickActionProcess, @unchecked Sen
 
 @MainActor
 final class QuickActionTests: XCTestCase {
-    func testDelegatesToAgentOnlyForCommitAndCreatePR() {
+    func testDelegatesToAgentForCommitCreatePRAndAddressFindings() {
         XCTAssertTrue(QuickAction.commit.delegatesToAgent)
         XCTAssertTrue(QuickAction.createPR.delegatesToAgent)
+        XCTAssertTrue(QuickAction.addressReviewFindings.delegatesToAgent)
         XCTAssertFalse(QuickAction.push.delegatesToAgent)
         XCTAssertFalse(QuickAction.closePR.delegatesToAgent)
     }
@@ -49,6 +50,7 @@ final class QuickActionTests: XCTestCase {
             QuickAction.createPR.prompt,
             "Create a pull request for the current changes. Write a clear title and description based on what we've been working on."
         )
+        XCTAssertNotNil(QuickAction.addressReviewFindings.prompt)
         XCTAssertNil(QuickAction.push.prompt)
         XCTAssertNil(QuickAction.closePR.prompt)
     }
@@ -56,6 +58,23 @@ final class QuickActionTests: XCTestCase {
     func testDelegatedActionsAreNotDisabledByMissingDirectTooling() {
         XCTAssertNil(QuickAction.commit.disabledReason(ghPath: nil))
         XCTAssertNil(QuickAction.createPR.disabledReason(ghPath: nil))
+        XCTAssertNil(QuickAction.addressReviewFindings.disabledReason(ghPath: nil))
+    }
+
+    func testInProgressTitleForAllActions() {
+        for action in QuickAction.allCases {
+            XCTAssertFalse(action.inProgressTitle.isEmpty)
+        }
+    }
+
+    func testQuickActionStateRunningProperties() {
+        let idle = QuickActionState.idle
+        XCTAssertFalse(idle.isRunning)
+        XCTAssertNil(idle.runningAction)
+
+        let running = QuickActionState.running(.push)
+        XCTAssertTrue(running.isRunning)
+        XCTAssertEqual(running.runningAction, .push)
     }
 
     func testClosePRRequiresGhCLI() {

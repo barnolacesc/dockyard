@@ -465,7 +465,9 @@ struct TerminalContainerView: View {
     @AppStorage("dockyard.splitOrientation") private var splitOrientation: String = "horizontal"
     @State private var tabs: [WorkspaceTab] = [.agent]
     @State private var showWorkstreamInfo = false
-    @State private var isAddressingFindings = false
+    @State private var activeAgentAction: QuickAction?
+    @State private var activeActionInvocationID: UUID?
+    @State private var observedAgentTurn = false
     @State private var terminalCount = 0
     @State private var browserCount = 0
     @State private var unreadTabs = Set<WorkspaceTab>()
@@ -759,7 +761,9 @@ struct TerminalContainerView: View {
                 worktreeState: appEnv.worktreeState(for: workingDirectory),
                 agentState: agentStateStore.agentState(for: workstreamID),
                 isRunningSetup: setupRunner.state == .running,
-                isAddressingFindings: isAddressingFindings,
+                activeAgentAction: activeAgentAction,
+                runningQuickAction: quickActionRunner.runningAction,
+                isAgentReady: surfaceCache.hasSurface(for: agentID),
                 directory: projectDirectory,
                 onOpenPR: {
                     if let pr = branchPR, let url = URL(string: pr.url) {
@@ -767,7 +771,7 @@ struct TerminalContainerView: View {
                     }
                 },
                 onAddressFindings: {
-                    handleAddressReviewFindings()
+                    handleAgentAction(.addressReviewFindings)
                 },
                 onFocusAgent: {
                     activeTab = .agent
@@ -805,14 +809,11 @@ struct TerminalContainerView: View {
                     worktreeState: appEnv.worktreeState(for: workingDirectory),
                     hasGitHubRemote: appEnv.hasGitHubRemote(projectDirectory),
                     branchPR: branchPR,
-                    isAddressingFindings: isAddressingFindings,
+                    delegatedAction: activeAgentAction,
+                    agentState: currentAgentState,
+                    isAgentReady: surfaceCache.hasSurface(for: agentID),
                     onSendToAgent: { action in
-                        if action == .addressReviewFindings {
-                            handleAddressReviewFindings()
-                        } else if let prompt = action.prompt {
-                            activeTab = .agent
-                            surfaceCache.sendText(to: agentID, text: prompt + "\r")
-                        }
+                        handleAgentAction(action)
                     }
                 )
 
@@ -980,8 +981,23 @@ struct TerminalContainerView: View {
         }
     }
 
-    private var mainContent: some View {
-        mainLayout
+    private var currentAgentState: AgentState? {
+        agentStateStore.agentState(for: workstreamID)
+    }
+
+    private func handleAgentStateChange(_ state: AgentState?) {
+        guard activeAgentAction != nil else { return }
+        if state == .working {
+            observedAgentTurn = true
+        } else if state == .idle || state == nil, observedAgentTurn {
+            activeAgentAction = nil
+            activeActionInvocationID = nil
+            observedAgentTurn = false
+        }
+    }
+
+    private func withOverlayAndSheets<Content: View>(_ content: Content) -> some View {
+        content
             .overlay(alignment: .bottomTrailing) {
                 if showScriptApprovalNotice {
                     ScriptApprovalNotice(
@@ -1001,12 +1017,33 @@ struct TerminalContainerView: View {
                 }
             }
             .animation(reduceMotion ? nil : DesignMotion.interaction, value: showScriptApprovalNotice)
+            .sheet(isPresented: $showScriptApproval) {
+                ScriptApprovalSheet(
+                    source: scriptConfig.source,
+                    setup: scriptConfig.setup,
+                    run: scriptConfig.run,
+                    teardown: scriptConfig.teardown,
+                    onApprove: {
+                        ScriptTrustStore.trust(projectDirectory: projectDirectory, config: scriptConfig)
+                        showScriptApproval = false
+                        startSetupIfNeeded()
+                    },
+                    onDecline: { showScriptApproval = false }
+                )
+            }
+    }
+
+    private func withStateListeners<Content: View>(_ content: Content) -> some View {
+        content
             .onAppear { updateAgentNotificationVisibility() }
             .onDisappear {
                 AgentAttentionNotifier.shared.setAgentVisible(false, for: workstreamID)
             }
             .onChange(of: isActive) { updateAgentNotificationVisibility() }
             .onChange(of: activeTab) { updateAgentNotificationVisibility() }
+            .onChange(of: currentAgentState) { _, state in
+                handleAgentStateChange(state)
+            }
             .onChange(of: tmuxMode) { rebuildAgentCommand() }
             .onChange(of: bypassPermissions) { rebuildAgentCommand() }
             .onChange(of: autoRenameBranch) { rebuildAgentCommand() }
@@ -1026,23 +1063,13 @@ struct TerminalContainerView: View {
                 startSetupIfNeeded()
                 if isActive { preloadSurfaces() }
             }
+    }
+
+    private func withNotificationListeners<Content: View>(_ content: Content) -> some View {
+        content
             .onReceive(NotificationCenter.default.publisher(for: .toggleInfo)) { _ in
                 guard isActive else { return }
                 showWorkstreamInfo.toggle()
-            }
-            .sheet(isPresented: $showScriptApproval) {
-                ScriptApprovalSheet(
-                    source: scriptConfig.source,
-                    setup: scriptConfig.setup,
-                    run: scriptConfig.run,
-                    teardown: scriptConfig.teardown,
-                    onApprove: {
-                        ScriptTrustStore.trust(projectDirectory: projectDirectory, config: scriptConfig)
-                        showScriptApproval = false
-                        startSetupIfNeeded()
-                    },
-                    onDecline: { showScriptApproval = false }
-                )
             }
             .onReceive(NotificationCenter.default.publisher(for: .focusAgent)) { _ in
                 guard isActive else { return }
@@ -1075,6 +1102,14 @@ struct TerminalContainerView: View {
                 guard isActive else { return }
                 splitOrientation = (splitOrientation == "vertical") ? "horizontal" : "vertical"
             }
+    }
+
+    private var mainContent: some View {
+        withNotificationListeners(
+            withStateListeners(
+                withOverlayAndSheets(mainLayout)
+            )
+        )
     }
 
     private func updateAgentNotificationVisibility() {
@@ -1399,15 +1434,27 @@ struct TerminalContainerView: View {
         }
     }
 
-    private func handleAddressReviewFindings() {
-        guard !isAddressingFindings else { return }
-        guard let prompt = QuickAction.addressReviewFindings.prompt else { return }
-        isAddressingFindings = true
+    private func handleAgentAction(_ action: QuickAction) {
+        guard activeAgentAction == nil else { return }
+        guard currentAgentState != .working else { return }
+        guard let prompt = action.prompt else { return }
         activeTab = .agent
-        surfaceCache.sendText(to: agentID, text: prompt + "\r")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            isAddressingFindings = false
+        guard surfaceCache.sendText(to: agentID, text: prompt + "\r") else { return }
+
+        let invocationID = UUID()
+        activeActionInvocationID = invocationID
+        activeAgentAction = action
+        observedAgentTurn = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15.0) {
+            if activeActionInvocationID == invocationID, !observedAgentTurn {
+                activeAgentAction = nil
+                activeActionInvocationID = nil
+            }
         }
+    }
+
+    private func handleAddressReviewFindings() {
+        handleAgentAction(.addressReviewFindings)
     }
 
     private func addTerminal() {
@@ -1825,7 +1872,9 @@ struct WorkstreamLifecyclePill: View {
     let worktreeState: WorktreeState
     let agentState: AgentState?
     let isRunningSetup: Bool
-    let isAddressingFindings: Bool
+    let activeAgentAction: QuickAction?
+    var runningQuickAction: QuickAction? = nil
+    var isAgentReady: Bool = true
     let directory: String
     let onOpenPR: () -> Void
     let onAddressFindings: () -> Void
@@ -1844,6 +1893,56 @@ struct WorkstreamLifecyclePill: View {
             .background(DesignColor.statusInfo.opacity(0.12))
             .foregroundStyle(DesignColor.statusInfo)
             .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+        } else if let action = activeAgentAction {
+            HStack(spacing: 4) {
+                Button { onFocusAgent?() } label: {
+                    HStack(spacing: 5) {
+                        ProgressView()
+                            .controlSize(.mini)
+                        if let pr = branchPR {
+                            Text(verbatim: "#\(pr.number)")
+                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                .tabularNumbers()
+                        }
+                        Text(action.inProgressTitle)
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(DesignColor.statusInfo.opacity(0.12))
+                    .foregroundStyle(DesignColor.statusInfo)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .help(NSLocalizedString("Agent is actively processing. Click to view terminal.", comment: ""))
+
+                if let pr = branchPR {
+                    PRChecksBadge(pr: pr, directory: directory, compact: true)
+                }
+            }
+        } else if let action = runningQuickAction {
+            HStack(spacing: 4) {
+                HStack(spacing: 5) {
+                    ProgressView()
+                        .controlSize(.mini)
+                    if let pr = branchPR {
+                        Text(verbatim: "#\(pr.number)")
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .tabularNumbers()
+                    }
+                    Text(action.inProgressTitle)
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(DesignColor.statusInfo.opacity(0.12))
+                .foregroundStyle(DesignColor.statusInfo)
+                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+
+                if let pr = branchPR {
+                    PRChecksBadge(pr: pr, directory: directory, compact: true)
+                }
+            }
         } else if let pr = branchPR {
             prPill(pr)
         } else {
@@ -1914,17 +2013,106 @@ struct WorkstreamLifecyclePill: View {
 
                 PRChecksBadge(pr: pr, directory: directory, compact: true)
             }
+        } else if agentState == .working {
+            HStack(spacing: 4) {
+                Button { onFocusAgent?() } label: {
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(DesignColor.statusSuccess)
+                            .frame(width: 6, height: 6)
+                        Text(verbatim: "#\(pr.number)")
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .tabularNumbers()
+                        Text(NSLocalizedString("Agent Working", comment: ""))
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(DesignColor.statusSuccess.opacity(0.12))
+                    .foregroundStyle(DesignColor.statusSuccess)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .help(NSLocalizedString("Agent is actively processing. Click to view terminal.", comment: ""))
+
+                PRChecksBadge(pr: pr, directory: directory, compact: true)
+            }
+        } else if agentState == .waiting {
+            HStack(spacing: 4) {
+                Button { onFocusAgent?() } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "bell.fill")
+                            .font(.system(size: 10))
+                        Text(verbatim: "#\(pr.number)")
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .tabularNumbers()
+                        Text(NSLocalizedString("Waiting for Input", comment: ""))
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(DesignColor.statusInfo.opacity(0.12))
+                    .foregroundStyle(DesignColor.statusInfo)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .help(NSLocalizedString("Agent is waiting for your response. Click to view terminal.", comment: ""))
+
+                PRChecksBadge(pr: pr, directory: directory, compact: true)
+            }
+        } else if worktreeState.hasUncommittedChanges {
+            HStack(spacing: 4) {
+                Button(action: onOpenPR) {
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(DesignColor.statusWarning)
+                            .frame(width: 6, height: 6)
+                        Text(verbatim: "#\(pr.number)")
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .tabularNumbers()
+                        Text(NSLocalizedString("Uncommitted Changes", comment: ""))
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(DesignColor.statusWarning.opacity(0.10))
+                    .foregroundStyle(DesignColor.statusWarning)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .help(pr.title)
+
+                PRChecksBadge(pr: pr, directory: directory, compact: true)
+            }
+        } else if worktreeState.hasUnpushedCommits && worktreeState.hasRemote {
+            HStack(spacing: 4) {
+                Button(action: onOpenPR) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 10, weight: .semibold))
+                        Text(verbatim: "#\(pr.number)")
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .tabularNumbers()
+                        Text(NSLocalizedString("Unpushed Commits", comment: ""))
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(DesignColor.statusInfo.opacity(0.10))
+                    .foregroundStyle(DesignColor.statusInfo)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .help(pr.title)
+
+                PRChecksBadge(pr: pr, directory: directory, compact: true)
+            }
         } else if case let .hasFindings(count) = pr.codeRabbitStatus {
             HStack(spacing: 4) {
                 Button(action: onAddressFindings) {
                     HStack(spacing: 5) {
-                        if isAddressingFindings {
-                            ProgressView()
-                                .controlSize(.mini)
-                        } else {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 11))
-                        }
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 11))
                         Text(verbatim: "#\(pr.number)")
                             .font(.system(size: 11, weight: .semibold, design: .monospaced))
                             .tabularNumbers()
@@ -1943,8 +2131,8 @@ struct WorkstreamLifecyclePill: View {
                     .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
                 }
                 .buttonStyle(.plain)
-                .disabled(isAddressingFindings)
-                .help(NSLocalizedString("AI review comments detected. Click to address with agent.", comment: ""))
+                .disabled(!isAgentReady)
+                .help(!isAgentReady ? NSLocalizedString("Coding Agent terminal is not ready", comment: "") : NSLocalizedString("AI review comments detected. Click to address with agent.", comment: ""))
 
                 PRChecksBadge(pr: pr, directory: directory, compact: true)
             }
@@ -1952,13 +2140,8 @@ struct WorkstreamLifecyclePill: View {
             HStack(spacing: 4) {
                 Button(action: onAddressFindings) {
                     HStack(spacing: 5) {
-                        if isAddressingFindings {
-                            ProgressView()
-                                .controlSize(.mini)
-                        } else {
-                            Image(systemName: "exclamationmark.bubble.fill")
-                                .font(.system(size: 11))
-                        }
+                        Image(systemName: "exclamationmark.bubble.fill")
+                            .font(.system(size: 11))
                         Text(verbatim: "#\(pr.number)")
                             .font(.system(size: 11, weight: .semibold, design: .monospaced))
                             .tabularNumbers()
@@ -1972,8 +2155,8 @@ struct WorkstreamLifecyclePill: View {
                     .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
                 }
                 .buttonStyle(.plain)
-                .disabled(isAddressingFindings)
-                .help(NSLocalizedString("Review changes requested. Click to address with agent.", comment: ""))
+                .disabled(!isAgentReady)
+                .help(!isAgentReady ? NSLocalizedString("Coding Agent terminal is not ready", comment: "") : NSLocalizedString("Review changes requested. Click to address with agent.", comment: ""))
 
                 PRChecksBadge(pr: pr, directory: directory, compact: true)
             }
@@ -2144,7 +2327,9 @@ private struct GitHubActionMenu: View {
     let worktreeState: WorktreeState
     let hasGitHubRemote: Bool
     let branchPR: GitHubPR?
-    let isAddressingFindings: Bool
+    let delegatedAction: QuickAction?
+    var agentState: AgentState? = nil
+    var isAgentReady: Bool = true
     let onSendToAgent: (QuickAction) -> Void
 
     private var prState: String? {
@@ -2165,14 +2350,14 @@ private struct GitHubActionMenu: View {
             return nil
         }
         if hasOpenPR {
-            if branchPR?.hasReviewFindings == true {
-                return .quickAction(.addressReviewFindings)
-            }
             if worktreeState.hasUncommittedChanges {
                 return .quickAction(.commit)
             }
             if worktreeState.hasUnpushedCommits, worktreeState.hasRemote {
                 return .quickAction(.push)
+            }
+            if branchPR?.hasReviewFindings == true {
+                return .quickAction(.addressReviewFindings)
             }
             if let pr = branchPR {
                 return .openPR(pr)
@@ -2206,7 +2391,9 @@ private struct GitHubActionMenu: View {
         }
         if let pr = branchPR, hasOpenPR {
             actions.append(.openPR(pr))
-            actions.append(.quickAction(.addressReviewFindings))
+            if pr.hasReviewFindings {
+                actions.append(.quickAction(.addressReviewFindings))
+            }
             actions.append(.quickAction(.closePR))
         }
 
@@ -2214,13 +2401,13 @@ private struct GitHubActionMenu: View {
     }
 
     private var isRunning: Bool {
-        if isAddressingFindings { return true }
+        if delegatedAction != nil { return true }
         if case .running = runner.state { return true }
         return false
     }
 
     private func isRunningAction(_ action: QuickAction) -> Bool {
-        if action == .addressReviewFindings && isAddressingFindings { return true }
+        if delegatedAction == action { return true }
         if case let .running(a) = runner.state { return a == action }
         return false
     }
@@ -2234,8 +2421,16 @@ private struct GitHubActionMenu: View {
     }
 
     private func disabledReason(for action: QuickAction) -> String? {
-        if action == .addressReviewFindings, isAddressingFindings {
-            return NSLocalizedString("Addressing review findings...", comment: "")
+        if delegatedAction == action {
+            return action.inProgressTitle
+        }
+        if action.delegatesToAgent {
+            if !isAgentReady {
+                return NSLocalizedString("Coding Agent terminal is not ready", comment: "")
+            }
+            if agentState == .working {
+                return NSLocalizedString("Agent is working", comment: "")
+            }
         }
         return action.disabledReason(ghPath: ghPath)
     }
@@ -2967,13 +3162,20 @@ final class TerminalSurfaceCache: ObservableObject {
 
     // MARK: - Text injection
 
-    /// Send text to a terminal surface as if it were typed.
-    func sendText(to surfaceID: UUID, text: String) {
+    /// Returns true if a live terminal surface exists for the given ID.
+    func hasSurface(for id: UUID) -> Bool {
+        surfaces[id]?.surface != nil
+    }
+
+    /// Send text to a terminal surface as if it were typed. Returns true if delivered.
+    @discardableResult
+    func sendText(to surfaceID: UUID, text: String) -> Bool {
         guard let view = surfaces[surfaceID],
-              let surface = view.surface else { return }
+              let surface = view.surface else { return false }
         text.withCString { ptr in
             ghostty_surface_text(surface, ptr, UInt(text.utf8.count))
         }
+        return true
     }
 
     // MARK: - Workspace tab snapshots

@@ -810,3 +810,11 @@
 "Issue Tasks Ready to Start" = "Issue Tasks Ready to Start";
 "Workstreams created from GitHub issues pass the task directly to your Coding Agent. Failed launches keep the task available for retry." = "Workstreams created from GitHub issues pass the task directly to your Coding Agent. Failed launches keep the task available for retry.";
 "Open a Chromium browser the Coding Agent can inspect and control while the regular in-app browser remains yours." = "Open a Chromium browser the Coding Agent can inspect and control while the regular in-app browser remains yours.";
+
+/* Quick Actions & Statuses */
+"Committing..." = "Committing...";
+"Pushing..." = "Pushing...";
+"Creating PR..." = "Creating PR...";
+"Closing PR..." = "Closing PR...";
+"Unpushed Commits" = "Unpushed Commits";
+"Coding Agent terminal is not ready" = "Coding Agent terminal is not ready";
