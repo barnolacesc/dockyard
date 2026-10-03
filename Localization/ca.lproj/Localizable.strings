@@ -817,3 +817,4 @@
 "Creating PR..." = "Creant PR...";
 "Closing PR..." = "Tancant PR...";
 "Unpushed Commits" = "Commits pendents de pujar";
+"Coding Agent terminal is not ready" = "El terminal de l'agent de codi no està a punt";

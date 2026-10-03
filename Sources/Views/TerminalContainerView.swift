@@ -466,6 +466,7 @@ struct TerminalContainerView: View {
     @State private var tabs: [WorkspaceTab] = [.agent]
     @State private var showWorkstreamInfo = false
     @State private var activeAgentAction: QuickAction?
+    @State private var activeActionInvocationID: UUID?
     @State private var observedAgentTurn = false
     @State private var terminalCount = 0
     @State private var browserCount = 0
@@ -762,6 +763,7 @@ struct TerminalContainerView: View {
                 isRunningSetup: setupRunner.state == .running,
                 activeAgentAction: activeAgentAction,
                 runningQuickAction: quickActionRunner.runningAction,
+                isAgentReady: surfaceCache.hasSurface(for: agentID),
                 directory: projectDirectory,
                 onOpenPR: {
                     if let pr = branchPR, let url = URL(string: pr.url) {
@@ -808,6 +810,8 @@ struct TerminalContainerView: View {
                     hasGitHubRemote: appEnv.hasGitHubRemote(projectDirectory),
                     branchPR: branchPR,
                     delegatedAction: activeAgentAction,
+                    agentState: currentAgentState,
+                    isAgentReady: surfaceCache.hasSurface(for: agentID),
                     onSendToAgent: { action in
                         handleAgentAction(action)
                     }
@@ -985,13 +989,13 @@ struct TerminalContainerView: View {
         guard activeAgentAction != nil else { return }
         if state == .working {
             observedAgentTurn = true
-        } else if observedAgentTurn {
+        } else if state == .idle || state == nil, observedAgentTurn {
             activeAgentAction = nil
+            activeActionInvocationID = nil
             observedAgentTurn = false
         }
     }
 
-    @ViewBuilder
     private func withOverlayAndSheets<Content: View>(_ content: Content) -> some View {
         content
             .overlay(alignment: .bottomTrailing) {
@@ -1029,7 +1033,6 @@ struct TerminalContainerView: View {
             }
     }
 
-    @ViewBuilder
     private func withStateListeners<Content: View>(_ content: Content) -> some View {
         content
             .onAppear { updateAgentNotificationVisibility() }
@@ -1062,7 +1065,6 @@ struct TerminalContainerView: View {
             }
     }
 
-    @ViewBuilder
     private func withNotificationListeners<Content: View>(_ content: Content) -> some View {
         content
             .onReceive(NotificationCenter.default.publisher(for: .toggleInfo)) { _ in
@@ -1102,7 +1104,6 @@ struct TerminalContainerView: View {
             }
     }
 
-    @ViewBuilder
     private var mainContent: some View {
         withNotificationListeners(
             withStateListeners(
@@ -1435,14 +1436,19 @@ struct TerminalContainerView: View {
 
     private func handleAgentAction(_ action: QuickAction) {
         guard activeAgentAction == nil else { return }
+        guard currentAgentState != .working else { return }
         guard let prompt = action.prompt else { return }
-        activeAgentAction = action
-        observedAgentTurn = agentStateStore.agentState(for: workstreamID) == .working
         activeTab = .agent
-        surfaceCache.sendText(to: agentID, text: prompt + "\r")
+        guard surfaceCache.sendText(to: agentID, text: prompt + "\r") else { return }
+
+        let invocationID = UUID()
+        activeActionInvocationID = invocationID
+        activeAgentAction = action
+        observedAgentTurn = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 15.0) {
-            if activeAgentAction == action, !observedAgentTurn {
+            if activeActionInvocationID == invocationID, !observedAgentTurn {
                 activeAgentAction = nil
+                activeActionInvocationID = nil
             }
         }
     }
@@ -1868,6 +1874,7 @@ struct WorkstreamLifecyclePill: View {
     let isRunningSetup: Bool
     let activeAgentAction: QuickAction?
     var runningQuickAction: QuickAction? = nil
+    var isAgentReady: Bool = true
     let directory: String
     let onOpenPR: () -> Void
     let onAddressFindings: () -> Void
@@ -2124,7 +2131,8 @@ struct WorkstreamLifecyclePill: View {
                     .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
                 }
                 .buttonStyle(.plain)
-                .help(NSLocalizedString("AI review comments detected. Click to address with agent.", comment: ""))
+                .disabled(!isAgentReady)
+                .help(!isAgentReady ? NSLocalizedString("Coding Agent terminal is not ready", comment: "") : NSLocalizedString("AI review comments detected. Click to address with agent.", comment: ""))
 
                 PRChecksBadge(pr: pr, directory: directory, compact: true)
             }
@@ -2147,7 +2155,8 @@ struct WorkstreamLifecyclePill: View {
                     .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous))
                 }
                 .buttonStyle(.plain)
-                .help(NSLocalizedString("Review changes requested. Click to address with agent.", comment: ""))
+                .disabled(!isAgentReady)
+                .help(!isAgentReady ? NSLocalizedString("Coding Agent terminal is not ready", comment: "") : NSLocalizedString("Review changes requested. Click to address with agent.", comment: ""))
 
                 PRChecksBadge(pr: pr, directory: directory, compact: true)
             }
@@ -2319,6 +2328,8 @@ private struct GitHubActionMenu: View {
     let hasGitHubRemote: Bool
     let branchPR: GitHubPR?
     let delegatedAction: QuickAction?
+    var agentState: AgentState? = nil
+    var isAgentReady: Bool = true
     let onSendToAgent: (QuickAction) -> Void
 
     private var prState: String? {
@@ -2412,6 +2423,14 @@ private struct GitHubActionMenu: View {
     private func disabledReason(for action: QuickAction) -> String? {
         if delegatedAction == action {
             return action.inProgressTitle
+        }
+        if action.delegatesToAgent {
+            if !isAgentReady {
+                return NSLocalizedString("Coding Agent terminal is not ready", comment: "")
+            }
+            if agentState == .working {
+                return NSLocalizedString("Agent is working", comment: "")
+            }
         }
         return action.disabledReason(ghPath: ghPath)
     }
@@ -3143,13 +3162,20 @@ final class TerminalSurfaceCache: ObservableObject {
 
     // MARK: - Text injection
 
-    /// Send text to a terminal surface as if it were typed.
-    func sendText(to surfaceID: UUID, text: String) {
+    /// Returns true if a live terminal surface exists for the given ID.
+    func hasSurface(for id: UUID) -> Bool {
+        surfaces[id]?.surface != nil
+    }
+
+    /// Send text to a terminal surface as if it were typed. Returns true if delivered.
+    @discardableResult
+    func sendText(to surfaceID: UUID, text: String) -> Bool {
         guard let view = surfaces[surfaceID],
-              let surface = view.surface else { return }
+              let surface = view.surface else { return false }
         text.withCString { ptr in
             ghostty_surface_text(surface, ptr, UInt(text.utf8.count))
         }
+        return true
     }
 
     // MARK: - Workspace tab snapshots
