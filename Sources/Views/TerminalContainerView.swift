@@ -2934,12 +2934,27 @@ final class TerminalSurfaceCache: ObservableObject {
         }
     }
 
+    /// Surface IDs that should remain visible regardless of workspace/workstream visibility (e.g. global floating terminal).
+    var alwaysVisibleSurfaceIDs: Set<UUID> = []
+
     /// Marks surfaces in the given set as visible; all others are occluded.
+    /// Surfaces in `alwaysVisibleSurfaceIDs` remain visible regardless of `visibleSurfaceIDs`.
     /// Pass nil to mark all surfaces as visible.
     func updateOcclusion(visibleSurfaceIDs: Set<UUID>?) {
         for (id, view) in surfaces {
-            let visible = visibleSurfaceIDs.map { $0.contains(id) } ?? true
+            let visible = visibleSurfaceIDs.map { $0.contains(id) || alwaysVisibleSurfaceIDs.contains(id) } ?? true
             view.setVisible(visible)
+        }
+    }
+
+    /// Sets whether a specific surface should always remain visible regardless of workspace/workstream occlusion.
+    func setSurfaceAlwaysVisible(_ id: UUID, isAlwaysVisible: Bool) {
+        if isAlwaysVisible {
+            alwaysVisibleSurfaceIDs.insert(id)
+            surfaces[id]?.setVisible(true)
+        } else {
+            alwaysVisibleSurfaceIDs.remove(id)
+            surfaces[id]?.setVisible(false)
         }
     }
 
@@ -3060,7 +3075,12 @@ final class TerminalSurfaceCache: ObservableObject {
         webViews.removeValue(forKey: id)
     }
 
+    /// Removes and destroys the terminal surface view for the given ID, cleaning up parameters and visibility tracking.
     func removeSurface(for id: UUID) {
+        alwaysVisibleSurfaceIDs.remove(id)
+        #if DEBUG
+            testSurfaceIDs.remove(id)
+        #endif
         if let view = surfaces.removeValue(forKey: id) {
             view.destroy()
         }
@@ -3165,6 +3185,23 @@ final class TerminalSurfaceCache: ObservableObject {
     /// Returns true if a live terminal surface exists for the given ID.
     func hasSurface(for id: UUID) -> Bool {
         surfaces[id]?.surface != nil
+    }
+
+    #if DEBUG
+        private var testSurfaceIDs: Set<UUID> = []
+
+        /// Injects a surface entry for testing cache lifecycle, occlusion, and eviction without requiring Ghostty GPU initialization.
+        func registerTestSurface(for id: UUID) {
+            testSurfaceIDs.insert(id)
+        }
+    #endif
+
+    /// Returns true if a terminal view is tracked in the cache for the given ID.
+    func isSurfaceCached(for id: UUID) -> Bool {
+        #if DEBUG
+            if testSurfaceIDs.contains(id) { return true }
+        #endif
+        return surfaces[id] != nil
     }
 
     /// Send text to a terminal surface as if it were typed. Returns true if delivered.

@@ -165,6 +165,7 @@ struct ContentView: View {
     }
 
     @StateObject private var surfaceCache = TerminalSurfaceCache()
+    @StateObject private var globalTerminalState = GlobalTerminalState()
     @StateObject private var appEnvironment = AppEnvironment()
     @StateObject private var activityTracker = WorkstreamActivityTracker()
     @StateObject private var agentStateStore = AgentStateStore.shared
@@ -384,7 +385,37 @@ struct ContentView: View {
 
     private var mainContent: some View {
         navigationView
-            .overlay(alignment: .bottomTrailing) { updateNotices }
+            .overlay(alignment: .bottomTrailing) {
+                VStack(alignment: .trailing, spacing: DesignSpacing.md) {
+                    updateNotices
+                    GlobalTerminalButton(
+                        state: globalTerminalState,
+                        onToggle: {
+                            globalTerminalState.toggle(surfaceCache: surfaceCache)
+                        }
+                    )
+                }
+                .padding(16)
+            }
+            .overlay(alignment: .topLeading) {
+                GeometryReader { geo in
+                    if globalTerminalState.isOpen && !globalTerminalState.isMinimized,
+                       let surfaceID = globalTerminalState.surfaceID
+                    {
+                        FloatingTerminalPanel(
+                            surfaceID: surfaceID,
+                            windowSize: geo.size,
+                            state: globalTerminalState,
+                            onClose: {
+                                globalTerminalState.close(surfaceCache: surfaceCache)
+                            },
+                            onMinimize: {
+                                globalTerminalState.minimize(surfaceCache: surfaceCache)
+                            }
+                        )
+                    }
+                }
+            }
             .animation(reduceMotion ? nil : DesignMotion.interaction, value: appUpdater.shouldPromptUpdate)
             .animation(reduceMotion ? nil : DesignMotion.interaction, value: appUpdater.shouldPromptUpdateReady)
             .shortcutHintOverlay()
@@ -414,6 +445,9 @@ struct ContentView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .openExternalTerminal)) { _ in
                 openExternalTerminal()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .toggleGlobalTerminal)) { _ in
+                globalTerminalState.toggle(surfaceCache: surfaceCache)
             }
             .onReceive(NotificationCenter.default.publisher(for: .terminalTabExited)) { notification in
                 if let exitedSurfaceID = notification.object as? UUID {
@@ -494,7 +528,12 @@ struct ContentView: View {
         ProjectStore.save([])
     }
 
+    /// Handles cleanup when a terminal process exits, checking for global terminal or project-level terminals.
     private func handleTerminalTabExited(_ exitedSurfaceID: UUID) {
+        if exitedSurfaceID == globalTerminalState.surfaceID {
+            globalTerminalState.handleProcessTerminated(surfaceCache: surfaceCache)
+            return
+        }
         for project in projects {
             let rootTerminalID = derivedUUID(from: project.id, salt: "project-root-terminal")
             if rootTerminalID == exitedSurfaceID {
@@ -654,6 +693,11 @@ struct ContentView: View {
                 case "light": NSApp.appearance = NSAppearance(named: .aqua)
                 case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
                 default: NSApp.appearance = nil
+                }
+                if globalTerminalState.isOpen && !globalTerminalState.isMinimized,
+                   let surfaceID = globalTerminalState.surfaceID
+                {
+                    surfaceCache.setSurfaceAlwaysVisible(surfaceID, isAlwaysVisible: true)
                 }
                 checkWhatsNewGate()
             }

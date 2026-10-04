@@ -818,3 +818,14 @@
 "Closing PR..." = "Closing PR...";
 "Unpushed Commits" = "Unpushed Commits";
 "Coding Agent terminal is not ready" = "Coding Agent terminal is not ready";
+
+/* Global Terminal */
+"Global Terminal" = "Global Terminal";
+"Open Global Terminal" = "Open Global Terminal";
+"Restore Global Terminal" = "Restore Global Terminal";
+"Minimize Global Terminal" = "Minimize Global Terminal";
+"Close Global Terminal" = "Close Global Terminal";
+"Minimize" = "Minimize";
+"Toggles the persistent floating global terminal" = "Toggles the persistent floating global terminal";
+"Persistent Floating Global Terminal" = "Persistent Floating Global Terminal";
+"Access a floating terminal from anywhere in Dockyard, independent of your active project or workstream." = "Access a floating terminal from anywhere in Dockyard, independent of your active project or workstream.";
