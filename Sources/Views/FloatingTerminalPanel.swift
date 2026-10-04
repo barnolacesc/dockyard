@@ -4,6 +4,7 @@
 import AppKit
 import SwiftUI
 
+/// A floating circular button positioned at the bottom-right corner to toggle the global terminal.
 struct GlobalTerminalButton: View {
     @ObservedObject var state: GlobalTerminalState
     let onToggle: () -> Void
@@ -24,6 +25,7 @@ struct GlobalTerminalButton: View {
         }
     }
 
+    /// The content and behavior of the global terminal trigger button.
     var body: some View {
         Button(action: onToggle) {
             Image(systemName: isActive ? "terminal.fill" : "terminal")
@@ -46,6 +48,7 @@ struct GlobalTerminalButton: View {
     }
 }
 
+/// A floating, draggable panel hosting the persistent global terminal instance.
 struct FloatingTerminalPanel: View {
     let surfaceID: UUID
     let windowSize: CGSize
@@ -56,16 +59,19 @@ struct FloatingTerminalPanel: View {
     @State private var dragStartPosition: CGPoint?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// Effective size of the panel clamped to the host window size.
     private var effectiveSize: CGSize {
         GlobalTerminalState.effectivePanelSize(windowSize: windowSize)
     }
 
+    /// Current top-left position of the panel clamped within the host window bounds.
     private var currentPosition: CGPoint {
         let defaultPos = GlobalTerminalState.defaultPosition(panelSize: effectiveSize, windowSize: windowSize)
         let pos = state.position ?? defaultPos
         return GlobalTerminalState.clampedPosition(pos, panelSize: effectiveSize, windowSize: windowSize)
     }
 
+    /// The content and layout of the floating terminal panel.
     var body: some View {
         VStack(spacing: 0) {
             titleBar
@@ -92,6 +98,7 @@ struct FloatingTerminalPanel: View {
         }
     }
 
+    /// The draggable title bar with label, minimize, and close actions.
     private var titleBar: some View {
         HStack(spacing: DesignSpacing.sm) {
             HStack(spacing: DesignSpacing.xs) {
@@ -137,6 +144,7 @@ struct FloatingTerminalPanel: View {
         .background(Color(nsColor: .windowBackgroundColor).opacity(0.85))
     }
 
+    /// Drag gesture handler that tracks panel movement and clamps position within window bounds.
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 2)
             .onChanged { gesture in
@@ -160,6 +168,7 @@ struct FloatingTerminalPanel: View {
             }
     }
 
+    /// The terminal view hosting the Ghostty surface in the user's home directory.
     private var terminalContent: some View {
         SingleTerminalView(
             surfaceID: surfaceID,

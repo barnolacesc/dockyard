@@ -4,29 +4,47 @@
 import AppKit
 import Foundation
 
+/// Coordinates state, position persistence, and Ghostty surface lifecycles for Dockyard's floating global terminal.
 @MainActor
 final class GlobalTerminalState: ObservableObject {
+    /// Dedicated dummy workstream ID used to isolate the global terminal from all workstreams.
     nonisolated static let globalWorkstreamID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
 
+    /// Default width for the floating terminal panel.
     nonisolated static let defaultWidth: CGFloat = 640
+    /// Default height for the floating terminal panel.
     nonisolated static let defaultHeight: CGFloat = 400
+    /// Minimum allowed width when scaled down for smaller windows.
     nonisolated static let minWidth: CGFloat = 360
+    /// Minimum allowed height when scaled down for smaller windows.
     nonisolated static let minHeight: CGFloat = 240
+    /// Standard padding inset from window boundaries.
     nonisolated static let padding: CGFloat = 12
 
+    /// The default initial working directory for the global terminal shell ($HOME).
     nonisolated static var defaultWorkingDirectory: String {
         FileManager.default.homeDirectoryForCurrentUser.path
     }
 
+    /// The active working directory used by this global terminal instance.
     let workingDirectory: String
 
+    /// Whether a global terminal session is currently open.
     @Published var isOpen: Bool
+    /// Whether the global terminal panel is currently minimized to the floating button.
     @Published var isMinimized: Bool
+    /// The current top-left position of the panel within the window coordinate space.
     @Published var position: CGPoint?
+    /// The unique surface ID corresponding to the active terminal session.
     @Published private(set) var surfaceID: UUID?
 
     private let userDefaults: UserDefaults
 
+    /// Initializes state with optional custom UserDefaults and initial directory.
+    ///
+    /// - Parameters:
+    ///   - userDefaults: The UserDefaults instance for persistence (defaults to .standard).
+    ///   - workingDirectory: The initial directory for the terminal session (defaults to $HOME).
     init(
         userDefaults: UserDefaults = .standard,
         workingDirectory: String = GlobalTerminalState.defaultWorkingDirectory
@@ -59,6 +77,9 @@ final class GlobalTerminalState: ObservableObject {
 
     // MARK: - Lifecycle
 
+    /// Opens a global terminal session, creating a new surface ID if one does not exist.
+    ///
+    /// - Parameter surfaceCache: Optional cache instance to mark the surface as visible.
     func open(surfaceCache: TerminalSurfaceCache? = nil) {
         if surfaceID == nil {
             surfaceID = UUID()
@@ -72,6 +93,9 @@ final class GlobalTerminalState: ObservableObject {
         }
     }
 
+    /// Minimizes the global terminal panel, hiding the view while preserving the running shell process.
+    ///
+    /// - Parameter surfaceCache: Optional cache instance to mark the surface as occluded.
     func minimize(surfaceCache: TerminalSurfaceCache? = nil) {
         guard isOpen else { return }
         isMinimized = true
@@ -81,6 +105,9 @@ final class GlobalTerminalState: ObservableObject {
         }
     }
 
+    /// Restores a minimized global terminal panel, revealing the existing running process.
+    ///
+    /// - Parameter surfaceCache: Optional cache instance to mark the surface as visible.
     func restore(surfaceCache: TerminalSurfaceCache? = nil) {
         if surfaceID == nil {
             surfaceID = UUID()
@@ -94,6 +121,9 @@ final class GlobalTerminalState: ObservableObject {
         }
     }
 
+    /// Toggles the global terminal state between open, minimized, and restored.
+    ///
+    /// - Parameter surfaceCache: Optional cache instance to update surface visibility.
     func toggle(surfaceCache: TerminalSurfaceCache? = nil) {
         if !isOpen {
             open(surfaceCache: surfaceCache)
@@ -104,6 +134,9 @@ final class GlobalTerminalState: ObservableObject {
         }
     }
 
+    /// Closes and destroys the active global terminal session, evicting it from the surface cache.
+    ///
+    /// - Parameter surfaceCache: Optional cache instance from which to remove the surface.
     func close(surfaceCache: TerminalSurfaceCache? = nil) {
         if let surfaceID {
             surfaceCache?.setSurfaceAlwaysVisible(surfaceID, isAlwaysVisible: false)
@@ -116,9 +149,13 @@ final class GlobalTerminalState: ObservableObject {
         userDefaults.set(false, forKey: "dockyard.globalTerminal.isMinimized")
     }
 
+    /// Handles cleanup when the terminal shell process terminates (e.g. exit command).
+    ///
+    /// - Parameter surfaceCache: Optional cache instance to update occlusion tracking and evict the dead surface.
     func handleProcessTerminated(surfaceCache: TerminalSurfaceCache? = nil) {
         if let surfaceID {
             surfaceCache?.setSurfaceAlwaysVisible(surfaceID, isAlwaysVisible: false)
+            surfaceCache?.removeSurface(for: surfaceID)
         }
         surfaceID = nil
         isOpen = false
@@ -127,6 +164,9 @@ final class GlobalTerminalState: ObservableObject {
         userDefaults.set(false, forKey: "dockyard.globalTerminal.isMinimized")
     }
 
+    /// Persists a new panel position to UserDefaults.
+    ///
+    /// - Parameter newPosition: The new top-left coordinates of the floating panel.
     func savePosition(_ newPosition: CGPoint) {
         position = newPosition
         userDefaults.set(Double(newPosition.x), forKey: "dockyard.globalTerminal.positionX")
@@ -135,6 +175,14 @@ final class GlobalTerminalState: ObservableObject {
 
     // MARK: - Geometry & Clamping
 
+    /// Computes the effective panel size adapted to the current window size.
+    ///
+    /// - Parameters:
+    ///   - windowSize: The current dimensions of the host window.
+    ///   - defaultSize: The preferred default panel size.
+    ///   - minSize: The minimum allowed panel size.
+    ///   - padding: Padding around the window edges.
+    /// - Returns: Clamped CGSize for the panel.
     nonisolated static func effectivePanelSize(
         windowSize: CGSize,
         defaultSize: CGSize = CGSize(width: defaultWidth, height: defaultHeight),
@@ -149,6 +197,13 @@ final class GlobalTerminalState: ObservableObject {
         )
     }
 
+    /// Calculates the initial default position for the panel near the bottom-right corner.
+    ///
+    /// - Parameters:
+    ///   - panelSize: The size of the floating panel.
+    ///   - windowSize: The size of the host window.
+    ///   - padding: Additional padding from the edge.
+    /// - Returns: Clamped CGPoint for top-left panel position.
     nonisolated static func defaultPosition(
         panelSize: CGSize,
         windowSize: CGSize,
@@ -159,6 +214,14 @@ final class GlobalTerminalState: ObservableObject {
         return clampedPosition(CGPoint(x: x, y: y), panelSize: panelSize, windowSize: windowSize)
     }
 
+    /// Clamps a candidate position to ensure the entire panel remains within the visible window.
+    ///
+    /// - Parameters:
+    ///   - position: Candidate top-left coordinate.
+    ///   - panelSize: Dimensions of the floating panel.
+    ///   - windowSize: Dimensions of the host window.
+    ///   - padding: Inset from the window edge.
+    /// - Returns: Clamped CGPoint guaranteed to lie within visible bounds.
     nonisolated static func clampedPosition(
         _ position: CGPoint,
         panelSize: CGSize,

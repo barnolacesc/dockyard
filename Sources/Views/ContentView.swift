@@ -528,6 +528,7 @@ struct ContentView: View {
         ProjectStore.save([])
     }
 
+    /// Handles cleanup when a terminal process exits, checking for global terminal or project-level terminals.
     private func handleTerminalTabExited(_ exitedSurfaceID: UUID) {
         if exitedSurfaceID == globalTerminalState.surfaceID {
             globalTerminalState.handleProcessTerminated(surfaceCache: surfaceCache)

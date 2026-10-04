@@ -3075,8 +3075,12 @@ final class TerminalSurfaceCache: ObservableObject {
         webViews.removeValue(forKey: id)
     }
 
+    /// Removes and destroys the terminal surface view for the given ID, cleaning up parameters and visibility tracking.
     func removeSurface(for id: UUID) {
         alwaysVisibleSurfaceIDs.remove(id)
+        #if DEBUG
+            testSurfaceIDs.remove(id)
+        #endif
         if let view = surfaces.removeValue(forKey: id) {
             view.destroy()
         }
@@ -3181,6 +3185,23 @@ final class TerminalSurfaceCache: ObservableObject {
     /// Returns true if a live terminal surface exists for the given ID.
     func hasSurface(for id: UUID) -> Bool {
         surfaces[id]?.surface != nil
+    }
+
+    #if DEBUG
+        private var testSurfaceIDs: Set<UUID> = []
+
+        /// Injects a surface entry for testing cache lifecycle, occlusion, and eviction without requiring Ghostty GPU initialization.
+        func registerTestSurface(for id: UUID) {
+            testSurfaceIDs.insert(id)
+        }
+    #endif
+
+    /// Returns true if a terminal view is tracked in the cache for the given ID.
+    func isSurfaceCached(for id: UUID) -> Bool {
+        #if DEBUG
+            if testSurfaceIDs.contains(id) { return true }
+        #endif
+        return surfaces[id] != nil
     }
 
     /// Send text to a terminal surface as if it were typed. Returns true if delivered.

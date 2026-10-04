@@ -199,8 +199,7 @@ struct DockyardApp: App {
         // Retired language overrides should return to the supported system default.
         let defaults = UserDefaults.standard
         if let language = defaults.string(forKey: "dockyard.languageOverride"),
-           ["de", "es", "sv"].contains(language)
-        {
+           ["de", "es", "sv"].contains(language) {
             defaults.removeObject(forKey: "dockyard.languageOverride")
             defaults.removeObject(forKey: "AppleLanguages")
         }
