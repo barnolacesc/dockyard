@@ -242,6 +242,9 @@ final class TerminalApp {
     private(set) nonisolated(unsafe) var config: ghostty_config_t?
     private var appearanceObserver: NSKeyValueObservation?
 
+    /// Initializes the Ghostty terminal application and runtime configuration.
+    ///
+    /// Skips initialization when running under XCTest to prevent dereferencing uninitialized engine structures.
     private init() {
         guard !isRunningXCTest() else { return }
 

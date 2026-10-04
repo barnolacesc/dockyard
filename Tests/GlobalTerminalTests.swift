@@ -337,6 +337,6 @@ final class GlobalTerminalTests: XCTestCase {
         let hosting = NSHostingView(rootView: panel)
         hosting.frame = CGRect(x: 0, y: 0, width: 800, height: 600)
         hosting.layout()
-        XCTAssertNotNil(hosting.subviews)
+        XCTAssertFalse(hosting.subviews.isEmpty, "Hosting view should populate rendered subviews after layout")
     }
 }

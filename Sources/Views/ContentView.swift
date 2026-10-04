@@ -379,6 +379,7 @@ struct ContentView: View {
         }
     }
 
+    /// The primary content view hierarchy with all top-level environment dependencies injected.
     var body: some View {
         applyAlerts(to: mainContent)
             .environmentObject(surfaceCache)
