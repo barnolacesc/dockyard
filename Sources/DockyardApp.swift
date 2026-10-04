@@ -37,6 +37,7 @@ extension Notification.Name {
     static let prevProject = Notification.Name("dockyard.prevProject")
     static let archiveWorkstream = Notification.Name("dockyard.archiveWorkstream")
     static let openAgentAttention = Notification.Name("dockyard.openAgentAttention")
+    static let toggleGlobalTerminal = Notification.Name("dockyard.toggleGlobalTerminal")
 }
 
 @MainActor
@@ -198,7 +199,8 @@ struct DockyardApp: App {
         // Retired language overrides should return to the supported system default.
         let defaults = UserDefaults.standard
         if let language = defaults.string(forKey: "dockyard.languageOverride"),
-           ["de", "es", "sv"].contains(language) {
+           ["de", "es", "sv"].contains(language)
+        {
             defaults.removeObject(forKey: "dockyard.languageOverride")
             defaults.removeObject(forKey: "AppleLanguages")
         }
@@ -355,6 +357,10 @@ struct DockyardApp: App {
                     NotificationCenter.default.post(name: .toggleTerminal, object: nil)
                 }
                 .keyboardShortcut("t", modifiers: .command)
+
+                Button("Global Terminal") {
+                    NotificationCenter.default.post(name: .toggleGlobalTerminal, object: nil)
+                }
 
                 Button("Split Terminal") {
                     NotificationCenter.default.post(name: .splitTerminal, object: nil)

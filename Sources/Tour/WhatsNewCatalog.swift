@@ -18,6 +18,11 @@ enum WhatsNewCatalog {
                 titleKey: "Agent-Controlled Browser",
                 bodyKey: "Open a Chromium browser the Coding Agent can inspect and control while the regular in-app browser remains yours."
             ),
+            WhatsNewEntry(
+                symbol: "terminal",
+                titleKey: "Persistent Floating Global Terminal",
+                bodyKey: "Access a floating terminal from anywhere in Dockyard, independent of your active project or workstream."
+            ),
         ]),
         WhatsNewRelease(version: "0.2.6", entries: [
             WhatsNewEntry(

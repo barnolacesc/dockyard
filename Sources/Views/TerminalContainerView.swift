@@ -2934,12 +2934,27 @@ final class TerminalSurfaceCache: ObservableObject {
         }
     }
 
+    /// Surface IDs that should remain visible regardless of workspace/workstream visibility (e.g. global floating terminal).
+    var alwaysVisibleSurfaceIDs: Set<UUID> = []
+
     /// Marks surfaces in the given set as visible; all others are occluded.
+    /// Surfaces in `alwaysVisibleSurfaceIDs` remain visible regardless of `visibleSurfaceIDs`.
     /// Pass nil to mark all surfaces as visible.
     func updateOcclusion(visibleSurfaceIDs: Set<UUID>?) {
         for (id, view) in surfaces {
-            let visible = visibleSurfaceIDs.map { $0.contains(id) } ?? true
+            let visible = visibleSurfaceIDs.map { $0.contains(id) || alwaysVisibleSurfaceIDs.contains(id) } ?? true
             view.setVisible(visible)
+        }
+    }
+
+    /// Sets whether a specific surface should always remain visible regardless of workspace/workstream occlusion.
+    func setSurfaceAlwaysVisible(_ id: UUID, isAlwaysVisible: Bool) {
+        if isAlwaysVisible {
+            alwaysVisibleSurfaceIDs.insert(id)
+            surfaces[id]?.setVisible(true)
+        } else {
+            alwaysVisibleSurfaceIDs.remove(id)
+            surfaces[id]?.setVisible(false)
         }
     }
 
@@ -3061,6 +3076,7 @@ final class TerminalSurfaceCache: ObservableObject {
     }
 
     func removeSurface(for id: UUID) {
+        alwaysVisibleSurfaceIDs.remove(id)
         if let view = surfaces.removeValue(forKey: id) {
             view.destroy()
         }

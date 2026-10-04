@@ -818,3 +818,14 @@
 "Closing PR..." = "Tancant PR...";
 "Unpushed Commits" = "Commits pendents de pujar";
 "Coding Agent terminal is not ready" = "El terminal de l'agent de codi no està a punt";
+
+/* Global Terminal */
+"Global Terminal" = "Terminal global";
+"Open Global Terminal" = "Obre el terminal global";
+"Restore Global Terminal" = "Restaura el terminal global";
+"Minimize Global Terminal" = "Minimitza el terminal global";
+"Close Global Terminal" = "Tanca el terminal global";
+"Minimize" = "Minimitza";
+"Toggles the persistent floating global terminal" = "Commuta el terminal global flotant persistent";
+"Persistent Floating Global Terminal" = "Terminal global flotant persistent";
+"Access a floating terminal from anywhere in Dockyard, independent of your active project or workstream." = "Accedeix a un terminal flotant des de qualsevol lloc de Dockyard, independentment del projecte o espai de treball actiu.";
