@@ -2,6 +2,7 @@
 
 @testable import Dockyard
 import Foundation
+import SwiftUI
 import XCTest
 
 /// Test suite validating global terminal state, persistence, geometry, and surface cache lifecycles.
@@ -309,5 +310,33 @@ final class GlobalTerminalTests: XCTestCase {
         XCTAssertTrue(cache.isSurfaceCached(for: globalSurfaceID))
         XCTAssertTrue(cache.alwaysVisibleSurfaceIDs.contains(globalSurfaceID))
         XCTAssertEqual(state.surfaceID, globalSurfaceID)
+    }
+
+    // MARK: - View Hierarchy & Environment Tests
+
+    /// Tests that FloatingTerminalPanel body evaluates cleanly when injected with TerminalSurfaceCache.
+    @MainActor
+    func testFloatingTerminalPanelRendersWithSurfaceCacheEnvironment() {
+        let state = GlobalTerminalState(userDefaults: testDefaults)
+        state.open()
+        guard let surfaceID = state.surfaceID else {
+            XCTFail("surfaceID should not be nil after open()")
+            return
+        }
+        let cache = TerminalSurfaceCache()
+
+        let panel = FloatingTerminalPanel(
+            surfaceID: surfaceID,
+            windowSize: CGSize(width: 800, height: 600),
+            state: state,
+            onClose: {},
+            onMinimize: {}
+        )
+        .environmentObject(cache)
+
+        let hosting = NSHostingView(rootView: panel)
+        hosting.frame = CGRect(x: 0, y: 0, width: 800, height: 600)
+        hosting.layout()
+        XCTAssertFalse(hosting.subviews.isEmpty, "Hosting view should populate rendered subviews after layout")
     }
 }

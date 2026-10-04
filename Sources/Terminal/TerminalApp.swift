@@ -78,7 +78,7 @@ private func handleTerminalAction(
     case GHOSTTY_ACTION_RING_BELL:
         guard let view = TerminalView.view(for: target.target.surface),
               let wsID = view.workstreamID else { return false }
-        
+
         var projectName: String?
         var workstreamName: String?
         let projects = ProjectStore.load()
@@ -89,7 +89,7 @@ private func handleTerminalAction(
                 break
             }
         }
-        
+
         let title = projectName ?? AppConstants.appName
         let body = workstreamName != nil ? "Agent needs attention in \(workstreamName!)" : "Terminal bell"
         sendDesktopNotification(title: title, body: body, suppressWhenActive: true)
@@ -242,7 +242,12 @@ final class TerminalApp {
     private(set) nonisolated(unsafe) var config: ghostty_config_t?
     private var appearanceObserver: NSKeyValueObservation?
 
+    /// Initializes the Ghostty terminal application and runtime configuration.
+    ///
+    /// Skips initialization when running under XCTest to prevent dereferencing uninitialized engine structures.
     private init() {
+        guard !isRunningXCTest() else { return }
+
         // Create config
         guard let config = ghostty_config_new() else {
             logger.error("ghostty_config_new failed")

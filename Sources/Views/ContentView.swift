@@ -379,8 +379,16 @@ struct ContentView: View {
         }
     }
 
+    /// The primary content view hierarchy with all top-level environment dependencies injected.
     var body: some View {
         applyAlerts(to: mainContent)
+            .environmentObject(surfaceCache)
+            .environmentObject(appEnvironment)
+            .environmentObject(activityTracker)
+            .environmentObject(agentStateStore)
+            .environmentObject(claudeUsageStore)
+            .environmentObject(codexUsageStore)
+            .environmentObject(agyUsageStore)
     }
 
     private var mainContent: some View {
@@ -413,6 +421,7 @@ struct ContentView: View {
                                 globalTerminalState.minimize(surfaceCache: surfaceCache)
                             }
                         )
+                        .environmentObject(surfaceCache)
                     }
                 }
             }
