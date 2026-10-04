@@ -399,7 +399,9 @@ struct ContentView: View {
                     GlobalTerminalButton(
                         state: globalTerminalState,
                         onToggle: {
-                            globalTerminalState.toggle(surfaceCache: surfaceCache)
+                            withAnimation(reduceMotion ? nil : DesignMotion.emphasis) {
+                                globalTerminalState.toggle(surfaceCache: surfaceCache)
+                            }
                         }
                     )
                 }
@@ -415,16 +417,23 @@ struct ContentView: View {
                             windowSize: geo.size,
                             state: globalTerminalState,
                             onClose: {
-                                globalTerminalState.close(surfaceCache: surfaceCache)
+                                withAnimation(reduceMotion ? nil : DesignMotion.emphasis) {
+                                    globalTerminalState.close(surfaceCache: surfaceCache)
+                                }
                             },
                             onMinimize: {
-                                globalTerminalState.minimize(surfaceCache: surfaceCache)
+                                withAnimation(reduceMotion ? nil : DesignMotion.emphasis) {
+                                    globalTerminalState.minimize(surfaceCache: surfaceCache)
+                                }
                             }
                         )
                         .environmentObject(surfaceCache)
+                        .transition(.scale(scale: 0.96).combined(with: .opacity))
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
+            .animation(reduceMotion ? nil : DesignMotion.emphasis, value: globalTerminalState.isOpen && !globalTerminalState.isMinimized)
             .animation(reduceMotion ? nil : DesignMotion.interaction, value: appUpdater.shouldPromptUpdate)
             .animation(reduceMotion ? nil : DesignMotion.interaction, value: appUpdater.shouldPromptUpdateReady)
             .shortcutHintOverlay()

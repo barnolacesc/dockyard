@@ -56,7 +56,8 @@ struct FloatingTerminalPanel: View {
     let onClose: () -> Void
     let onMinimize: () -> Void
 
-    @State private var dragStartPosition: CGPoint?
+    @GestureState private var dragTranslation: CGSize = .zero
+    @State private var isHoveringTitleBar = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Effective size of the panel clamped to the host window size.
@@ -67,8 +68,17 @@ struct FloatingTerminalPanel: View {
     /// Current top-left position of the panel clamped within the host window bounds.
     private var currentPosition: CGPoint {
         let defaultPos = GlobalTerminalState.defaultPosition(panelSize: effectiveSize, windowSize: windowSize)
-        let pos = state.position ?? defaultPos
-        return GlobalTerminalState.clampedPosition(pos, panelSize: effectiveSize, windowSize: windowSize)
+        let basePos = state.position ?? defaultPos
+        let candidate = CGPoint(
+            x: basePos.x + dragTranslation.width,
+            y: basePos.y + dragTranslation.height
+        )
+        return GlobalTerminalState.clampedPosition(candidate, panelSize: effectiveSize, windowSize: windowSize)
+    }
+
+    /// Whether the panel is actively being dragged.
+    private var isDragging: Bool {
+        dragTranslation != .zero
     }
 
     /// The content and layout of the floating terminal panel.
@@ -83,10 +93,15 @@ struct FloatingTerminalPanel: View {
         .clipShape(RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
+                .strokeBorder(Color.primary.opacity(isDragging ? 0.25 : 0.15), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.25), radius: 16, y: 8)
+        .shadow(
+            color: .black.opacity(isDragging ? 0.35 : 0.25),
+            radius: isDragging ? 24 : 16,
+            y: isDragging ? 12 : 8
+        )
         .offset(x: currentPosition.x, y: currentPosition.y)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Global Terminal")
         .onChange(of: windowSize) { _, newSize in
@@ -110,8 +125,6 @@ struct FloatingTerminalPanel: View {
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
             }
-            .contentShape(Rectangle())
-            .gesture(dragGesture)
 
             HStack(spacing: DesignSpacing.xs) {
                 Button(action: onMinimize) {
@@ -142,29 +155,41 @@ struct FloatingTerminalPanel: View {
         .padding(.horizontal, DesignSpacing.md)
         .frame(height: 32)
         .background(Color(nsColor: .windowBackgroundColor).opacity(0.85))
+        .contentShape(Rectangle())
+        .gesture(dragGesture)
+        .onHover { hovering in
+            isHoveringTitleBar = hovering
+            if hovering {
+                NSCursor.openHand.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
     }
 
-    /// Drag gesture handler that tracks panel movement and clamps position within window bounds.
+    /// Drag gesture handler that tracks panel movement without invalidating parent views.
     private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 2)
-            .onChanged { gesture in
-                let start = dragStartPosition ?? currentPosition
-                if dragStartPosition == nil {
-                    dragStartPosition = start
-                }
+        DragGesture(minimumDistance: 1)
+            .updating($dragTranslation) { value, gestureState, _ in
+                gestureState = value.translation
+            }
+            .onChanged { _ in
+                NSCursor.closedHand.set()
+            }
+            .onEnded { value in
+                let defaultPos = GlobalTerminalState.defaultPosition(panelSize: effectiveSize, windowSize: windowSize)
+                let basePos = state.position ?? defaultPos
                 let target = CGPoint(
-                    x: start.x + gesture.translation.width,
-                    y: start.y + gesture.translation.height
+                    x: basePos.x + value.translation.width,
+                    y: basePos.y + value.translation.height
                 )
                 let clamped = GlobalTerminalState.clampedPosition(target, panelSize: effectiveSize, windowSize: windowSize)
-                state.position = clamped
-            }
-            .onEnded { _ in
-                if let finalPos = state.position {
-                    let clamped = GlobalTerminalState.clampedPosition(finalPos, panelSize: effectiveSize, windowSize: windowSize)
-                    state.savePosition(clamped)
+                state.savePosition(clamped)
+                if isHoveringTitleBar {
+                    NSCursor.openHand.set()
+                } else {
+                    NSCursor.arrow.set()
                 }
-                dragStartPosition = nil
             }
     }
 
