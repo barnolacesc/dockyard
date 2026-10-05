@@ -399,41 +399,12 @@ struct ContentView: View {
                     GlobalTerminalButton(
                         state: globalTerminalState,
                         onToggle: {
-                            withAnimation(reduceMotion ? nil : DesignMotion.emphasis) {
-                                globalTerminalState.toggle(surfaceCache: surfaceCache)
-                            }
+                            globalTerminalState.toggle(surfaceCache: surfaceCache)
                         }
                     )
                 }
                 .padding(16)
             }
-            .overlay(alignment: .topLeading) {
-                GeometryReader { geo in
-                    if globalTerminalState.isOpen && !globalTerminalState.isMinimized,
-                       let surfaceID = globalTerminalState.surfaceID
-                    {
-                        FloatingTerminalPanel(
-                            surfaceID: surfaceID,
-                            windowSize: geo.size,
-                            state: globalTerminalState,
-                            onClose: {
-                                withAnimation(reduceMotion ? nil : DesignMotion.emphasis) {
-                                    globalTerminalState.close(surfaceCache: surfaceCache)
-                                }
-                            },
-                            onMinimize: {
-                                withAnimation(reduceMotion ? nil : DesignMotion.emphasis) {
-                                    globalTerminalState.minimize(surfaceCache: surfaceCache)
-                                }
-                            }
-                        )
-                        .environmentObject(surfaceCache)
-                        .transition(.scale(scale: 0.96).combined(with: .opacity))
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            }
-            .animation(reduceMotion ? nil : DesignMotion.emphasis, value: globalTerminalState.isOpen && !globalTerminalState.isMinimized)
             .animation(reduceMotion ? nil : DesignMotion.interaction, value: appUpdater.shouldPromptUpdate)
             .animation(reduceMotion ? nil : DesignMotion.interaction, value: appUpdater.shouldPromptUpdateReady)
             .shortcutHintOverlay()
@@ -548,8 +519,8 @@ struct ContentView: View {
 
     /// Handles cleanup when a terminal process exits, checking for global terminal or project-level terminals.
     private func handleTerminalTabExited(_ exitedSurfaceID: UUID) {
-        if exitedSurfaceID == globalTerminalState.surfaceID {
-            globalTerminalState.handleProcessTerminated(surfaceCache: surfaceCache)
+        if globalTerminalState.tabs.contains(exitedSurfaceID) {
+            globalTerminalState.handleProcessTerminated(surfaceID: exitedSurfaceID, surfaceCache: surfaceCache)
             return
         }
         for project in projects {
@@ -712,11 +683,7 @@ struct ContentView: View {
                 case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
                 default: NSApp.appearance = nil
                 }
-                if globalTerminalState.isOpen && !globalTerminalState.isMinimized,
-                   let surfaceID = globalTerminalState.surfaceID
-                {
-                    surfaceCache.setSurfaceAlwaysVisible(surfaceID, isAlwaysVisible: true)
-                }
+                GlobalTerminalWindowController.shared.setup(state: globalTerminalState, surfaceCache: surfaceCache)
                 checkWhatsNewGate()
             }
             .onChange(of: sidebarModeRaw) { _, _ in

@@ -1081,6 +1081,7 @@ struct TerminalContainerView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .toggleTerminal)) { _ in
                 guard isActive else { return }
+                guard !GlobalTerminalWindowController.shared.isPanelKeyWindow else { return }
                 addTerminal()
             }
             .onReceive(NotificationCenter.default.publisher(for: .toggleBrowser)) { _ in
@@ -1093,6 +1094,7 @@ struct TerminalContainerView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .closeTerminal)) { _ in
                 guard isActive else { return }
+                guard !GlobalTerminalWindowController.shared.isPanelKeyWindow else { return }
                 if activeTab.isCloseable { closeTab(activeTab) }
             }
             .onReceive(NotificationCenter.default.publisher(for: .splitAgent)) { _ in toggleSplit(for: .agent) }
@@ -1216,11 +1218,13 @@ struct TerminalContainerView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .nextTab)) { _ in
                 guard isActive else { return }
+                guard !GlobalTerminalWindowController.shared.isPanelKeyWindow else { return }
                 guard let currentIndex = tabs.firstIndex(of: activeTab) else { return }
                 activeTab = tabs[(currentIndex + 1) % tabs.count]
             }
             .onReceive(NotificationCenter.default.publisher(for: .prevTab)) { _ in
                 guard isActive else { return }
+                guard !GlobalTerminalWindowController.shared.isPanelKeyWindow else { return }
                 guard let currentIndex = tabs.firstIndex(of: activeTab) else { return }
                 activeTab = tabs[(currentIndex - 1 + tabs.count) % tabs.count]
             }
@@ -2801,7 +2805,9 @@ private struct TerminalSurfaceView: NSViewRepresentable {
 
         if isFocused {
             DispatchQueue.main.async {
-                terminalView.window?.makeFirstResponder(terminalView)
+                if let window = terminalView.window, window.firstResponder !== terminalView {
+                    window.makeFirstResponder(terminalView)
+                }
             }
         }
     }

@@ -825,6 +825,9 @@
 "Restore Global Terminal" = "Restore Global Terminal";
 "Minimize Global Terminal" = "Minimize Global Terminal";
 "Close Global Terminal" = "Close Global Terminal";
+"Resize Global Terminal" = "Resize Global Terminal";
+"New Tab" = "New Tab";
+"Close Tab" = "Close Tab";
 "Minimize" = "Minimize";
 "Toggles the persistent floating global terminal" = "Toggles the persistent floating global terminal";
 "Persistent Floating Global Terminal" = "Persistent Floating Global Terminal";
