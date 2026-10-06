@@ -326,8 +326,6 @@ final class GlobalTerminalTests: XCTestCase {
         let cache = TerminalSurfaceCache()
 
         let panel = FloatingTerminalPanel(
-            surfaceID: surfaceID,
-            windowSize: CGSize(width: 800, height: 600),
             state: state,
             onClose: {},
             onMinimize: {}
@@ -338,5 +336,325 @@ final class GlobalTerminalTests: XCTestCase {
         hosting.frame = CGRect(x: 0, y: 0, width: 800, height: 600)
         hosting.layout()
         XCTAssertFalse(hosting.subviews.isEmpty, "Hosting view should populate rendered subviews after layout")
+    }
+
+    // MARK: - Resizing & Geometry Tests
+
+    /// Tests that custom panel size persists across state initializations.
+    @MainActor
+    func testPersistenceOfSize() {
+        let state1 = GlobalTerminalState(userDefaults: testDefaults)
+        let customSize = CGSize(width: 720, height: 480)
+        state1.saveSize(customSize)
+
+        let state2 = GlobalTerminalState(userDefaults: testDefaults)
+        XCTAssertEqual(state2.size, customSize)
+    }
+
+    /// Tests that effective panel size respects custom size and clamps correctly.
+    func testEffectivePanelSizeWithCustomSize() {
+        let window = CGSize(width: 1200, height: 800)
+
+        // Custom size within bounds
+        let normalCustom = CGSize(width: 700, height: 500)
+        let effectiveNormal = GlobalTerminalState.effectivePanelSize(windowSize: window, customSize: normalCustom)
+        XCTAssertEqual(effectiveNormal, normalCustom)
+
+        // Custom size exceeding window bounds clamps to available space
+        let hugeCustom = CGSize(width: 2000, height: 1500)
+        let effectiveHuge = GlobalTerminalState.effectivePanelSize(windowSize: window, customSize: hugeCustom)
+        XCTAssertEqual(effectiveHuge.width, window.width - GlobalTerminalState.padding * 2)
+        XCTAssertEqual(effectiveHuge.height, window.height - GlobalTerminalState.padding * 2)
+
+        // Custom size below minimum clamps to minWidth and minHeight
+        let tinyCustom = CGSize(width: 100, height: 100)
+        let effectiveTiny = GlobalTerminalState.effectivePanelSize(windowSize: window, customSize: tinyCustom)
+        XCTAssertEqual(effectiveTiny.width, GlobalTerminalState.minWidth)
+        XCTAssertEqual(effectiveTiny.height, GlobalTerminalState.minHeight)
+    }
+
+    /// Tests resizing calculations for all four edges.
+    func testCalculateResizedGeometryEdges() {
+        let window = CGSize(width: 1200, height: 800)
+        let basePos = CGPoint(x: 200, y: 150)
+        let baseSize = CGSize(width: 600, height: 400)
+
+        // 1. Right edge: expands width, position unchanged
+        let rightGeo = GlobalTerminalState.calculateResizedGeometry(
+            handle: .right,
+            translation: CGSize(width: 50, height: 30),
+            basePosition: basePos,
+            baseSize: baseSize,
+            windowSize: window
+        )
+        XCTAssertEqual(rightGeo.position, basePos)
+        XCTAssertEqual(rightGeo.size.width, 650)
+        XCTAssertEqual(rightGeo.size.height, 400)
+
+        // 2. Bottom edge: expands height, position unchanged
+        let bottomGeo = GlobalTerminalState.calculateResizedGeometry(
+            handle: .bottom,
+            translation: CGSize(width: 50, height: 60),
+            basePosition: basePos,
+            baseSize: baseSize,
+            windowSize: window
+        )
+        XCTAssertEqual(bottomGeo.position, basePos)
+        XCTAssertEqual(bottomGeo.size.width, 600)
+        XCTAssertEqual(bottomGeo.size.height, 460)
+
+        // 3. Left edge: drags right by 50 (shrinking width, moving x right)
+        let leftGeo = GlobalTerminalState.calculateResizedGeometry(
+            handle: .left,
+            translation: CGSize(width: 50, height: 0),
+            basePosition: basePos,
+            baseSize: baseSize,
+            windowSize: window
+        )
+        XCTAssertEqual(leftGeo.position, CGPoint(x: 250, y: 150))
+        XCTAssertEqual(leftGeo.size.width, 550)
+        XCTAssertEqual(leftGeo.size.height, 400)
+
+        // 4. Top edge: drags down by 40 (shrinking height, moving y down)
+        let topGeo = GlobalTerminalState.calculateResizedGeometry(
+            handle: .top,
+            translation: CGSize(width: 0, height: 40),
+            basePosition: basePos,
+            baseSize: baseSize,
+            windowSize: window
+        )
+        XCTAssertEqual(topGeo.position, CGPoint(x: 200, y: 190))
+        XCTAssertEqual(topGeo.size.width, 600)
+        XCTAssertEqual(topGeo.size.height, 360)
+    }
+
+    /// Tests resizing calculations for all four corners.
+    func testCalculateResizedGeometryCorners() {
+        let window = CGSize(width: 1200, height: 800)
+        let basePos = CGPoint(x: 200, y: 150)
+        let baseSize = CGSize(width: 600, height: 400)
+
+        // 1. Bottom-Right: expands both width and height, position unchanged
+        let brGeo = GlobalTerminalState.calculateResizedGeometry(
+            handle: .bottomRight,
+            translation: CGSize(width: 80, height: 50),
+            basePosition: basePos,
+            baseSize: baseSize,
+            windowSize: window
+        )
+        XCTAssertEqual(brGeo.position, basePos)
+        XCTAssertEqual(brGeo.size, CGSize(width: 680, height: 450))
+
+        // 2. Top-Left: shrinks both width and height, shifts origin right and down
+        let tlGeo = GlobalTerminalState.calculateResizedGeometry(
+            handle: .topLeft,
+            translation: CGSize(width: 30, height: 20),
+            basePosition: basePos,
+            baseSize: baseSize,
+            windowSize: window
+        )
+        XCTAssertEqual(tlGeo.position, CGPoint(x: 230, y: 170))
+        XCTAssertEqual(tlGeo.size, CGSize(width: 570, height: 380))
+
+        // 3. Top-Right: expands width (x unchanged), shrinks height (y shifted down)
+        let trGeo = GlobalTerminalState.calculateResizedGeometry(
+            handle: .topRight,
+            translation: CGSize(width: 40, height: 25),
+            basePosition: basePos,
+            baseSize: baseSize,
+            windowSize: window
+        )
+        XCTAssertEqual(trGeo.position, CGPoint(x: 200, y: 175))
+        XCTAssertEqual(trGeo.size, CGSize(width: 640, height: 375))
+
+        // 4. Bottom-Left: shrinks width (x shifted right), expands height (y unchanged)
+        let blGeo = GlobalTerminalState.calculateResizedGeometry(
+            handle: .bottomLeft,
+            translation: CGSize(width: 35, height: 45),
+            basePosition: basePos,
+            baseSize: baseSize,
+            windowSize: window
+        )
+        XCTAssertEqual(blGeo.position, CGPoint(x: 235, y: 150))
+        XCTAssertEqual(blGeo.size, CGSize(width: 565, height: 445))
+    }
+
+    /// Tests that resize clamping strictly respects minWidth, minHeight, and window boundaries.
+    func testCalculateResizedGeometryEnforcesMinimumAndWindowBounds() {
+        let window = CGSize(width: 1000, height: 700)
+        let basePos = CGPoint(x: 100, y: 100)
+        let baseSize = CGSize(width: 500, height: 350)
+        let padding: CGFloat = 12
+
+        // Shrinking past minWidth and minHeight
+        let shrinkGeo = GlobalTerminalState.calculateResizedGeometry(
+            handle: .bottomRight,
+            translation: CGSize(width: -400, height: -300),
+            basePosition: basePos,
+            baseSize: baseSize,
+            windowSize: window,
+            minWidth: 360,
+            minHeight: 240,
+            padding: padding
+        )
+        XCTAssertEqual(shrinkGeo.size.width, 360)
+        XCTAssertEqual(shrinkGeo.size.height, 240)
+
+        // Expanding past window boundaries
+        let expandGeo = GlobalTerminalState.calculateResizedGeometry(
+            handle: .bottomRight,
+            translation: CGSize(width: 2000, height: 2000),
+            basePosition: basePos,
+            baseSize: baseSize,
+            windowSize: window,
+            minWidth: 360,
+            minHeight: 240,
+            padding: padding
+        )
+        XCTAssertEqual(expandGeo.size.width, window.width - padding - basePos.x)
+        XCTAssertEqual(expandGeo.size.height, window.height - padding - basePos.y)
+
+        // Left handle dragging left past 0 clamps to padding
+        let leftEdgeGeo = GlobalTerminalState.calculateResizedGeometry(
+            handle: .left,
+            translation: CGSize(width: -500, height: 0),
+            basePosition: basePos,
+            baseSize: baseSize,
+            windowSize: window,
+            minWidth: 360,
+            minHeight: 240,
+            padding: padding
+        )
+        XCTAssertEqual(leftEdgeGeo.position.x, padding)
+        XCTAssertEqual(leftEdgeGeo.size.width, basePos.x + baseSize.width - padding)
+    }
+
+    // MARK: - Multi-Tab Management Tests
+
+    /// Tests adding new tabs to the global terminal and activating them.
+    @MainActor
+    func testAddNewTabCreatesSecondTabAndSelectsIt() {
+        let state = GlobalTerminalState(userDefaults: testDefaults)
+        state.open()
+
+        XCTAssertEqual(state.tabs.count, 1)
+        let tab1 = state.tabs[0]
+        XCTAssertEqual(state.activeTabID, tab1)
+
+        let tab2 = state.addNewTab()
+        XCTAssertEqual(state.tabs.count, 2)
+        XCTAssertEqual(state.tabs, [tab1, tab2])
+        XCTAssertEqual(state.activeTabID, tab2)
+    }
+
+    /// Tests closing a tab in the global terminal when multiple tabs exist.
+    @MainActor
+    func testCloseTabRemovesTabAndSelectsAdjacent() {
+        let state = GlobalTerminalState(userDefaults: testDefaults)
+        state.open()
+
+        let tab1 = state.tabs[0]
+        let tab2 = state.addNewTab()
+        let tab3 = state.addNewTab()
+        XCTAssertEqual(state.activeTabID, tab3)
+
+        // Close tab3 (active, last): should activate tab2
+        state.closeActiveTab()
+        XCTAssertEqual(state.tabs, [tab1, tab2])
+        XCTAssertEqual(state.activeTabID, tab2)
+        XCTAssertTrue(state.isOpen)
+
+        // Close tab1 (inactive): tab2 should remain active
+        state.closeTab(tab1)
+        XCTAssertEqual(state.tabs, [tab2])
+        XCTAssertEqual(state.activeTabID, tab2)
+        XCTAssertTrue(state.isOpen)
+    }
+
+    /// Tests that closing the last tab closes the global terminal panel.
+    @MainActor
+    func testCloseLastTabClosesTerminal() {
+        let state = GlobalTerminalState(userDefaults: testDefaults)
+        state.open()
+
+        XCTAssertEqual(state.tabs.count, 1)
+        state.closeActiveTab()
+
+        XCTAssertTrue(state.tabs.isEmpty)
+        XCTAssertNil(state.activeTabID)
+        XCTAssertFalse(state.isOpen)
+    }
+
+    /// Tests cycling through tabs forward and backward.
+    @MainActor
+    func testSelectNextAndPreviousTab() {
+        let state = GlobalTerminalState(userDefaults: testDefaults)
+        state.open()
+        let tab1 = state.tabs[0]
+        let tab2 = state.addNewTab()
+        let tab3 = state.addNewTab()
+
+        // Current: tab3 -> next -> tab1
+        state.selectNextTab()
+        XCTAssertEqual(state.activeTabID, tab1)
+
+        // Current: tab1 -> next -> tab2
+        state.selectNextTab()
+        XCTAssertEqual(state.activeTabID, tab2)
+
+        // Current: tab2 -> previous -> tab1
+        state.selectPreviousTab()
+        XCTAssertEqual(state.activeTabID, tab1)
+
+        // Current: tab1 -> previous -> tab3
+        state.selectPreviousTab()
+        XCTAssertEqual(state.activeTabID, tab3)
+    }
+
+    /// Tests selecting a tab by index.
+    @MainActor
+    func testSelectTabAtIndex() {
+        let state = GlobalTerminalState(userDefaults: testDefaults)
+        state.open()
+        let tab1 = state.tabs[0]
+        let tab2 = state.addNewTab()
+
+        state.selectTabAtIndex(0)
+        XCTAssertEqual(state.activeTabID, tab1)
+
+        state.selectTabAtIndex(1)
+        XCTAssertEqual(state.activeTabID, tab2)
+
+        // Out-of-bounds index should be ignored
+        state.selectTabAtIndex(99)
+        XCTAssertEqual(state.activeTabID, tab2)
+    }
+
+    /// Tests that process termination on an individual tab closes only that tab.
+    @MainActor
+    func testHandleProcessTerminatedClosesOnlyTerminatedTab() {
+        let state = GlobalTerminalState(userDefaults: testDefaults)
+        state.open()
+        let tab1 = state.tabs[0]
+        let tab2 = state.addNewTab()
+
+        state.handleProcessTerminated(surfaceID: tab1)
+
+        XCTAssertEqual(state.tabs, [tab2])
+        XCTAssertEqual(state.activeTabID, tab2)
+        XCTAssertTrue(state.isOpen)
+    }
+
+    /// Tests that process termination on the last remaining tab closes the terminal.
+    @MainActor
+    func testHandleProcessTerminatedOnLastTabClosesTerminal() {
+        let state = GlobalTerminalState(userDefaults: testDefaults)
+        state.open()
+        let tab1 = state.tabs[0]
+
+        state.handleProcessTerminated(surfaceID: tab1)
+
+        XCTAssertTrue(state.tabs.isEmpty)
+        XCTAssertFalse(state.isOpen)
     }
 }

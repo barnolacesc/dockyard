@@ -825,6 +825,9 @@
 "Restore Global Terminal" = "Restaura el terminal global";
 "Minimize Global Terminal" = "Minimitza el terminal global";
 "Close Global Terminal" = "Tanca el terminal global";
+"Resize Global Terminal" = "Redimensiona el terminal global";
+"New Tab" = "Nova pestanya";
+"Close Tab" = "Tanca la pestanya";
 "Minimize" = "Minimitza";
 "Toggles the persistent floating global terminal" = "Commuta el terminal global flotant persistent";
 "Persistent Floating Global Terminal" = "Terminal global flotant persistent";
