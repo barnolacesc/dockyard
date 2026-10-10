@@ -38,8 +38,8 @@ targets:
       path: Dockyard/Info.plist
       properties:
         CFBundleDisplayName: $(PRODUCT_NAME)
-        CFBundleVersion: "0.2.7" # x-release-please-version
-        CFBundleShortVersionString: "0.2.7" # x-release-please-version
+        CFBundleVersion: "0.2.8" # x-release-please-version
+        CFBundleShortVersionString: "0.2.8" # x-release-please-version
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
         NSMainStoryboardFile: ""
         NSPrincipalClass: NSApplication
@@ -186,7 +186,6 @@ targets:
         name: Generate AppCommit
     sources:
       - path: Sources/AgentStateHelper
-      - path: Sources/Models/CodexSession.swift
       - path: Sources/Models/AgentState.swift
       - path: Sources/Models/AppConstants.swift
       - path: Sources/Models/AppCommit.swift
