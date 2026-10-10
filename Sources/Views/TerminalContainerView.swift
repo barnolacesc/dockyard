@@ -1054,7 +1054,13 @@ struct TerminalContainerView: View {
             .onChange(of: initialAgentPrompt) { rebuildAgentCommand() }
             .onChange(of: effectiveCodingCLIStoredValue) {
                 livePermissionHint = nil
+                CodexSession.terminateOwnedProcesses(for: workstreamID, beforeTermination: {
+                    if let tmuxPath = appEnv.toolStatus.tmux.path {
+                        TmuxSession.killSession(tmuxPath: tmuxPath, sessionName: TmuxSession.codexSessionName(workstreamID: workstreamID))
+                    }
+                })
                 surfaceCache.removeSurface(for: agentID)
+                surfaceCache.respawnableIDs.insert(agentID)
                 rebuildAgentCommand()
                 preloadSurfaces()
             }
@@ -3077,6 +3083,10 @@ final class TerminalSurfaceCache: ObservableObject {
 
     /// Removes and destroys the terminal surface view for the given ID, cleaning up parameters and visibility tracking.
     func removeSurface(for id: UUID) {
+        if surfaceParams[id]?.workstreamID == id {
+            CodexSession.terminateOwnedProcesses(for: id)
+        }
+        respawnableIDs.remove(id)
         alwaysVisibleSurfaceIDs.remove(id)
         #if DEBUG
             testSurfaceIDs.remove(id)
@@ -3090,6 +3100,7 @@ final class TerminalSurfaceCache: ObservableObject {
     }
 
     func removeWorkstreamSurfaces(for workstreamID: UUID) {
+        CodexSession.terminateOwnedProcesses(for: workstreamID)
         pendingPromptReceipts.removeValue(forKey: workstreamID)
         if pendingPromptReceipts.isEmpty {
             promptReceiptTask?.cancel()
@@ -3112,6 +3123,7 @@ final class TerminalSurfaceCache: ObservableObject {
             }
         }
         derivedIDs.formUnion(recordedSurfaceIDs)
+        derivedIDs.formUnion(surfaceParams.compactMap { $0.value.workstreamID == workstreamID ? $0.key : nil })
         for id in derivedIDs {
             if surfaces[id] != nil { removeSurface(for: id) }
             if webViews[id] != nil { removeWebView(for: id) }

@@ -34,6 +34,11 @@ struct CommandBuilder {
         parts.joined(separator: " ")
     }
 
+    static func loginCommand(_ command: String, shell: String = userShell) -> String {
+        let shCommand = "exec /bin/sh -c \(shellQuote(command, forShell: shell))"
+        return "\(shell) -lic \(shellQuote(shCommand, forShell: shell))"
+    }
+
     /// Wrap two commands in a fallback using the user's login shell for proper PATH.
     /// Uses two layers: the login shell loads profiles, then exec's sh for POSIX syntax.
     /// This is shell-agnostic (works with zsh, bash, fish) because only sh sees POSIX operators.
@@ -301,6 +306,7 @@ enum CodingCLICommandBuilder {
             command = buildCodexAgentCommand(
                 cliPath: cliPath,
                 workingDirectory: workingDirectory,
+                workstreamID: workstreamID,
                 bypassPermissions: bypassPermissions,
                 allowOutsideWorktree: allowOutsideWorktree,
                 autoRenameBranch: autoRenameBranch,
@@ -325,7 +331,7 @@ enum CodingCLICommandBuilder {
             )
         }
 
-        if let initialPrompt, !initialPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if cli != .codex || hookInvocation?.sessionHelperPath == nil, let initialPrompt, !initialPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             let continuation = buildAgentCommand(
                 cli: cli,
                 cliPath: cliPath,
@@ -356,7 +362,9 @@ enum CodingCLICommandBuilder {
         }
 
         if useTmux, cli.capabilities.supportsDockyardTmuxPersistence, let tmuxPath {
-            let session = TmuxSession.sessionName(project: projectName, workstream: workstreamName, role: "agent")
+            let session = cli == .codex
+                ? TmuxSession.codexSessionName(workstreamID: workstreamID)
+                : TmuxSession.sessionName(project: projectName, workstream: workstreamName, role: "agent")
             let wrapped = TmuxSession.wrapCommand(
                 tmuxPath: tmuxPath,
                 sessionName: session,
@@ -459,6 +467,7 @@ enum CodingCLICommandBuilder {
     private static func buildCodexAgentCommand(
         cliPath: String,
         workingDirectory: String,
+        workstreamID: UUID,
         bypassPermissions: Bool,
         allowOutsideWorktree: Bool,
         autoRenameBranch: Bool,
@@ -469,7 +478,8 @@ enum CodingCLICommandBuilder {
     ) -> AgentLaunchCommand {
         var resume = CommandBuilder(cliPath)
         resume.arg("resume")
-        resume.flag("--last")
+        resume.arg("\"$dockyard_codex_thread\"")
+        resume.flag("--no-daemon")
         applyCodexInteractiveOptions(
             to: &resume,
             workingDirectory: workingDirectory,
@@ -485,6 +495,7 @@ enum CodingCLICommandBuilder {
         applyCodexHookOptions(to: &resume, hookInvocation: hookInvocation)
 
         var fresh = CommandBuilder(cliPath)
+        fresh.flag("--no-daemon")
         applyCodexInteractiveOptions(
             to: &fresh,
             workingDirectory: workingDirectory,
@@ -499,21 +510,17 @@ enum CodingCLICommandBuilder {
         )
         applyCodexHookOptions(to: &fresh, hookInvocation: hookInvocation)
 
-        let normalizedPrompt = initialPrompt?.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let normalizedPrompt, !normalizedPrompt.isEmpty {
-            resume.quotedArg(normalizedPrompt)
-            fresh.quotedArg(normalizedPrompt)
+        guard let helperPath = hookInvocation?.sessionHelperPath else {
+            if let prompt = initialPrompt?.trimmingCharacters(in: .whitespacesAndNewlines), !prompt.isEmpty {
+                fresh.quotedArg(prompt)
+            }
+            return AgentLaunchCommand(finalCommand: CommandBuilder.loginCommand(fresh.command), intermediateCommands: [fresh.command])
         }
-
-        let finalCommand = CommandBuilder.withFallback(
-            resume.command,
-            fresh.command,
-            message: NSLocalizedString("Starting new session...", comment: "")
+        let finalCommand = CodexSession.wrap(
+            fresh: fresh.command, resume: resume.command, helperPath: helperPath,
+            workstreamID: workstreamID, workingDirectory: workingDirectory, initialPrompt: initialPrompt
         )
-        return AgentLaunchCommand(
-            finalCommand: finalCommand,
-            intermediateCommands: [resume.command, fresh.command, finalCommand]
-        )
+        return AgentLaunchCommand(finalCommand: finalCommand, intermediateCommands: [resume.command, fresh.command])
     }
 
     /// Checks Antigravity CLI's SQLite metadata store (`conversation_summaries.db`) to determine
@@ -734,5 +741,57 @@ enum CodingCLICommandBuilder {
             }
         }
         return "\"\(escaped)\""
+    }
+}
+
+extension CodexSession {
+    static func wrap(fresh: String, resume: String, helperPath: String, workstreamID: UUID,
+                     workingDirectory: String, initialPrompt: String?, directory: URL = AppConstants.configDirectory, shell: String = CommandBuilder.userShell) -> String
+    {
+        let quote: (String) -> String = { CommandBuilder.shellQuote($0) }
+        let helper = "\(quote(helperPath)) --workstream-id \(workstreamID.uuidString.lowercased()) --working-directory \(quote(workingDirectory)) --codex-config-directory \(quote(directory.path))"
+        let receipt = quote(AgentInitialPrompt.receiptURL(for: workstreamID, directory: directory).path)
+        let stateDirectory = quote(fileURL(for: workstreamID, directory: directory).deletingLastPathComponent().path)
+        let prompt = initialPrompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let script = """
+        [ -d \(quote(workingDirectory)) ] || exit 1
+        mkdir -p \(stateDirectory) || exit $?
+        DOCKYARD_CODEX_START_RECEIPT=$(mktemp \(stateDirectory)/launch.XXXXXX) || exit $?
+        export DOCKYARD_CODEX_START_RECEIPT
+        trap 'rm -f "$DOCKYARD_CODEX_START_RECEIPT"' EXIT
+        unset DOCKYARD_CODEX_INITIAL_PROMPT
+        if [ ! -f \(receipt) ] && [ -n \(quote(prompt)) ]; then
+          DOCKYARD_CODEX_INITIAL_PROMPT=\(quote(prompt))
+          export DOCKYARD_CODEX_INITIAL_PROMPT
+        fi
+        dockyard_codex_thread=$(\(helper) --codex-resolve) || exit $?
+        \(helper) --codex-register-process || exit $?
+        dockyard_codex_run() {
+          if [ -n "${DOCKYARD_CODEX_INITIAL_PROMPT:-}" ]; then
+            "$@" "$DOCKYARD_CODEX_INITIAL_PROMPT"
+          else
+            "$@"
+          fi
+        }
+        if [ -n "$dockyard_codex_thread" ]; then
+          dockyard_codex_run \(resume)
+          dockyard_codex_status=$?
+          if [ "$dockyard_codex_status" -eq 0 ] || [ -s "$DOCKYARD_CODEX_START_RECEIPT" ]; then
+            exit "$dockyard_codex_status"
+          fi
+          if [ "$dockyard_codex_status" -gt 128 ] || [ "$dockyard_codex_status" -eq 126 ] || [ "$dockyard_codex_status" -eq 127 ]; then
+            exit "$dockyard_codex_status"
+          fi
+        fi
+        dockyard_codex_run \(fresh)
+        dockyard_fresh_status=$?
+        if [ -n "$dockyard_codex_thread" ]; then
+          if [ "$dockyard_fresh_status" -eq 0 ] && [ ! -s "$DOCKYARD_CODEX_START_RECEIPT" ]; then
+            \(helper) --codex-clear || exit $?
+          fi
+        fi
+        exit "$dockyard_fresh_status"
+        """
+        return CommandBuilder.loginCommand(script, shell: shell)
     }
 }

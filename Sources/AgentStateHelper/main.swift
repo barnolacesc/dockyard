@@ -43,6 +43,39 @@ else {
     usage()
 }
 
+let codexConfigDirectory = value(for: "--codex-config-directory").map { URL(fileURLWithPath: $0) } ?? AppConstants.configDirectory
+if arguments.contains("--codex-register-process") {
+    do {
+        try CodexSession.registerOwnedProcess(pid: getppid(), for: id, directory: codexConfigDirectory)
+        exit(0)
+    } catch { exit(1) }
+}
+
+if arguments.contains("--codex-resolve") || arguments.contains("--codex-clear") {
+    guard let workingDirectory = value(for: "--working-directory") else { usage() }
+    if arguments.contains("--codex-clear") {
+        CodexSession.remove(for: id, directory: codexConfigDirectory)
+    } else if let session = CodexSession.load(for: id, workingDirectory: workingDirectory, directory: codexConfigDirectory) {
+        FileHandle.standardOutput.write(Data(session.threadID.uuidString.lowercased().utf8))
+    }
+    exit(0)
+}
+
+if arguments.contains("--codex-record") {
+    guard let workingDirectory = value(for: "--working-directory") else { usage() }
+    do {
+        guard let data = try readBoundedStandardInput(maximumBytes: AgentSubagentHookInput.maximumInputBytes) else { usage() }
+        try CodexSession.recordHook(data, for: id, workingDirectory: workingDirectory, directory: codexConfigDirectory)
+    } catch {
+        FileHandle.standardError.write(Data("dy-agent-state: cannot associate Codex session: \(error.localizedDescription)\n".utf8))
+        exit(1)
+    }
+    if value(for: "--state") == nil {
+        FileHandle.standardOutput.write(Data("{}\n".utf8))
+        exit(0)
+    }
+}
+
 let requestedState: AgentState?
 if let stateString = value(for: "--state") {
     guard let state = AgentState(rawValue: stateString) else { usage() }
@@ -93,7 +126,8 @@ if let requestedSubagentEvent {
         }
         if let jsonObject = try? JSONSerialization.jsonObject(with: inputData) as? [String: Any],
            let error = jsonObject["error"] as? String,
-           !error.isEmpty {
+           !error.isEmpty
+        {
             FileHandle.standardOutput.write(Data("{}\n".utf8))
             exit(0)
         }
@@ -149,7 +183,8 @@ do {
         var shouldRemoveSubagents = true
         if let stopData = try? readBoundedStandardInputIfAvailable(maximumBytes: AgentSubagentHookInput.maximumInputBytes),
            let jsonObject = try? JSONSerialization.jsonObject(with: stopData) as? [String: Any],
-           let fullyIdle = jsonObject["fullyIdle"] as? Bool {
+           let fullyIdle = jsonObject["fullyIdle"] as? Bool
+        {
             shouldRemoveSubagents = fullyIdle
         }
         if shouldRemoveSubagents {

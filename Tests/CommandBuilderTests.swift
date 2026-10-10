@@ -587,16 +587,12 @@ final class CommandBuilderTests: XCTestCase {
 
         XCTAssertEqual(
             command.intermediateCommands[0],
-            "/usr/local/bin/codex resume --last -C /tmp/worktree --dangerously-bypass-approvals-and-sandbox"
-        )
-        XCTAssertEqual(
-            command.intermediateCommands[1],
-            "/usr/local/bin/codex -C /tmp/worktree --dangerously-bypass-approvals-and-sandbox"
+            "/usr/local/bin/codex --no-daemon -C /tmp/worktree --dangerously-bypass-approvals-and-sandbox"
         )
         XCTAssertFalse(command.intermediateCommands[0].contains("--sandbox"))
         XCTAssertFalse(command.intermediateCommands[0].contains("--ask-for-approval"))
-        XCTAssertTrue(command.finalCommand.contains("codex resume --last"))
-        XCTAssertTrue(command.finalCommand.contains("Starting new session..."))
+        XCTAssertFalse(command.finalCommand.contains("resume"))
+        XCTAssertFalse(command.finalCommand.contains("--last"))
     }
 
     func testBuildCodexAgentCommandWithoutBypassUsesPromptedWorkspaceSandbox() throws {
@@ -619,11 +615,7 @@ final class CommandBuilderTests: XCTestCase {
 
         XCTAssertEqual(
             command.intermediateCommands[0],
-            "/usr/local/bin/codex resume --last -C /tmp/worktree --sandbox workspace-write --ask-for-approval on-request"
-        )
-        XCTAssertEqual(
-            command.intermediateCommands[1],
-            "/usr/local/bin/codex -C /tmp/worktree --sandbox workspace-write --ask-for-approval on-request"
+            "/usr/local/bin/codex --no-daemon -C /tmp/worktree --sandbox workspace-write --ask-for-approval on-request"
         )
     }
 
@@ -886,9 +878,7 @@ final class CommandBuilderTests: XCTestCase {
         )
 
         XCTAssertFalse(command.intermediateCommands[0].contains("--dangerously-bypass-hook-trust"))
-        XCTAssertFalse(command.intermediateCommands[1].contains("--dangerously-bypass-hook-trust"))
         XCTAssertFalse(command.intermediateCommands[0].contains("--config"))
-        XCTAssertFalse(command.intermediateCommands[1].contains("--config"))
     }
 
     func testBuildClaudeAgentCommandWithInitialPromptAppendsQuotedArgument() throws {
@@ -913,7 +903,6 @@ final class CommandBuilderTests: XCTestCase {
 
         let expectedQuoted = CommandBuilder.shellQuote(prompt)
         XCTAssertTrue(command.intermediateCommands[0].hasSuffix(" " + expectedQuoted))
-        XCTAssertTrue(command.intermediateCommands[1].hasSuffix(" " + expectedQuoted))
         XCTAssertTrue(command.finalCommand.contains("Implement GitHub issue #42"))
         try assertShellCanParse(command.finalCommand)
     }
@@ -940,7 +929,6 @@ final class CommandBuilderTests: XCTestCase {
 
         let expectedQuoted = CommandBuilder.shellQuote(prompt)
         XCTAssertTrue(command.intermediateCommands[0].hasSuffix(" " + expectedQuoted))
-        XCTAssertTrue(command.intermediateCommands[1].hasSuffix(" " + expectedQuoted))
         XCTAssertTrue(command.finalCommand.contains("Implement GitHub issue #42"))
         try assertShellCanParse(command.finalCommand)
     }

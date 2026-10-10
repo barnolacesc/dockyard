@@ -534,6 +534,7 @@ struct ContentView: View {
     private func handleClearProjects() {
         for project in projects {
             for ws in project.workstreams {
+                WorkstreamArchiver.stopSessions(for: ws, projectName: project.name, tmuxPath: appEnvironment.toolStatus.tmux.path)
                 surfaceCache.removeWorkstreamSurfaces(for: ws.id)
             }
             surfaceCache.removeProjectRootSurface(for: project.id)
@@ -630,6 +631,7 @@ struct ContentView: View {
                 for id in missing {
                     if let project = projects.first(where: { $0.id == id }) {
                         for ws in project.workstreams {
+                            WorkstreamArchiver.stopSessions(for: ws, projectName: project.name, tmuxPath: appEnvironment.toolStatus.tmux.path)
                             surfaceCache.removeWorkstreamSurfaces(for: ws.id)
                         }
                     }

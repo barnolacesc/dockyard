@@ -4,6 +4,21 @@
 import XCTest
 
 final class AgentHooksTests: XCTestCase {
+    func testCodexWorkingDirectoryEnablesSessionAssociationHooks() throws {
+        let id = UUID()
+        let invocation = try XCTUnwrap(AgentHooks.hookInvocation(
+            for: .codex, workstreamID: id, helperPath: "/Applications/Dockyard Debug.app/Contents/Helpers/dy-agent-state",
+            workingDirectory: "/tmp/worktree with spaces"
+        ))
+        XCTAssertNotNil(invocation.sessionHelperPath)
+        XCTAssertTrue(invocation.commandConfigOverrides.contains("features.hooks=true"))
+        for event in ["SessionStart", "UserPromptSubmit"] {
+            let override = try XCTUnwrap(invocation.commandConfigOverrides.first { $0.hasPrefix("hooks.\(event)=") })
+            XCTAssertTrue(override.contains("--codex-record"))
+            XCTAssertTrue(override.contains("--working-directory '/tmp/worktree with spaces'"))
+        }
+    }
+
     override func setUp() {
         super.setUp()
         try? FileManager.default.removeItem(at: AgentHooks.settingsDirectoryURL)

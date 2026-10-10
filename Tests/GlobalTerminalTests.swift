@@ -7,6 +7,23 @@ import XCTest
 
 /// Test suite validating global terminal state, persistence, geometry, and surface cache lifecycles.
 final class GlobalTerminalTests: XCTestCase {
+    @MainActor
+    func testWorkstreamRemovalRevokesRespawnWithoutEvictingSibling() {
+        let cache = TerminalSurfaceCache()
+        let removed = UUID()
+        let sibling = UUID()
+        cache.registerTestSurface(for: removed)
+        cache.registerTestSurface(for: sibling)
+        cache.respawnableIDs = [removed, sibling]
+
+        cache.removeWorkstreamSurfaces(for: removed)
+
+        XCTAssertFalse(cache.isSurfaceCached(for: removed))
+        XCTAssertFalse(cache.respawnableIDs.contains(removed))
+        XCTAssertTrue(cache.isSurfaceCached(for: sibling))
+        XCTAssertTrue(cache.respawnableIDs.contains(sibling))
+    }
+
     private var testDefaults: UserDefaults!
     private let suiteName = "GlobalTerminalTestsSuite"
 
