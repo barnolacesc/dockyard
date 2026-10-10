@@ -128,6 +128,15 @@ enum AgentHooks {
                     "command": "\(quotedHelper) --workstream-id \(id) --state working",
                 ],
             ],
+            // A running session can load hooks after its first invocation.
+            // Refresh working state at the next model response or completed
+            // tool call too, so a missed start event does not hide the agent.
+            "PostInvocation": [
+                [
+                    "type": "command",
+                    "command": "\(quotedHelper) --workstream-id \(id) --state working",
+                ],
+            ],
             "PreToolUse": [
                 [
                     "matcher": "ask_question",
@@ -141,7 +150,7 @@ enum AgentHooks {
             ],
             "PostToolUse": [
                 [
-                    "matcher": "ask_question",
+                    "matcher": "*",
                     "hooks": [
                         [
                             "type": "command",

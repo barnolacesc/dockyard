@@ -66,7 +66,7 @@ final class AgentHooksTests: XCTestCase {
         XCTAssertTrue(preToolCmd.contains("--state waiting"))
 
         let postToolUse = try XCTUnwrap((dockyardState["PostToolUse"] as? [[String: Any]])?.first)
-        XCTAssertEqual(postToolUse["matcher"] as? String, "ask_question")
+        XCTAssertEqual(postToolUse["matcher"] as? String, "*")
         let postToolHook = try XCTUnwrap((postToolUse["hooks"] as? [[String: Any]])?.first)
         let postToolCmd = try XCTUnwrap(postToolHook["command"] as? String)
         XCTAssertTrue(postToolCmd.contains("--state working"))
@@ -75,6 +75,62 @@ final class AgentHooksTests: XCTestCase {
         XCTAssertEqual(stop["type"] as? String, "command")
         let stopCmd = try XCTUnwrap(stop["command"] as? String)
         XCTAssertTrue(stopCmd.contains("--state idle"))
+    }
+
+    func testAgySessionsRecoverFromMissedStartAndKeepIndependentStates() throws {
+        let helperPath = try XCTUnwrap(AgentHooks.bundledHelperPath)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let ids = (0 ..< 4).map { _ in UUID() }
+        defer {
+            try? FileManager.default.removeItem(at: directory)
+            for id in ids {
+                AgentStateFiles.remove(for: id)
+            }
+        }
+
+        var configs: [[String: Any]] = []
+        for id in ids {
+            let url = try XCTUnwrap(AgentHooks.writeAgyHooks(
+                workingDirectory: directory.appendingPathComponent(id.uuidString).path,
+                workstreamID: id,
+                helperPath: helperPath
+            ))
+            let json = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+            try configs.append(XCTUnwrap(json["dockyard-state"] as? [String: Any]))
+        }
+
+        func runHook(_ event: String, config: [String: Any]) throws {
+            let group = try XCTUnwrap((config[event] as? [[String: Any]])?.first)
+            let handler = (group["hooks"] as? [[String: Any]])?.first ?? group
+            let command = try XCTUnwrap(handler["command"] as? String)
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/bin/sh")
+            // Replace the hook shell so the snapshot records this live test
+            // process as its parent, just as a directly spawned agent does.
+            process.arguments = ["-c", "exec " + command]
+            process.standardInput = FileHandle.nullDevice
+            process.standardOutput = Pipe()
+            try process.run()
+            process.waitUntilExit()
+            XCTAssertEqual(process.terminationStatus, 0)
+        }
+
+        // No PreInvocation event: hooks were loaded during an existing turn.
+        for config in configs {
+            try runHook("PostInvocation", config: config)
+        }
+        for id in ids {
+            XCTAssertEqual(AgentStateFiles.loadValidated(for: id)?.state, .working)
+        }
+
+        try runHook("PreToolUse", config: configs[0])
+        try runHook("Stop", config: configs[1])
+        try runHook("PostToolUse", config: configs[2])
+        XCTAssertEqual(ids.map { AgentStateFiles.loadValidated(for: $0)?.state }, [.waiting, .idle, .working, .working])
+
+        // Completing ask_question resumes only that session.
+        try runHook("PostToolUse", config: configs[0])
+        XCTAssertEqual(ids.map { AgentStateFiles.loadValidated(for: $0)?.state }, [.working, .idle, .working, .working])
     }
 
     func testWriteAgyHooksPreservesExistingHooksAndRemoveCleansUp() throws {
