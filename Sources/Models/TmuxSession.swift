@@ -19,6 +19,10 @@ enum TmuxSession {
         "\(AppConstants.appID)/\(sanitize(project))/\(sanitize(workstream))/\(role)"
     }
 
+    static func codexSessionName(workstreamID: UUID) -> String {
+        "\(AppConstants.appID)/\(workstreamID.uuidString.lowercased())/codex"
+    }
+
     /// Config strips all UI chrome (status bar, prefix key, keybindings) so tmux is
     /// invisible inside Dockyard, which manages the terminal directly.
     /// Sessions are still accessible from external terminals via:
@@ -154,14 +158,18 @@ enum TmuxSession {
     }
 
     /// Kill a tmux session by name.
-    static func killSession(tmuxPath: String, sessionName: String) {
+    static func killSession(tmuxPath: String, sessionName: String, socket: String = AppConstants.appID) {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: tmuxPath)
-        process.arguments = ["-L", socketName, "kill-session", "-t", sessionName]
+        process.arguments = ["-L", socket, "kill-session", "-t", "=\(sessionName)"]
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
-        try? process.run()
-        process.waitUntilExit()
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            // A missing tmux executable cannot own a running session.
+        }
     }
 
     static func sessionExists(tmuxPath: String, sessionName: String) -> Bool {
@@ -180,7 +188,10 @@ enum TmuxSession {
     }
 
     /// Kill the agent tmux session for a workstream.
-    static func killWorkstreamSessions(tmuxPath: String, project: String, workstream: String) {
+    static func killWorkstreamSessions(tmuxPath: String, project: String, workstream: String, workstreamID: UUID? = nil) {
+        if let workstreamID {
+            killSession(tmuxPath: tmuxPath, sessionName: codexSessionName(workstreamID: workstreamID))
+        }
         let agentSession = sessionName(project: project, workstream: workstream, role: "agent")
         killSession(tmuxPath: tmuxPath, sessionName: agentSession)
     }

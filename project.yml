@@ -186,6 +186,7 @@ targets:
         name: Generate AppCommit
     sources:
       - path: Sources/AgentStateHelper
+      - path: Sources/Models/CodexSession.swift
       - path: Sources/Models/AgentState.swift
       - path: Sources/Models/AppConstants.swift
       - path: Sources/Models/AppCommit.swift

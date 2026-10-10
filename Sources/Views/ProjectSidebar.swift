@@ -1199,6 +1199,7 @@ struct ProjectSidebar: View {
     private func deleteProject(id: UUID) {
         if let project = projects.first(where: { $0.id == id }) {
             for ws in project.workstreams {
+                WorkstreamArchiver.stopSessions(for: ws, projectName: project.name, tmuxPath: appEnv.toolStatus.tmux.path)
                 surfaceCache.removeWorkstreamSurfaces(for: ws.id)
             }
         }

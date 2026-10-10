@@ -7,6 +7,7 @@ struct AgentHookInvocation: Equatable {
     let generatedConfigURL: URL?
     let commandConfigOverrides: [String]
     let commandFlags: [String]
+    var sessionHelperPath: String? = nil
 }
 
 enum AgentHookError: LocalizedError, Equatable {
@@ -72,7 +73,7 @@ enum AgentHooks {
                 commandFlags: []
             )
         case .codexHooks:
-            return codexHookInvocation(workstreamID: workstreamID, helperPath: helperPath)
+            return codexHookInvocation(workstreamID: workstreamID, helperPath: helperPath, workingDirectory: workingDirectory)
         case .agyHooks:
             guard let workingDirectory else { return nil }
             guard let url = try writeAgyHooks(workingDirectory: workingDirectory, workstreamID: workstreamID, helperPath: helperPath) else {
@@ -367,7 +368,7 @@ enum AgentHooks {
         return FileManager.default.fileExists(atPath: candidate) ? candidate : nil
     }
 
-    private static func codexHookInvocation(workstreamID: UUID, helperPath: String) -> AgentHookInvocation {
+    private static func codexHookInvocation(workstreamID: UUID, helperPath: String, workingDirectory: String?) -> AgentHookInvocation {
         let id = workstreamID.uuidString.lowercased()
         let quotedHelper = shellSingleQuote(helperPath)
         let eventStates: [(event: String, state: AgentState)] = [
@@ -376,15 +377,24 @@ enum AgentHooks {
             ("Stop", .idle),
         ]
 
-        let overrides = eventStates.map { event, state in
-            let command = "\(quotedHelper) --workstream-id \(id) --state \(state.rawValue)"
+        var overrides = eventStates.map { event, state in
+            var command = "\(quotedHelper) --workstream-id \(id) --state \(state.rawValue)"
+            if event == "UserPromptSubmit", let workingDirectory {
+                command += " --codex-record --working-directory \(shellSingleQuote(workingDirectory))"
+            }
             return codexConfigOverride(event: event, command: command)
+        }
+        if let workingDirectory {
+            overrides.append(codexConfigOverride(event: "SessionStart", command:
+                "\(quotedHelper) --workstream-id \(id) --codex-record --working-directory \(shellSingleQuote(workingDirectory))"))
+            overrides.append("features.hooks=true")
         }
 
         return AgentHookInvocation(
             generatedConfigURL: nil,
             commandConfigOverrides: overrides,
-            commandFlags: ["--dangerously-bypass-hook-trust"]
+            commandFlags: ["--dangerously-bypass-hook-trust"],
+            sessionHelperPath: workingDirectory == nil ? nil : helperPath
         )
     }
 

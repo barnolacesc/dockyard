@@ -19,6 +19,8 @@
 
 ## Bugs
 
+- [x] Codex workstream isolation: resume only the thread reported by the workstream's lifecycle hooks; new and legacy workstreams start fresh. Stop registered owned process trees and revoke respawn eligibility on removal.
+- [ ] Investigate safe attribution of legacy orphaned Codex processes that predate launcher ownership records; do not terminate them based only on executable names or missing working directories.
 - [x] Issue prompt launch lifecycle: persist a receipt after successful CLI exit so tmux respawns omit the original prompt and failed launches retain it for retry.
 - [x] Branch name doesn't appear in sidebar after workstream creation until the 15s refresh timer fires. Fixed: call `refreshPathValidity` immediately in the `.workstreamWorktreeReady` handler.
 - [x] Branch/workstream renames lagged up to 15s. Fixed: FSEvents `WorktreeHeadWatcher` syncs the name instantly on `.git/HEAD` change; 15s poll remains a backstop.

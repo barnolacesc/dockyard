@@ -1,11 +1,37 @@
 // ABOUTME: Tests for tmux session configuration and command composition.
 // ABOUTME: Verifies respawn behavior is scoped to agent sessions, not global.
 
-@testable import Dockyard
 import Darwin
+@testable import Dockyard
 import XCTest
 
 final class TmuxSessionTests: XCTestCase {
+    func testKillTargetsExactOwnedSessionAndPreservesSibling() throws {
+        let tmux = "/opt/homebrew/bin/tmux"
+        guard FileManager.default.isExecutableFile(atPath: tmux) else { throw XCTSkip("tmux is unavailable") }
+        let socket = "dockyard-test-\(UUID().uuidString)"
+        let owned = TmuxSession.codexSessionName(workstreamID: UUID())
+        let sibling = owned + "-sibling"
+        func run(_ args: [String]) throws -> Int32 {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: tmux)
+            process.arguments = ["-L", socket] + args
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
+            try process.run()
+            process.waitUntilExit()
+            return process.terminationStatus
+        }
+        defer { _ = try? run(["kill-server"]) }
+        XCTAssertEqual(try run(["-f", "/dev/null", "new-session", "-d", "-s", owned, "sleep 60"]), 0)
+        XCTAssertEqual(try run(["new-session", "-d", "-s", sibling, "sleep 60"]), 0)
+
+        TmuxSession.killSession(tmuxPath: tmux, sessionName: owned, socket: socket)
+
+        XCTAssertNotEqual(try run(["has-session", "-t", "=\(owned)"]), 0)
+        XCTAssertEqual(try run(["has-session", "-t", "=\(sibling)"]), 0)
+    }
+
     private var cacheDirectory: URL!
 
     override func setUpWithError() throws {

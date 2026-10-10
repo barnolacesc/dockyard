@@ -4,6 +4,14 @@
 import Foundation
 
 enum WorkstreamArchiver {
+    static func stopSessions(for workstream: Workstream, projectName: String, tmuxPath: String?) {
+        CodexSession.terminateOwnedProcesses(for: workstream.id, beforeTermination: {
+            if let tmuxPath {
+                TmuxSession.killWorkstreamSessions(tmuxPath: tmuxPath, project: projectName, workstream: workstream.name, workstreamID: workstream.id)
+            }
+        })
+    }
+
     /// Removes a workstream from the project without deleting the worktree from disk.
     /// Kills running terminals and tmux sessions but leaves files intact.
     @MainActor
@@ -14,13 +22,7 @@ enum WorkstreamArchiver {
         tmuxPath: String?
     ) {
         if let ws = project.workstreams.first(where: { $0.id == workstreamID }) {
-            let projName = project.name
-            let wsName = ws.name
-            Task.detached {
-                if let tmuxPath {
-                    TmuxSession.killWorkstreamSessions(tmuxPath: tmuxPath, project: projName, workstream: wsName)
-                }
-            }
+            stopSessions(for: ws, projectName: project.name, tmuxPath: tmuxPath)
         }
         surfaceCache.removeWorkstreamSurfaces(for: workstreamID)
         LaunchLogger.removeLog(for: workstreamID)
@@ -62,8 +64,7 @@ enum WorkstreamArchiver {
         if let ws = project.workstreams.first(where: { $0.id == workstreamID }) {
             let projectDir = project.directory
             let configuredWorktreePath = ws.worktreePath
-            let wsName = ws.name
-            let projName = project.name
+            stopSessions(for: ws, projectName: project.name, tmuxPath: tmuxPath)
             Task.detached {
                 if let configuredWorktreePath,
                    let worktreePath = GitOperations.registeredWorktreePath(
@@ -82,15 +83,13 @@ enum WorkstreamArchiver {
                         GitOperations.fetchDefaultBranch(at: projectDir)
                     }
                 }
-                if let tmuxPath {
-                    TmuxSession.killWorkstreamSessions(tmuxPath: tmuxPath, project: projName, workstream: wsName)
-                }
             }
         }
         surfaceCache.removeWorkstreamSurfaces(for: workstreamID)
         LaunchLogger.removeLog(for: workstreamID)
         SetupStateStore.remove(for: workstreamID)
         AgentStateFiles.remove(for: workstreamID)
+        CodexSession.remove(for: workstreamID)
         try? FileManager.default.removeItem(at: AgentHooks.settingsURL(for: workstreamID))
         project.workstreams.removeAll { $0.id == workstreamID }
     }
