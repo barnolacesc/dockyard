@@ -338,22 +338,25 @@ struct SidebarRail: View {
             }
             .pressable()
             .help(NSLocalizedString("Restart Dockyard to apply the installed update", comment: "Collapsed sidebar update restart tooltip"))
-            .accessibilityLabel("Restart")
-        } else if appUpdater.commitsAhead > 0 {
+        } else if appUpdater.hasUpdate {
             Button(action: { appUpdater.applyUpdate() }) {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.system(size: 17, weight: .medium))
                         .foregroundStyle(Color.accentColor)
                         .frame(minWidth: 40, minHeight: 40)
-                    UnreadCountBadge(count: appUpdater.commitsAhead, compact: true)
-                        .offset(x: 4, y: -2)
+                    if appUpdater.commitsAhead > 0 {
+                        UnreadCountBadge(count: appUpdater.commitsAhead, compact: true)
+                            .offset(x: 4, y: -2)
+                    }
                 }
             }
             .pressable()
-            .help(NSLocalizedString("Pull latest changes from main and rebuild", comment: "Collapsed sidebar update button tooltip"))
-            .accessibilityLabel("Update")
-            .accessibilityValue("\(appUpdater.commitsAhead)")
+            .help(appUpdater.availableReleaseTag != nil
+                ? String(format: NSLocalizedString("Install %@ and rebuild", comment: "Collapsed sidebar update button tooltip with release tag"), appUpdater.availableReleaseTag!)
+                : NSLocalizedString("Pull latest changes from main and rebuild", comment: "Collapsed sidebar update button tooltip"))
+            .accessibilityLabel(NSLocalizedString("Update", comment: ""))
+            .accessibilityValue(appUpdater.availableReleaseTag ?? "\(appUpdater.commitsAhead)")
         } else {
             Button(action: { appUpdater.checkForUpdates() }) {
                 Image(systemName: "arrow.clockwise")

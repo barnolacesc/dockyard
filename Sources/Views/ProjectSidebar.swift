@@ -558,15 +558,20 @@ struct ProjectSidebar: View {
                         .frame(minHeight: 40)
                     }
                     .pressable()
-                    .help("Restart Dockyard to apply the installed update")
-                } else if appUpdater.commitsAhead > 0 {
+                } else if appUpdater.hasUpdate {
                     Button(action: {
                         appUpdater.applyUpdate()
                     }) {
                         HStack(spacing: 2) {
                             Image(systemName: "arrow.up.circle.fill")
-                            Text("Update (\(appUpdater.commitsAhead))")
-                                .tabularNumbers()
+                            if let tag = appUpdater.availableReleaseTag {
+                                Text("Update (\(tag))")
+                            } else if appUpdater.commitsAhead > 0 {
+                                Text("Update (\(appUpdater.commitsAhead))")
+                                    .tabularNumbers()
+                            } else {
+                                Text("Update")
+                            }
                         }
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.white)
@@ -577,7 +582,9 @@ struct ProjectSidebar: View {
                         .frame(minHeight: 40)
                     }
                     .pressable()
-                    .help("Pull latest changes from main and rebuild")
+                    .help(appUpdater.availableReleaseTag != nil
+                        ? String(format: NSLocalizedString("Install %@ and rebuild", comment: "Sidebar update button tooltip with release tag"), appUpdater.availableReleaseTag!)
+                        : NSLocalizedString("Pull latest changes from main and rebuild", comment: "Sidebar update button tooltip"))
                 } else {
                     Button(action: {
                         appUpdater.checkForUpdates()

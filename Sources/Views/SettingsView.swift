@@ -54,6 +54,7 @@ enum CLIInstallationValidator {
 }
 
 struct SettingsView: View {
+    @ObservedObject var appUpdater: AppUpdater = .init()
     @AppStorage("dockyard.languageOverride") private var languageOverride: String = ""
     @AppStorage("dockyard.codingCLI") private var codingCLIRaw: String = ""
     @AppStorage("dockyard.tmuxMode") private var tmuxMode: Bool = false
@@ -74,7 +75,7 @@ struct SettingsView: View {
     @AppStorage("dockyard.showShortcutHints") private var showShortcutHints: Bool = true
     @AppStorage("dockyard.detailedLogging") private var detailedLogging: Bool = false
     @AppStorage("dockyard.quickActionDebug") private var quickActionDebug: Bool = false
-    @AppStorage("dockyard.bleedingEdge") private var bleedingEdge: Bool = false
+    @AppStorage(AppUpdater.channelStorageKey) private var updateChannel: String = AppUpdater.loadChannel().rawValue
     @AppStorage("dockyard.baseDirectory") private var baseDirectory: String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? ""
 
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
@@ -304,29 +305,54 @@ struct SettingsView: View {
 
             // MARK: - Updates
 
-            if updater.isConfigured {
+            if appUpdater.isSourceBuild || updater.isConfigured {
                 Section("Updates") {
-                    SettingToggle(
-                        "Automatically check for updates",
-                        isOn: Binding(
-                            get: { updater.automaticallyChecksForUpdates },
-                            set: { updater.automaticallyChecksForUpdates = $0 }
-                        ),
-                        description: "Sparkle checks daily and prompts when a new release is available."
-                    )
+                    if appUpdater.isSourceBuild {
+                        Picker("Release channel", selection: $updateChannel) {
+                            ForEach(UpdateChannel.allCases) { channel in
+                                Text(channel.displayName).tag(channel.rawValue)
+                            }
+                        }
+                        .onChange(of: updateChannel) { _, newValue in
+                            if let channel = UpdateChannel(rawValue: newValue) {
+                                appUpdater.setChannel(channel)
+                            }
+                        }
+
+                        Text(selectedChannelDescription)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if updater.isConfigured {
+                        SettingToggle(
+                            "Automatically check for updates",
+                            isOn: Binding(
+                                get: { updater.automaticallyChecksForUpdates },
+                                set: { updater.automaticallyChecksForUpdates = $0 }
+                            ),
+                            description: "Sparkle checks daily and prompts when a new release is available."
+                        )
+                    }
 
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Check now")
-                            Text("Fetches the latest appcast and installs any available update.")
+                            Text(appUpdater.isSourceBuild
+                                ? "Checks origin for updates according to your selected release channel."
+                                : "Fetches the latest appcast and installs any available update.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
                         Button("Check for Updates...") {
-                            updater.checkForUpdates()
+                            if appUpdater.isSourceBuild {
+                                appUpdater.checkForUpdates()
+                            } else {
+                                updater.checkForUpdates()
+                            }
                         }
-                        .disabled(!updater.canCheckForUpdates)
+                        .disabled(appUpdater.isChecking || (!appUpdater.isSourceBuild && !updater.canCheckForUpdates))
                     }
                 }
             }
@@ -496,13 +522,6 @@ struct SettingsView: View {
                     description: "Show a debug panel with command output from quick actions."
                 )
 
-                SettingToggle(
-                    "Bleeding edge",
-                    isOn: $bleedingEdge,
-                    description: "Receive pre-release builds with the latest features. These may be less stable.",
-                    descriptionStyle: bleedingEdge ? .warning : .secondary
-                )
-
                 LabeledContent("Clear project list") {
                     Button("Clear All...", role: .destructive, action: { showingClearConfirm = true })
                         .pressable()
@@ -523,6 +542,10 @@ struct SettingsView: View {
         } message: {
             Text("This will remove all projects and workstreams from the sidebar. No files on disk will be deleted. This cannot be undone.")
         }
+    }
+
+    private var selectedChannelDescription: String {
+        (UpdateChannel(rawValue: updateChannel) ?? .releases).description
     }
 
     private func installCLI() {

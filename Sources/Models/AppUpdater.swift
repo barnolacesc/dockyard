@@ -159,6 +159,73 @@ enum UpdateCheckCommandRunner {
         }
         return count
     }
+
+    static func latestNewReleaseTag(
+        at path: String,
+        from appCommit: String,
+        processFactory: UpdateCheckProcessFactory = defaultUpdateCheckProcessFactory
+    ) -> String? {
+        let executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        let revision = appCommit.range(of: "^[0-9a-fA-F]{7,40}$", options: .regularExpression) == nil
+            ? "HEAD"
+            : appCommit
+        let arguments = ["tag", "--merged", "origin/main", "--no-merged", revision, "--sort=-v:refname"]
+        let workingDirectoryURL = URL(fileURLWithPath: path)
+
+        let process: any UpdateCheckProcess
+        do {
+            process = try processFactory(
+                executableURL,
+                arguments,
+                workingDirectoryURL,
+                maximumOutputBytes
+            )
+            try process.run()
+        } catch {
+            return nil
+        }
+
+        let result = process.waitForExit()
+        guard result.terminationStatus == 0,
+              result.didFinishOutput,
+              !result.outputExceededLimit,
+              let output = String(data: result.output, encoding: .utf8)
+        else {
+            return nil
+        }
+        let tags = output
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        return tags.first
+    }
+}
+
+enum UpdateChannel: String, CaseIterable, Identifiable {
+    case releases
+    case mainCommits = "main"
+
+    var id: String {
+        rawValue
+    }
+
+    var displayName: String {
+        switch self {
+        case .releases:
+            return NSLocalizedString("Official releases", comment: "Update channel: official releases only")
+        case .mainCommits:
+            return NSLocalizedString("Every commit to main", comment: "Update channel: continuous updates on main")
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .releases:
+            return NSLocalizedString("Only notify when a new official release tag is published.", comment: "Update channel description: official releases")
+        case .mainCommits:
+            return NSLocalizedString("Notify whenever new changes are pushed to main.", comment: "Update channel description: main commits")
+        }
+    }
 }
 
 enum SourceUpdateBuildMode {
@@ -169,7 +236,22 @@ enum SourceUpdateBuildMode {
 
 @MainActor
 final class AppUpdater: ObservableObject {
+    nonisolated static let channelStorageKey = "dockyard.updateChannel"
+
+    nonisolated static func loadChannel(from defaults: UserDefaults = .standard) -> UpdateChannel {
+        if let raw = defaults.string(forKey: channelStorageKey),
+           let channel = UpdateChannel(rawValue: raw)
+        {
+            return channel
+        }
+        if defaults.bool(forKey: "dockyard.bleedingEdge") {
+            return .mainCommits
+        }
+        return .releases
+    }
+
     @Published var commitsAhead: Int = 0
+    @Published var availableReleaseTag: String? = nil
     @Published var isChecking: Bool = false
     @Published private(set) var isUpdating = false
     @Published private(set) var isUpdateReady = false
@@ -177,6 +259,17 @@ final class AppUpdater: ObservableObject {
     /// one-time prompt instead of silently showing a small button.
     @Published var shouldPromptUpdate: Bool = false
     @Published var shouldPromptUpdateReady: Bool = false
+
+    var hasUpdate: Bool {
+        availableReleaseTag != nil || commitsAhead > 0
+    }
+
+    var isSourceBuild: Bool {
+        let path = AppCommit.sourcePath
+        guard !path.isEmpty else { return false }
+        let gitPath = URL(fileURLWithPath: path).appendingPathComponent(".git").path
+        return FileManager.default.fileExists(atPath: gitPath)
+    }
 
     private var hasPromptedThisSession = false
     private var updateTask: Task<Void, Never>?
@@ -199,31 +292,52 @@ final class AppUpdater: ObservableObject {
         updateTask?.cancel()
     }
 
+    func setChannel(_ channel: UpdateChannel) {
+        UserDefaults.standard.set(channel.rawValue, forKey: Self.channelStorageKey)
+        UserDefaults.standard.set(channel == .mainCommits, forKey: "dockyard.bleedingEdge")
+        hasPromptedThisSession = false
+        checkForUpdates()
+    }
+
     func checkForUpdates() {
         guard !isChecking, !isUpdating, !isUpdateReady else { return }
         isChecking = true
 
+        let channel = Self.loadChannel()
         Task.detached {
             let path = AppCommit.sourcePath
 
-            // 1. Fetch from origin main
+            // 1. Fetch from origin main with tags
             let fetchProcess = Process()
             fetchProcess.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-            fetchProcess.arguments = ["fetch", "origin", "main"]
+            fetchProcess.arguments = ["fetch", "origin", "main", "--tags"]
             fetchProcess.currentDirectoryURL = URL(fileURLWithPath: path)
             try? fetchProcess.run()
             fetchProcess.waitUntilExit()
 
-            // 2. Count commits
-            let count = UpdateCheckCommandRunner.commitsAhead(at: path, from: AppCommit.hash)
+            // 2. Query git based on selected channel
+            let count: Int?
+            let tag: String?
+            switch channel {
+            case .releases:
+                tag = UpdateCheckCommandRunner.latestNewReleaseTag(at: path, from: AppCommit.hash)
+                count = 0
+            case .mainCommits:
+                tag = nil
+                count = UpdateCheckCommandRunner.commitsAhead(at: path, from: AppCommit.hash)
+            }
+
             await MainActor.run {
                 self.isChecking = false
-                if let count {
-                    self.commitsAhead = count
-                    if count > 0, !self.hasPromptedThisSession {
-                        self.hasPromptedThisSession = true
-                        self.shouldPromptUpdate = true
-                    }
+                self.commitsAhead = count ?? 0
+                self.availableReleaseTag = tag
+
+                let hasNewUpdate = (tag != nil) || ((count ?? 0) > 0)
+                if !hasNewUpdate {
+                    self.shouldPromptUpdate = false
+                } else if !self.hasPromptedThisSession {
+                    self.hasPromptedThisSession = true
+                    self.shouldPromptUpdate = true
                 }
             }
         }
@@ -238,6 +352,7 @@ final class AppUpdater: ObservableObject {
         // Killing and reopening from inside the worker races Launch Services and prevents the
         // app from reporting success. The user initiates a controlled restart after install.
         let buildMode = SourceUpdateBuildMode.resolve(configuration: AppCommit.configuration)
+        let targetRef = availableReleaseTag ?? ""
 
         // Delegate the git reconciliation + build to a hardened, idempotent script so the
         // update survives divergent branches and dirty build artifacts. Fall back to the
@@ -257,11 +372,15 @@ final class AppUpdater: ObservableObject {
                     process.executableURL = URL(fileURLWithPath: "/usr/bin/nohup")
                     process.arguments = ["/bin/sh", "-c", """
                     if [ -x ./scripts/self-update.sh ]; then
-                        exec ./scripts/self-update.sh "$1"
+                        exec ./scripts/self-update.sh "$1" "$2"
                     else
-                        git fetch origin main && git merge --ff-only origin/main && ./scripts/dev.sh "$1"
+                        if [ -n "$2" ]; then
+                            git fetch origin --tags && git checkout "$2" && ./scripts/dev.sh "$1"
+                        else
+                            git fetch origin main && git merge --ff-only origin/main && ./scripts/dev.sh "$1"
+                        fi
                     fi
-                    """, "dockyard-update", buildMode]
+                    """, "dockyard-update", buildMode, targetRef]
                     process.currentDirectoryURL = URL(fileURLWithPath: path)
                     var environment = ProcessInfo.processInfo.environment
                     let shell = CommandBuilder.resolvedUserShell(environment: environment)
@@ -284,6 +403,7 @@ final class AppUpdater: ObservableObject {
             isUpdating = false
             if succeeded {
                 commitsAhead = 0
+                availableReleaseTag = nil
                 isUpdateReady = true
                 shouldPromptUpdateReady = true
                 UserDefaults.standard.set(
