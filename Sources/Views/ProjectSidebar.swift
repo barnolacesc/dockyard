@@ -388,6 +388,9 @@ struct ProjectSidebar: View {
                         let statusStyle = WorkstreamStatusStyle(agentState: agentState, isPathValid: isPathValid)
                         let branch = appEnv.branchName(for: workstream.worktreePath)
                         let pr = branch.flatMap { appEnv.githubPR(for: project.directory, branch: $0) }
+                        let resolvedCodingCLI = appEnv.toolStatus.resolvedCodingCLI(
+                            storedValue: effectiveCodingCLIRaw(workstream: workstream.codingCLI, global: globalCodingCLIRaw)
+                        )
                         WorkstreamRow(
                             name: workstream.name,
                             branchName: branch,
@@ -407,6 +410,7 @@ struct ProjectSidebar: View {
                             projectDirectory: project.directory,
                             stage: workstream.stage,
                             uncommittedCount: workstream.worktreePath.map { appEnv.worktreeState(for: $0).uncommittedCount } ?? 0,
+                            codingCLI: resolvedCodingCLI,
                             onRemove: { workstreamToRemove = workstream.id },
                             onPurge: { confirmPurge(workstream) },
                             onRename: {
@@ -1719,6 +1723,7 @@ private struct WorkstreamRow: View {
     var projectDirectory: String = ""
     var stage: WorkstreamStage = .auto
     var uncommittedCount: Int = 0
+    var codingCLI: CodingCLI = .claude
     let onRemove: () -> Void
     let onPurge: () -> Void
     var onRename: (() -> Void)? = nil
@@ -1906,6 +1911,9 @@ private struct WorkstreamRow: View {
             ActivityIndicator(state: agentState, isPathValid: isPathValid)
                 .opacity(contentOpacity)
 
+            CodingCLIIcon(cli: codingCLI, size: 10, useBrandColor: agentState == .working || isSelected)
+                .opacity(contentOpacity)
+
             if isChromeActive {
                 Image(systemName: "globe")
                     .font(.system(size: 9, weight: .medium))
@@ -1974,18 +1982,23 @@ private struct WorkstreamRow: View {
         }
     }
 
+    private enum AgentRowIcon {
+        case provider(CodingCLI)
+        case system(String)
+    }
+
     private var agentFleet: some View {
         VStack(alignment: .leading, spacing: 3) {
             if let agentState {
                 agentLine(
-                    systemImage: "sparkles",
+                    icon: .provider(codingCLI),
                     title: NSLocalizedString("Coding Agent", comment: "Main agent label in selected workstream"),
                     state: agentState
                 )
             }
             ForEach(activeSubagents.prefix(4), id: \.agentID) { subagent in
                 agentLine(
-                    systemImage: "point.3.connected.trianglepath.dotted",
+                    icon: .system("point.3.connected.trianglepath.dotted"),
                     title: subagent.agentType,
                     state: .working
                 )
@@ -2008,12 +2021,18 @@ private struct WorkstreamRow: View {
         .padding(.bottom, 3)
     }
 
-    private func agentLine(systemImage: String, title: String, state: AgentState) -> some View {
+    private func agentLine(icon: AgentRowIcon, title: String, state: AgentState) -> some View {
         HStack(spacing: 5) {
-            Image(systemName: systemImage)
-                .font(.system(size: 9, weight: .medium))
-                .foregroundStyle(state == .waiting ? DesignColor.statusWarning : DesignColor.statusSuccess)
-                .frame(width: 11)
+            switch icon {
+            case let .provider(cli):
+                CodingCLIIcon(cli: cli, size: 9, useBrandColor: state == .working)
+                    .frame(width: 11)
+            case let .system(systemImage):
+                Image(systemName: systemImage)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(state == .waiting ? DesignColor.statusWarning : DesignColor.statusSuccess)
+                    .frame(width: 11)
+            }
             Text(title)
                 .font(.system(size: 10))
                 .lineLimit(1)
@@ -2371,7 +2390,7 @@ private struct NewWorkstreamSheet: View {
                 Picker("Coding Agent", selection: $codingCLI) {
                     Text("Project Default").tag("")
                     ForEach(CodingCLI.allCases) { cli in
-                        Text(cli.displayName).tag(cli.rawValue)
+                        Label(cli.displayName, image: cli.iconAssetName).tag(cli.rawValue)
                     }
                 }
                 .onChange(of: codingCLI) { _ in

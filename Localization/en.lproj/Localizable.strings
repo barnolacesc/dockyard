@@ -852,3 +852,7 @@
 "Install %@ and rebuild" = "Install %@ and rebuild";
 "Update (%@)" = "Update (%@)";
 "Update (%d)" = "Update (%d)";
+
+/* Agent Provider Icons */
+"Coding Agent Provider Icons" = "Coding Agent Provider Icons";
+"Identify your active agent at a glance with provider icons for Claude, OpenAI Codex, Antigravity, and OpenCode in the sidebar and tabs." = "Identify your active agent at a glance with provider icons for Claude, OpenAI Codex, Antigravity, and OpenCode in the sidebar and tabs.";

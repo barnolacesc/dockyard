@@ -362,7 +362,7 @@ struct SettingsView: View {
             Section("Coding Agent") {
                 Picker("Coding CLI", selection: codingCLIBinding) {
                     ForEach(CodingCLI.allCases) { cli in
-                        Text(cli.displayName).tag(cli.rawValue)
+                        Label(cli.displayName, image: cli.iconAssetName).tag(cli.rawValue)
                     }
                 }
                 Text("Used as the default for workstreams that have not chosen their own Coding Agent.")
