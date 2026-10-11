@@ -171,6 +171,7 @@ Dockyard prioritza el teclat. Aquí tens tot.
 | ⌘W | Tanca tab |
 | ⌘Shift+W | Arxiva workstream |
 | ⌘L | Barra d'adreces (navegador) |
+| ⌘Shift+M | Commuta la versió mòbil (navegador) |
 | ⌘Shift+Return | Inicia/reinicia run |
 
 #### Navegació {#navigation-1}

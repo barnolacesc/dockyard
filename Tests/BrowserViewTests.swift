@@ -180,9 +180,9 @@ final class BrowserViewTests: XCTestCase {
         XCTAssertEqual(LinkOpener.currentTarget, .external)
     }
 
-    func testLinkOpenerQueuesAndConsumesPendingURLs() {
+    func testLinkOpenerQueuesAndConsumesPendingURLs() throws {
         let workstreamID = UUID()
-        let testURL = URL(string: "https://example.com/test")!
+        let testURL = try XCTUnwrap(URL(string: "https://example.com/test"))
 
         LinkOpener.openInApp(url: testURL, workstreamID: workstreamID)
         let consumed = LinkOpener.consumePendingURL(for: workstreamID)
@@ -190,13 +190,13 @@ final class BrowserViewTests: XCTestCase {
         XCTAssertNil(LinkOpener.consumePendingURL(for: workstreamID))
     }
 
-    func testLinkOpenerPostsInAppNotification() {
+    func testLinkOpenerPostsInAppNotification() throws {
         let originalTarget = LinkOpener.currentTarget
         defer { LinkOpener.currentTarget = originalTarget }
 
         LinkOpener.currentTarget = .inApp
         let workstreamID = UUID()
-        let testURL = URL(string: "https://github.com/test/repo")!
+        let testURL = try XCTUnwrap(URL(string: "https://github.com/test/repo"))
 
         let expectation = expectation(forNotification: .openInAppBrowser, object: nil) { notification in
             guard let url = notification.userInfo?["url"] as? URL,
@@ -206,6 +206,55 @@ final class BrowserViewTests: XCTestCase {
 
         LinkOpener.open(url: testURL, workstreamID: workstreamID)
         wait(for: [expectation], timeout: 1.0)
+    }
+
+    func testMobileDeviceProfileConfiguration() {
+        XCTAssertTrue(MobileDeviceProfile.userAgent.contains("iPhone"))
+        XCTAssertTrue(MobileDeviceProfile.userAgent.contains("Mobile"))
+        XCTAssertEqual(MobileDeviceProfile.viewportWidth, 393)
+        XCTAssertEqual(MobileDeviceProfile.cornerRadius, 20)
+    }
+
+    func testCustomUserAgentToggling() {
+        let webView = WKWebView()
+        XCTAssertTrue(webView.customUserAgent == nil || webView.customUserAgent?.isEmpty == true)
+
+        webView.customUserAgent = MobileDeviceProfile.userAgent
+        XCTAssertEqual(webView.customUserAgent, MobileDeviceProfile.userAgent)
+
+        webView.customUserAgent = nil
+        XCTAssertTrue(webView.customUserAgent == nil || webView.customUserAgent?.isEmpty == true)
+    }
+
+    func testWebViewRepresentableMobileLayerConfiguration() {
+        let webView = WKWebView()
+        let representableMobile = WebViewRepresentable(
+            webView: webView,
+            isMobileView: true,
+            isLoading: .constant(false),
+            canGoBack: .constant(false),
+            canGoForward: .constant(false),
+            urlText: .constant(""),
+            connectionError: .constant(false),
+            pageTitle: .constant(nil)
+        )
+        representableMobile.applyMobileLayerConfiguration(webView)
+        XCTAssertEqual(webView.layer?.cornerRadius, MobileDeviceProfile.cornerRadius)
+        XCTAssertEqual(webView.layer?.masksToBounds, true)
+
+        let representableDesktop = WebViewRepresentable(
+            webView: webView,
+            isMobileView: false,
+            isLoading: .constant(false),
+            canGoBack: .constant(false),
+            canGoForward: .constant(false),
+            urlText: .constant(""),
+            connectionError: .constant(false),
+            pageTitle: .constant(nil)
+        )
+        representableDesktop.applyMobileLayerConfiguration(webView)
+        XCTAssertEqual(webView.layer?.cornerRadius, 0)
+        XCTAssertEqual(webView.layer?.masksToBounds, false)
     }
 
     private func permissions(of url: URL) throws -> Int {

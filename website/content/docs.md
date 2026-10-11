@@ -178,6 +178,7 @@ Dockyard is keyboard-first. Here's everything.
 | ⌘W | Close tab |
 | ⌘Shift+W | Archive workstream |
 | ⌘L | Address bar (browser) |
+| ⌘Shift+M | Toggle mobile view (browser) |
 | ⌘Shift+Return | Start/Rerun |
 
 #### Navigation

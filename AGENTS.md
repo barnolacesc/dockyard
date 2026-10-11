@@ -191,6 +191,7 @@ Current shortcuts:
 - **Cmd+W**: Close tab
 - **Cmd+Shift+W**: Archive workstream
 - **Cmd+L**: Address bar (browser)
+- **Cmd+Shift+M**: Toggle mobile view (browser)
 - **Cmd+Shift+Return**: Start/Rerun
 - **Cmd+[/]**: Cycle workstreams (current project)
 - **Ctrl+Tab / Ctrl+Shift+Tab**: Cycle workstreams (globally)

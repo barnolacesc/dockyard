@@ -199,7 +199,8 @@ struct DockyardApp: App {
         // Retired language overrides should return to the supported system default.
         let defaults = UserDefaults.standard
         if let language = defaults.string(forKey: "dockyard.languageOverride"),
-           ["de", "es", "sv"].contains(language) {
+           ["de", "es", "sv"].contains(language)
+        {
             defaults.removeObject(forKey: "dockyard.languageOverride")
             defaults.removeObject(forKey: "AppleLanguages")
         }
@@ -422,6 +423,11 @@ struct DockyardApp: App {
                     NotificationCenter.default.post(name: .focusAddressBar, object: nil)
                 }
                 .keyboardShortcut("0", modifiers: .command)
+
+                Button("Toggle Mobile View") {
+                    NotificationCenter.default.post(name: .browserToggleMobileView, object: nil)
+                }
+                .keyboardShortcut("m", modifiers: [.command, .shift])
 
                 Divider()
 
