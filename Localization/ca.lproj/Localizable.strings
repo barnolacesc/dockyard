@@ -838,3 +838,17 @@
 "Toggles the persistent floating global terminal" = "Commuta el terminal global flotant persistent";
 "Persistent Floating Global Terminal" = "Terminal global flotant persistent";
 "Access a floating terminal from anywhere in Dockyard, independent of your active project or workstream." = "Accedeix a un terminal flotant des de qualsevol lloc de Dockyard, independentment del projecte o espai de treball actiu.";
+
+/* Update Channels & Release Lifecycle */
+"Release channel" = "Canal de llançament";
+"Official releases" = "Llançaments oficials";
+"Every commit to main" = "Cada comissió a main";
+"Only notify when a new official release tag is published." = "Avisa només quan es publiqui una nova etiqueta de llançament oficial.";
+"Notify whenever new changes are pushed to main." = "Avisa cada vegada que s'enviïn nous canvis a main.";
+"Checks origin for updates according to your selected release channel." = "Comprova origin per veure si hi ha actualitzacions segons el canal de llançament seleccionat.";
+"Release %@ Available" = "Llançament %@ disponible";
+"Release %@ available" = "Llançament %@ disponible";
+"Dockyard %@ is available. It will install in the background while you keep working." = "El Dockyard %@ està disponible. S'instal·larà en segon pla mentre continueu treballant.";
+"Install %@ and rebuild" = "Instal·la %@ i recompila";
+"Update (%@)" = "Actualitza (%@)";
+"Update (%d)" = "Actualitza (%d)";

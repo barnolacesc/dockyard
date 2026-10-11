@@ -270,7 +270,7 @@ struct ContentView: View {
             .navigationTitle("Attention")
             .navigationSubtitle(AppConstants.appName)
         } else if selection == .settings {
-            SettingsView()
+            SettingsView(appUpdater: appUpdater)
                 .navigationTitle("Settings")
                 .navigationSubtitle(AppConstants.appName)
         } else if selection == .help {
@@ -460,6 +460,7 @@ struct ContentView: View {
         } else if appUpdater.shouldPromptUpdate {
             UpdateAvailableNotice(
                 commitsAhead: appUpdater.commitsAhead,
+                releaseTag: appUpdater.availableReleaseTag,
                 onUpdate: {
                     appUpdater.shouldPromptUpdate = false
                     appUpdater.applyUpdate()
@@ -1141,6 +1142,7 @@ private struct UpdateInstalledNotice: View {
 
 private struct UpdateAvailableNotice: View {
     let commitsAhead: Int
+    let releaseTag: String?
     let onUpdate: () -> Void
     let onDismiss: () -> Void
 
@@ -1152,13 +1154,23 @@ private struct UpdateAvailableNotice: View {
                 .frame(width: 24, height: 24)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Update Available")
-                    .font(.system(size: 13, weight: .semibold))
+                if let releaseTag {
+                    Text(String(format: NSLocalizedString("Release %@ Available", comment: "Update available popup title with release tag"), releaseTag))
+                        .font(.system(size: 13, weight: .semibold))
 
-                Text("A new version of Dockyard is ready. It will install in the background while you keep working.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    Text(String(format: NSLocalizedString("Dockyard %@ is available. It will install in the background while you keep working.", comment: "Update available popup message with release tag"), releaseTag))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text("Update Available")
+                        .font(.system(size: 13, weight: .semibold))
+
+                    Text("A new version of Dockyard is ready. It will install in the background while you keep working.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 Button("Install Update", action: onUpdate)
                     .buttonStyle(.borderedProminent)
@@ -1181,7 +1193,9 @@ private struct UpdateAvailableNotice: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous))
         .shadow(color: .black.opacity(0.10), radius: 2, y: 1)
         .shadow(color: .black.opacity(0.18), radius: 16, y: 6)
-        .accessibilityValue(String(format: NSLocalizedString("%d updates available", comment: "Available source updates"), commitsAhead))
+        .accessibilityValue(releaseTag != nil
+            ? String(format: NSLocalizedString("Release %@ available", comment: "Available release update"), releaseTag!)
+            : String(format: NSLocalizedString("%d updates available", comment: "Available source updates"), commitsAhead))
     }
 }
 

@@ -46,6 +46,80 @@ final class AppUpdaterTests: XCTestCase {
         XCTAssertEqual(SourceUpdateBuildMode.resolve(configuration: "Release"), "install-bg")
     }
 
+    func testLatestNewReleaseTagParsesFirstTag() {
+        let process = UpdateCheckProcessDouble(output: Data("v0.2.7\nv0.2.6\n".utf8))
+
+        let tag = UpdateCheckCommandRunner.latestNewReleaseTag(at: "/tmp/dockyard source", from: "123b4d0") {
+            executableURL,
+            arguments,
+            workingDirectoryURL,
+            maximumOutputBytes in
+            XCTAssertEqual(executableURL.path, "/usr/bin/git")
+            XCTAssertEqual(arguments, ["tag", "--merged", "origin/main", "--no-merged", "123b4d0", "--sort=-v:refname"])
+            XCTAssertEqual(workingDirectoryURL.path, "/tmp/dockyard source")
+            XCTAssertEqual(maximumOutputBytes, 64 * 1024)
+            return process
+        }
+
+        XCTAssertEqual(tag, "v0.2.7")
+        XCTAssertEqual(process.runCallCount, 1)
+        XCTAssertEqual(process.waitCallCount, 1)
+    }
+
+    func testLatestNewReleaseTagFiltersOutNonReleaseAndPrereleaseTags() {
+        let process = UpdateCheckProcessDouble(
+            output: Data("custom-tag\nv0.2.8-beta.1\nv0.2.8-rc1\nv0.2.7\nv0.2.6\n".utf8)
+        )
+
+        let tag = UpdateCheckCommandRunner.latestNewReleaseTag(at: "/tmp/dockyard source", from: "123b4d0") { _, _, _, _ in
+            process
+        }
+
+        XCTAssertEqual(tag, "v0.2.7")
+    }
+
+    func testLatestNewReleaseTagReturnsNilWhenEmpty() {
+        let process = UpdateCheckProcessDouble(output: Data("".utf8))
+
+        let tag = UpdateCheckCommandRunner.latestNewReleaseTag(at: "/tmp", from: "123b4d0") { _, _, _, _ in
+            process
+        }
+
+        XCTAssertNil(tag)
+    }
+
+    func testLatestNewReleaseTagFallsBackToHeadForInvalidCommit() {
+        let process = UpdateCheckProcessDouble(output: Data("v0.2.7\n".utf8))
+
+        let tag = UpdateCheckCommandRunner.latestNewReleaseTag(at: "/tmp", from: "invalid_hash") { _, arguments, _, _ in
+            XCTAssertEqual(arguments, ["tag", "--merged", "origin/main", "--no-merged", "HEAD", "--sort=-v:refname"])
+            return process
+        }
+
+        XCTAssertEqual(tag, "v0.2.7")
+    }
+
+    @MainActor
+    func testUpdateChannelDefaultsAndMigration() throws {
+        let suiteName = "test.dockyard.updateChannel.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        // Default when nothing set
+        XCTAssertEqual(AppUpdater.loadChannel(from: defaults), .releases)
+
+        // Legacy bleedingEdge toggle migration
+        defaults.set(true, forKey: "dockyard.bleedingEdge")
+        XCTAssertEqual(AppUpdater.loadChannel(from: defaults), .mainCommits)
+
+        // Explicit updateChannel overrides bleedingEdge
+        defaults.set(UpdateChannel.releases.rawValue, forKey: AppUpdater.channelStorageKey)
+        XCTAssertEqual(AppUpdater.loadChannel(from: defaults), .releases)
+
+        defaults.set(UpdateChannel.mainCommits.rawValue, forKey: AppUpdater.channelStorageKey)
+        XCTAssertEqual(AppUpdater.loadChannel(from: defaults), .mainCommits)
+    }
+
     func testSuccessfulCountPreservesGitCommandAndWorkingDirectory() {
         let process = UpdateCheckProcessDouble(output: Data("  42\n".utf8))
 

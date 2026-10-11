@@ -838,3 +838,17 @@
 "Toggles the persistent floating global terminal" = "Toggles the persistent floating global terminal";
 "Persistent Floating Global Terminal" = "Persistent Floating Global Terminal";
 "Access a floating terminal from anywhere in Dockyard, independent of your active project or workstream." = "Access a floating terminal from anywhere in Dockyard, independent of your active project or workstream.";
+
+/* Update Channels & Release Lifecycle */
+"Release channel" = "Release channel";
+"Official releases" = "Official releases";
+"Every commit to main" = "Every commit to main";
+"Only notify when a new official release tag is published." = "Only notify when a new official release tag is published.";
+"Notify whenever new changes are pushed to main." = "Notify whenever new changes are pushed to main.";
+"Checks origin for updates according to your selected release channel." = "Checks origin for updates according to your selected release channel.";
+"Release %@ Available" = "Release %@ Available";
+"Release %@ available" = "Release %@ available";
+"Dockyard %@ is available. It will install in the background while you keep working." = "Dockyard %@ is available. It will install in the background while you keep working.";
+"Install %@ and rebuild" = "Install %@ and rebuild";
+"Update (%@)" = "Update (%@)";
+"Update (%d)" = "Update (%d)";
