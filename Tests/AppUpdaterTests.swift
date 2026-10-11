@@ -66,6 +66,18 @@ final class AppUpdaterTests: XCTestCase {
         XCTAssertEqual(process.waitCallCount, 1)
     }
 
+    func testLatestNewReleaseTagFiltersOutNonReleaseAndPrereleaseTags() {
+        let process = UpdateCheckProcessDouble(
+            output: Data("custom-tag\nv0.2.8-beta.1\nv0.2.8-rc1\nv0.2.7\nv0.2.6\n".utf8)
+        )
+
+        let tag = UpdateCheckCommandRunner.latestNewReleaseTag(at: "/tmp/dockyard source", from: "123b4d0") { _, _, _, _ in
+            process
+        }
+
+        XCTAssertEqual(tag, "v0.2.7")
+    }
+
     func testLatestNewReleaseTagReturnsNilWhenEmpty() {
         let process = UpdateCheckProcessDouble(output: Data("".utf8))
 

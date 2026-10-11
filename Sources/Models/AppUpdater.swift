@@ -193,10 +193,15 @@ enum UpdateCheckCommandRunner {
         else {
             return nil
         }
+        let releaseTagRegex = try? NSRegularExpression(pattern: "^v[0-9]+\\.[0-9]+\\.[0-9]+$")
         let tags = output
             .components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
+            .filter { tag in
+                guard !tag.isEmpty else { return false }
+                guard let regex = releaseTagRegex else { return tag.hasPrefix("v") }
+                return regex.firstMatch(in: tag, range: NSRange(location: 0, length: tag.utf16.count)) != nil
+            }
         return tags.first
     }
 }
@@ -273,6 +278,9 @@ final class AppUpdater: ObservableObject {
 
     private var hasPromptedThisSession = false
     private var updateTask: Task<Void, Never>?
+    private var activeCheckTask: Task<Void, Never>?
+    private var currentCheckID = UUID()
+    private var hasPendingChannelCheck = false
 
     init() {
         // Initial check
@@ -290,55 +298,80 @@ final class AppUpdater: ObservableObject {
 
     deinit {
         updateTask?.cancel()
+        activeCheckTask?.cancel()
     }
 
     func setChannel(_ channel: UpdateChannel) {
         UserDefaults.standard.set(channel.rawValue, forKey: Self.channelStorageKey)
         UserDefaults.standard.set(channel == .mainCommits, forKey: "dockyard.bleedingEdge")
         hasPromptedThisSession = false
-        checkForUpdates()
+        if isChecking {
+            hasPendingChannelCheck = true
+            activeCheckTask?.cancel()
+        } else {
+            checkForUpdates()
+        }
     }
 
     func checkForUpdates() {
-        guard !isChecking, !isUpdating, !isUpdateReady else { return }
+        guard !isUpdating, !isUpdateReady else { return }
+        if isChecking {
+            return
+        }
         isChecking = true
+        let checkID = UUID()
+        currentCheckID = checkID
 
         let channel = Self.loadChannel()
-        Task.detached {
-            let path = AppCommit.sourcePath
+        let path = AppCommit.sourcePath
+        let commitHash = AppCommit.hash
 
-            // 1. Fetch from origin main with tags
-            let fetchProcess = Process()
-            fetchProcess.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-            fetchProcess.arguments = ["fetch", "origin", "main", "--tags"]
-            fetchProcess.currentDirectoryURL = URL(fileURLWithPath: path)
-            try? fetchProcess.run()
-            fetchProcess.waitUntilExit()
+        activeCheckTask = Task { @MainActor [weak self] in
+            let (count, tag) = await Task.detached { () -> (Int?, String?) in
+                // 1. Fetch from origin main with tags
+                let fetchProcess = Process()
+                fetchProcess.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+                fetchProcess.arguments = ["fetch", "origin", "main", "--tags"]
+                fetchProcess.currentDirectoryURL = URL(fileURLWithPath: path)
+                try? fetchProcess.run()
+                fetchProcess.waitUntilExit()
 
-            // 2. Query git based on selected channel
-            let count: Int?
-            let tag: String?
-            switch channel {
-            case .releases:
-                tag = UpdateCheckCommandRunner.latestNewReleaseTag(at: path, from: AppCommit.hash)
-                count = 0
-            case .mainCommits:
-                tag = nil
-                count = UpdateCheckCommandRunner.commitsAhead(at: path, from: AppCommit.hash)
+                guard !Task.isCancelled else { return (nil, nil) }
+
+                // 2. Query git based on selected channel
+                let count: Int?
+                let tag: String?
+                switch channel {
+                case .releases:
+                    tag = UpdateCheckCommandRunner.latestNewReleaseTag(at: path, from: commitHash)
+                    count = 0
+                case .mainCommits:
+                    tag = nil
+                    count = UpdateCheckCommandRunner.commitsAhead(at: path, from: commitHash)
+                }
+                return (count, tag)
+            }.value
+
+            guard let self else { return }
+            self.isChecking = false
+            self.activeCheckTask = nil
+
+            if self.hasPendingChannelCheck {
+                self.hasPendingChannelCheck = false
+                self.checkForUpdates()
+                return
             }
 
-            await MainActor.run {
-                self.isChecking = false
-                self.commitsAhead = count ?? 0
-                self.availableReleaseTag = tag
+            guard !Task.isCancelled, self.currentCheckID == checkID else { return }
+            self.commitsAhead = count ?? 0
+            self.availableReleaseTag = tag
 
-                let hasNewUpdate = (tag != nil) || ((count ?? 0) > 0)
-                if !hasNewUpdate {
-                    self.shouldPromptUpdate = false
-                } else if !self.hasPromptedThisSession {
-                    self.hasPromptedThisSession = true
-                    self.shouldPromptUpdate = true
-                }
+            let hasNewUpdate = (tag != nil) || ((count ?? 0) > 0)
+            if !hasNewUpdate {
+                self.shouldPromptUpdate = false
+            } else if !self.hasPromptedThisSession {
+                self.hasPromptedThisSession = true
+                self.shouldPromptUpdate = true
             }
         }
     }

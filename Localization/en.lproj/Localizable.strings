@@ -844,3 +844,5 @@
 "Release %@ available" = "Release %@ available";
 "Dockyard %@ is available. It will install in the background while you keep working." = "Dockyard %@ is available. It will install in the background while you keep working.";
 "Install %@ and rebuild" = "Install %@ and rebuild";
+"Update (%@)" = "Update (%@)";
+"Update (%d)" = "Update (%d)";

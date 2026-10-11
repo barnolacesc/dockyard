@@ -844,3 +844,5 @@
 "Release %@ available" = "Llançament %@ disponible";
 "Dockyard %@ is available. It will install in the background while you keep working." = "El Dockyard %@ està disponible. S'instal·larà en segon pla mentre continueu treballant.";
 "Install %@ and rebuild" = "Instal·la %@ i recompila";
+"Update (%@)" = "Actualitza (%@)";
+"Update (%d)" = "Actualitza (%d)";

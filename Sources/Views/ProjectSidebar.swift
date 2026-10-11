@@ -565,9 +565,9 @@ struct ProjectSidebar: View {
                         HStack(spacing: 2) {
                             Image(systemName: "arrow.up.circle.fill")
                             if let tag = appUpdater.availableReleaseTag {
-                                Text("Update (\(tag))")
+                                Text(String(format: NSLocalizedString("Update (%@)", comment: "Sidebar update button with release tag"), tag))
                             } else if appUpdater.commitsAhead > 0 {
-                                Text("Update (\(appUpdater.commitsAhead))")
+                                Text(String(format: NSLocalizedString("Update (%d)", comment: "Sidebar update button with commits ahead count"), appUpdater.commitsAhead))
                                     .tabularNumbers()
                             } else {
                                 Text("Update")
