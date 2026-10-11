@@ -24,6 +24,11 @@ enum WhatsNewCatalog {
                 bodyKey: "Access a floating terminal from anywhere in Dockyard, independent of your active project or workstream."
             ),
             WhatsNewEntry(
+                symbol: "sparkles",
+                titleKey: "Coding Agent Provider Icons",
+                bodyKey: "Identify your active agent at a glance with provider icons for Claude, OpenAI Codex, Antigravity, and OpenCode in the sidebar and tabs."
+            ),
+            WhatsNewEntry(
                 symbol: "iphone",
                 titleKey: "Mobile View in Browser",
                 bodyKey: "Toggle between desktop and mobile viewport and user-agent in the in-app browser with a single click."

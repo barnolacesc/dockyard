@@ -760,6 +760,7 @@ struct TerminalContainerView: View {
                 branchPR: branchPR,
                 worktreeState: appEnv.worktreeState(for: workingDirectory),
                 agentState: agentStateStore.agentState(for: workstreamID),
+                codingCLI: selectedCodingCLI,
                 isRunningSetup: setupRunner.state == .running,
                 activeAgentAction: activeAgentAction,
                 runningQuickAction: quickActionRunner.runningAction,
@@ -845,6 +846,7 @@ struct TerminalContainerView: View {
             tab: tab,
             label: tabLabel(tab),
             icon: tabIcon(tab),
+            codingCLI: tab == .agent ? selectedCodingCLI : nil,
             shortcut: shortcut,
             isActive: activeTab == tab,
             isUnread: unreadTabs.contains(tab),
@@ -1753,6 +1755,7 @@ private struct WorkspaceTabButton: View {
     let tab: WorkspaceTab
     let label: String?
     let icon: String
+    var codingCLI: CodingCLI? = nil
     var shortcut: String? = nil
     let isActive: Bool
     var isUnread: Bool = false
@@ -1771,9 +1774,14 @@ private struct WorkspaceTabButton: View {
                         .fill(Color.accentColor)
                         .frame(width: 6, height: 6)
                 }
-                Image(systemName: icon)
-                    .font(.system(size: 11))
-                    .offset(y: 0.5)
+                if let codingCLI {
+                    CodingCLIIcon(cli: codingCLI, size: 11, useBrandColor: isActive)
+                        .offset(y: 0.5)
+                } else {
+                    Image(systemName: icon)
+                        .font(.system(size: 11))
+                        .offset(y: 0.5)
+                }
                 if isChromeActive {
                     Image(systemName: "globe")
                         .font(.system(size: 10, weight: .medium))
@@ -1881,6 +1889,7 @@ struct WorkstreamLifecyclePill: View {
     let branchPR: GitHubPR?
     let worktreeState: WorktreeState
     let agentState: AgentState?
+    var codingCLI: CodingCLI = .claude
     let isRunningSetup: Bool
     let activeAgentAction: QuickAction?
     var runningQuickAction: QuickAction? = nil
@@ -1889,6 +1898,9 @@ struct WorkstreamLifecyclePill: View {
     let onOpenPR: () -> Void
     let onAddressFindings: () -> Void
     var onFocusAgent: (() -> Void)? = nil
+
+    @State private var isPulsing = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         if isRunningSetup {
@@ -1909,6 +1921,7 @@ struct WorkstreamLifecyclePill: View {
                     HStack(spacing: 5) {
                         ProgressView()
                             .controlSize(.mini)
+                        CodingCLIIcon(cli: codingCLI, size: 10, useBrandColor: true)
                         if let pr = branchPR {
                             Text(verbatim: "#\(pr.number)")
                                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
@@ -2030,6 +2043,13 @@ struct WorkstreamLifecyclePill: View {
                         Circle()
                             .fill(DesignColor.statusSuccess)
                             .frame(width: 6, height: 6)
+                            .opacity(isPulsing ? 0.4 : 1.0)
+                            .animation(
+                                reduceMotion ? nil : .easeInOut(duration: 0.8).repeatForever(autoreverses: true),
+                                value: isPulsing
+                            )
+                            .onAppear { isPulsing = true }
+                        CodingCLIIcon(cli: codingCLI, size: 10, useBrandColor: true)
                         Text(verbatim: "#\(pr.number)")
                             .font(.system(size: 11, weight: .semibold, design: .monospaced))
                             .tabularNumbers()
@@ -2053,6 +2073,7 @@ struct WorkstreamLifecyclePill: View {
                     HStack(spacing: 5) {
                         Image(systemName: "bell.fill")
                             .font(.system(size: 10))
+                        CodingCLIIcon(cli: codingCLI, size: 10, useBrandColor: true)
                         Text(verbatim: "#\(pr.number)")
                             .font(.system(size: 11, weight: .semibold, design: .monospaced))
                             .tabularNumbers()
@@ -2273,6 +2294,13 @@ struct WorkstreamLifecyclePill: View {
                     Circle()
                         .fill(DesignColor.statusSuccess)
                         .frame(width: 6, height: 6)
+                        .opacity(isPulsing ? 0.4 : 1.0)
+                        .animation(
+                            reduceMotion ? nil : .easeInOut(duration: 0.8).repeatForever(autoreverses: true),
+                            value: isPulsing
+                        )
+                        .onAppear { isPulsing = true }
+                    CodingCLIIcon(cli: codingCLI, size: 10, useBrandColor: true)
                     Text(NSLocalizedString("Agent Working", comment: ""))
                         .font(.system(size: 11, weight: .medium))
                 }
@@ -2289,6 +2317,7 @@ struct WorkstreamLifecyclePill: View {
                 HStack(spacing: 5) {
                     Image(systemName: "bell.fill")
                         .font(.system(size: 10))
+                    CodingCLIIcon(cli: codingCLI, size: 10, useBrandColor: true)
                     Text(NSLocalizedString("Waiting for Input", comment: ""))
                         .font(.system(size: 11, weight: .medium))
                 }
