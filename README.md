@@ -189,6 +189,7 @@ Every workstream terminal has access to:
 | `Cmd+R` | Reload browser |
 | `Cmd+Shift+R` | Hard reload browser (bypass cache) |
 | `Cmd+L` | Address bar (browser) |
+| `Cmd+Shift+M` | Toggle mobile view (browser) |
 
 #### Navigation
 

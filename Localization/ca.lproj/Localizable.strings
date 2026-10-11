@@ -279,6 +279,12 @@
 /* BrowserView */
 "Server not responding" = "El servidor no respon";
 "Retry" = "Reintenta";
+"Switch to mobile view" = "Canvia a la versió mòbil";
+"Switch to desktop view" = "Canvia a la versió d'escriptori";
+"Toggle Mobile View" = "Commuta la versió mòbil";
+"Toggle mobile view (browser)" = "Commuta la versió mòbil (navegador)";
+"Mobile View in Browser" = "Versió mòbil al navegador";
+"Toggle between desktop and mobile viewport and user-agent in the in-app browser with a single click." = "Commuta entre la vista d'escriptori i mòbil i l'agent d'usuari al navegador integrat amb un sol clic.";
 
 /* ProjectOverviewView */
 "Repository" = "Repositori";

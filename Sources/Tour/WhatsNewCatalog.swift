@@ -23,6 +23,11 @@ enum WhatsNewCatalog {
                 titleKey: "Persistent Floating Global Terminal",
                 bodyKey: "Access a floating terminal from anywhere in Dockyard, independent of your active project or workstream."
             ),
+            WhatsNewEntry(
+                symbol: "iphone",
+                titleKey: "Mobile View in Browser",
+                bodyKey: "Toggle between desktop and mobile viewport and user-agent in the in-app browser with a single click."
+            ),
         ]),
         WhatsNewRelease(version: "0.2.6", entries: [
             WhatsNewEntry(

@@ -114,6 +114,7 @@ struct HelpView: View {
                         ShortcutRow(keys: "R", description: "Reload browser")
                         ShortcutRow(keys: "R", shift: true, description: "Hard reload browser")
                         ShortcutRow(keys: "L", description: "Address bar (browser)")
+                        ShortcutRow(keys: "M", shift: true, description: "Toggle mobile view (browser)")
                         ShortcutRow(keys: "0", description: "Back to project")
                         ShortcutRow(keys: "[", shift: true, description: "Previous tab")
                         ShortcutRow(keys: "]", shift: true, description: "Next tab")

@@ -9,6 +9,7 @@ extension Notification.Name {
     static let browserTitleChanged = Notification.Name("dockyard.browserTitleChanged")
     static let browserReload = Notification.Name("dockyard.browserReload")
     static let browserHardReload = Notification.Name("dockyard.browserHardReload")
+    static let browserToggleMobileView = Notification.Name("dockyard.browserToggleMobileView")
     static let openInAppBrowser = Notification.Name("dockyard.openInAppBrowser")
     static let browserURLChanged = Notification.Name("dockyard.browserURLChanged")
 }
@@ -107,6 +108,12 @@ private func normalizedBrowserURL(_ urlString: String) -> String {
     return normalized.string ?? resolved
 }
 
+enum MobileDeviceProfile {
+    static let userAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+    static let viewportWidth: CGFloat = 393
+    static let cornerRadius: CGFloat = 20
+}
+
 struct BrowserView: View {
     let defaultURL: String
     var initialURL: String? = nil
@@ -120,6 +127,7 @@ struct BrowserView: View {
     @State private var canGoForward = false
     @State private var connectionError = false
     @State private var pageTitle: String?
+    @State private var isMobileView = false
     @FocusState private var urlFieldFocused: Bool
 
     var body: some View {
@@ -169,6 +177,21 @@ struct BrowserView: View {
                 .pressable()
                 .accessibilityLabel("Home")
 
+                Button(action: toggleMobileView) {
+                    Image(systemName: "iphone")
+                        .font(.system(size: 11))
+                        .frame(width: 40, height: 40)
+                        .foregroundStyle(isMobileView ? Color.accentColor : .primary)
+                        .background(
+                            isMobileView ? Color.accentColor.opacity(0.12) : Color.clear,
+                            in: RoundedRectangle(cornerRadius: DesignRadius.sm, style: .continuous)
+                        )
+                }
+                .pressable()
+                .accessibilityLabel(isMobileView ? "Switch to desktop view" : "Switch to mobile view")
+                .help(isMobileView ? NSLocalizedString("Switch to desktop view", comment: "") : NSLocalizedString("Switch to mobile view", comment: ""))
+                .shortcutHint(ShortcutHint(commandShift: "M"))
+
                 TextField("URL", text: $urlText)
                     .textFieldStyle(.plain)
                     .font(.system(size: 12, design: .monospaced))
@@ -201,10 +224,16 @@ struct BrowserView: View {
 
             // Content
             ZStack {
+                if isMobileView {
+                    Color.primary.opacity(0.04)
+                        .ignoresSafeArea()
+                }
+
                 WebViewRepresentable(
                     webView: webView,
                     tabID: tabID,
                     workstreamID: workstreamID,
+                    isMobileView: isMobileView,
                     isLoading: $isLoading,
                     canGoBack: $canGoBack,
                     canGoForward: $canGoForward,
@@ -213,6 +242,18 @@ struct BrowserView: View {
                     pageTitle: $pageTitle
                 )
                 .opacity(connectionError ? 0 : 1)
+                .frame(maxWidth: isMobileView ? MobileDeviceProfile.viewportWidth : .infinity)
+                .frame(maxHeight: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: isMobileView ? MobileDeviceProfile.cornerRadius : 0, style: .continuous))
+                .overlay {
+                    if isMobileView {
+                        RoundedRectangle(cornerRadius: MobileDeviceProfile.cornerRadius, style: .continuous)
+                            .stroke(Color.primary.opacity(0.15), lineWidth: 1)
+                    }
+                }
+                .shadow(color: isMobileView ? Color.black.opacity(0.12) : Color.clear, radius: 10, x: 0, y: 3)
+                .padding(.vertical, isMobileView ? 12 : 0)
+                .padding(.horizontal, isMobileView ? 8 : 0)
 
                 if connectionError {
                     VStack(spacing: 16) {
@@ -240,6 +281,9 @@ struct BrowserView: View {
             }
         }
         .onAppear {
+            if let ua = webView.customUserAgent, ua == MobileDeviceProfile.userAgent {
+                isMobileView = true
+            }
             if webView.url == nil {
                 let startURL = initialURL ?? defaultURL
                 urlText = startURL
@@ -263,6 +307,10 @@ struct BrowserView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .browserHardReload)) { _ in
             webView.reloadFromOrigin()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .browserToggleMobileView)) { notification in
+            guard notification.object == nil || (notification.object as? UUID) == tabID else { return }
+            toggleMobileView()
         }
         .onChange(of: defaultURL) { oldURL, newURL in
             guard shouldRetargetBrowser(
@@ -312,12 +360,27 @@ struct BrowserView: View {
             navigateTo(defaultURL)
         }
     }
+
+    private func toggleMobileView() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isMobileView.toggle()
+        }
+        if isMobileView {
+            webView.customUserAgent = MobileDeviceProfile.userAgent
+        } else {
+            webView.customUserAgent = nil
+        }
+        if webView.url != nil {
+            webView.reload()
+        }
+    }
 }
 
 struct WebViewRepresentable: NSViewRepresentable {
     let webView: WKWebView
     var tabID: UUID? = nil
     var workstreamID: UUID?
+    var isMobileView: Bool = false
     @Binding var isLoading: Bool
     @Binding var canGoBack: Bool
     @Binding var canGoForward: Bool
@@ -333,10 +396,24 @@ struct WebViewRepresentable: NSViewRepresentable {
             controller.removeScriptMessageHandler(forName: "dockyardConsole")
             controller.add(context.coordinator, name: "dockyardConsole")
         }
+        applyMobileLayerConfiguration(webView)
         return webView
     }
 
-    func updateNSView(_: WKWebView, context _: Context) {}
+    func updateNSView(_ nsView: WKWebView, context _: Context) {
+        applyMobileLayerConfiguration(nsView)
+    }
+
+    func applyMobileLayerConfiguration(_ nsView: WKWebView) {
+        if isMobileView {
+            nsView.wantsLayer = true
+            nsView.layer?.cornerRadius = MobileDeviceProfile.cornerRadius
+            nsView.layer?.masksToBounds = true
+        } else {
+            nsView.layer?.cornerRadius = 0
+            nsView.layer?.masksToBounds = false
+        }
+    }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -459,10 +536,10 @@ struct WebViewRepresentable: NSViewRepresentable {
         @MainActor
         @available(macOS 12.0, *)
         func webView(
-            _ webView: WKWebView,
-            requestMediaCapturePermissionFor origin: WKSecurityOrigin,
-            initiatedByFrame frame: WKFrameInfo,
-            type: WKMediaCaptureType,
+            _: WKWebView,
+            requestMediaCapturePermissionFor _: WKSecurityOrigin,
+            initiatedByFrame _: WKFrameInfo,
+            type _: WKMediaCaptureType,
             decisionHandler: @escaping @MainActor @Sendable (WKPermissionDecision) -> Void
         ) {
             decisionHandler(.grant)

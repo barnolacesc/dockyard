@@ -279,6 +279,12 @@
 /* BrowserView */
 "Server not responding" = "Server not responding";
 "Retry" = "Retry";
+"Switch to mobile view" = "Switch to mobile view";
+"Switch to desktop view" = "Switch to desktop view";
+"Toggle Mobile View" = "Toggle Mobile View";
+"Toggle mobile view (browser)" = "Toggle mobile view (browser)";
+"Mobile View in Browser" = "Mobile View in Browser";
+"Toggle between desktop and mobile viewport and user-agent in the in-app browser with a single click." = "Toggle between desktop and mobile viewport and user-agent in the in-app browser with a single click.";
 
 /* ProjectOverviewView */
 "Repository" = "Repository";
