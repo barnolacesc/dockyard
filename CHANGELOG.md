@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.2.8](https://github.com/barnolacesc/dockyard/compare/v0.2.7...v0.2.8) (2026-10-12)
+
+
+### Features
+
+* **browser:** add mobile view toggle with device emulation ([#268](https://github.com/barnolacesc/dockyard/issues/268)) ([20761ad](https://github.com/barnolacesc/dockyard/commit/20761ad97de8a459dc9c0ce48857ee6cf2337976))
+* show LLM provider icon on workstream tab and sidebar ([#269](https://github.com/barnolacesc/dockyard/issues/269)) ([9038207](https://github.com/barnolacesc/dockyard/commit/903820763f1dc0e1d0106fb8aead98a452b30b32))
+* **terminal:** add resizable native floating panel with multi-tab support ([#263](https://github.com/barnolacesc/dockyard/issues/263)) ([256b1d5](https://github.com/barnolacesc/dockyard/commit/256b1d5cbd211c7f425e62aab134b9307a85ce54))
+* **terminal:** improve floating terminal window and draggable launcher bubble ([#270](https://github.com/barnolacesc/dockyard/issues/270)) ([f196cb3](https://github.com/barnolacesc/dockyard/commit/f196cb379daeeac18897d393604288f90da78d48))
+* **updater:** add configurable release channel for updates ([#267](https://github.com/barnolacesc/dockyard/issues/267)) ([84fc485](https://github.com/barnolacesc/dockyard/commit/84fc48520a8a411850a47949754da17cefa0efda))
+
+
+### Bug Fixes
+
+* **agent:** isolate codex sessions and preserve associations on generic startup failures ([#266](https://github.com/barnolacesc/dockyard/issues/266)) ([f3095c2](https://github.com/barnolacesc/dockyard/commit/f3095c2bf5aa2883bc38cefe358ac68e89c7cc04))
+* **agent:** recover AGY status after missed start events ([#265](https://github.com/barnolacesc/dockyard/issues/265)) ([b7fcfe0](https://github.com/barnolacesc/dockyard/commit/b7fcfe0ba5e73fb22a2ff2d02e791a2c2b066aa7))
+* **terminal:** inject surfaceCache environment into FloatingTerminalPanel ([#260](https://github.com/barnolacesc/dockyard/issues/260)) ([495f16c](https://github.com/barnolacesc/dockyard/commit/495f16c533130b53d3e6be7a5fce0d64278f4ed9))
+
+
+### Performance
+
+* **terminal:** make global terminal window movement 120fps smooth and responsive ([#262](https://github.com/barnolacesc/dockyard/issues/262)) ([35057fe](https://github.com/barnolacesc/dockyard/commit/35057fef0aa1943bf0a639a964f1b0953bbc946c))
+
 ## [0.2.7](https://github.com/barnolacesc/dockyard/compare/v0.2.6...v0.2.7) (2026-10-04)
 
 
