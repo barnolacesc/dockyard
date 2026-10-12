@@ -391,19 +391,25 @@ struct ContentView: View {
             .environmentObject(agyUsageStore)
     }
 
+    private var isBubbleAtBottomTrailing: Bool {
+        let pos = globalTerminalState.bubblePosition
+        return (pos.edge == .right && pos.fraction > 0.7) || (pos.edge == .bottom && pos.fraction > 0.7)
+    }
+
     private var mainContent: some View {
         navigationView
             .overlay(alignment: .bottomTrailing) {
-                VStack(alignment: .trailing, spacing: DesignSpacing.md) {
-                    updateNotices
-                    GlobalTerminalButton(
-                        state: globalTerminalState,
-                        onToggle: {
-                            globalTerminalState.toggle(surfaceCache: surfaceCache)
-                        }
-                    )
-                }
-                .padding(16)
+                updateNotices
+                    .padding(.trailing, 16)
+                    .padding(.bottom, isBubbleAtBottomTrailing ? 60 : 16)
+            }
+            .overlay {
+                DraggableGlobalTerminalBubble(
+                    state: globalTerminalState,
+                    onToggle: {
+                        globalTerminalState.toggle(surfaceCache: surfaceCache)
+                    }
+                )
             }
             .animation(reduceMotion ? nil : DesignMotion.interaction, value: appUpdater.shouldPromptUpdate)
             .animation(reduceMotion ? nil : DesignMotion.interaction, value: appUpdater.shouldPromptUpdateReady)

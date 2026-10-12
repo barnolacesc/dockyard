@@ -10,7 +10,22 @@ struct GlobalTerminalButton: View {
     @ObservedObject var state: GlobalTerminalState
     let onToggle: () -> Void
 
-    @State private var isHovering = false
+    var body: some View {
+        DraggableGlobalTerminalBubble(state: state, onToggle: onToggle)
+    }
+}
+
+/// An interactive floating button that can be dragged across the screen and snaps to the borders of the Dockyard app.
+struct DraggableGlobalTerminalBubble: View {
+    @ObservedObject var state: GlobalTerminalState
+    let onToggle: () -> Void
+
+    @State private var dragOffset: CGSize = .zero
+    @State private var isDragging: Bool = false
+    @State private var isHovering: Bool = false
+
+    private let buttonSize: CGFloat = 36
+    private let padding: CGFloat = 16
 
     private var isActive: Bool {
         state.isOpen && !state.isMinimized
@@ -26,30 +41,98 @@ struct GlobalTerminalButton: View {
         }
     }
 
-    /// The content and behavior of the global terminal trigger button.
     var body: some View {
-        Button(action: onToggle) {
+        GeometryReader { proxy in
+            let restingOrigin = GlobalTerminalState.restingBubbleOrigin(
+                for: state.bubblePosition,
+                in: proxy.size,
+                buttonSize: buttonSize,
+                padding: padding
+            )
+
+            let minX = padding
+            let maxX = max(minX, proxy.size.width - buttonSize - padding)
+            let minY: CGFloat = 28
+            let maxY = max(minY, proxy.size.height - buttonSize - padding)
+
+            let currentX = min(max(restingOrigin.x + dragOffset.width, minX), maxX)
+            let currentY = min(max(restingOrigin.y + dragOffset.height, minY), maxY)
+
+            ZStack(alignment: .topLeading) {
+                bubbleContent
+                    .frame(width: buttonSize, height: buttonSize)
+                    .contentShape(Circle())
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                let dist = hypot(value.translation.width, value.translation.height)
+                                if dist > 3 {
+                                    isDragging = true
+                                }
+                                dragOffset = value.translation
+                            }
+                            .onEnded { value in
+                                let dist = hypot(value.translation.width, value.translation.height)
+                                if dist < 4 {
+                                    onToggle()
+                                    dragOffset = .zero
+                                    isDragging = false
+                                } else {
+                                    let droppedPoint = CGPoint(
+                                        x: min(max(restingOrigin.x + value.translation.width, minX), maxX),
+                                        y: min(max(restingOrigin.y + value.translation.height, minY), maxY)
+                                    )
+                                    let newPos = GlobalTerminalState.snapBubbleToBorder(
+                                        droppedPoint: droppedPoint,
+                                        in: proxy.size,
+                                        buttonSize: buttonSize,
+                                        padding: padding
+                                    )
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                                        state.saveBubblePosition(newPos)
+                                        dragOffset = .zero
+                                        isDragging = false
+                                    }
+                                }
+                            }
+                    )
+                    .offset(x: currentX, y: currentY)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+
+    private var bubbleContent: some View {
+        ZStack {
+            Circle()
+                .fill(.regularMaterial)
+                .frame(width: buttonSize, height: buttonSize)
+                .overlay(
+                    Circle()
+                        .strokeBorder(Color.primary.opacity(isHovering || isDragging ? 0.25 : 0.1), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(isDragging ? 0.3 : 0.18), radius: isDragging ? 8 : 4, y: isDragging ? 4 : 2)
+
             Image(systemName: isActive ? "terminal.fill" : "terminal")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(isActive ? Color.accentColor : (isHovering ? .primary : .secondary))
-                .frame(width: 36, height: 36)
-                .background(.regularMaterial, in: Circle())
-                .overlay(
-                    Circle()
-                        .strokeBorder(Color.primary.opacity(isHovering ? 0.2 : 0.1), lineWidth: 1)
-                )
-                .shadow(color: .black.opacity(0.18), radius: 4, y: 2)
         }
-        .buttonStyle(.plain)
-        .pressable()
+        .frame(width: buttonSize, height: buttonSize)
+        .contentShape(Circle())
+        .scaleEffect(isDragging ? 1.08 : (isHovering ? 1.04 : 1.0))
+        .animation(DesignMotion.interaction, value: isHovering)
+        .animation(DesignMotion.interaction, value: isDragging)
         .onHover { isHovering = $0 }
+        .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabelKey)
         .accessibilityHint("Toggles the persistent floating global terminal")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { onToggle() }
         .help(accessibilityLabelKey)
     }
 }
 
-/// An AppKit NSView bridge that routes title-bar mouse drags directly to the macOS WindowServer at 120fps.
+/// An AppKit NSView bridge that routes title-bar mouse drags to smooth real-time dragging constrained inside the Dockyard app boundaries.
 struct WindowDragHandle: NSViewRepresentable {
     func makeNSView(context _: Context) -> DragView {
         DragView()
@@ -59,7 +142,36 @@ struct WindowDragHandle: NSViewRepresentable {
 
     final class DragView: NSView {
         override func mouseDown(with event: NSEvent) {
-            window?.performDrag(with: event)
+            guard let panel = window as? GlobalTerminalPanel,
+                  let mainWindow = GlobalTerminalWindowController.shared.findMainWindow()
+            else {
+                window?.performDrag(with: event)
+                return
+            }
+
+            panel.makeKeyAndOrderFront(nil)
+
+            let initialMouse = NSEvent.mouseLocation
+            let initialOrigin = panel.frame.origin
+            let panelSize = panel.frame.size
+
+            while true {
+                guard let nextEvent = panel.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) else { break }
+                if nextEvent.type == .leftMouseUp {
+                    break
+                }
+                let currentMouse = NSEvent.mouseLocation
+                let deltaX = currentMouse.x - initialMouse.x
+                let deltaY = currentMouse.y - initialMouse.y
+                let candidateOrigin = CGPoint(x: initialOrigin.x + deltaX, y: initialOrigin.y + deltaY)
+                let clampedRect = GlobalTerminalState.clampPanelFrame(
+                    NSRect(origin: candidateOrigin, size: panelSize),
+                    inside: mainWindow.frame
+                )
+                panel.setFrameOrigin(clampedRect.origin)
+            }
+
+            GlobalTerminalWindowController.shared.notifyWindowDidMove()
         }
     }
 }
@@ -391,15 +503,104 @@ final class GlobalTerminalWindowController: NSObject, NSWindowDelegate {
         }
     }
 
+    func findMainWindow() -> NSWindow? {
+        if let window = NSApp.windows.first(where: { !($0 is NSPanel) && $0.isVisible && $0.identifier?.rawValue == "main" }) {
+            return window
+        }
+        if let mainWindow = NSApp.mainWindow, !(mainWindow is NSPanel) {
+            return mainWindow
+        }
+        return NSApp.windows.first(where: { !($0 is NSPanel) && $0.canBecomeKey })
+    }
+
+    func notifyWindowDidMove() {
+        guard let panel else { return }
+        state?.savePosition(panel.frame.origin)
+    }
+
+    private var mainWindowObservers: [NSObjectProtocol] = []
+    private var lastMainWindowFrame: NSRect?
+
+    func observeMainWindow(_ mainWindow: NSWindow) {
+        clearMainWindowObservers()
+        lastMainWindowFrame = mainWindow.frame
+
+        let center = NotificationCenter.default
+        mainWindowObservers.append(
+            center.addObserver(forName: NSWindow.didMoveNotification, object: mainWindow, queue: .main) { [weak self] _ in
+                self?.mainWindowDidMove(mainWindow)
+            }
+        )
+        mainWindowObservers.append(
+            center.addObserver(forName: NSWindow.didResizeNotification, object: mainWindow, queue: .main) { [weak self] _ in
+                self?.mainWindowDidResize(mainWindow)
+            }
+        )
+        mainWindowObservers.append(
+            center.addObserver(forName: NSWindow.didMiniaturizeNotification, object: mainWindow, queue: .main) { [weak self] _ in
+                self?.panel?.orderOut(nil)
+            }
+        )
+        mainWindowObservers.append(
+            center.addObserver(forName: NSWindow.didDeminiaturizeNotification, object: mainWindow, queue: .main) { [weak self] _ in
+                guard let self, let state = self.state, state.isOpen, !state.isMinimized else { return }
+                self.panel?.orderFrontRegardless()
+            }
+        )
+    }
+
+    private func clearMainWindowObservers() {
+        for observer in mainWindowObservers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        mainWindowObservers.removeAll()
+    }
+
+    private func mainWindowDidMove(_ mainWindow: NSWindow) {
+        guard let panel else { return }
+        let currentFrame = mainWindow.frame
+        if let lastFrame = lastMainWindowFrame {
+            let dx = currentFrame.origin.x - lastFrame.origin.x
+            let dy = currentFrame.origin.y - lastFrame.origin.y
+            if dx != 0 || dy != 0 {
+                var newFrame = panel.frame.offsetBy(dx: dx, dy: dy)
+                newFrame = GlobalTerminalState.clampPanelFrame(newFrame, inside: currentFrame)
+                panel.setFrame(newFrame, display: true)
+                state?.savePosition(newFrame.origin)
+            }
+        }
+        lastMainWindowFrame = currentFrame
+    }
+
+    private func mainWindowDidResize(_ mainWindow: NSWindow) {
+        guard let panel else { return }
+        let currentFrame = mainWindow.frame
+        let clamped = GlobalTerminalState.clampPanelFrame(panel.frame, inside: currentFrame)
+        if clamped != panel.frame {
+            panel.setFrame(clamped, display: true)
+            state?.saveSize(clamped.size)
+            state?.savePosition(clamped.origin)
+        }
+        lastMainWindowFrame = currentFrame
+    }
+
     private func showPanel(state: GlobalTerminalState, surfaceCache: TerminalSurfaceCache) {
         if panel == nil {
             createPanel(state: state, surfaceCache: surfaceCache)
         }
 
         guard let panel else { return }
+        if let mainWindow = findMainWindow() {
+            observeMainWindow(mainWindow)
+            let clamped = GlobalTerminalState.clampPanelFrame(panel.frame, inside: mainWindow.frame)
+            if clamped != panel.frame {
+                panel.setFrame(clamped, display: true)
+            }
+        }
         if let activeTabID = state.activeTabID {
             surfaceCache.setSurfaceAlwaysVisible(activeTabID, isAlwaysVisible: true)
         }
+        panel.orderFrontRegardless()
         panel.makeKeyAndOrderFront(nil)
     }
 
@@ -418,25 +619,23 @@ final class GlobalTerminalWindowController: NSObject, NSWindowDelegate {
             targetRect.origin = savedPos
         }
 
-        // Validate whether targetRect is on a visible screen:
-        let isVisibleOnScreen = NSScreen.screens.contains { screen in
-            screen.visibleFrame.intersects(targetRect)
-        }
-
-        if !isVisibleOnScreen || state.position == nil {
-            if let mainWindow = NSApp.mainWindow ?? NSApp.windows.first(where: { !($0 is NSPanel) }) {
-                let mainFrame = mainWindow.frame
-                let x = max(mainFrame.minX + 24, mainFrame.maxX - initialSize.width - 24)
-                let y = max(mainFrame.minY + 24, mainFrame.minY + 48)
-                targetRect.origin = CGPoint(x: x, y: y)
-            } else if let screen = NSScreen.main ?? NSScreen.screens.first {
-                let screenRect = screen.visibleFrame
-                let x = screenRect.maxX - initialSize.width - 24
-                let y = screenRect.minY + 48
-                targetRect.origin = CGPoint(x: x, y: y)
-            } else {
-                targetRect.origin = CGPoint(x: 100, y: 100)
-            }
+        if let mainWindow = findMainWindow() {
+            let mainFrame = mainWindow.frame
+            let clampedSize = CGSize(
+                width: min(initialSize.width, max(GlobalTerminalState.minWidth, mainFrame.width - GlobalTerminalState.padding * 2)),
+                height: min(initialSize.height, max(GlobalTerminalState.minHeight, mainFrame.height - GlobalTerminalState.padding * 2))
+            )
+            let x = max(mainFrame.minX + GlobalTerminalState.padding, mainFrame.maxX - clampedSize.width - GlobalTerminalState.padding - 12)
+            let y = max(mainFrame.minY + GlobalTerminalState.padding, mainFrame.minY + 48)
+            let candidateRect = NSRect(origin: state.position ?? CGPoint(x: x, y: y), size: clampedSize)
+            targetRect = GlobalTerminalState.clampPanelFrame(candidateRect, inside: mainFrame)
+        } else if let screen = NSScreen.main ?? NSScreen.screens.first {
+            let screenRect = screen.visibleFrame
+            let x = screenRect.maxX - initialSize.width - 24
+            let y = screenRect.minY + 48
+            targetRect.origin = CGPoint(x: x, y: y)
+        } else {
+            targetRect.origin = CGPoint(x: 100, y: 100)
         }
 
         let panel = GlobalTerminalPanel(
@@ -451,6 +650,7 @@ final class GlobalTerminalWindowController: NSObject, NSWindowDelegate {
         )
 
         panel.isFloatingPanel = true
+        panel.hidesOnDeactivate = false
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.titleVisibility = .hidden
@@ -483,13 +683,32 @@ final class GlobalTerminalWindowController: NSObject, NSWindowDelegate {
 
     // MARK: - NSWindowDelegate
 
+    func windowWillResize(_: NSWindow, to frameSize: NSSize) -> NSSize {
+        guard let mainWindow = findMainWindow() else { return frameSize }
+        let maxW = max(GlobalTerminalState.minWidth, mainWindow.frame.width - GlobalTerminalState.padding * 2)
+        let maxH = max(GlobalTerminalState.minHeight, mainWindow.frame.height - GlobalTerminalState.padding * 2)
+        return NSSize(width: min(frameSize.width, maxW), height: min(frameSize.height, maxH))
+    }
+
     func windowDidMove(_: Notification) {
         guard let panel else { return }
+        if let mainWindow = findMainWindow() {
+            let clamped = GlobalTerminalState.clampPanelFrame(panel.frame, inside: mainWindow.frame)
+            if clamped != panel.frame {
+                panel.setFrame(clamped, display: true)
+            }
+        }
         state?.savePosition(panel.frame.origin)
     }
 
     func windowDidResize(_: Notification) {
         guard let panel else { return }
+        if let mainWindow = findMainWindow() {
+            let clamped = GlobalTerminalState.clampPanelFrame(panel.frame, inside: mainWindow.frame)
+            if clamped != panel.frame {
+                panel.setFrame(clamped, display: true)
+            }
+        }
         state?.saveSize(panel.frame.size)
         state?.savePosition(panel.frame.origin)
     }

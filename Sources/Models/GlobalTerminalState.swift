@@ -27,6 +27,26 @@ public struct PanelGeometry: Equatable, Sendable {
     }
 }
 
+/// An edge along the Dockyard window boundaries where the floating terminal bubble can anchor.
+public enum BubbleBorderEdge: String, Codable, CaseIterable, Sendable {
+    case right
+    case left
+    case top
+    case bottom
+}
+
+/// Represents the persisted anchor edge and normalized offset of the floating terminal bubble.
+public struct BubblePosition: Codable, Equatable, Sendable {
+    public var edge: BubbleBorderEdge
+    /// A normalized fraction (0.0 ... 1.0) along the specified edge.
+    public var fraction: CGFloat
+
+    public init(edge: BubbleBorderEdge = .right, fraction: CGFloat = 1.0) {
+        self.edge = edge
+        self.fraction = fraction
+    }
+}
+
 /// Coordinates state, position persistence, and Ghostty surface lifecycles for Dockyard's floating global terminal.
 @MainActor
 final class GlobalTerminalState: ObservableObject {
@@ -60,6 +80,8 @@ final class GlobalTerminalState: ObservableObject {
     @Published var position: CGPoint?
     /// The user-defined size of the floating terminal panel, if resized.
     @Published var size: CGSize?
+    /// The current border anchor and offset of the floating bubble trigger button.
+    @Published var bubblePosition: BubblePosition
     /// All active terminal tab surface IDs in display order.
     @Published var tabs: [UUID]
     /// The currently selected terminal tab surface ID.
@@ -89,6 +111,16 @@ final class GlobalTerminalState: ObservableObject {
 
         isMinimized = savedMinimized
         isOpen = savedOpen
+
+        if let edgeStr = userDefaults.string(forKey: "dockyard.globalTerminal.bubbleEdge"),
+           let edge = BubbleBorderEdge(rawValue: edgeStr),
+           userDefaults.object(forKey: "dockyard.globalTerminal.bubbleFraction") != nil
+        {
+            let fraction = CGFloat(userDefaults.double(forKey: "dockyard.globalTerminal.bubbleFraction"))
+            bubblePosition = BubblePosition(edge: edge, fraction: min(max(fraction, 0.0), 1.0))
+        } else {
+            bubblePosition = BubblePosition(edge: .right, fraction: 1.0)
+        }
 
         if userDefaults.object(forKey: "dockyard.globalTerminal.positionX") != nil,
            userDefaults.object(forKey: "dockyard.globalTerminal.positionY") != nil
@@ -334,6 +366,15 @@ final class GlobalTerminalState: ObservableObject {
         userDefaults.set(Double(newSize.height), forKey: "dockyard.globalTerminal.height")
     }
 
+    /// Persists a new bubble anchor position to UserDefaults.
+    ///
+    /// - Parameter newPosition: The new edge and normalized offset of the bubble.
+    func saveBubblePosition(_ newPosition: BubblePosition) {
+        bubblePosition = newPosition
+        userDefaults.set(newPosition.edge.rawValue, forKey: "dockyard.globalTerminal.bubbleEdge")
+        userDefaults.set(Double(newPosition.fraction), forKey: "dockyard.globalTerminal.bubbleFraction")
+    }
+
     // MARK: - Geometry & Clamping
 
     /// Computes the effective panel size adapted to the current window size and optional user size.
@@ -471,5 +512,116 @@ final class GlobalTerminalState: ObservableObject {
         let clampedX = min(max(position.x, minX), maxX)
         let clampedY = min(max(position.y, minY), maxY)
         return CGPoint(x: clampedX, y: clampedY)
+    }
+
+    /// Calculates the top-left resting origin of the bubble within its container based on edge and fraction.
+    ///
+    /// - Parameters:
+    ///   - position: The anchored border edge and normalized offset.
+    ///   - containerSize: The size of the container (Dockyard window).
+    ///   - buttonSize: The diameter of the circular bubble.
+    ///   - padding: Padding from window edges.
+    /// - Returns: Clamped CGPoint for the top-left origin of the bubble.
+    nonisolated static func restingBubbleOrigin(
+        for position: BubblePosition,
+        in containerSize: CGSize,
+        buttonSize: CGFloat = 36,
+        padding: CGFloat = 16
+    ) -> CGPoint {
+        let minX = padding
+        let maxX = max(minX, containerSize.width - buttonSize - padding)
+        let minY: CGFloat = 28 // Inset to stay below titlebar
+        let maxY = max(minY, containerSize.height - buttonSize - padding)
+
+        switch position.edge {
+        case .right:
+            let y = minY + position.fraction * (maxY - minY)
+            return CGPoint(x: maxX, y: y)
+        case .left:
+            let startY = max(minY, 48) // Inset below window traffic lights
+            let y = startY + position.fraction * (maxY - startY)
+            return CGPoint(x: minX, y: y)
+        case .bottom:
+            let x = minX + position.fraction * (maxX - minX)
+            return CGPoint(x: x, y: maxY)
+        case .top:
+            let startX = max(minX, 80) // Inset to the right of window traffic lights
+            let x = startX + position.fraction * (maxX - startX)
+            return CGPoint(x: x, y: minY)
+        }
+    }
+
+    /// Determines the closest border edge and computed fraction for a dropped point.
+    ///
+    /// - Parameters:
+    ///   - droppedPoint: The top-left origin of the bubble where dropped.
+    ///   - containerSize: The size of the container (Dockyard window).
+    ///   - buttonSize: The diameter of the circular bubble.
+    ///   - padding: Padding from window edges.
+    /// - Returns: The resulting BubblePosition snapped to the nearest border.
+    nonisolated static func snapBubbleToBorder(
+        droppedPoint: CGPoint,
+        in containerSize: CGSize,
+        buttonSize: CGFloat = 36,
+        padding: CGFloat = 16
+    ) -> BubblePosition {
+        let minX = padding
+        let maxX = max(minX, containerSize.width - buttonSize - padding)
+        let minY: CGFloat = 28
+        let maxY = max(minY, containerSize.height - buttonSize - padding)
+
+        let dLeft = max(0, droppedPoint.x - minX)
+        let dRight = max(0, maxX - droppedPoint.x)
+        let dTop = max(0, droppedPoint.y - minY)
+        let dBottom = max(0, maxY - droppedPoint.y)
+
+        let minDist = min(dLeft, dRight, dTop, dBottom)
+
+        if minDist == dRight {
+            let frac = (maxY > minY) ? (droppedPoint.y - minY) / (maxY - minY) : 1.0
+            return BubblePosition(edge: .right, fraction: min(max(frac, 0.0), 1.0))
+        } else if minDist == dLeft {
+            let startY = max(minY, 48)
+            let frac = (maxY > startY) ? (droppedPoint.y - startY) / (maxY - startY) : 1.0
+            return BubblePosition(edge: .left, fraction: min(max(frac, 0.0), 1.0))
+        } else if minDist == dBottom {
+            let frac = (maxX > minX) ? (droppedPoint.x - minX) / (maxX - minX) : 1.0
+            return BubblePosition(edge: .bottom, fraction: min(max(frac, 0.0), 1.0))
+        } else {
+            let startX = max(minX, 80)
+            let frac = (maxX > startX) ? (droppedPoint.x - startX) / (maxX - startX) : 1.0
+            return BubblePosition(edge: .top, fraction: min(max(frac, 0.0), 1.0))
+        }
+    }
+
+    /// Clamps a floating panel frame so that it remains completely within the host window's frame.
+    ///
+    /// - Parameters:
+    ///   - frame: The proposed panel frame in screen coordinates.
+    ///   - mainFrame: The host window's frame in screen coordinates.
+    ///   - padding: Padding inset from window edges.
+    /// - Returns: Clamped NSRect guaranteed to be inside mainFrame.
+    nonisolated static func clampPanelFrame(
+        _ frame: NSRect,
+        inside mainFrame: NSRect,
+        padding: CGFloat = padding
+    ) -> NSRect {
+        let minW = min(minWidth, max(100, mainFrame.width - padding * 2))
+        let minH = min(minHeight, max(100, mainFrame.height - padding * 2))
+        let maxW = max(minW, mainFrame.width - padding * 2)
+        let maxH = max(minH, mainFrame.height - padding * 2)
+
+        let clampedW = min(max(frame.width, minW), maxW)
+        let clampedH = min(max(frame.height, minH), maxH)
+
+        let minX = mainFrame.minX + padding
+        let maxX = max(minX, mainFrame.maxX - clampedW - padding)
+        let clampedX = min(max(frame.origin.x, minX), maxX)
+
+        let minY = mainFrame.minY + padding
+        let maxY = max(minY, mainFrame.maxY - clampedH - padding)
+        let clampedY = min(max(frame.origin.y, minY), maxY)
+
+        return NSRect(x: clampedX, y: clampedY, width: clampedW, height: clampedH)
     }
 }

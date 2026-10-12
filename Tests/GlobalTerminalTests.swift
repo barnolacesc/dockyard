@@ -674,4 +674,124 @@ final class GlobalTerminalTests: XCTestCase {
         XCTAssertTrue(state.tabs.isEmpty)
         XCTAssertFalse(state.isOpen)
     }
+
+    // MARK: - Bubble & Panel Constraints Tests
+
+    /// Tests that freshly initialized bubble position defaults to the right edge at the bottom corner.
+    @MainActor
+    func testInitialBubblePositionIsBottomRight() {
+        let state = GlobalTerminalState(userDefaults: testDefaults)
+        XCTAssertEqual(state.bubblePosition.edge, .right)
+        XCTAssertEqual(state.bubblePosition.fraction, 1.0)
+    }
+
+    /// Tests that saving a custom bubble position persists across state instances in UserDefaults.
+    @MainActor
+    func testSaveBubblePositionPersistsAcrossInstances() {
+        let state1 = GlobalTerminalState(userDefaults: testDefaults)
+        let customPos = BubblePosition(edge: .left, fraction: 0.42)
+        state1.saveBubblePosition(customPos)
+
+        let state2 = GlobalTerminalState(userDefaults: testDefaults)
+        XCTAssertEqual(state2.bubblePosition.edge, .left)
+        XCTAssertEqual(state2.bubblePosition.fraction, 0.42, accuracy: 0.001)
+    }
+
+    /// Tests resting origin calculation along the right, left, bottom, and top borders.
+    func testRestingBubbleOriginEdges() {
+        let container = CGSize(width: 1000, height: 700)
+        let buttonSize: CGFloat = 36
+        let padding: CGFloat = 16
+
+        // Right edge
+        let rightPos = BubblePosition(edge: .right, fraction: 1.0)
+        let rightOrigin = GlobalTerminalState.restingBubbleOrigin(for: rightPos, in: container, buttonSize: buttonSize, padding: padding)
+        XCTAssertEqual(rightOrigin.x, 1000 - buttonSize - padding)
+        XCTAssertEqual(rightOrigin.y, 700 - buttonSize - padding)
+
+        // Left edge: must inset below traffic lights (startY >= 48)
+        let leftPos = BubblePosition(edge: .left, fraction: 0.0)
+        let leftOrigin = GlobalTerminalState.restingBubbleOrigin(for: leftPos, in: container, buttonSize: buttonSize, padding: padding)
+        XCTAssertEqual(leftOrigin.x, padding)
+        XCTAssertEqual(leftOrigin.y, 48)
+
+        // Bottom edge
+        let bottomPos = BubblePosition(edge: .bottom, fraction: 0.5)
+        let bottomOrigin = GlobalTerminalState.restingBubbleOrigin(for: bottomPos, in: container, buttonSize: buttonSize, padding: padding)
+        XCTAssertEqual(bottomOrigin.y, 700 - buttonSize - padding)
+        XCTAssertGreaterThan(bottomOrigin.x, padding)
+        XCTAssertLessThan(bottomOrigin.x, 1000 - buttonSize - padding)
+
+        // Top edge: must inset to the right of traffic lights (startX >= 80)
+        let topPos = BubblePosition(edge: .top, fraction: 0.0)
+        let topOrigin = GlobalTerminalState.restingBubbleOrigin(for: topPos, in: container, buttonSize: buttonSize, padding: padding)
+        XCTAssertEqual(topOrigin.x, 80)
+        XCTAssertEqual(topOrigin.y, 28)
+    }
+
+    /// Tests that dropped points correctly snap to the nearest window border.
+    func testSnapBubbleToBorderClosestEdges() {
+        let container = CGSize(width: 1000, height: 700)
+        let buttonSize: CGFloat = 36
+        let padding: CGFloat = 16
+
+        // Dropped near the right border
+        let nearRight = CGPoint(x: 950, y: 300)
+        let snappedRight = GlobalTerminalState.snapBubbleToBorder(droppedPoint: nearRight, in: container, buttonSize: buttonSize, padding: padding)
+        XCTAssertEqual(snappedRight.edge, .right)
+
+        // Dropped near the left border
+        let nearLeft = CGPoint(x: 30, y: 300)
+        let snappedLeft = GlobalTerminalState.snapBubbleToBorder(droppedPoint: nearLeft, in: container, buttonSize: buttonSize, padding: padding)
+        XCTAssertEqual(snappedLeft.edge, .left)
+
+        // Dropped near the bottom border
+        let nearBottom = CGPoint(x: 500, y: 660)
+        let snappedBottom = GlobalTerminalState.snapBubbleToBorder(droppedPoint: nearBottom, in: container, buttonSize: buttonSize, padding: padding)
+        XCTAssertEqual(snappedBottom.edge, .bottom)
+
+        // Dropped near the top border
+        let nearTop = CGPoint(x: 500, y: 40)
+        let snappedTop = GlobalTerminalState.snapBubbleToBorder(droppedPoint: nearTop, in: container, buttonSize: buttonSize, padding: padding)
+        XCTAssertEqual(snappedTop.edge, .top)
+    }
+
+    /// Tests that clampPanelFrame guarantees the floating panel remains strictly inside the main window frame.
+    func testClampPanelFrameGuaranteesInsideMainWindow() {
+        let mainFrame = NSRect(x: 100, y: 100, width: 1200, height: 800)
+        let padding: CGFloat = 12
+
+        // Frame completely inside remains unchanged
+        let insideFrame = NSRect(x: 200, y: 200, width: 640, height: 400)
+        let clampedInside = GlobalTerminalState.clampPanelFrame(insideFrame, inside: mainFrame, padding: padding)
+        XCTAssertEqual(clampedInside, insideFrame)
+
+        // Frame exceeding left boundary clamps to minX + padding
+        let exceedingLeft = NSRect(x: 50, y: 200, width: 640, height: 400)
+        let clampedLeft = GlobalTerminalState.clampPanelFrame(exceedingLeft, inside: mainFrame, padding: padding)
+        XCTAssertEqual(clampedLeft.origin.x, mainFrame.minX + padding)
+
+        // Frame exceeding right boundary clamps to maxX - width - padding
+        let exceedingRight = NSRect(x: 900, y: 200, width: 640, height: 400)
+        let clampedRight = GlobalTerminalState.clampPanelFrame(exceedingRight, inside: mainFrame, padding: padding)
+        XCTAssertEqual(clampedRight.origin.x, mainFrame.maxX - 640 - padding)
+
+        // Frame exceeding bottom boundary clamps to minY + padding
+        let exceedingBottom = NSRect(x: 200, y: 50, width: 640, height: 400)
+        let clampedBottom = GlobalTerminalState.clampPanelFrame(exceedingBottom, inside: mainFrame, padding: padding)
+        XCTAssertEqual(clampedBottom.origin.y, mainFrame.minY + padding)
+
+        // Frame exceeding top boundary clamps to maxY - height - padding
+        let exceedingTop = NSRect(x: 200, y: 600, width: 640, height: 400)
+        let clampedTop = GlobalTerminalState.clampPanelFrame(exceedingTop, inside: mainFrame, padding: padding)
+        XCTAssertEqual(clampedTop.origin.y, mainFrame.maxY - 400 - padding)
+
+        // Oversized frame scales down to fit within main window
+        let oversized = NSRect(x: 50, y: 50, width: 1400, height: 900)
+        let clampedOversized = GlobalTerminalState.clampPanelFrame(oversized, inside: mainFrame, padding: padding)
+        XCTAssertEqual(clampedOversized.width, mainFrame.width - padding * 2)
+        XCTAssertEqual(clampedOversized.height, mainFrame.height - padding * 2)
+        XCTAssertEqual(clampedOversized.origin.x, mainFrame.minX + padding)
+        XCTAssertEqual(clampedOversized.origin.y, mainFrame.minY + padding)
+    }
 }
