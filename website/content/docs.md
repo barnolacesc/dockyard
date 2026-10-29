@@ -13,7 +13,7 @@ The year is 2026. We build on tmux (2007), git worktrees (2015), terminals (1978
 You need two things: a Mac and a vague sense that your current workflow could be better.
 
 ```
-brew install --cask dockyard
+brew install --cask barnolacesc/tap/dockyard
 ```
 
 <a href="https://github.com/barnolacesc/dockyard/releases/latest/download/Dockyard.dmg" class="docs-download"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download DMG</a>
@@ -57,7 +57,7 @@ A workstream is where the work happens. Each one gets its own git worktree, bran
 **⌘N** creates a new workstream. Behind the scenes:
 
 1. Fetches the latest default branch from origin
-2. Creates a git worktree with a fresh branch (prefixed with your branch prefix, default: `ff`)
+2. Creates a git worktree with a fresh branch (prefixed with your branch prefix, default: `dy`)
 3. Symlinks `.env` and `.env.local` from the main repo (if enabled)
 4. Runs the setup script (if configured)
 5. Launches the coding agent
@@ -86,14 +86,14 @@ When a PR is merged, Dockyard shows a "Purge" badge so you know it's safe to cle
 
 ### The Coding Agent
 
-The coding agent tab runs either [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview) or [Codex](https://developers.openai.com/codex) in an embedded terminal. Choose the CLI in Settings, then use the same Agent tab in every workstream.
+The coding agent tab runs [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview), [Codex](https://developers.openai.com/codex), OpenCode, or Antigravity CLI in an embedded terminal. Choose the CLI in Settings, then use the same Agent tab in every workstream.
 
 #### Agent settings
 
 - **Bypass permission prompts** — skips confirmation dialogs. Useful if you trust your agent (and live dangerously).
 - **Tmux mode** — wraps agent sessions in tmux so they survive app restarts. Requires tmux.
 - **Auto-rename branch** — lets Claude Code rename the branch to match the task.
-- **Coding CLI** — switches the Agent tab between Claude Code and Codex.
+- **Coding CLI** — selects the coding CLI used in the Agent tab.
 - **Agent Teams** — experimental multi-agent coordination, currently available with Claude Code.
 
 #### Quick actions
@@ -105,7 +105,7 @@ Quick actions run one-shot coding CLI tasks from the sidebar:
 - **Create PR** — creates a pull request with AI-generated title and description
 - **Close PR** — closes the PR
 
-These run as background Claude Code or Codex commands, depending on the selected CLI. Enable **Quick action debug mode** in settings if you want to know how the sausage is made. Trust us, [Francesc](https://github.com/barnolacesc) spent more time than he can admit debugging weird behaviors in there.
+These run as background commands using the selected coding CLI where supported. Enable **Quick action debug mode** in settings if you want to know how the sausage is made. Trust us, [Francesc](https://github.com/barnolacesc) spent more time than he can admit debugging weird behaviors in there.
 
 ---
 
@@ -260,7 +260,7 @@ Open with **⌘,** or click the gear icon.
 #### General
 
 - **Base directory** — default location for new projects
-- **Branch prefix** — prefix for workstream branches (default: `ff`)
+- **Branch prefix** — prefix for workstream branches (default: `dy`)
 - **Symlink .env files** — auto-symlink `.env` and `.env.local` to worktrees
 - **Theme** — System, Light, or Dark
 - **Language** — System default, English and Catalan
@@ -294,10 +294,10 @@ Connecting Dockyard to everything else.
 
 ### CLI
 
-Install the `ff` command from Settings > Environment > Install CLI. Then:
+Install the `dy` command from Settings > Environment > Install CLI. Then:
 
 ```
-ff /path/to/your/project
+dy /path/to/your/project
 ```
 
 Opens the directory in Dockyard. That's all it does, and that's all it needs to do.

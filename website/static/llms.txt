@@ -7,7 +7,7 @@ Dockyard lets developers run several AI coding agents in parallel on the same co
 Key capabilities:
 
 - Git worktrees: each workstream operates on its own branch and worktree, no stashing needed
-- Selectable Claude Code or Codex integration: embedded AI agent with session persistence via tmux
+- Selectable Claude Code, Codex, OpenCode, or Antigravity CLI integration, with optional tmux sessions
 - Setup/run/teardown scripts: configured per project via `.dockyard.json`
 - Embedded browser: WKWebView with automatic port detection from run scripts
 - GitHub integration: repo info, open PRs, and branch PR status via the `gh` CLI
@@ -24,11 +24,11 @@ brew install --cask barnolacesc/tap/dockyard
 
 Or download from GitHub Releases.
 
-The `ff` CLI command is included:
+Homebrew installs the `dy` CLI; DMG users can install it from Settings > Environment:
 
 ```
-ff                  # open current directory
-ff ~/repos/myapp    # open a specific directory
+dy                  # open current directory
+dy ~/repos/myapp    # open a specific directory
 ```
 
 ## Configuration

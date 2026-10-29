@@ -1,67 +1,18 @@
-<div class="mt-8 md:mt-16 animate-fade-up-4">
-  <div class="relative">
-    <!-- Screenshot tabs -->
-    <div class="flex justify-center gap-1.5 md:gap-2 mb-3 md:mb-4 flex-wrap">
-      <button onclick="showScreenshot('demo')" class="ss-tab ss-tab-active font-mono text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-md border border-fg-faint transition-all" data-tab="demo">{{ T "hero_demo_tab" }}</button>
-      <button onclick="showScreenshot('agent')" class="ss-tab font-mono text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-md border border-fg-faint transition-all" data-tab="agent">Agent</button>
-      <button onclick="showScreenshot('environment')" class="ss-tab font-mono text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-md border border-fg-faint transition-all hidden md:inline-flex" data-tab="environment">Environment</button>
-      <button onclick="showScreenshot('info')" class="ss-tab font-mono text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-md border border-fg-faint transition-all" data-tab="info">Info</button>
-      <button onclick="showScreenshot('terminal')" class="ss-tab font-mono text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-md border border-fg-faint transition-all" data-tab="terminal">Terminal</button>
-      <button onclick="showScreenshot('browser')" class="ss-tab font-mono text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-md border border-fg-faint transition-all hidden md:inline-flex" data-tab="browser">Browser</button>
-      <button onclick="showScreenshot('project')" class="ss-tab font-mono text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-md border border-fg-faint transition-all hidden md:inline-flex" data-tab="project">Project</button>
+<div class="mt-4 md:mt-8 rounded-xl overflow-hidden border border-fg-faint bg-bg-surface shadow-[0_12px_36px_var(--color-shadow)] animate-fade-up-4" aria-label="Dockyard workspace preview">
+  <div class="flex items-center gap-2 px-4 py-3 border-b border-fg-faint" aria-hidden="true">
+    <span class="w-2.5 h-2.5 rounded-full bg-[#d87370]"></span><span class="w-2.5 h-2.5 rounded-full bg-[#d3ae67]"></span><span class="w-2.5 h-2.5 rounded-full bg-[#83a882]"></span>
+    <span class="ml-3 text-xs text-fg-muted">Dockyard</span>
+  </div>
+  <div class="grid grid-cols-[9rem_1fr] sm:grid-cols-[14rem_1fr] min-h-[260px] sm:min-h-[330px]">
+    <div class="border-r border-fg-faint p-4 sm:p-5 text-sm">
+      <div class="font-semibold text-fg mb-5">{{ T "preview_projects" }}</div>
+      <div class="text-fg-dim mb-3">▾ &nbsp; my-project</div>
+      <div class="rounded-md bg-bg-elevated px-3 py-2 text-fg text-xs sm:text-sm">↳ &nbsp; new-feature</div>
+      <div class="px-3 py-3 text-fg-muted text-xs sm:text-sm">↳ &nbsp; fix-bug</div>
     </div>
-
-    <!-- Demo video + Screenshots -->
-    <div class="rounded-xl overflow-hidden shadow-[0_25px_80px_var(--color-shadow)] border border-fg-faint">
-      <div id="ss-demo" class="ss-img aspect-video">
-        <iframe class="w-full h-full" src="https://www.youtube-nocookie.com/embed/uneYTs5z42k?rel=0" title="Dockyard demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-      </div>
-      <div class="cursor-pointer" onclick="openScreenshotModal()">
-        <img id="ss-agent" class="ss-img w-full hidden" src="/img/screenshots/agent.png" alt="Coding agent running in Dockyard">
-        <img id="ss-environment" class="ss-img w-full hidden" src="/img/screenshots/environment.png" alt="Environment tab with setup and run scripts">
-        <img id="ss-info" class="ss-img w-full hidden" src="/img/screenshots/info.png" alt="Workstream info with documentation">
-        <img id="ss-terminal" class="ss-img w-full hidden" src="/img/screenshots/terminal.png" alt="Ghostty terminal with custom shell">
-        <img id="ss-browser" class="ss-img w-full hidden" src="/img/screenshots/browser.png" alt="Embedded browser with auto-port detection">
-        <img id="ss-project" class="ss-img w-full hidden" src="/img/screenshots/project.png" alt="Project overview with git info and docs">
-      </div>
+    <div class="p-5 sm:p-8">
+      <div class="flex gap-4 border-b border-fg-faint pb-3 text-xs sm:text-sm"><span class="text-fg">Coding Agent</span><span class="text-fg-muted">Terminal</span><span class="text-fg-muted">{{ T "preview_browser" }}</span></div>
+      <div class="mt-7 font-mono text-xs sm:text-sm leading-relaxed text-fg-dim"><p><span class="text-brand-light">~/my-project</span> &nbsp; git status</p><p class="mt-3 text-fg-muted">On branch dy/new-feature</p><p class="text-fg-muted">Working tree clean</p><p class="mt-6 text-brand-light">❯ <span class="text-fg-muted">_</span></p></div>
     </div>
   </div>
 </div>
-
-<!-- Screenshot modal -->
-<dialog id="ss-modal" class="modal">
-  <div class="modal-box max-w-none w-[95vw] md:w-[90vw] p-0 bg-bg border border-fg-faint rounded-xl overflow-hidden">
-    <form method="dialog" class="absolute top-2 right-2 z-10">
-      <button class="btn btn-sm btn-circle bg-bg-surface border-fg-faint text-fg hover:bg-bg-elevated">✕</button>
-    </form>
-    <img id="ss-modal-img" class="w-full" src="" alt="">
-  </div>
-  <form method="dialog" class="modal-backdrop bg-black/70">
-    <button>close</button>
-  </form>
-</dialog>
-
-<script>
-function showScreenshot(name) {
-  document.querySelectorAll('.ss-img').forEach(function(img) { img.classList.add('hidden'); });
-  document.querySelectorAll('.ss-tab').forEach(function(tab) {
-    tab.classList.remove('ss-tab-active', 'bg-wine', 'text-[#F7F4F3]', 'border-wine');
-    tab.classList.add('text-fg-muted', 'bg-transparent');
-  });
-  document.getElementById('ss-' + name).classList.remove('hidden');
-  var activeTab = document.querySelector('[data-tab="' + name + '"]');
-  activeTab.classList.add('ss-tab-active', 'bg-wine', 'text-[#F7F4F3]', 'border-wine');
-  activeTab.classList.remove('text-fg-muted', 'bg-transparent');
-}
-
-function openScreenshotModal() {
-  var visible = document.querySelector('.ss-img:not(.hidden)');
-  if (!visible) return;
-  document.getElementById('ss-modal-img').src = visible.src;
-  document.getElementById('ss-modal-img').alt = visible.alt;
-  document.getElementById('ss-modal').showModal();
-}
-
-// Initialize first tab
-document.addEventListener('DOMContentLoaded', function() { showScreenshot('demo'); });
-</script>

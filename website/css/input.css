@@ -5,48 +5,54 @@
 @theme {
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
   --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --color-wine: #5B2333;
-  --color-wine-light: #7a3348;
-  --color-wine-glow: rgba(91, 35, 51, 0.4);
-  --color-bg: #1a1816;
-  --color-bg-surface: #2C2826;
-  --color-bg-elevated: #3a3634;
-  --color-fg: #F7F4F3;
-  --color-fg-dim: rgba(247, 244, 243, 0.7);
-  --color-fg-faint: rgba(247, 244, 243, 0.12);
-  --color-fg-muted: #928E8D;
-  --color-nav-bg: rgba(26, 24, 22, 0.8);
-  --color-shadow: rgba(0,0,0,0.5);
-  --color-code-key: #c49a6c;
-  --color-code-str: #6b9e78;
+
+  /* Muted harbor blue and neutral surfaces. */
+  --color-brand: #486b7b;
+  --color-brand-light: #9ab6c1;
+  --color-brand-glow: rgba(154, 182, 193, 0.10);
+  --color-dockyard-blue: #486b7b;
+  --color-dockyard-cyan: #9ab6c1;
+  --color-dockyard-purple: #a49eae;
+  --color-dockyard-amber: #c4a478;
+  --color-wine: #486b7b;
+  --color-wine-light: #9ab6c1;
+  --color-wine-glow: rgba(154, 182, 193, 0.10);
+  --color-bg: #1d2021;
+  --color-bg-surface: #262a2b;
+  --color-bg-elevated: #303536;
+  --color-fg: #f1f0eb;
+  --color-fg-dim: rgba(241, 240, 235, 0.78);
+  --color-fg-faint: rgba(241, 240, 235, 0.12);
+  --color-fg-muted: #a7aaa5;
+  --color-nav-bg: rgba(29, 32, 33, 0.92);
+  --color-shadow: rgba(0, 0, 0, 0.32);
+  --color-code-key: #9ab6c1;
+  --color-code-str: #a5ba9d;
 }
 
 .light {
-  --color-bg: #F7F4F3;
-  --color-bg-surface: #ede9e7;
-  --color-bg-elevated: #e0dbda;
-  --color-fg: #2C2826;
-  --color-fg-dim: rgba(44, 40, 38, 0.75);
-  --color-fg-faint: rgba(44, 40, 38, 0.1);
-  --color-fg-muted: #6e6a69;
-  --color-nav-bg: rgba(247, 244, 243, 0.85);
-  --color-wine: #5B2333;
-  --color-wine-light: #5B2333;
-  --color-wine-glow: rgba(91, 35, 51, 0.15);
-  --color-shadow: rgba(0,0,0,0.1);
-  --color-code-key: #8b5e2f;
-  --color-code-str: #3a6e48;
+  --color-brand: #486b7b;
+  --color-brand-light: #426675;
+  --color-brand-glow: rgba(72, 107, 123, 0.08);
+  --color-wine: #486b7b;
+  --color-wine-light: #426675;
+  --color-wine-glow: rgba(72, 107, 123, 0.08);
+  --color-bg: #f6f5f1;
+  --color-bg-surface: #eeede8;
+  --color-bg-elevated: #e5e5df;
+  --color-fg: #252b2b;
+  --color-fg-dim: rgba(37, 43, 43, 0.78);
+  --color-fg-faint: rgba(37, 43, 43, 0.12);
+  --color-fg-muted: #626b69;
+  --color-nav-bg: rgba(246, 245, 241, 0.94);
+  --color-shadow: rgba(0, 0, 0, 0.12);
+  --color-code-key: #486b7b;
+  --color-code-str: #526e4c;
 }
 
-/* Noise overlay */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 9999;
-}
+html { -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { text-wrap: balance; }
+p { text-wrap: pretty; }
 
 /* Animations */
 @keyframes fadeUp {
@@ -54,8 +60,8 @@ body::before {
   to { opacity: 1; transform: translateY(0); }
 }
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.05); }
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
 }
 @keyframes blink {
   0%, 100% { opacity: 1; }
@@ -92,13 +98,18 @@ body::before {
   left: calc(16.67% + 1rem);
   right: calc(16.67% + 1rem);
   height: 1px;
-  background: linear-gradient(90deg, var(--color-wine-light), var(--color-fg-muted));
+  background: var(--color-fg-muted);
   opacity: 0.3;
 }
 
 .divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, var(--color-fg-faint) 50%, transparent 100%);
+  background: var(--color-fg-faint);
   max-width: 1100px;
   margin: 0 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+  .reveal { opacity: 1; transform: none; }
 }

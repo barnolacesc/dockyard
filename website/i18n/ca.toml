@@ -20,9 +20,35 @@ other = "entorn de desenvolupament"
 [hero_title_2]
 other = "amb IA."
 [hero_desc]
-other = "App nativa de macOS sobre el terminal GPU de <a href=\"https://ghostty.org\" class=\"text-wine-light hover:underline\">Ghostty</a>. Gestiona git worktrees, sessions d'agent de codi i servidors dev des d'una sola finestra. Cada workstream té branch, terminal i agent propis, tot en paral·lel, tot a velocitat nativa."
-[hero_demo_tab]
-other = "Demo"
+other = "App nativa de macOS sobre el terminal GPU de <a href=\"https://ghostty.org\" class=\"text-brand-light hover:underline\">Ghostty</a>. Gestiona git worktrees, sessions d'agent de codi i servidors dev des d'una sola finestra. Cada workstream té branch, terminal i agent propis, tot en paral·lel, tot a velocitat nativa."
+[hero_tab_split]
+other = "Pantalla dividida"
+[hero_tab_issues]
+other = "GitHub Issues"
+[hero_tab_ci]
+other = "CI i revisions IA"
+[hero_tab_worktrees]
+other = "Worktrees"
+[hero_tab_scripts]
+other = "Servidors Dev"
+[hero_tab_terminal]
+other = "Terminal flotant"
+[hero_tab_compact]
+other = "Dock compacte"
+[hero_caption_split]
+other = "Pantalla dividida: agent Gemini 3.8 Flash treballant al terminal Ghostty al costat del navegador incrustat amb l'app en viu (:3000)."
+[hero_caption_issues]
+other = "Finestra de nou workstream: carrega issues de GitHub, tria l'agent de codi (Claude Code, Antigravity CLI, Codex) i activa el mode YOLO."
+[hero_caption_ci]
+other = "Popover de checks de CI en directe: seguiment en temps real de revisions IA de CodeRabbit, GitHub Actions i enllaços directes a la PR."
+[hero_caption_worktrees]
+other = "Vista general del projecte: mètriques de commits, estat de branches, llista de workstreams i neteja de worktrees en 1 clic."
+[hero_caption_scripts]
+other = "Cicle de vida dev automatitzat: execució d'scripts de setup i servidor via .dockyard.json amb rastreig de ports dy-run."
+[hero_caption_terminal]
+other = "Terminal flotant ràpid: finestra superposada amb LazyVim o eines de línia d'ordres sobre el teu espai de treball actiu."
+[hero_caption_compact]
+other = "Dock lateral compacte: vista minimalista per icones amb alertes d'atenció, indicadors de proveïdor de models i píndoles de PR."
 [hero_download]
 other = "Descarrega"
 [hero_source]
@@ -40,25 +66,25 @@ other = "Git Worktrees"
 [feat_worktrees_desc]
 other = "Cada workstream té branch i worktree propis. Canvia de tasca sense stash, amb fitxers .env symlinkats automàticament."
 [feat_claude_title]
-other = "Claude Code o Codex"
+other = "Claude Code, Antigravity i Codex"
 [feat_claude_desc]
-other = "Tria <a href='https://docs.anthropic.com/en/docs/claude-code/overview' class='text-wine-light no-underline hover:underline'>Claude Code</a> o <a href='https://developers.openai.com/codex' class='text-wine-light no-underline hover:underline'>Codex</a> per a la pestanya d'agent integrada, amb represa de sessió entre reinicis."
+other = "Executa <a href='https://docs.anthropic.com/en/docs/claude-code/overview' class='text-brand-light no-underline hover:underline'>Claude Code</a>, Antigravity CLI o <a href='https://developers.openai.com/codex' class='text-brand-light no-underline hover:underline'>Codex</a> amb represa automàtica i mode YOLO."
 [feat_tmux_title]
 other = "Persistència tmux"
 [feat_tmux_desc]
 other = "Les sessions d'agent sobreviuen reinicis via tmux en un socket dedicat. Mai més context perdut ni workflows interromputs."
 [feat_scripts_title]
-other = "Setup & Run Scripts"
+other = "Scripts de Setup i Run"
 [feat_scripts_desc]
-other = "Configura scripts de setup, run i teardown per projecte via .dockyard.json."
+other = "Configura scripts de setup, run i teardown per projecte via .dockyard.json amb detecció automàtica de ports."
 [feat_browser_title]
-other = "Browser integrat"
+other = "Navegador incrustat i pantalla dividida"
 [feat_browser_desc]
-other = "Browser integrat amb detecció automàtica de port. El port d'escolta del run script es detecta automàticament i el browser hi navega. Previsualitza l'app sense sortir del workspace."
+other = "Previsualitza la teva app web en paral·lel amb detecció automàtica de ports (:3000, :5001...) sense sortir de l'espai de treball."
 [feat_github_title]
-other = "Integració GitHub"
+other = "GitHub Issues i popovers CI"
 [feat_github_desc]
-other = "Info del repo, PRs obertes i estat de PRs per branch, directament a la vista del projecte. Via gh CLI."
+other = "Crea workstreams des d'issues de GitHub, inspecciona checks de CI en viu amb revisions IA de CodeRabbit i gestiona PRs a l'instant."
 
 # How it works
 [how_label]
@@ -167,6 +193,14 @@ other = "Nou Editor"
 other = "Browser extern"
 [sc_ext_terminal]
 other = "Terminal extern"
+[sc_toggle_sidebar]
+other = "Commuta la barra lateral"
+[sc_new_terminal]
+other = "Nou Terminal"
+[sc_new_browser]
+other = "Nou Navegador"
+[sc_rerun]
+other = "Inicia o reinicia el servidor"
 
 # Footer
 [footer_built_by]
@@ -212,3 +246,8 @@ other = "Tot el que necessites saber, res del que no."
 # Changelog
 [changelog_subtitle]
 other = "Historial de versions de Dockyard"
+
+[preview_projects]
+other = "Projectes"
+[preview_browser]
+other = "Navegador"
