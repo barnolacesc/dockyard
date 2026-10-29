@@ -346,6 +346,11 @@ final class GlobalTerminalPanel: NSPanel {
         false
     }
 
+    override var hidesOnDeactivate: Bool {
+        get { false }
+        set {}
+    }
+
     override init(
         contentRect: NSRect,
         styleMask style: NSWindow.StyleMask,
