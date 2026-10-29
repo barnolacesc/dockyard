@@ -29,8 +29,8 @@
 <link rel="alternate" hreflang="{{ .Lang }}" href="{{ .Permalink }}">
 {{ end }}
 <link rel="alternate" hreflang="{{ .Site.Language.Lang }}" href="{{ .Permalink }}">
-{{ $defaultPage := . }}{{ range .AllTranslations }}{{ if eq .Lang "en" }}{{ $defaultPage = . }}{{ end }}{{ end }}
-<link rel="alternate" hreflang="x-default" href="{{ $defaultPage.Permalink }}">
+{{ $canonicalEn := strings.TrimPrefix "/ca" .RelPermalink }}
+<link rel="alternate" hreflang="x-default" href="{{ printf "%s%s" (strings.TrimSuffix "/" .Site.BaseURL) $canonicalEn }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
@@ -90,9 +90,12 @@
 
 var observer = new IntersectionObserver(function(entries) {
   entries.forEach(function(entry) {
-    if (entry.isIntersecting) entry.target.classList.add('visible');
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
   });
-}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+}, { threshold: 0.05, rootMargin: '0px 0px 150px 0px' });
 document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
 </script>
 </body>

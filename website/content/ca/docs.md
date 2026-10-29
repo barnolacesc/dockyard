@@ -12,14 +12,14 @@ Estem al 2026. Construïm sobre tmux (2007), git worktrees (2015), terminals (19
 Necessites dues coses: un Mac i la vaga sensació que el teu flux de treball podria ser millor.
 
 ```
-brew install --cask dockyard
+brew install --cask barnolacesc/tap/dockyard
 ```
 
 <a href="https://github.com/barnolacesc/dockyard/releases/latest/download/Dockyard.dmg" class="docs-download"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download DMG</a>
 
 Dockyard funciona millor quan tens instal·lat el següent (t'avisarà si falta alguna cosa):
 
-- **[Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview)** — la raó de ser, bàsicament
+- **[Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview)**, **[Codex](https://developers.openai.com/codex)**, **OpenCode** o **Antigravity CLI** — tria l’agent de codi que vulguis utilitzar
 - **git** — probablement ja el tens
 - **[gh](https://cli.github.com/)** — GitHub CLI, per a l'estat de PRs i quick actions
 - **[tmux](https://github.com/tmux/tmux)** — opcional, permet persistència de sessions
@@ -56,7 +56,7 @@ Un workstream és on passa la feina. Cadascun té el seu propi git worktree, bra
 **⌘N** crea un workstream nou. Entre bastidors:
 
 1. Descarrega l'última branch per defecte des de l'origin
-2. Crea un git worktree amb una branch nova (amb el prefix de branch configurat, per defecte: `ff`)
+2. Crea un git worktree amb una branch nova (amb el prefix de branch configurat, per defecte: `dy`)
 3. Fa symlink de `.env` i `.env.local` des del repositori principal (si està activat)
 4. Executa el setup script (si està configurat)
 5. Llança el coding agent
@@ -85,7 +85,7 @@ Quan un PR es fusiona, Dockyard mostra un badge "Purge" perquè sàpigues que po
 
 ### El Coding Agent {#the-coding-agent}
 
-El Coding Agent tab executa [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview) en un terminal integrat. Es situa just després del tab Info a cada workstream.
+La pestanya Coding Agent executa Claude Code, Codex, OpenCode o Antigravity CLI en un terminal integrat. Tria el CLI a la configuració.
 
 #### Configuració de l'agent {#agent-settings}
 
@@ -96,14 +96,14 @@ El Coding Agent tab executa [Claude Code](https://docs.anthropic.com/en/docs/cla
 
 #### Quick actions {#quick-actions}
 
-Les quick actions executen tasques puntuals de Claude des del sidebar:
+Les quick actions executen tasques puntuals amb el CLI de codi des del sidebar:
 
 - **Commit** — prepara i fa commit amb un missatge generat per IA
 - **Push** — fa push de la branch actual a l'origin
 - **Create PR** — crea una pull request amb títol i descripció generats per IA
 - **Close PR** — tanca la PR
 
-S'executen com a crides `claude -p` en segon pla. Activa **Quick action debug mode** a la configuració si vols saber com es fa l'embotit. Confia en nosaltres, en [Francesc](https://github.com/barnolacesc) va passar més temps del que pot admetre depurant comportaments estranys allà dins.
+S'executen en segon pla amb el CLI seleccionat quan és compatible. Activa **Quick action debug mode** a la configuració si vols saber com es fa l'embotit. Confia en nosaltres, en [Francesc](https://github.com/barnolacesc) va passar més temps del que pot admetre depurant comportaments estranys allà dins.
 
 ---
 
@@ -248,7 +248,7 @@ Obre amb **⌘,** o fes clic a la icona d'engranatge.
 #### General {#general}
 
 - **Base directory** — ubicació per defecte per a nous projectes
-- **Branch prefix** — prefix per a les branches dels workstreams (per defecte: `ff`)
+- **Branch prefix** — prefix per a les branches dels workstreams (per defecte: `dy`)
 - **Symlink .env files** — symlink automàtic de `.env` i `.env.local` als worktrees
 - **Theme** — Sistema, Clar, o Fosc
 - **Language** — Per defecte del sistema, anglès o català
@@ -282,10 +282,10 @@ Connectant Dockyard amb tot el demés.
 
 ### CLI {#cli}
 
-Instal·la la comanda `ff` des de Settings > Environment > Install CLI. Després:
+Instal·la la comanda `dy` des de Settings > Environment > Install CLI. Després:
 
 ```
-ff /path/to/your/project
+dy /path/to/your/project
 ```
 
 Obre el directori a Dockyard. Això és tot el que fa, i és tot el que necessita fer.
@@ -322,7 +322,7 @@ Activa **Bleeding edge updates** a Settings > Advanced per a builds de pre-llan�
 
 ### Editor de codi {#code-editor}
 
-No. Sense ressaltat de sintaxi, sense autocompletar, sense minimapa. Els nostres VCs inexistents no han estat imposant cap agenda corporativa. La intenció és que facis servir les eines que ja t'agraden: [Zed](https://zed.dev), [VS Code](https://code.visualstudio.com), el que sigui. Dockyard et dóna un coding agent, un navegador, i un worktree. A més, qui escriu codi avui en dia?
+Hi ha un editor integrat (⌘O) per consultar fitxers i fer petits canvis. La intenció és que facis servir les eines que ja t'agraden: [Zed](https://zed.dev), [VS Code](https://code.visualstudio.com), el que sigui. Dockyard et dóna un coding agent, un navegador, i un worktree. A més, qui escriu codi avui en dia?
 
 ### Visor de merge {#merge-viewer}
 

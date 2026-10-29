@@ -5,1036 +5,366 @@ hideInstall: true
 translationKey: changelog
 ---
 
-## [0.1.65](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.65) (2026-04-03)
+## [0.2.7](https://github.com/barnolacesc/dockyard/releases/tag/v0.2.7) (2026-10-04)
 
 
 ### Features
 
-* add Open on GitHub button for projects with GitHub remotes ([#330](https://github.com/barnolacesc/dockyard/issues/330)) ([9c7c7f5](https://github.com/barnolacesc/dockyard/commit/9c7c7f5dcd28c12059c16018b6d0f483d4bc175c))
-* Cmd+Click opens links in external browser and fix HTTP redirects ([#331](https://github.com/barnolacesc/dockyard/issues/331)) ([599253a](https://github.com/barnolacesc/dockyard/commit/599253a66066cc1ae4b586a3d04392bc7d9f7db2))
-* display agent-generated task descriptions in sidebar ([#336](https://github.com/barnolacesc/dockyard/issues/336)) ([6bac1fe](https://github.com/barnolacesc/dockyard/commit/6bac1fe9d625cd9710dd58433f9b79a867cca8b8))
-* make run play icons clickable and style center start button ([#328](https://github.com/barnolacesc/dockyard/issues/328)) ([0007372](https://github.com/barnolacesc/dockyard/commit/0007372a18fb6e6a729ec39102602b2340fd8fe2))
-* show task description in workstream title subtitle ([#339](https://github.com/barnolacesc/dockyard/issues/339)) ([3b475a9](https://github.com/barnolacesc/dockyard/commit/3b475a9e1de70060033e9257b03c043662e83964))
-* **website:** add docs section, issue templates, and improve site navigation ([#342](https://github.com/barnolacesc/dockyard/issues/342)) ([a20d0f0](https://github.com/barnolacesc/dockyard/commit/a20d0f0ce7f38c995cdfed8374e0cba456bd536f)), closes [#338](https://github.com/barnolacesc/dockyard/issues/338)
+* add icons and emojis for projects ([#255](https://github.com/barnolacesc/dockyard/issues/255)) ([3db01db](https://github.com/barnolacesc/dockyard/commit/3db01dbbbe1ad9c691d6bb64a853d71f688f9ce6))
+* add persistent floating Global Terminal ([#259](https://github.com/barnolacesc/dockyard/issues/259)) ([9d63ddd](https://github.com/barnolacesc/dockyard/commit/9d63ddd376593e77ad03d99408a00e102f9c343e))
+* **agent:** autofill issue contents when starting issue workstream ([#256](https://github.com/barnolacesc/dockyard/issues/256)) ([ce10e59](https://github.com/barnolacesc/dockyard/commit/ce10e59ebdfbfb5137c1b4e760842237a30aa116))
+* **browser:** add agent-controlled Terminal Browser ([#254](https://github.com/barnolacesc/dockyard/issues/254)) ([4885906](https://github.com/barnolacesc/dockyard/commit/4885906c373cf0f930720b2548c04ef69945f18b))
+* **sidebar:** auto-load scrollable GitHub issues and copy prompt on creation ([#249](https://github.com/barnolacesc/dockyard/issues/249)) ([d4ff128](https://github.com/barnolacesc/dockyard/commit/d4ff128d35fd70f05377917ba392a77273e46c8b))
+* **ui:** improve workstream status lifecycle and active action tracking ([#258](https://github.com/barnolacesc/dockyard/issues/258)) ([7d1a3cf](https://github.com/barnolacesc/dockyard/commit/7d1a3cf967a577f502dca06dcf0a36f6961a5681))
+* **ui:** refine workstream lifecycle states and fix warning pill contrast ([#251](https://github.com/barnolacesc/dockyard/issues/251)) ([840d582](https://github.com/barnolacesc/dockyard/commit/840d582cfadf576ff7bda137ee0c06f37163b390))
 
 
 ### Bug Fixes
 
-* re-sort sidebar projects when workstream activity updates lastAccessedAt ([#327](https://github.com/barnolacesc/dockyard/issues/327)) ([0005ed6](https://github.com/barnolacesc/dockyard/commit/0005ed624fc45ad87843a4960e6e59dadfe37c10))
-* refresh git repo cache immediately when project is added via drag-drop ([#325](https://github.com/barnolacesc/dockyard/issues/325)) ([6921180](https://github.com/barnolacesc/dockyard/commit/692118070cf0254143ab297151aca7afb2489399))
+* **agent:** scope agy session continuation to workspaces with existing conversations ([#252](https://github.com/barnolacesc/dockyard/issues/252)) ([801bd70](https://github.com/barnolacesc/dockyard/commit/801bd70ca337b5c5b68f126a7a855c2c2a7a33d3))
 
-
-### Miscellaneous
-
-* ignore dirty state in ghostty submodule ([#346](https://github.com/barnolacesc/dockyard/issues/346)) ([400dcc0](https://github.com/barnolacesc/dockyard/commit/400dcc0f09446047a79716c4dec0918d2ef38e69))
-
-
-### Documentation
-
-* document Hugo AllTranslations bug in AGENTS.md ([#345](https://github.com/barnolacesc/dockyard/issues/345)) ([abbc136](https://github.com/barnolacesc/dockyard/commit/abbc1365a6bcb9d57c6741f61e418b52e6df5954))
-* **website:** translate docs to Catalan, Spanish, and Swedish ([#344](https://github.com/barnolacesc/dockyard/issues/344)) ([b0794b6](https://github.com/barnolacesc/dockyard/commit/b0794b676a85abefbb431bff8a5a80485fb1b2d6)), closes [#340](https://github.com/barnolacesc/dockyard/issues/340)
-
-## [0.1.64](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.64) (2026-04-03)
+## [0.2.6](https://github.com/barnolacesc/dockyard/releases/tag/v0.2.6) (2026-09-21)
 
 
 ### Features
 
-* add Reveal in Finder and Open in External Terminal to sidebar context menus ([#310](https://github.com/barnolacesc/dockyard/issues/310)) ([775e188](https://github.com/barnolacesc/dockyard/commit/775e188b4b85706e59ed70e6782dca4e7b0aef1c))
-* adopt existing worktrees as workstreams and enrich worktree status ([#313](https://github.com/barnolacesc/dockyard/issues/313)) ([7f09a3f](https://github.com/barnolacesc/dockyard/commit/7f09a3f4074e802478e4a67be10e551456a179b6))
-* background fetch of origin default branch every 2 minutes ([#320](https://github.com/barnolacesc/dockyard/issues/320)) ([cd73dc5](https://github.com/barnolacesc/dockyard/commit/cd73dc5dd8b7ed722e420001834ed1ce8729ffed))
-* collapse doc tabs by default and pin to bottom of info views ([#315](https://github.com/barnolacesc/dockyard/issues/315)) ([7c38c6e](https://github.com/barnolacesc/dockyard/commit/7c38c6eb55c50c947a4b07143e35c0cff26e8974))
-* detect merged PRs and show archive prompt for completed workstreams ([#316](https://github.com/barnolacesc/dockyard/issues/316)) ([4c062ad](https://github.com/barnolacesc/dockyard/commit/4c062ad5f7b5d2b0a598058b7a6b1df1df346ddc))
-* support drag-and-drop of files and text onto embedded terminal ([#312](https://github.com/barnolacesc/dockyard/issues/312)) ([1d568a6](https://github.com/barnolacesc/dockyard/commit/1d568a6602e9368a34396e780a4054e57e5957ab))
+* add actionable agent attention notifications ([#213](https://github.com/barnolacesc/dockyard/issues/213)) ([91eec20](https://github.com/barnolacesc/dockyard/commit/91eec203d1118da30c9c86e1169a0e4ff24dee32))
+* add Antigravity CLI (agy) support replacing legacy Gemini CLI ([#236](https://github.com/barnolacesc/dockyard/issues/236)) ([62c8b3d](https://github.com/barnolacesc/dockyard/commit/62c8b3dd1be8c8cd57f34429a24db0a725b348b1))
+* add caffeinate mode ([#226](https://github.com/barnolacesc/dockyard/issues/226)) ([078c5da](https://github.com/barnolacesc/dockyard/commit/078c5dac52e6b905616886d423ab32df986edee2))
+* add project root terminal ([#210](https://github.com/barnolacesc/dockyard/issues/210)) ([d12c7a5](https://github.com/barnolacesc/dockyard/commit/d12c7a5c8701c9cae7dc652ff9fd0c81a86bdf1f))
+* **agent:** add Antigravity CLI (agy) lifecycle hooks and permission bypass ([#240](https://github.com/barnolacesc/dockyard/issues/240)) ([87fe408](https://github.com/barnolacesc/dockyard/commit/87fe408395c51d759a5e9e194be022945acb7b9a))
+* **agent:** show active subagents in sidebar and workspace tab bar ([#247](https://github.com/barnolacesc/dockyard/issues/247)) ([6a9a9e8](https://github.com/barnolacesc/dockyard/commit/6a9a9e857a2da13dd372a43c59bfc7c93bea93f5))
+* **attention:** add Dockyard work overview ([#221](https://github.com/barnolacesc/dockyard/issues/221)) ([36b9173](https://github.com/barnolacesc/dockyard/commit/36b917393f1504f5b5dade1688088cdd8c23514e))
+* **browser:** persistent session and configurable link opening ([#244](https://github.com/barnolacesc/dockyard/issues/244)) ([830933b](https://github.com/barnolacesc/dockyard/commit/830933bccb6434782e26de79fc182d48d0256511))
+* **caffeinate:** add sidebar toggle to cycle sleep modes ([#246](https://github.com/barnolacesc/dockyard/issues/246)) ([92ece1f](https://github.com/barnolacesc/dockyard/commit/92ece1f417d21b322bfc84d6eaab4790f0c0ecf4))
+* configure workstreams from GitHub issues ([#220](https://github.com/barnolacesc/dockyard/issues/220)) ([8933bf2](https://github.com/barnolacesc/dockyard/commit/8933bf2a9ef7a237f7b73d0b7b0a4fc93323e1a6))
+* **info:** improve worktree management and uncommitted changes handling ([#239](https://github.com/barnolacesc/dockyard/issues/239)) ([10c859e](https://github.com/barnolacesc/dockyard/commit/10c859e1da55fd2c53e6e9e6d5e0d71494da7ef0))
+* **project:** add overview and terminal tabs with script configuration ([#238](https://github.com/barnolacesc/dockyard/issues/238)) ([263285e](https://github.com/barnolacesc/dockyard/commit/263285ea6c27fc7773a2546e6a267f0c57af8c11))
+* rename Codex and OpenCode workstreams ([#217](https://github.com/barnolacesc/dockyard/issues/217)) ([9d27d0d](https://github.com/barnolacesc/dockyard/commit/9d27d0d6a22a94c92aeadced4ec192c419e942d3))
+* show pull request CI checks ([#219](https://github.com/barnolacesc/dockyard/issues/219)) ([adf0196](https://github.com/barnolacesc/dockyard/commit/adf01960c5cb2728e5fe85aeed9192ec698dfe42))
+* **sidebar:** report all PR statuses, merge conflicts, and CodeRabbit reviews ([#245](https://github.com/barnolacesc/dockyard/issues/245)) ([39fc5cc](https://github.com/barnolacesc/dockyard/commit/39fc5ccc2593d44150dae75de5ff287a294da200))
+* **workspace:** collapse run script console and redesign workstream info layout ([#243](https://github.com/barnolacesc/dockyard/issues/243)) ([6e16046](https://github.com/barnolacesc/dockyard/commit/6e1604654ebf7b002e5a0499ebdf3034ce263ca6))
+* **workspace:** redesign top bar with lifecycle pill and ai reviewer action ([#242](https://github.com/barnolacesc/dockyard/issues/242)) ([0d21219](https://github.com/barnolacesc/dockyard/commit/0d21219d7ddd25487cac7ae92c7efb79e7e7f8d5))
+* **workstream:** toggle dangerous permissions in creation sheet ([#241](https://github.com/barnolacesc/dockyard/issues/241)) ([88e9883](https://github.com/barnolacesc/dockyard/commit/88e9883ba78a178f62e12b4b8214438c09f4d062))
 
 
 ### Bug Fixes
 
-* differentiate merged vs open PRs and make PR badges clickable in worktree list ([#321](https://github.com/barnolacesc/dockyard/issues/321)) ([58d9c73](https://github.com/barnolacesc/dockyard/commit/58d9c7385156090d7a329c2c973b076e81735b97))
-* Fish 4.0 shell escaping breaks tmux and agent launch ([#324](https://github.com/barnolacesc/dockyard/issues/324)) ([323d136](https://github.com/barnolacesc/dockyard/commit/323d136350d1bd803f446d78031403765acb7b69))
-* init ghostty submodule properly instead of symlinking entire directory ([#323](https://github.com/barnolacesc/dockyard/issues/323)) ([702f786](https://github.com/barnolacesc/dockyard/commit/702f7867a634311eeff068e8674480add57da143)), closes [#322](https://github.com/barnolacesc/dockyard/issues/322)
-* persist quick action runner across workstream navigation ([#317](https://github.com/barnolacesc/dockyard/issues/317)) ([3c04488](https://github.com/barnolacesc/dockyard/commit/3c0448804f373d5d91d8339be1347b3453cd8940))
-* preserve active tab when cycling workstreams with Cmd+Shift+[/] ([#318](https://github.com/barnolacesc/dockyard/issues/318)) ([e4547be](https://github.com/barnolacesc/dockyard/commit/e4547be28a8d708996f2437450518b07588c075c))
-* skip submodule dirty checks in git status ([#314](https://github.com/barnolacesc/dockyard/issues/314)) ([8ae6395](https://github.com/barnolacesc/dockyard/commit/8ae6395a24ad4a096a7fc2be8ba95e8f02af2203))
-
-## [0.1.63](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.63) (2026-04-02)
-
-
-### Features
-
-* quick actions, workspace UI improvements, and settings redesign ([#307](https://github.com/barnolacesc/dockyard/issues/307)) ([3842c21](https://github.com/barnolacesc/dockyard/commit/3842c21dd4be4877f82ed35b4e232a42b6c34857))
-
-
-### Bug Fixes
-
-* cache isGitRepo and port state to avoid main-thread I/O in sidebar ([#299](https://github.com/barnolacesc/dockyard/issues/299)) ([1a9999f](https://github.com/barnolacesc/dockyard/commit/1a9999f109d4f1a43480424ea85f95aeb972dc84))
-* check Ghostty resources exist before building ([#297](https://github.com/barnolacesc/dockyard/issues/297)) ([c89ca5a](https://github.com/barnolacesc/dockyard/commit/c89ca5a2c1b22b472427a605eadc2d1683bb982c)), closes [#284](https://github.com/barnolacesc/dockyard/issues/284)
-* detect CLI tools in fish shell and Nix environments ([#300](https://github.com/barnolacesc/dockyard/issues/300)) ([2c2c5b1](https://github.com/barnolacesc/dockyard/commit/2c2c5b1e624fc284e9d86443b7066c8134e87ba1))
-* PR number formatting and worktree zig-out symlink ([#301](https://github.com/barnolacesc/dockyard/issues/301)) ([d9b3a9b](https://github.com/barnolacesc/dockyard/commit/d9b3a9b68fd072a9d545fa254cdccee9111eab12))
-* sidebar branch name delay and improve workstream row content ([#306](https://github.com/barnolacesc/dockyard/issues/306)) ([86b83cf](https://github.com/barnolacesc/dockyard/commit/86b83cfa62b70a941db72b16d55fcca5a9756346))
-
-
-### Miscellaneous
-
-* **deps:** update actions/checkout action to v6 ([#305](https://github.com/barnolacesc/dockyard/issues/305)) ([1dc5605](https://github.com/barnolacesc/dockyard/commit/1dc5605a0cd8212e01b11a3c6575aefa6cdcf5ce))
-
-## [0.1.62](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.62) (2026-04-01)
-
-
-### Bug Fixes
-
-* retry GitHub release asset uploads ([#295](https://github.com/barnolacesc/dockyard/issues/295)) ([f37aa7f](https://github.com/barnolacesc/dockyard/commit/f37aa7fbeab771937a8999ae191389a3041ac48d))
-
-## [0.1.61](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.61) (2026-04-01)
-
-
-### Bug Fixes
-
-* handle notification delivery callback off main thread ([#293](https://github.com/barnolacesc/dockyard/issues/293)) ([d31f06f](https://github.com/barnolacesc/dockyard/commit/d31f06fcb42113e420fabb820d7104d237026157))
-
-## [0.1.60](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.60) (2026-04-01)
-
-
-### Bug Fixes
-
-* remove sendable requirement from notification request protocol ([#291](https://github.com/barnolacesc/dockyard/issues/291)) ([337ff89](https://github.com/barnolacesc/dockyard/commit/337ff893ede250ac3f8ccaa65d863696eaf0b14f))
-
-## [0.1.59](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.59) (2026-04-01)
-
-
-### Bug Fixes
-
-* avoid main-actor notification callback crash ([#289](https://github.com/barnolacesc/dockyard/issues/289)) ([ec03f7d](https://github.com/barnolacesc/dockyard/commit/ec03f7d7cd2b1fcce5713de683b84b0060eb2d79))
-
-## [0.1.58](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.58) (2026-04-01)
-
-
-### Bug Fixes
-
-* handle notification authorization on main thread ([#287](https://github.com/barnolacesc/dockyard/issues/287)) ([6376d3a](https://github.com/barnolacesc/dockyard/commit/6376d3a78e9a630f0bdf4a4d97811d9c18d0f9aa))
-
-## [0.1.57](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.57) (2026-04-01)
-
-
-### Bug Fixes
-
-* **ci:** cache ghostty share dirs needed by xcodegen ([#285](https://github.com/barnolacesc/dockyard/issues/285)) ([7b243c3](https://github.com/barnolacesc/dockyard/commit/7b243c30e3f2d1dd5e1111099f2388e9e8b9177d))
-
-## [0.1.56](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.56) (2026-04-01)
-
-
-### Bug Fixes
-
-* align local release script signing with CI workflow ([#282](https://github.com/barnolacesc/dockyard/issues/282)) ([76a0dcf](https://github.com/barnolacesc/dockyard/commit/76a0dcfb7ceaba7d2db25614a1da33d39f3a13d2))
-* bundle ghostty terminfo and shell integration in app resources ([#283](https://github.com/barnolacesc/dockyard/issues/283)) ([bd4ea71](https://github.com/barnolacesc/dockyard/commit/bd4ea712cec51ae8d750dfc12afb10500e722eec))
-* use local entitlements to bypass library validation in dev release builds ([#280](https://github.com/barnolacesc/dockyard/issues/280)) ([2f8161c](https://github.com/barnolacesc/dockyard/commit/2f8161cb99efb4e811eb58c7582453acbe65a8c2)), closes [#279](https://github.com/barnolacesc/dockyard/issues/279)
-
-## [0.1.55](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.55) (2026-03-31)
-
-
-### Bug Fixes
-
-* move notification authorization to applicationDidFinishLaunching ([#277](https://github.com/barnolacesc/dockyard/issues/277)) ([6085ffd](https://github.com/barnolacesc/dockyard/commit/6085ffd0e0ed57d2ec82f579964c4499281285af)), closes [#274](https://github.com/barnolacesc/dockyard/issues/274)
-
-## [0.1.54](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.54) (2026-03-31)
-
-
-### Bug Fixes
-
-* dispatch notification authorization handler to main thread ([#275](https://github.com/barnolacesc/dockyard/issues/275)) ([fee40fc](https://github.com/barnolacesc/dockyard/commit/fee40fc4a99acc49d0243ed7d863927af6872202)), closes [#274](https://github.com/barnolacesc/dockyard/issues/274)
-
-## [0.1.53](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.53) (2026-03-31)
-
-
-### Features
-
-* auto-fetch origin/main before worktree creation ([#257](https://github.com/barnolacesc/dockyard/issues/257)) ([cfa8dc6](https://github.com/barnolacesc/dockyard/commit/cfa8dc640decdad5d7816f6a3826f79c5370885a)), closes [#253](https://github.com/barnolacesc/dockyard/issues/253)
-* handle ghostty desktop notifications and bell actions ([#264](https://github.com/barnolacesc/dockyard/issues/264)) ([fde32f5](https://github.com/barnolacesc/dockyard/commit/fde32f563e40bb00643dc0721043c774b3b1ef04))
-* support conductor.json and superset config as script fallbacks ([#261](https://github.com/barnolacesc/dockyard/issues/261)) ([0a4f0bc](https://github.com/barnolacesc/dockyard/commit/0a4f0bc32c522b6053d843df1c3c0cc7f5076894)), closes [#256](https://github.com/barnolacesc/dockyard/issues/256)
-
-
-### Bug Fixes
-
-* enable desktop notifications by adding UNUserNotificationCenterDelegate ([#269](https://github.com/barnolacesc/dockyard/issues/269)) ([0c5d9f1](https://github.com/barnolacesc/dockyard/commit/0c5d9f14edd352a9f84af8cafa476d2f2fca637f))
-* match ghostty trackpad scroll speed and momentum ([#263](https://github.com/barnolacesc/dockyard/issues/263)) ([60996a2](https://github.com/barnolacesc/dockyard/commit/60996a2e26a8fae0df891e51babbfe527a2bba81)), closes [#262](https://github.com/barnolacesc/dockyard/issues/262)
-* prevent user tmux config from leaking into sessions ([#272](https://github.com/barnolacesc/dockyard/issues/272)) ([c7ccef9](https://github.com/barnolacesc/dockyard/commit/c7ccef93ed8236a6bcbb8ee277c6c1ffe4fa24b7))
-* resolve build error and warnings in ContentView and TerminalApp ([#265](https://github.com/barnolacesc/dockyard/issues/265)) ([06d476d](https://github.com/barnolacesc/dockyard/commit/06d476d7fb54bd2d4d9b643fb13ad378824f93f2))
-* respawn agent in tmux mode when process exits ([#267](https://github.com/barnolacesc/dockyard/issues/267)) ([f8e54a1](https://github.com/barnolacesc/dockyard/commit/f8e54a1c32152c064748540ed95550201824706f))
-* revert worktree-create hook to symlink only xcframework ([#273](https://github.com/barnolacesc/dockyard/issues/273)) ([9ed32b5](https://github.com/barnolacesc/dockyard/commit/9ed32b5584ba69ce097bb7c8f10123b8a9568151))
-* scope tmux respawn hook to agent sessions only ([#268](https://github.com/barnolacesc/dockyard/issues/268)) ([e4b57af](https://github.com/barnolacesc/dockyard/commit/e4b57af886f826acc73b30c1dd4c857ff2d7aaf4))
-* show explicit desktop notifications even when app is active ([#266](https://github.com/barnolacesc/dockyard/issues/266)) ([f0b04ca](https://github.com/barnolacesc/dockyard/commit/f0b04caa4ab9bbda5c02b731ecf82184fb2ac301))
-
-
-### Performance
-
-* show workstream UI instantly during worktree creation ([#258](https://github.com/barnolacesc/dockyard/issues/258)) ([8f31121](https://github.com/barnolacesc/dockyard/commit/8f31121cf49c260b08119c109ab41c1e6c987b85)), closes [#254](https://github.com/barnolacesc/dockyard/issues/254)
-
-
-### Miscellaneous
-
-* **deps:** update actions/checkout action to v6 ([#271](https://github.com/barnolacesc/dockyard/issues/271)) ([0ac67a2](https://github.com/barnolacesc/dockyard/commit/0ac67a28ac9d8bc53a349db69ec48878434b75c5))
-
-
-### Documentation
-
-* document .dockyard.json script configuration ([#259](https://github.com/barnolacesc/dockyard/issues/259)) ([d52c0a2](https://github.com/barnolacesc/dockyard/commit/d52c0a2878a273c75118b950c7cb295d5c2b334a)), closes [#255](https://github.com/barnolacesc/dockyard/issues/255)
-
-## [0.1.52](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.52) (2026-03-31)
-
-
-### Bug Fixes
-
-* create empty initial commit on git init to enable worktrees ([#252](https://github.com/barnolacesc/dockyard/issues/252)) ([656e5f3](https://github.com/barnolacesc/dockyard/commit/656e5f38a80530fa037b898b6a4a2cc4c0703961))
-* prefer login shell PATH for tool detection ([#250](https://github.com/barnolacesc/dockyard/issues/250)) ([407683d](https://github.com/barnolacesc/dockyard/commit/407683dccfcb27f3b00f30a989dc0b216a54b331))
-
-## [0.1.51](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.51) (2026-03-31)
-
-
-### Bug Fixes
-
-* stop overriding PATH and redirecting stderr in agent launch ([#248](https://github.com/barnolacesc/dockyard/issues/248)) ([cbc1d19](https://github.com/barnolacesc/dockyard/commit/cbc1d194999e706abbbb324dea71330ae5ae46ab))
-
-## [0.1.50](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.50) (2026-03-31)
-
-
-### Features
-
-* improve terminal spawning resilience ([#235](https://github.com/barnolacesc/dockyard/issues/235)) ([8313c13](https://github.com/barnolacesc/dockyard/commit/8313c13a03134c3800248c06a520afa7cee73c2d))
-* improve update experience for Homebrew users ([#246](https://github.com/barnolacesc/dockyard/issues/246)) ([c4db1d2](https://github.com/barnolacesc/dockyard/commit/c4db1d2b8fce6d2ca8f6967ac2d1a6d54d810418))
-* per-workstream debug log files for launches ([#247](https://github.com/barnolacesc/dockyard/issues/247)) ([5c156f5](https://github.com/barnolacesc/dockyard/commit/5c156f5b27d9029d270b71dbd236a7aeab5b7ff0))
-* **website:** add download button to /get/ page ([#240](https://github.com/barnolacesc/dockyard/issues/240)) ([3f1b212](https://github.com/barnolacesc/dockyard/commit/3f1b212fdbdd18aee032053a16642271fe793fb8)), closes [#231](https://github.com/barnolacesc/dockyard/issues/231)
-
-
-### Bug Fixes
-
-* consolidate settings from 7 sections to 4 ([#242](https://github.com/barnolacesc/dockyard/issues/242)) ([9607073](https://github.com/barnolacesc/dockyard/commit/9607073d1155333d6c2270ac61b78b005728f361)), closes [#233](https://github.com/barnolacesc/dockyard/issues/233)
-* fade onboarding content so skyline remains visible in small windows ([#245](https://github.com/barnolacesc/dockyard/issues/245)) ([c0b998c](https://github.com/barnolacesc/dockyard/commit/c0b998c81827e0321f1cff9dc3e5e8e2ee03eb45))
-* increase DMG window height so skyline is visible ([#238](https://github.com/barnolacesc/dockyard/issues/238)) ([79e9a32](https://github.com/barnolacesc/dockyard/commit/79e9a32919973d639418d06a71929a0e83f2c360)), closes [#230](https://github.com/barnolacesc/dockyard/issues/230)
-* resolve compiler warnings in Launcher, BrowserView, and Updater ([#241](https://github.com/barnolacesc/dockyard/issues/241)) ([645ea15](https://github.com/barnolacesc/dockyard/commit/645ea15efdfd3e7a6424eff7a958fa2e5ebb04af)), closes [#228](https://github.com/barnolacesc/dockyard/issues/228)
-* trigger Sparkle update from sidebar instead of opening website ([#237](https://github.com/barnolacesc/dockyard/issues/237)) ([5b74416](https://github.com/barnolacesc/dockyard/commit/5b7441650749205026c9316c49f2f03db976f4c8)), closes [#232](https://github.com/barnolacesc/dockyard/issues/232)
-* use interactive login shell (-lic) for tool version manager support ([#243](https://github.com/barnolacesc/dockyard/issues/243)) ([d48ee31](https://github.com/barnolacesc/dockyard/commit/d48ee3131ca760cfe2876bddb2c4a8ec2b2370b1))
-
-## [0.1.49](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.49) (2026-03-30)
-
-
-### Features
-
-* add launch at login toggle in Settings ([#227](https://github.com/barnolacesc/dockyard/issues/227)) ([6c5dd43](https://github.com/barnolacesc/dockyard/commit/6c5dd43e957001e675a9ba4ebb5fa92ab1744baa)), closes [#224](https://github.com/barnolacesc/dockyard/issues/224)
-* direct DMG download and styled installer ([#225](https://github.com/barnolacesc/dockyard/issues/225)) ([8fbafdf](https://github.com/barnolacesc/dockyard/commit/8fbafdfd7d1fc3dc0fa3c45de8d943b17d95b3cb))
-
-
-### Bug Fixes
-
-* disable update checker in debug builds ([#209](https://github.com/barnolacesc/dockyard/issues/209)) ([ddb0e54](https://github.com/barnolacesc/dockyard/commit/ddb0e54414eaf84e82af172e5758025843af75a4))
-* match WKUIDelegate completion handler signatures for concurrency ([#212](https://github.com/barnolacesc/dockyard/issues/212)) ([9d807a5](https://github.com/barnolacesc/dockyard/commit/9d807a5213049db058ca715c3d0b2c961a4d1944))
-* read Sparkle changelog from CHANGELOG.md instead of GitHub release ([#221](https://github.com/barnolacesc/dockyard/issues/221)) ([087afee](https://github.com/barnolacesc/dockyard/commit/087afee420dd88c7028870e5a571c8a19066b511))
-* resolve LSP false positives for conditionally compiled AppConstants ([#213](https://github.com/barnolacesc/dockyard/issues/213)) ([a105cf6](https://github.com/barnolacesc/dockyard/commit/a105cf6964f123743a9b0abf6b2bf5e463c86763)), closes [#211](https://github.com/barnolacesc/dockyard/issues/211)
-* run worktree build in background to speed up creation ([#214](https://github.com/barnolacesc/dockyard/issues/214)) ([a2ed834](https://github.com/barnolacesc/dockyard/commit/a2ed83426974ec7a962e59a0e29d6e1c9c0adf5b))
-* **website:** prevent horizontal scroll on mobile Safari ([#218](https://github.com/barnolacesc/dockyard/issues/218)) ([8e68359](https://github.com/barnolacesc/dockyard/commit/8e683590c89c5498222c72dd761b901a9c7934f0))
+* **agent:** bound state cache reads ([#224](https://github.com/barnolacesc/dockyard/issues/224)) ([9a8d5c1](https://github.com/barnolacesc/dockyard/commit/9a8d5c151b8e9234750053b6abb3cfc4750e1b72))
+* **attention:** show only current workspaces ([#216](https://github.com/barnolacesc/dockyard/issues/216)) ([6865dcc](https://github.com/barnolacesc/dockyard/commit/6865dcc9541c2d0440d1c729fb696092c7d589ff))
+* **git:** bound repository exclude reads ([#234](https://github.com/barnolacesc/dockyard/issues/234)) ([67c5e05](https://github.com/barnolacesc/dockyard/commit/67c5e059802fc37b7b770614310057c56f634d7f))
+* rename task tabs and branches separately ([#222](https://github.com/barnolacesc/dockyard/issues/222)) ([aef9b35](https://github.com/barnolacesc/dockyard/commit/aef9b350dce00b38f19cdc8ef268e07e899febb0))
+* **settings:** bound CLI validation reads ([#232](https://github.com/barnolacesc/dockyard/issues/232)) ([69f2b88](https://github.com/barnolacesc/dockyard/commit/69f2b882a56fc8893e7d0a8e15e18e8b78b6e3bb))
+* **setup:** bound output delivery backlog ([#230](https://github.com/barnolacesc/dockyard/issues/230)) ([2241ad3](https://github.com/barnolacesc/dockyard/commit/2241ad3feaf5be4fc11a0dd52ccb27bfa0403f69))
+* **updater:** complete background source updates ([#227](https://github.com/barnolacesc/dockyard/issues/227)) ([e7c236c](https://github.com/barnolacesc/dockyard/commit/e7c236cf66e3d7d11d4985397715ce2b144098c8))
+* **updater:** run source updates without terminal windows ([#215](https://github.com/barnolacesc/dockyard/issues/215)) ([34ecd1e](https://github.com/barnolacesc/dockyard/commit/34ecd1e0efb3eedb025bec1f02aa40bcffc79e6a))
 
 
 ### Refactoring
 
-* remove ScriptLogger and move logging toggle to privacy section ([#216](https://github.com/barnolacesc/dockyard/issues/216)) ([3858229](https://github.com/barnolacesc/dockyard/commit/385822910afd9ab3d9ac6b549938d0a6cb144932))
-
-
-### Miscellaneous
-
-* add __pycache__ to .gitignore ([#223](https://github.com/barnolacesc/dockyard/issues/223)) ([015d9ec](https://github.com/barnolacesc/dockyard/commit/015d9ec53554bceead26d10f4973e5891acea72a)), closes [#222](https://github.com/barnolacesc/dockyard/issues/222)
+* **editor:** remove Monaco editor and use terminal editor for Cmd+O ([#237](https://github.com/barnolacesc/dockyard/issues/237)) ([9dc2d31](https://github.com/barnolacesc/dockyard/commit/9dc2d3105c8b2798419bed093a3b82ec25428a78))
+* **localization:** support English and Catalan only ([#218](https://github.com/barnolacesc/dockyard/issues/218)) ([8bd5f85](https://github.com/barnolacesc/dockyard/commit/8bd5f85b2b072ae79bd92214ed893e98bca746c3))
+* **sidebar:** remove recent workstreams section ([#248](https://github.com/barnolacesc/dockyard/issues/248)) ([fad6746](https://github.com/barnolacesc/dockyard/commit/fad6746cc836dced2ff5a99664ad87c0b27ea539))
 
 
 ### Documentation
 
-* add terminal resilience design doc ([#219](https://github.com/barnolacesc/dockyard/issues/219)) ([06ab89a](https://github.com/barnolacesc/dockyard/commit/06ab89ad0ba0a14f6250ea77e1e6a6246da4da1d))
-* add terminal spawning architecture reference ([#217](https://github.com/barnolacesc/dockyard/issues/217)) ([77b11c3](https://github.com/barnolacesc/dockyard/commit/77b11c3c21ae58dc7f592ffa20b651f0d1282c5c))
+* **roadmap:** reconcile post-weekend product priorities ([#235](https://github.com/barnolacesc/dockyard/issues/235)) ([3d45ea4](https://github.com/barnolacesc/dockyard/commit/3d45ea47badeada5b72c4dc79757489300870efb))
+* specify agent attention notifications ([#211](https://github.com/barnolacesc/dockyard/issues/211)) ([60f0e2e](https://github.com/barnolacesc/dockyard/commit/60f0e2eee5c3db31769651cf352a576cd507368e))
 
-## [0.1.48](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.48) (2026-03-29)
+## [0.2.5](https://github.com/barnolacesc/dockyard/releases/tag/v0.2.5) (2026-09-11)
 
 
 ### Features
 
-* show changelog in Sparkle update window ([#206](https://github.com/barnolacesc/dockyard/issues/206)) ([e32562c](https://github.com/barnolacesc/dockyard/commit/e32562cb719a3a3c674687e47cca89d6fe5bfd90))
+* integrate remaining workstream and persistence changes ([#209](https://github.com/barnolacesc/dockyard/issues/209)) ([305323b](https://github.com/barnolacesc/dockyard/commit/305323b4ce8e110d08e570af7805a12d11b080c8))
 
 
 ### Bug Fixes
 
-* close button on workspace tabs not intercepting clicks ([#208](https://github.com/barnolacesc/dockyard/issues/208)) ([e51bd82](https://github.com/barnolacesc/dockyard/commit/e51bd8233334eb07b0a37fb06dbd1f751683f424))
-* close button on workspace tabs not working ([#203](https://github.com/barnolacesc/dockyard/issues/203)) ([571dab4](https://github.com/barnolacesc/dockyard/commit/571dab4ded1d133ef66d262d1537c6e44636a744))
-* create logs directory before revealing in Finder ([#201](https://github.com/barnolacesc/dockyard/issues/201)) ([86b8344](https://github.com/barnolacesc/dockyard/commit/86b83444ad8cfa52e93f23d6233feaca0b3208fc))
-* hide add-workstream button for non-git projects ([#204](https://github.com/barnolacesc/dockyard/issues/204)) ([af30344](https://github.com/barnolacesc/dockyard/commit/af30344d62018e5015936a92576a799d6f67134d))
-* inject login shell PATH into terminal environment ([#205](https://github.com/barnolacesc/dockyard/issues/205)) ([2aa33aa](https://github.com/barnolacesc/dockyard/commit/2aa33aa111cfafaa42938f8da6009d9971b968ac))
+* **cache:** bound legacy migration enumeration ([#199](https://github.com/barnolacesc/dockyard/issues/199)) ([5450320](https://github.com/barnolacesc/dockyard/commit/54503203d9098a7231c08266f532350713954b48))
+* **dev:** launch current debug build ([763e906](https://github.com/barnolacesc/dockyard/commit/763e90605df79acd609a171a2b0ff4de99b4a8b4))
+* **persistence:** bound project snapshot decoding ([#201](https://github.com/barnolacesc/dockyard/issues/201)) ([9215bf5](https://github.com/barnolacesc/dockyard/commit/9215bf5a6e764ca608fa7c16e75baf379dc77e58))
+* **terminal:** support macOS dictation ([af3fef5](https://github.com/barnolacesc/dockyard/commit/af3fef5c1faac6e46b9ba60fb4abe93db97ba1b3))
+* **terminal:** support macOS dictation ([e24314c](https://github.com/barnolacesc/dockyard/commit/e24314c941112fb5348983b6fe7df98105414722))
+* **workspace:** make blocking notices passive ([#208](https://github.com/barnolacesc/dockyard/issues/208)) ([9edbb7f](https://github.com/barnolacesc/dockyard/commit/9edbb7fc5d1cfd227813f73d35cd8064283c1ed6))
+
+## [0.2.4](https://github.com/barnolacesc/dockyard/releases/tag/v0.2.4) (2026-09-08)
+
+
+### Features
+
+* **sidebar:** add persistent project colors ([bbd4a54](https://github.com/barnolacesc/dockyard/commit/bbd4a5430df7785cb0c8cb1e4959eabbc46a5562))
+* **sidebar:** add persistent project colors ([35e78f6](https://github.com/barnolacesc/dockyard/commit/35e78f69d0c7623a0dbefd7c8324324e0df7d740))
+
+
+### Bug Fixes
+
+* **updater:** detect stale running builds ([f2a5a00](https://github.com/barnolacesc/dockyard/commit/f2a5a0074f8d2aa2570e29c5669a4669f7e2cb7c))
+* **updater:** detect stale running builds ([cdcc6ae](https://github.com/barnolacesc/dockyard/commit/cdcc6aea4ecb9b89ec85e061bb1f9f645fa9958b))
+
+## [0.2.3](https://github.com/barnolacesc/dockyard/releases/tag/v0.2.3) (2026-09-08)
+
+
+### Features
+
+* **ui:** add agent attention workspace ([dfb1ef0](https://github.com/barnolacesc/dockyard/commit/dfb1ef0c716ad045cf4e515ceaf041ba3065a24a))
+* **ui:** add agent attention workspace ([bc3f0cd](https://github.com/barnolacesc/dockyard/commit/bc3f0cdae0368180af39928ee2f6531caec6c4d3))
+
+
+### Bug Fixes
+
+* **ui:** tighten sidebar row spacing ([8691129](https://github.com/barnolacesc/dockyard/commit/869112909da629f1291b68b4c3afac82af716896))
+* **ui:** tighten sidebar row spacing ([ccec6d7](https://github.com/barnolacesc/dockyard/commit/ccec6d7fdc75d8532efc796122095dc5c39843c0))
+
+## [0.2.2](https://github.com/barnolacesc/dockyard/releases/tag/v0.2.2) (2026-09-08)
+
+
+### Features
+
+* add getting-started tour flow content ([982523b](https://github.com/barnolacesc/dockyard/commit/982523bc8112c2548a78cc2466d8bee3da3724a5))
+* add interactive getting-started tour and what's new panel ([c300666](https://github.com/barnolacesc/dockyard/commit/c300666af4bf20edc4bb1b34ce9b34924cb30462))
+* add tour data model and anchor plumbing ([6fbfe8d](https://github.com/barnolacesc/dockyard/commit/6fbfe8d2acabd3e336cafd8193ef6272524e716b))
+* add tour entry points in Help menu and onboarding ([52f3619](https://github.com/barnolacesc/dockyard/commit/52f36198109bc73d74379d78b30d049d839be106))
+* add tour overlay, anchors, and run/config event posts ([daff1b8](https://github.com/barnolacesc/dockyard/commit/daff1b84d0335fe71e2c16d241fa7bc8edf7c917))
+* add TourController with notification-driven advancement ([22b405e](https://github.com/barnolacesc/dockyard/commit/22b405e8af44e39b4187e97b843395bec94d6468))
+* add what's new gate, models, and catalog ([bad3ba9](https://github.com/barnolacesc/dockyard/commit/bad3ba96eaead1ada0c1f413cbc47eb9abf38cba))
+* add what's new panel with per-version gate ([2ec9119](https://github.com/barnolacesc/dockyard/commit/2ec9119ec8dd45bbc48fde5d5fdd0ab03bc17a8f))
+* **agent:** aggregate Claude subagent status ([cd99804](https://github.com/barnolacesc/dockyard/commit/cd99804ecaa0805f6bccfdb64ff21c7c8020deed))
+* **agent:** define capability contract ([136ebe1](https://github.com/barnolacesc/dockyard/commit/136ebe128b94c6910379bd1008ac6adef5b1c43a))
+* **agent:** define capability contract ([cb35e3d](https://github.com/barnolacesc/dockyard/commit/cb35e3d521d539eb3f43db6615268a8a6b4a2bce))
+* **github:** add issue task preview model ([56a5e63](https://github.com/barnolacesc/dockyard/commit/56a5e63fa5db0aef5726778ccf13dc13b89c03a4))
+* name agent sessions after the task branch ([840b9b4](https://github.com/barnolacesc/dockyard/commit/840b9b42e3da19d7aa535eecdae114c4d8a4bd41))
+* name Claude Code agent sessions after the task branch ([7e72699](https://github.com/barnolacesc/dockyard/commit/7e72699bbc7551f1956b27009b121647ae50e551))
+* show Claude in Chrome activity ([aabce5f](https://github.com/barnolacesc/dockyard/commit/aabce5f62ea4db204d1d02be4b3054b4a805ffe9))
+* show Claude in Chrome activity ([bf0d04f](https://github.com/barnolacesc/dockyard/commit/bf0d04fa1f7ba7f3a433cfa3b89152db4d27fff4))
+* **tour:** add passive power features showcase ([6bcc263](https://github.com/barnolacesc/dockyard/commit/6bcc2637580298642491cd58294151472b009b45))
+* **tour:** add workspace tabs showcase ([35f280c](https://github.com/barnolacesc/dockyard/commit/35f280c4d20167f8605ce0379c266e062aaab78a))
+* triage worktree list, delete branches on prune, fix stale overview ([6a8c87c](https://github.com/barnolacesc/dockyard/commit/6a8c87c3a41b8b6d5c502d9495db1225d3b4fd2b))
+* **worktrees:** classify merged pull requests ([644d5da](https://github.com/barnolacesc/dockyard/commit/644d5da7367abacc2491ef47798518b2a10621d9))
+* **worktrees:** classify merged pull requests ([bd5f8e5](https://github.com/barnolacesc/dockyard/commit/bd5f8e59f43224ead0961b0cd119c1e86e7f442c))
+
+
+### Bug Fixes
+
+* **actions:** bound PR mutation output ([d3595ef](https://github.com/barnolacesc/dockyard/commit/d3595ef215dc95c6e4b51a62dccf408d45e1930b))
+* **actions:** bound push output ([af15566](https://github.com/barnolacesc/dockyard/commit/af1556673719e7f64e84fce91a2eb1e0cca7168d))
+* **actions:** terminate cancelled PR mutations ([6753ae2](https://github.com/barnolacesc/dockyard/commit/6753ae25ddd36a1eba53abebcfa04c667a573eab))
+* **actions:** terminate cancelled PR mutations ([8d87ab8](https://github.com/barnolacesc/dockyard/commit/8d87ab86bd9ea0dc07360206d9838731e75b2370))
+* **browser:** bound state cache reads ([bfbfc9c](https://github.com/barnolacesc/dockyard/commit/bfbfc9ca28c21dfeaba48e2e83d372b8f75b4121))
+* **browser:** bound state cache reads ([390f19b](https://github.com/barnolacesc/dockyard/commit/390f19b9412886c26393bef2cb1eee5f79eecb0e))
+* **browser:** secure browser-state cache files ([440279c](https://github.com/barnolacesc/dockyard/commit/440279cf87bad71cd5396c2a5a896503f139a2bd))
+* **config:** bound script configuration reads ([ed53f28](https://github.com/barnolacesc/dockyard/commit/ed53f28a2a2879ab1329d595c6f869d64b6cb9e2))
+* **docs:** bound workstream preview reads ([459568d](https://github.com/barnolacesc/dockyard/commit/459568df3c297333b48aac18d2a53dabee49c7fb))
+* **docs:** contain standard document reads ([d66ecb7](https://github.com/barnolacesc/dockyard/commit/d66ecb7ad3af685720356ef395cd56f825cd00b0))
+* don't let untracked files block self-update rebase ([ecabe78](https://github.com/barnolacesc/dockyard/commit/ecabe78ee1ed8360fa7aec0ac53b5ad5b525daec))
+* **editor:** bound Monaco resource responses ([bc89e4e](https://github.com/barnolacesc/dockyard/commit/bc89e4e989b488252cedb0723afb75c39b621529))
+* **editor:** bound source-file reads ([37f5e0a](https://github.com/barnolacesc/dockyard/commit/37f5e0ac4944667969ba4e1cab1c09d382a6b92d))
+* **editor:** contain close-tab saves ([ed95589](https://github.com/barnolacesc/dockyard/commit/ed955896ee1074ba10e1e4274308ad440ee9b779))
+* **editor:** contain close-tab saves ([eef5f89](https://github.com/barnolacesc/dockyard/commit/eef5f898ac1084453608f32b2e1d7afd424a44a4))
+* **editor:** contain Monaco resource paths ([05e3700](https://github.com/barnolacesc/dockyard/commit/05e37005c4f430ab2ed8b8a6f6649fbec8281824))
+* **editor:** contain workspace file access ([8588a40](https://github.com/barnolacesc/dockyard/commit/8588a404efd62acf6add4dac27c74d6d9a7a2fe9))
+* **environment:** bound description metadata reads ([e9bf004](https://github.com/barnolacesc/dockyard/commit/e9bf004524f57ad83761157e4a4783e079b8210f))
+* **environment:** contain automatic activation paths ([7c78ec2](https://github.com/barnolacesc/dockyard/commit/7c78ec27a29b1b7668d2d16c00bb45c2e2a1cfa2))
+* **environment:** contain automatic activation paths ([c3bb23a](https://github.com/barnolacesc/dockyard/commit/c3bb23aa85691d33e1c726fbd88fc9aa6f1da574))
+* force worktree removal in prune to handle populated submodules ([0dbcd7e](https://github.com/barnolacesc/dockyard/commit/0dbcd7e5a3d49fa15dcaba6ee4ef96183c5e29ee))
+* **github:** bound read-only metadata probes ([96e331e](https://github.com/barnolacesc/dockyard/commit/96e331e484a7ce21f08e03ffe812e691b39da771))
+* **github:** preserve Unicode issue text ([6561d28](https://github.com/barnolacesc/dockyard/commit/6561d2887ec5acb83b898610926451a20d014550))
+* **git:** preserve dirty default checkout ([fce9d0f](https://github.com/barnolacesc/dockyard/commit/fce9d0f61ee8b673ea1f09f27cb82e7d0245b5fb))
+* **git:** preserve dirty default checkout ([de12c16](https://github.com/barnolacesc/dockyard/commit/de12c168a33df5d5e4e28d6b20f581099a08d8b4))
+* **logging:** bound unified-log polling snapshots ([78fd3f3](https://github.com/barnolacesc/dockyard/commit/78fd3f37e63b3cfdb65bc1720f2a61150bb5e715))
+* **logging:** cap detailed launch log growth ([f8848ce](https://github.com/barnolacesc/dockyard/commit/f8848cea46f494c69dc51a5accd38eb4bf1bbb5a))
+* **logging:** secure detailed launch logs ([8b31afc](https://github.com/barnolacesc/dockyard/commit/8b31afc19b0012f57df5d695be33d092298b3352))
+* **opencode:** account for debug tmux session name ([ac3e684](https://github.com/barnolacesc/dockyard/commit/ac3e684acbcc340ac7932d78b741c0d387eb3688))
+* **opencode:** define supported agent capabilities ([9ec32a3](https://github.com/barnolacesc/dockyard/commit/9ec32a3fa986e849cb50d9b8659db0d40dcdf1df))
+* **opencode:** define supported agent capabilities ([6532089](https://github.com/barnolacesc/dockyard/commit/6532089230fe852a03f8005010201b890d513d8e))
+* **paths:** respect home directory boundary ([d386331](https://github.com/barnolacesc/dockyard/commit/d3863310954a0d58007e78a8f2a5f17a8270cc49))
+* **persistence:** enforce private state directories ([05e2a67](https://github.com/barnolacesc/dockyard/commit/05e2a679e045e19fd4f99c5734b5777edfdff801))
+* **persistence:** isolate malformed project records ([fe3a7df](https://github.com/barnolacesc/dockyard/commit/fe3a7dfb23af02d71789ea62ba6fa3243c8d234e))
+* **persistence:** isolate malformed project records ([51db415](https://github.com/barnolacesc/dockyard/commit/51db41588730f27142672e8c114719b8e68669b3))
+* **persistence:** isolate malformed tab snapshots ([12af455](https://github.com/barnolacesc/dockyard/commit/12af45583ed9608ff42a0588850a99c05bee21a4))
+* **persistence:** preserve cache migration destinations ([92ffc91](https://github.com/barnolacesc/dockyard/commit/92ffc913a22753ee1be933621096e9d1bc25eef2))
+* **persistence:** preserve cache migration destinations ([1d0d9ef](https://github.com/barnolacesc/dockyard/commit/1d0d9efeee22f0b50da75a356c8bdd4b52dcb8a8))
+* **persistence:** preserve valid setup completion state ([b34d5cd](https://github.com/barnolacesc/dockyard/commit/b34d5cd73746f6e1da86b62b849f614b01721c76))
+* **persistence:** protect watcher state directories ([6b07927](https://github.com/barnolacesc/dockyard/commit/6b0792766c31a0deea85a15a4eb4eb01e4e9ff72))
+* **persistence:** protect watcher state directories ([cd2874b](https://github.com/barnolacesc/dockyard/commit/cd2874bd5c771c778540da1091541670e08314f2))
+* **persistence:** recover agent state watcher ([9444fe9](https://github.com/barnolacesc/dockyard/commit/9444fe97489a150fabeea55a22fc39e2714646e2))
+* **persistence:** recover valid setup completion state ([a23633e](https://github.com/barnolacesc/dockyard/commit/a23633e623fc25a0809310985aa8c3be16f2bd92))
+* **persistence:** recover worktree HEAD watchers ([1a26277](https://github.com/barnolacesc/dockyard/commit/1a262772fa0afd8f2fbedb6857e5b5ee0eee183a))
+* **port-detection:** bound run-state cache reads ([08ec8b3](https://github.com/barnolacesc/dockyard/commit/08ec8b33781b5ea406a1dcf5eeaa071954c1ebd6))
+* **port-detection:** bound run-state cache reads ([e389ea0](https://github.com/barnolacesc/dockyard/commit/e389ea03a78bbf9aaf216975f6c5edecceebdc43))
+* **port-detection:** contain env port inference ([d75b996](https://github.com/barnolacesc/dockyard/commit/d75b9960a93b54e8529c83a969f173517af64b5e))
+* **port-detection:** recover replaced state watcher ([97f62a7](https://github.com/barnolacesc/dockyard/commit/97f62a7a7ac37f5b8f52223d6f05cb15f0f61085))
+* re-exec latest self-update script so update-flow fixes apply immediately ([33b3fdb](https://github.com/barnolacesc/dockyard/commit/33b3fdb6c227d8b633f3163e22aba93046046d84))
+* re-exec latest self-update script so update-flow fixes apply immediately ([558dc75](https://github.com/barnolacesc/dockyard/commit/558dc758cc5fd215906eacdf37cc0f478cf0ff91))
+* **run-state:** reject stale process snapshots ([ee6675a](https://github.com/barnolacesc/dockyard/commit/ee6675ad9779f0d80c8800c06243d98748046f2a))
+* **run-state:** reject stale process snapshots ([2a6014e](https://github.com/barnolacesc/dockyard/commit/2a6014efea9a64c5ce5deab5e72e96633092d65e))
+* scope tour run-start signal and harden controller ([d153e26](https://github.com/barnolacesc/dockyard/commit/d153e26099062e928101b1f680a6bb9001eface5))
+* **scripts:** contain project config resolution ([b4a4405](https://github.com/barnolacesc/dockyard/commit/b4a4405f2d15e1c3d7c980c0c545dfdabb85f907))
+* **setup:** drain output before completion ([4868c8a](https://github.com/barnolacesc/dockyard/commit/4868c8af95ba9a643c7ae7726e0cccf223d73cc8))
+* **sidebar:** preserve selected workstream contrast ([2f8c244](https://github.com/barnolacesc/dockyard/commit/2f8c2440e0a91b04ba67bb556998a0d1501b805e))
+* **sidebar:** preserve selected workstream contrast ([a76f42e](https://github.com/barnolacesc/dockyard/commit/a76f42e8908170700adcf20bde0eb80ee8194409))
+* **stack-detection:** contain metadata reads ([6042b61](https://github.com/barnolacesc/dockyard/commit/6042b61a24a074eddf48ba5ecf692629b8cf6178))
+* **stack:** bound manifest inspection reads ([ab35250](https://github.com/barnolacesc/dockyard/commit/ab352503d556dc59612b9cf9a5edc7392987d0bc))
+* **tests:** pass workstreamID in PortDetectorWatcherTests snapshots ([5961a70](https://github.com/barnolacesc/dockyard/commit/5961a70a17dccac1dd2446ef37c4eeef5300ea95))
+* **tmux:** bound cached configuration reads ([f4ed23a](https://github.com/barnolacesc/dockyard/commit/f4ed23a23899f20baf6bd7b5c709f86ef616c03b))
+* **tmux:** preserve sessions across app restarts ([4bf0150](https://github.com/barnolacesc/dockyard/commit/4bf0150146c0ffb66e81b9c56c53271682e7a245))
+* **tmux:** protect diagnostic cache permissions ([49ff869](https://github.com/barnolacesc/dockyard/commit/49ff869ac4f4b17ec2becf36c94ef95ba084b1ed))
+* **tmux:** protect diagnostic cache permissions ([12200ab](https://github.com/barnolacesc/dockyard/commit/12200ab1222b5130743c8a0f9476399dd449d738))
+* **tmux:** restore session persistence across app restarts ([99b68df](https://github.com/barnolacesc/dockyard/commit/99b68dfb91afbb80c2a48f0c20b3f0aa3cfd4f9e))
+* **tools:** bound login shell path discovery ([8ac3c40](https://github.com/barnolacesc/dockyard/commit/8ac3c40e77f4c67322216202781ef53429ec5233))
+* **tools:** bound startup detection probes ([e0f4ec1](https://github.com/barnolacesc/dockyard/commit/e0f4ec1b2bd8dc30f8623a3f5d2ed8071c39f31c))
+* **updater:** bound update-check output ([321613f](https://github.com/barnolacesc/dockyard/commit/321613f558384926d203f969048c97ede1a3a91b))
+* **usage:** bound Claude transcript parsing ([addd262](https://github.com/barnolacesc/dockyard/commit/addd26209301b0def3a4e8cf8e9044e7de5b34e4))
+* **usage:** bound Claude usage probe ([7f7fd40](https://github.com/barnolacesc/dockyard/commit/7f7fd40958dd308008d4de8795347d94719fe6ec))
+* **usage:** bound Codex probe IO ([9bdc542](https://github.com/barnolacesc/dockyard/commit/9bdc5422fc5cf30cf6550eb2d7888200115b1b2f))
+* worktree triage, prune branches + submodule force-remove, self-update untracked files ([95217cd](https://github.com/barnolacesc/dockyard/commit/95217cd929b757b589acf2e6f1753a719a49dde8))
+* **worktree:** bound gitfile indirection reads ([83d6965](https://github.com/barnolacesc/dockyard/commit/83d69653a1d256c197081f0b3aae6b7f42ed93da))
+* **worktree:** refuse unregistered purge targets ([d465b3e](https://github.com/barnolacesc/dockyard/commit/d465b3e14803770dd4eb1c2b8195a2e5256acf56))
+* **worktree:** refuse unregistered purge targets ([da5d734](https://github.com/barnolacesc/dockyard/commit/da5d734251076d413cdddaaf7100017a16af401e))
 
 
 ### Miscellaneous
 
-* **deps:** update astral-sh/setup-uv action to v7 ([#207](https://github.com/barnolacesc/dockyard/issues/207)) ([8b2cfda](https://github.com/barnolacesc/dockyard/commit/8b2cfda4bbfe0afdbcb6f3965e56e0c9de4608eb))
-
-## [0.1.47](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.47) (2026-03-29)
-
-
-### Features
-
-* add file-based logging for setup, run, and teardown scripts ([#198](https://github.com/barnolacesc/dockyard/issues/198)) ([949cf67](https://github.com/barnolacesc/dockyard/commit/949cf674bf60aba5b57d01bddf667ef39bd0ef64))
-* show changelog in Sparkle update window ([#200](https://github.com/barnolacesc/dockyard/issues/200)) ([3daf92a](https://github.com/barnolacesc/dockyard/commit/3daf92af357e5f69ed804a5f9c388019e21b231b))
-
-
-### Bug Fixes
-
-* discover CLI tools from user's login shell PATH ([#196](https://github.com/barnolacesc/dockyard/issues/196)) ([b00ae30](https://github.com/barnolacesc/dockyard/commit/b00ae30edefa0939a67767ec039537ebc3fc4ce1))
-* suppress incomplete umbrella header warnings from GhosttyKit ([#199](https://github.com/barnolacesc/dockyard/issues/199)) ([9f4ad38](https://github.com/barnolacesc/dockyard/commit/9f4ad38c9e05b842898a8b8bb744c5d9af795336))
-
-## [0.1.46](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.46) (2026-03-27)
-
-
-### Bug Fixes
-
-* handle Claude Code versions without --name flag ([#191](https://github.com/barnolacesc/dockyard/issues/191)) ([18d805b](https://github.com/barnolacesc/dockyard/commit/18d805ba3c6b6aaec023b35ac91eb3ae01823f48))
-
-
-### Miscellaneous
-
-* **deps:** update actions/deploy-pages action to v5 ([#187](https://github.com/barnolacesc/dockyard/issues/187)) ([82fa566](https://github.com/barnolacesc/dockyard/commit/82fa566265dcaa9bb4b21d742f1a58162e46b2fc))
-
-## [0.1.45](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.45) (2026-03-25)
-
-
-### Features
-
-* add anonymous usage telemetry via self-hosted Umami ([#186](https://github.com/barnolacesc/dockyard/issues/186)) ([392848c](https://github.com/barnolacesc/dockyard/commit/392848cfa8da966016f01bf7cc502f08ef59671f))
-* **website:** embed YouTube demo video in hero section ([#185](https://github.com/barnolacesc/dockyard/issues/185)) ([fb94c51](https://github.com/barnolacesc/dockyard/commit/fb94c511f49dd09fdf1b7e3c25a80b347c1bfada))
-
-
-### Bug Fixes
-
-* **browser:** handle JavaScript alert, confirm, and prompt dialogs ([#184](https://github.com/barnolacesc/dockyard/issues/184)) ([e4e40bf](https://github.com/barnolacesc/dockyard/commit/e4e40bfaad9ab6347de3dac5050e7b188158ec68))
-* cache WKWebView instances to prevent browser tab reload on switch ([#183](https://github.com/barnolacesc/dockyard/issues/183)) ([b6bd587](https://github.com/barnolacesc/dockyard/commit/b6bd587cdb252eb849209af8e9e844449548137a))
+* integrate audited open pull requests ([28422ea](https://github.com/barnolacesc/dockyard/commit/28422ea5fa46bb7c9465d91c354e3417da9a0887))
+* merge main and resolve localization conflicts ([a2c8e35](https://github.com/barnolacesc/dockyard/commit/a2c8e352eece12e5db106f6a44b9389f764fbf70))
+* merge reviewed openclaw PRs [#79](https://github.com/barnolacesc/dockyard/issues/79)–[#107](https://github.com/barnolacesc/dockyard/issues/107) ([2a92c7e](https://github.com/barnolacesc/dockyard/commit/2a92c7ebb8963f991bceecfd431d22be162c2c04))
+* remove Barcelona motto from website footer and unused app strings ([1ade116](https://github.com/barnolacesc/dockyard/commit/1ade11615dba082063eb9e5029a3054a105abd29))
 
 
 ### Documentation
 
-* awesome lists submission guide and README install improvements ([#179](https://github.com/barnolacesc/dockyard/issues/179)) ([ae855a1](https://github.com/barnolacesc/dockyard/commit/ae855a1d0c8314aeb10f5039b9672ef0615e7c31))
-* replace CLI-centric Get Started with in-app workflow ([#181](https://github.com/barnolacesc/dockyard/issues/181)) ([dd6347d](https://github.com/barnolacesc/dockyard/commit/dd6347d48a125f0d391e8a1d9272c93b26fff327))
-* update awesome lists tracking table with submission status ([#182](https://github.com/barnolacesc/dockyard/issues/182)) ([a91bee1](https://github.com/barnolacesc/dockyard/commit/a91bee19e6900cd572bc5da698d454c47908feff))
-
-## [0.1.44](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.44) (2026-03-24)
-
-
-### Bug Fixes
-
-* split ProjectSidebar body into computed properties to fix type-check timeout ([#177](https://github.com/barnolacesc/dockyard/issues/177)) ([a48545c](https://github.com/barnolacesc/dockyard/commit/a48545cb22dc02eb6a585b4efb422d8585ca2f10))
-
-## [0.1.43](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.43) (2026-03-24)
-
-
-### Bug Fixes
-
-* break up complex ProjectSidebar body to fix release build failure ([#175](https://github.com/barnolacesc/dockyard/issues/175)) ([c49002a](https://github.com/barnolacesc/dockyard/commit/c49002a15646bebb7306db175a5fd0cdf25989c5))
-
-## [0.1.42](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.42) (2026-03-24)
-
-
-### Features
-
-* localize NS*UsageDescription privacy strings via InfoPlist.strings ([#173](https://github.com/barnolacesc/dockyard/issues/173)) ([98d4358](https://github.com/barnolacesc/dockyard/commit/98d4358733484b8be59a7a001aa73ce0b206438d)), closes [#172](https://github.com/barnolacesc/dockyard/issues/172)
-
-
-### Bug Fixes
-
-* add privacy entitlements and TCC usage descriptions for embedded terminal ([#171](https://github.com/barnolacesc/dockyard/issues/171)) ([87c4216](https://github.com/barnolacesc/dockyard/commit/87c4216482fe07fe5c4797ab6ddf4829b8c0995f)), closes [#167](https://github.com/barnolacesc/dockyard/issues/167)
-* preserve terminal and browser tabs across workspace navigation ([#168](https://github.com/barnolacesc/dockyard/issues/168)) ([be89532](https://github.com/barnolacesc/dockyard/commit/be89532f3fec4c23715bca40715306c665d5543d))
-* sidebar archive button fails due to stale workstream index cache ([#170](https://github.com/barnolacesc/dockyard/issues/170)) ([3727c40](https://github.com/barnolacesc/dockyard/commit/3727c40af9e3db31ce27018abec071ab382337f7))
-* use login shell for agent and tmux commands to load user PATH ([#174](https://github.com/barnolacesc/dockyard/issues/174)) ([debcaad](https://github.com/barnolacesc/dockyard/commit/debcaad4bb195ff070fcab0507839592c9826459))
-
-## [0.1.41](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.41) (2026-03-23)
-
-
-### Bug Fixes
-
-* rewrite dy-run to exec command directly for ghostty PTY compatibility ([#166](https://github.com/barnolacesc/dockyard/issues/166)) ([90871a9](https://github.com/barnolacesc/dockyard/commit/90871a9f87772ba24ad5400cd8a40e2e74cc9981))
-* run build in worktree-create hook for SourceKit resolution ([#163](https://github.com/barnolacesc/dockyard/issues/163)) ([1184e7b](https://github.com/barnolacesc/dockyard/commit/1184e7bd3070ec75df62db098ee4fdc436e7092d)), closes [#161](https://github.com/barnolacesc/dockyard/issues/161)
-* skip symlinks when loading doc files in info panel ([#160](https://github.com/barnolacesc/dockyard/issues/160)) ([cd97a42](https://github.com/barnolacesc/dockyard/commit/cd97a42ec950d66da2bc04b5414d4b13d4286e23))
-* **website:** link changelog versions to GitHub releases instead of diffs ([#164](https://github.com/barnolacesc/dockyard/issues/164)) ([7f0ccd9](https://github.com/barnolacesc/dockyard/commit/7f0ccd99922f3973943ff18a4ab2c0fa57350a1f))
+* lead README with install/usage, remove Barcelona motto ([ceeea08](https://github.com/barnolacesc/dockyard/commit/ceeea0811d385396f497632469a705b184a13953))
+* note release-please CI approval quirk in TODO ([393d162](https://github.com/barnolacesc/dockyard/commit/393d1625640bf8af476aad73331d0d2f7d0bea17))
+* note release-please CI approval quirk in TODO ([1c1c4b2](https://github.com/barnolacesc/dockyard/commit/1c1c4b26db9a980b9cdf1aa600ebcb3da0a9af7d))
+* **readme:** consolidate install instructions at top, drop motto footer ([05ef2e5](https://github.com/barnolacesc/dockyard/commit/05ef2e520f038bf138ecba7e698e717facf99d1c))
+* **roadmap:** add Herdr runtime direction ([a82965f](https://github.com/barnolacesc/dockyard/commit/a82965f87456db782fef3fe833e25fedbf9d5b29))
+* **roadmap:** align Dockyard with Orca insights ([eca59d8](https://github.com/barnolacesc/dockyard/commit/eca59d8f2b099d54f44e076bbafa66f5b8dc2563))
+* **roadmap:** clarify tmux regression scope ([18227f7](https://github.com/barnolacesc/dockyard/commit/18227f7361365c9ea0fc5b8b615c0ee218940076))
+* **roadmap:** link bounded gitfile review ([14a6b77](https://github.com/barnolacesc/dockyard/commit/14a6b7731850e9aa1ac73648d566f09b047165f4))
+* **roadmap:** link browser state review ([df351b9](https://github.com/barnolacesc/dockyard/commit/df351b93038fe9a9e0874ef5ae44b2a9ed64d8bb))
+* **roadmap:** link cache migration review ([02e0be9](https://github.com/barnolacesc/dockyard/commit/02e0be9aa55ce527e8bfc3fc5ca1c03b53e3075f))
+* **roadmap:** link Codex probe review ([67c9783](https://github.com/barnolacesc/dockyard/commit/67c9783efba2b5138bf136e56c10499c090403a3))
+* **roadmap:** link description metadata review ([250457c](https://github.com/barnolacesc/dockyard/commit/250457cef49a8a71ab325f95f3ba629f64f27338))
+* **roadmap:** link editor read hardening ([3e6db69](https://github.com/barnolacesc/dockyard/commit/3e6db6995c949e663aed18e8b964a5a6bddb257b))
+* **roadmap:** link helper verification review ([a6f318c](https://github.com/barnolacesc/dockyard/commit/a6f318cf7c7be8b486fdc21de1fadde370a1db93))
+* **roadmap:** link issue preview review ([ed98b44](https://github.com/barnolacesc/dockyard/commit/ed98b44c62f717482cfc0dc41f0a811a940863a3))
+* **roadmap:** link launch log retention review ([6a5d8cb](https://github.com/barnolacesc/dockyard/commit/6a5d8cb5edf1144e01e231793f0586a42fcd605e))
+* **roadmap:** link login shell probe review ([e25f2d2](https://github.com/barnolacesc/dockyard/commit/e25f2d2ed4b39c600570e027d9df0fa140419b11))
+* **roadmap:** link merged PR classification review ([a80a496](https://github.com/barnolacesc/dockyard/commit/a80a496e97f918bdd9bff615f17b382ea2e6554c))
+* **roadmap:** link Monaco resource review ([1b7da71](https://github.com/barnolacesc/dockyard/commit/1b7da71c83b30bb5999666a2de7e6aeb42b1cad2))
+* **roadmap:** link power features review ([dc4f5f9](https://github.com/barnolacesc/dockyard/commit/dc4f5f9e3736842250547ed271f22e04c3622cd9))
+* **roadmap:** link push output review ([874848a](https://github.com/barnolacesc/dockyard/commit/874848a95918f36ccfb87da02c15d23cb52e5890))
+* **roadmap:** link R47 review ([3a4031a](https://github.com/barnolacesc/dockyard/commit/3a4031ad1ab62bf8aacc47c77bb196b55d154d45))
+* **roadmap:** link R56 review ([87092c3](https://github.com/barnolacesc/dockyard/commit/87092c3f9c5d01a47ccc9148565baab64eba2685))
+* **roadmap:** link R58 review ([4aa4817](https://github.com/barnolacesc/dockyard/commit/4aa4817edb251e34c5f99c40407c64b8ee30ad1e))
+* **roadmap:** link run-state review ([d18bd04](https://github.com/barnolacesc/dockyard/commit/d18bd04a368fa700de9a8c273aaebf563299c90b))
+* **roadmap:** link run-state validation PR ([4dd7d8f](https://github.com/barnolacesc/dockyard/commit/4dd7d8f6e20550fc160137d3d21828892b9abc34))
+* **roadmap:** link subagent status review ([569bd4c](https://github.com/barnolacesc/dockyard/commit/569bd4c81d092567d030c24b4219f483561453df))
+* **roadmap:** link unified-log snapshot review ([f62a46e](https://github.com/barnolacesc/dockyard/commit/f62a46e0154dd2ec2d563efe0d2d87b54495627b))
+* **roadmap:** link workspace tabs tour review ([3ee77a4](https://github.com/barnolacesc/dockyard/commit/3ee77a48327b12f4676b1f127bbd87f3bfc7c575))
+* **roadmap:** link worktree purge review ([7666469](https://github.com/barnolacesc/dockyard/commit/7666469113a2df6bc86c556698d074238971571c))
+* **roadmap:** mark browser state CI green ([94e05bc](https://github.com/barnolacesc/dockyard/commit/94e05bc2164d622bf0087c3de6ad0ac5e8c40bbd))
+* **roadmap:** reconcile document containment work ([ce57b45](https://github.com/barnolacesc/dockyard/commit/ce57b45f0e603ef39b2f483e4eb03751b2d8da7c))
+* **roadmap:** reconcile tmux PR blocker ([07b94a8](https://github.com/barnolacesc/dockyard/commit/07b94a88c96d4fbccc591ef4c4910f1846f2bbb5))
+* **roadmap:** record agent watcher recovery PR ([db2bedc](https://github.com/barnolacesc/dockyard/commit/db2bedcf922f194170cb8b04be86c7023b758ce5))
+* **roadmap:** record bounded GitHub probes ([f6598dc](https://github.com/barnolacesc/dockyard/commit/f6598dcbefb7fa3af7643a8d0e3b1578670afbeb))
+* **roadmap:** record bounded tool probes ([604c3aa](https://github.com/barnolacesc/dockyard/commit/604c3aa37e2bb4b8f72bf41efe17332b0f649368))
+* **roadmap:** record browser state CI ([63d1c15](https://github.com/barnolacesc/dockyard/commit/63d1c153ecd1633642feec3178cc8967f548711e))
+* **roadmap:** record browser state CI ([4b127a9](https://github.com/barnolacesc/dockyard/commit/4b127a90f56f3141b95b76669dc5418c046aebb2))
+* **roadmap:** record browser state PR ([b4d1e11](https://github.com/barnolacesc/dockyard/commit/b4d1e11f9fa299ac7dd8068207da1692280392ac))
+* **roadmap:** record cache migration CI evidence ([0cee878](https://github.com/barnolacesc/dockyard/commit/0cee87855169bc12369601d83d3097e39d04a7a3))
+* **roadmap:** record CI approval blocker ([933e275](https://github.com/barnolacesc/dockyard/commit/933e2759d3f08fecc5feefb20a22861a74dc8939))
+* **roadmap:** record Claude transcript CI ([ca2c86b](https://github.com/barnolacesc/dockyard/commit/ca2c86b9ae1b7a7c7643d3abf4586e2e23c1f16a))
+* **roadmap:** record Claude usage probe CI ([50422e8](https://github.com/barnolacesc/dockyard/commit/50422e8ee90e5dc9d362aeb65228292b4d81091b))
+* **roadmap:** record Codex probe CI ([cd98e15](https://github.com/barnolacesc/dockyard/commit/cd98e15b75f000e2e61c18bc3a19c2f3aaf8324e))
+* **roadmap:** record description metadata CI ([fa722e2](https://github.com/barnolacesc/dockyard/commit/fa722e2112244eebbc97199bf4f52257e8b10182))
+* **roadmap:** record editor containment evidence ([9a5f3b1](https://github.com/barnolacesc/dockyard/commit/9a5f3b10c5a6f6516774f26a8935dd5927e33b2e))
+* **roadmap:** record editor containment PR ([76dee1f](https://github.com/barnolacesc/dockyard/commit/76dee1fa0859f7c203fad83be82887c109297a47))
+* **roadmap:** record editor read CI ([63a531e](https://github.com/barnolacesc/dockyard/commit/63a531eaefee1ec41f7cf3732d47e1e2dd565195))
+* **roadmap:** record editor save CI evidence ([8e214f1](https://github.com/barnolacesc/dockyard/commit/8e214f1eba4736ec9dc41c10445a6a0718728e5c))
+* **roadmap:** record editor save pull request ([41e8f97](https://github.com/barnolacesc/dockyard/commit/41e8f979ba8bf48326515d473d016d532bf1e6ec))
+* **roadmap:** record gitfile reader CI ([cd771d3](https://github.com/barnolacesc/dockyard/commit/cd771d38f335fadb06f5c7b75add00e3c2239801))
+* **roadmap:** record helper verification CI ([5566692](https://github.com/barnolacesc/dockyard/commit/55666925e0ce2acf85f596ba1d281ae6c8c2e004))
+* **roadmap:** record home path boundary PR ([2224027](https://github.com/barnolacesc/dockyard/commit/22240270bfb6ffbd443dc7188bdde02662f8ce26))
+* **roadmap:** record issue preview CI ([d52722a](https://github.com/barnolacesc/dockyard/commit/d52722acad4c533fa9d9f8e2d4e28ed4b669a183))
+* **roadmap:** record July 27 CI blocker ([5320ef8](https://github.com/barnolacesc/dockyard/commit/5320ef8ab1f82642526aa0f7532f221d9195b1e9))
+* **roadmap:** record launch log retention CI ([02150b4](https://github.com/barnolacesc/dockyard/commit/02150b46f67b23bf06ddb51edd25d15a563e5591))
+* **roadmap:** record launch-log CI evidence ([b7dae0c](https://github.com/barnolacesc/dockyard/commit/b7dae0c37bca4f85cd1042cac27af9f353ced9d4))
+* **roadmap:** record launch-log privacy PR ([b7bfb29](https://github.com/barnolacesc/dockyard/commit/b7bfb293455381ca58563b507dd4803f8dcd78a4))
+* **roadmap:** record localization drift PR ([7ef4fc7](https://github.com/barnolacesc/dockyard/commit/7ef4fc7498ad86a9d18feb771dc7051058ea53f0))
+* **roadmap:** record login shell probe CI ([0e8726d](https://github.com/barnolacesc/dockyard/commit/0e8726ddb7eea1efcd5f51b02efe0cbb6ab0cef2))
+* **roadmap:** record merged PR status CI ([cd15095](https://github.com/barnolacesc/dockyard/commit/cd1509530101c8bb2f0e2f8b31a23effadc096bb))
+* **roadmap:** record Monaco containment PR ([532f37b](https://github.com/barnolacesc/dockyard/commit/532f37b5b79ecb0616b078949cf412e73e6a9683))
+* **roadmap:** record Monaco resource CI ([693f48e](https://github.com/barnolacesc/dockyard/commit/693f48ec918e7828e507c306fb4c544d537909b2))
+* **roadmap:** record native CI blocker ([4f1ce65](https://github.com/barnolacesc/dockyard/commit/4f1ce65c14c37b2c83009e903c0cfe891341b8d9))
+* **roadmap:** record native validation ([a3a59b8](https://github.com/barnolacesc/dockyard/commit/a3a59b88c53f1be69741f0a96ca7163ec3b3b6e2))
+* **roadmap:** record native watcher checks ([72d1d5e](https://github.com/barnolacesc/dockyard/commit/72d1d5e51cc25f0b734421c6cceeeacb819c05b8))
+* **roadmap:** record OpenCode CI evidence ([95ea04e](https://github.com/barnolacesc/dockyard/commit/95ea04ecb8f8262d4f56e834e127782b44ec2448))
+* **roadmap:** record OpenCode contract PR ([c04a5f3](https://github.com/barnolacesc/dockyard/commit/c04a5f307f7359a46cf9904681d0bc4d3fa48721))
+* **roadmap:** record port watcher CI evidence ([2459a58](https://github.com/barnolacesc/dockyard/commit/2459a58aab55ceebdd214249ad96914f734b3a50))
+* **roadmap:** record port watcher pull request ([ee64b35](https://github.com/barnolacesc/dockyard/commit/ee64b35d889609fa942a7747e9d2b0cbdefdfd97))
+* **roadmap:** record power features CI evidence ([da3f68f](https://github.com/barnolacesc/dockyard/commit/da3f68f0fddaf355fd300cef39b956bb6c3687ee))
+* **roadmap:** record push output CI ([652d9dd](https://github.com/barnolacesc/dockyard/commit/652d9dd91a9a9184594e95d672d61bbd0ee806a7))
+* **roadmap:** record R20 native evidence ([f40847a](https://github.com/barnolacesc/dockyard/commit/f40847af4231adcb5c0caad7b26e2e13961306e4))
+* **roadmap:** record R20 review state ([9718872](https://github.com/barnolacesc/dockyard/commit/9718872cb0fd9d3560c8378fa33c1b86405320f5))
+* **roadmap:** record R47 native evidence ([71e19b3](https://github.com/barnolacesc/dockyard/commit/71e19b3e7f29f14d3d16f3e81ed57dd980431b60))
+* **roadmap:** record R49 native evidence ([1694c3f](https://github.com/barnolacesc/dockyard/commit/1694c3f7a1fe40e8b152c1e0cca499e8351bec9e))
+* **roadmap:** record R53 CI evidence ([60eba84](https://github.com/barnolacesc/dockyard/commit/60eba8402a11b0b5cb83d10008d1b10f792b3113))
+* **roadmap:** record R53 review state ([58f3707](https://github.com/barnolacesc/dockyard/commit/58f37071e8ea1b21a5ad64ad0a6d4a16d1fcca2d))
+* **roadmap:** record R56 CI evidence ([0f68022](https://github.com/barnolacesc/dockyard/commit/0f680221c29672115e33d013e9570aa86f83eaee))
+* **roadmap:** record R57 CI evidence ([8b9dbfb](https://github.com/barnolacesc/dockyard/commit/8b9dbfb435f6df9d56d62c0518aef375e4f0fcae))
+* **roadmap:** record R58 CI evidence ([253c6d4](https://github.com/barnolacesc/dockyard/commit/253c6d474cab601228780947bc88dfebfcb09ded))
+* **roadmap:** record run-state CI evidence ([20ac7b5](https://github.com/barnolacesc/dockyard/commit/20ac7b59d28605df1a707c06f465599a9be00c55))
+* **roadmap:** record script containment CI ([ce548f1](https://github.com/barnolacesc/dockyard/commit/ce548f14cb43e14f7c8114711788022409a3044e))
+* **roadmap:** record script containment PR ([c28a246](https://github.com/barnolacesc/dockyard/commit/c28a246f7e6af7401d38e5442a84e32a8fa1a3d9))
+* **roadmap:** record sidebar contrast PR ([8615b37](https://github.com/barnolacesc/dockyard/commit/8615b37d83036cfe5e884c5748e0abe5508850f4))
+* **roadmap:** record stack detection CI ([4ea6fae](https://github.com/barnolacesc/dockyard/commit/4ea6faef7aff39935c04fbc42f26f99d7d32eb8e))
+* **roadmap:** record stack metadata containment ([2b9f4f0](https://github.com/barnolacesc/dockyard/commit/2b9f4f0aaaade474f9c30a374392631c8fc6d480))
+* **roadmap:** record state privacy pull request ([f522f3a](https://github.com/barnolacesc/dockyard/commit/f522f3a70f7776220047035b54b87656237fcfe9))
+* **roadmap:** record subagent status CI ([cb978e2](https://github.com/barnolacesc/dockyard/commit/cb978e2dc69c468fcb2cefd7c092dd08c437afc2))
+* **roadmap:** record tab snapshot recovery ([e74ca2d](https://github.com/barnolacesc/dockyard/commit/e74ca2ded3cf1d5112f300e1fee809c0f7193a65))
+* **roadmap:** record tmux diagnostics CI evidence ([bc012bd](https://github.com/barnolacesc/dockyard/commit/bc012bdfe0414e74c36ce01b6ac05558c8ab19c2))
+* **roadmap:** record tmux persistence PR ([900e40d](https://github.com/barnolacesc/dockyard/commit/900e40d7785001043f29508487b68bf4632b91b4))
+* **roadmap:** record tool probe CI ([e18dd7e](https://github.com/barnolacesc/dockyard/commit/e18dd7ea873c3f6575d29cdce4b793c9d98c1e46))
+* **roadmap:** record transient CI failure ([4428d3e](https://github.com/barnolacesc/dockyard/commit/4428d3e5305b60005d77160bf5f87a0e74afdd90))
+* **roadmap:** record unified-log CI evidence ([622bb08](https://github.com/barnolacesc/dockyard/commit/622bb08266d5be794add57a99b3fa5ef745bdd32))
+* **roadmap:** record unrelated CI flake ([1c65c55](https://github.com/barnolacesc/dockyard/commit/1c65c553adb76d733188fc5296cfa5eb952ba73f))
+* **roadmap:** record unrelated native test flake ([7b711ed](https://github.com/barnolacesc/dockyard/commit/7b711ed125b67eaffbe0a46e3af261c1b3c1ff4d))
+* **roadmap:** record workspace tour CI evidence ([4e97688](https://github.com/barnolacesc/dockyard/commit/4e97688834a0d10636bf0324fe737147a85717db))
+* **roadmap:** record worktree purge CI ([1068139](https://github.com/barnolacesc/dockyard/commit/1068139905835475f3d783d3855eba0bc4f7e75a))
+* **roadmap:** record worktree watcher PR ([2a3c88e](https://github.com/barnolacesc/dockyard/commit/2a3c88e667950f4ed0f73a4c1d9853a21f0cbe3c))
+* **roadmap:** refresh pending PR evidence ([9d873bb](https://github.com/barnolacesc/dockyard/commit/9d873bba9ff8d8f79ad619ceff247eebd29225e2))
+* **roadmap:** select private browser state ([2ddc4ec](https://github.com/barnolacesc/dockyard/commit/2ddc4ece5688d274373b2095cff266f2879cdb15))
+* **roadmap:** specify quiet bottom statusline ([eaf0a9d](https://github.com/barnolacesc/dockyard/commit/eaf0a9daac62cb0a14bd43cdaca6943f40063b6c))
 
 
 ### CI/CD
 
-* make Ghostty compat test manual-only and arm64-only ([#165](https://github.com/barnolacesc/dockyard/issues/165)) ([2e56331](https://github.com/barnolacesc/dockyard/commit/2e56331d3d5648969a5ce0b8794016f4a76d78a1))
+* **localization:** validate bundle membership ([bbcba97](https://github.com/barnolacesc/dockyard/commit/bbcba970f5f7aa265ec32ef8bec3eb8534b6aaea))
+* **localization:** validate bundle resource membership ([d782d72](https://github.com/barnolacesc/dockyard/commit/d782d728e47055e9ed262debf6c45711331fbf81))
+* **localization:** validate privacy prompt parity ([d3068a8](https://github.com/barnolacesc/dockyard/commit/d3068a8edc417d6d6c0e7c8e0423fb9880ea489a))
+* **localization:** validate privacy prompt parity ([08012ae](https://github.com/barnolacesc/dockyard/commit/08012ae9a6a1c50b41889af85bb7c6d3a2ddfb56))
+* prevent new localization key drift ([d36ceaf](https://github.com/barnolacesc/dockyard/commit/d36ceafab1d3b9f381f5dac94b7673c68244b7f4))
+* verify bundled helper integrity ([677b8ce](https://github.com/barnolacesc/dockyard/commit/677b8ce51e4855d9a9fbd7e22ec3be66d26f101d))
+* verify bundled helper integrity ([cb332cd](https://github.com/barnolacesc/dockyard/commit/cb332cd7de2e313fa1517d5129a763de77afd6c6))
 
-## [0.1.40](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.40) (2026-03-19)
-
-
-### Features
-
-* **website:** add llms.txt for AI crawler discovery ([#156](https://github.com/barnolacesc/dockyard/issues/156)) ([1e4fcc2](https://github.com/barnolacesc/dockyard/commit/1e4fcc2d7fb9c3c2f13eaefd113ce0460c7d000e))
-
-
-### Bug Fixes
-
-* use heap-allocated C strings for ghostty env vars ([#159](https://github.com/barnolacesc/dockyard/issues/159)) ([3c66311](https://github.com/barnolacesc/dockyard/commit/3c6631153e95322e78baa490f5618564fb7889bc))
+## [0.2.1](https://github.com/barnolacesc/dockyard/releases/tag/v0.2.1) (2026-07-11)
 
 
-### Performance
+### Miscellaneous
 
-* share SPM package cache across worktrees ([#158](https://github.com/barnolacesc/dockyard/issues/158)) ([e531a5a](https://github.com/barnolacesc/dockyard/commit/e531a5a5aeb5f66db72b8c29141d00d5b4ed80bb))
+* remove all sponsor links and pages ([1caa0e8](https://github.com/barnolacesc/dockyard/commit/1caa0e8f918b3f1e751f0a2c852db354e3d5f51f))
+* remove all sponsor links and pages ([3e37f8c](https://github.com/barnolacesc/dockyard/commit/3e37f8c66b330250ee06c5b525f1031408bd63ff))
 
-## [0.1.39](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.39) (2026-03-19)
+
+### Documentation
+
+* check off homebrew tap in fork-separation TODO ([dbbc25a](https://github.com/barnolacesc/dockyard/commit/dbbc25a6839f7c3233908fb398d3164e420956d6))
+* check off homebrew tap in fork-separation TODO ([917c2c4](https://github.com/barnolacesc/dockyard/commit/917c2c475048bb857cf4611077b6e117f3542f80))
 
 
 ### CI/CD
 
-* fix build warnings and improve CI caching ([#154](https://github.com/barnolacesc/dockyard/issues/154)) ([1c2db0b](https://github.com/barnolacesc/dockyard/commit/1c2db0b6d18e5c059aa72b14e705e4df6f88297c))
-
-## [0.1.38](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.38) (2026-03-19)
-
-
-### Bug Fixes
-
-* **ci:** prevent premature website deploy during releases ([#145](https://github.com/barnolacesc/dockyard/issues/145)) ([dd2967c](https://github.com/barnolacesc/dockyard/commit/dd2967c4a3b87a0eb225eaf1ae4797c95761e732))
-* host appcast on website to avoid Sparkle update race condition ([#149](https://github.com/barnolacesc/dockyard/issues/149)) ([5984c50](https://github.com/barnolacesc/dockyard/commit/5984c5012a7632df4d59e55bad03309cd5070d5a))
-* replace blocking runModal calls with async alternatives ([#148](https://github.com/barnolacesc/dockyard/issues/148)) ([a0d7e73](https://github.com/barnolacesc/dockyard/commit/a0d7e734bcf22de1f4a1d81ffc71b16d0457639d))
-
-
-### Refactoring
-
-* **ci:** embed Sparkle public key in project.yml ([#147](https://github.com/barnolacesc/dockyard/issues/147)) ([6465fb7](https://github.com/barnolacesc/dockyard/commit/6465fb7258e490a1f663432f8938e3b0c3c82278))
-* **ci:** embed Sparkle public key in project.yml ([#147](https://github.com/barnolacesc/dockyard/issues/147)) ([f7870fa](https://github.com/barnolacesc/dockyard/commit/f7870fabe94d26be60d52bcb054822743fefbe86))
-
-## [0.1.37](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.37) (2026-03-19)
-
-
-### Bug Fixes
-
-* wrap preloaded setup script in login shell ([#143](https://github.com/barnolacesc/dockyard/issues/143)) ([a263d35](https://github.com/barnolacesc/dockyard/commit/a263d35f94a7befdaa19e6922bd88b57ddb5e2a7))
-
-## [0.1.36](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.36) (2026-03-19)
-
-
-### Refactoring
-
-* generate Info.plist via XcodeGen and versions.json at deploy time ([#141](https://github.com/barnolacesc/dockyard/issues/141)) ([c1d624b](https://github.com/barnolacesc/dockyard/commit/c1d624b9f5f3192b20213917bdfd33b8c936a153))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.35 ([4e0a3ac](https://github.com/barnolacesc/dockyard/commit/4e0a3ac0b8411d4380660ebcce7564ef243df083))
-
-## [0.1.35](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.35) (2026-03-19)
-
-
-### Bug Fixes
-
-* correct TmuxSessionTests assertions to match actual output ([#138](https://github.com/barnolacesc/dockyard/issues/138)) ([76dbb87](https://github.com/barnolacesc/dockyard/commit/76dbb87cae1e2dbb6360dbebf35cf810324a8dae)), closes [#137](https://github.com/barnolacesc/dockyard/issues/137)
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.34 ([4b58179](https://github.com/barnolacesc/dockyard/commit/4b58179dae5c2343039dbe2cc1a907d76df78cdc))
-
-## [0.1.34](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.34) (2026-03-19)
-
-
-### Bug Fixes
-
-* run setup/run/teardown scripts in user's login shell ([#135](https://github.com/barnolacesc/dockyard/issues/135)) ([b9d8340](https://github.com/barnolacesc/dockyard/commit/b9d8340a968ccd53859615d7087f869695dc3b2f))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.33 ([27ea914](https://github.com/barnolacesc/dockyard/commit/27ea91456cf15ec4d83429e8e0f8e0e15dceb745))
-
-## [0.1.33](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.33) (2026-03-19)
-
-
-### Bug Fixes
-
-* **ci:** make dSYM upload non-blocking for releases ([#133](https://github.com/barnolacesc/dockyard/issues/133)) ([e73b829](https://github.com/barnolacesc/dockyard/commit/e73b8299924c5b0a05b6ee0672d7cc2bd1a17a9e))
-
-## [0.1.32](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.32) (2026-03-19)
-
-
-### Bug Fixes
-
-* upload dSYMs to Sentry so crash reports are symbolicated ([#131](https://github.com/barnolacesc/dockyard/issues/131)) ([7f4f2b9](https://github.com/barnolacesc/dockyard/commit/7f4f2b9cc80efbd7e0e35b1d62da7b5a50aaf9ff))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.31 ([5b0cbbe](https://github.com/barnolacesc/dockyard/commit/5b0cbbea2197b50b8da6d5f020735c825d49a165))
-
-## [0.1.31](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.31) (2026-03-19)
-
-
-### Bug Fixes
-
-* align CFBundleVersion with semver so Sparkle detects updates ([#129](https://github.com/barnolacesc/dockyard/issues/129)) ([0bcb0aa](https://github.com/barnolacesc/dockyard/commit/0bcb0aa42c968725bb0efdc76b6f8c0b5b3bf9fd))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.30 ([a319936](https://github.com/barnolacesc/dockyard/commit/a31993680a3a5f5ed6abb9b8f2bd7064ccb2a696))
-
-## [0.1.30](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.30) (2026-03-19)
-
-
-### Features
-
-* display app version on welcome screen and centralize version access ([#125](https://github.com/barnolacesc/dockyard/issues/125)) ([85d8856](https://github.com/barnolacesc/dockyard/commit/85d8856429c013bd125e94131496b9045eb355c9))
-* resolve git worktree paths to main repository when adding projects ([#127](https://github.com/barnolacesc/dockyard/issues/127)) ([780f26d](https://github.com/barnolacesc/dockyard/commit/780f26dafed1dc65aaf5fd4f95bca8ad79fb10fc))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.29 ([4649027](https://github.com/barnolacesc/dockyard/commit/4649027154a37bd29fd256193ad8170ddfd800ed))
-
-## [0.1.29](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.29) (2026-03-18)
-
-
-### Features
-
-* show port indicator in sidebar and title bar ([#119](https://github.com/barnolacesc/dockyard/issues/119)) ([#123](https://github.com/barnolacesc/dockyard/issues/123)) ([cdb1731](https://github.com/barnolacesc/dockyard/commit/cdb1731c8c7b00a231c081a637a314421e540ff4))
-
-
-### Bug Fixes
-
-* set run-state files to 0600 and directories to 0700 ([#97](https://github.com/barnolacesc/dockyard/issues/97)) ([#121](https://github.com/barnolacesc/dockyard/issues/121)) ([8009d0d](https://github.com/barnolacesc/dockyard/commit/8009d0db9fe1a479c6a2246450514e37ac3b80c4))
-* show spinner when environment pane is restarting ([#89](https://github.com/barnolacesc/dockyard/issues/89)) ([#120](https://github.com/barnolacesc/dockyard/issues/120)) ([7bc3fc3](https://github.com/barnolacesc/dockyard/commit/7bc3fc398e506e88b09062f59a5ba2a810d5cffa))
-
-
-### Refactoring
-
-* remove legacy JSON file migration code ([#93](https://github.com/barnolacesc/dockyard/issues/93)) ([#122](https://github.com/barnolacesc/dockyard/issues/122)) ([3b5041c](https://github.com/barnolacesc/dockyard/commit/3b5041ca4f6bca93aa09ef722c3544be1904298d))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.28 ([1507e37](https://github.com/barnolacesc/dockyard/commit/1507e37d77a4e65753793b8e23abe2215a90bddc))
-
-## [0.1.28](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.28) (2026-03-18)
-
-
-### Bug Fixes
-
-* don't double-escape tmux command argument ([#115](https://github.com/barnolacesc/dockyard/issues/115)) ([91aad5e](https://github.com/barnolacesc/dockyard/commit/91aad5eca06148d9739f41438fd5ea19e0ab77a5))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.27 ([2daee40](https://github.com/barnolacesc/dockyard/commit/2daee401eed245da006fe552f3ce64b8eecb7842))
-
-## [0.1.27](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.27) (2026-03-18)
-
-
-### Bug Fixes
-
-* flatten tmux command to single sh -c level, eliminate nested escaping ([#114](https://github.com/barnolacesc/dockyard/issues/114)) ([c42631f](https://github.com/barnolacesc/dockyard/commit/c42631f113abf10e71498088391b011705b1cbb6))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.26 ([0776e67](https://github.com/barnolacesc/dockyard/commit/0776e678857a34597729058bd7b25a49ffced837))
-
-
-### Documentation
-
-* add hybrid adoption strategy to SwiftGitX analysis ([#112](https://github.com/barnolacesc/dockyard/issues/112)) ([668b3cd](https://github.com/barnolacesc/dockyard/commit/668b3cdae7502609409d795ec692474d85460312))
-* add SwiftGitX feasibility analysis ([#110](https://github.com/barnolacesc/dockyard/issues/110)) ([2970473](https://github.com/barnolacesc/dockyard/commit/297047352b56e656ae618829dcfb2463ea3add61))
-
-## [0.1.26](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.26) (2026-03-18)
-
-
-### Bug Fixes
-
-* **ci:** add --options=runtime to framework re-signing step ([#108](https://github.com/barnolacesc/dockyard/issues/108)) ([5dcb866](https://github.com/barnolacesc/dockyard/commit/5dcb8668426582d6d0c6bc19d085daafc3666dd5))
-
-## [0.1.25](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.25) (2026-03-18)
-
-
-### Bug Fixes
-
-* remove stale baseDirectory argument from MarkdownContentView call ([#106](https://github.com/barnolacesc/dockyard/issues/106)) ([1758aba](https://github.com/barnolacesc/dockyard/commit/1758aba868bd81b884a445f59162f641b0db3e2e))
-
-## [0.1.24](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.24) (2026-03-18)
-
-
-### Features
-
-* add Sparkle auto-update ([#39](https://github.com/barnolacesc/dockyard/issues/39)) ([#80](https://github.com/barnolacesc/dockyard/issues/80)) ([83acde7](https://github.com/barnolacesc/dockyard/commit/83acde778dce1d4963c1f06c7f83087ba303ecb1))
-* **website:** mobile screenshot layout and modal viewer ([#74](https://github.com/barnolacesc/dockyard/issues/74)) ([#78](https://github.com/barnolacesc/dockyard/issues/78)) ([7cf81e5](https://github.com/barnolacesc/dockyard/commit/7cf81e55ed7729cf7aa9f707861f75b5fda547cb))
-
-
-### Bug Fixes
-
-* async worktree creation with loading spinner ([#92](https://github.com/barnolacesc/dockyard/issues/92), [#87](https://github.com/barnolacesc/dockyard/issues/87)) ([#101](https://github.com/barnolacesc/dockyard/issues/101)) ([a0d8580](https://github.com/barnolacesc/dockyard/commit/a0d858063b742cb2721dfcbefb3f54d7c66842f1))
-* double-quote tmux -e values to handle spaces and special chars ([#94](https://github.com/barnolacesc/dockyard/issues/94)) ([#104](https://github.com/barnolacesc/dockyard/issues/104)) ([a31a676](https://github.com/barnolacesc/dockyard/commit/a31a67668552fa27eba169f3c88a216c466d7b88))
-* localize all user-facing strings in alerts and prune UI ([#88](https://github.com/barnolacesc/dockyard/issues/88)) ([#103](https://github.com/barnolacesc/dockyard/issues/103)) ([4fabdb0](https://github.com/barnolacesc/dockyard/commit/4fabdb0c913eb9d6a31f9e1383cd6a6c12cde95c))
-* require user consent for dockyard:// URL scheme ([#98](https://github.com/barnolacesc/dockyard/issues/98)) ([#102](https://github.com/barnolacesc/dockyard/issues/102)) ([cfb2e77](https://github.com/barnolacesc/dockyard/commit/cfb2e775d3bdb3385af633317c6876aa7d6adb92))
-* strip raw HTML from markdown rendering, remove file:// base URL ([#95](https://github.com/barnolacesc/dockyard/issues/95)) ([#99](https://github.com/barnolacesc/dockyard/issues/99)) ([5c4dce5](https://github.com/barnolacesc/dockyard/commit/5c4dce584ddaddcd8ef0a58e04f0d8ab6e946b1b))
-
-
-### Refactoring
-
-* move run-state and tmux.conf to ~/Library/Caches/dockyard/ ([#75](https://github.com/barnolacesc/dockyard/issues/75)) ([#76](https://github.com/barnolacesc/dockyard/issues/76)) ([a1de232](https://github.com/barnolacesc/dockyard/commit/a1de232cf57d9eb2754ebcf9c29a1abb05e3149a))
-
-
-### Miscellaneous
-
-* add prek pre-commit hooks ([#82](https://github.com/barnolacesc/dockyard/issues/82)) ([#83](https://github.com/barnolacesc/dockyard/issues/83)) ([19f08f3](https://github.com/barnolacesc/dockyard/commit/19f08f3218f56b875e0734a53b53a51c735c8637))
-* add SwiftFormat hook and update AGENTS.md ([#84](https://github.com/barnolacesc/dockyard/issues/84), [#85](https://github.com/barnolacesc/dockyard/issues/85)) ([#86](https://github.com/barnolacesc/dockyard/issues/86)) ([8656ea8](https://github.com/barnolacesc/dockyard/commit/8656ea81659f318906874885a011c83cb7055841))
-* update versions.json to v0.1.23 ([1f0ef5d](https://github.com/barnolacesc/dockyard/commit/1f0ef5d489abaa737bbd1255db2aedb84dce33be))
-
-
-### Documentation
-
-* add SwiftGit2 feasibility analysis (recommendation: don't adopt) ([#105](https://github.com/barnolacesc/dockyard/issues/105)) ([38fce35](https://github.com/barnolacesc/dockyard/commit/38fce358fc98c59d66e401726e6b2dc69348d47c))
-* document ProjectList ObservableObject audit results ([#91](https://github.com/barnolacesc/dockyard/issues/91)) ([#100](https://github.com/barnolacesc/dockyard/issues/100)) ([b38e2b7](https://github.com/barnolacesc/dockyard/commit/b38e2b77b55f42f33822ce4be24f1c84d9a9b70d))
-
-## [0.1.23](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.23) (2026-03-18)
-
-
-### Bug Fixes
-
-* migrate project storage from JSON files to UserDefaults ([#70](https://github.com/barnolacesc/dockyard/issues/70)) ([9a86fa5](https://github.com/barnolacesc/dockyard/commit/9a86fa5c14adacbfdaf111b58f31663a27924a59)), closes [#46](https://github.com/barnolacesc/dockyard/issues/46)
-* migrate project storage from JSON files to UserDefaults ([#72](https://github.com/barnolacesc/dockyard/issues/72)) ([4a88ebe](https://github.com/barnolacesc/dockyard/commit/4a88ebe497b782bbd02ad4ffd6f1a4195f3f9551)), closes [#46](https://github.com/barnolacesc/dockyard/issues/46)
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.22 ([51075bb](https://github.com/barnolacesc/dockyard/commit/51075bb96d8fb9430239461201d092385e4e4de5))
-
-
-### Documentation
-
-* add Sparkle scoping doc; fix(website): native changelog rendering ([#41](https://github.com/barnolacesc/dockyard/issues/41)) ([#73](https://github.com/barnolacesc/dockyard/issues/73)) ([ee9805b](https://github.com/barnolacesc/dockyard/commit/ee9805b6ba1d6400d5ddf45bf76748bcccf5421c))
-
-## [0.1.22](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.22) (2026-03-18)
-
-
-### Bug Fixes
-
-* remove double shell-escaping of tmux -e env flags ([#64](https://github.com/barnolacesc/dockyard/issues/64)) ([be08aa4](https://github.com/barnolacesc/dockyard/commit/be08aa45420f6b380dfce87298f866cb47060258))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.21 ([db0a820](https://github.com/barnolacesc/dockyard/commit/db0a820ee71fa496a9999e63b851079556862769))
-
-## [0.1.21](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.21) (2026-03-18)
-
-
-### Bug Fixes
-
-* **ci:** match local and CI build environments ([#59](https://github.com/barnolacesc/dockyard/issues/59)), add SPM cache path ([#38](https://github.com/barnolacesc/dockyard/issues/38)) ([#60](https://github.com/barnolacesc/dockyard/issues/60)) ([771dc21](https://github.com/barnolacesc/dockyard/commit/771dc2117f98cc16b0b60ea78c232418c1ad7863))
-* use ObservableObject for projects to fix Release @State timing ([#43](https://github.com/barnolacesc/dockyard/issues/43)) ([#63](https://github.com/barnolacesc/dockyard/issues/63)) ([c0568c8](https://github.com/barnolacesc/dockyard/commit/c0568c84ccccd8da0761b79b8347921326e4940d))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.20 ([88939d1](https://github.com/barnolacesc/dockyard/commit/88939d16b69dd24981be021ea4fc8de3bca76052))
-
-
-### Documentation
-
-* add release command to build instructions ([#62](https://github.com/barnolacesc/dockyard/issues/62)) ([4ed8099](https://github.com/barnolacesc/dockyard/commit/4ed80997b166a35a9ba80262c2c4b38dc37715d7))
-
-## [0.1.20](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.20) (2026-03-18)
-
-
-### Bug Fixes
-
-* use notifications for project/workstream creation ([#43](https://github.com/barnolacesc/dockyard/issues/43)) ([#57](https://github.com/barnolacesc/dockyard/issues/57)) ([75ed058](https://github.com/barnolacesc/dockyard/commit/75ed058599bf263a43af98b5750f9457a1e21f5a))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.19 ([0aed24f](https://github.com/barnolacesc/dockyard/commit/0aed24f1b5ff5a656f803d819cdf22b35f988cf8))
-
-## [0.1.19](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.19) (2026-03-18)
-
-
-### Bug Fixes
-
-* delay selection after projects mutation to ensure SwiftUI commits ([#43](https://github.com/barnolacesc/dockyard/issues/43)) ([#55](https://github.com/barnolacesc/dockyard/issues/55)) ([ef451ff](https://github.com/barnolacesc/dockyard/commit/ef451ff0536d632744185b48e7b91657f9418714))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.18 ([5297fc7](https://github.com/barnolacesc/dockyard/commit/5297fc7a83ef28c566f86a84c898415bfa387899))
-
-## [0.1.18](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.18) (2026-03-18)
-
-
-### Bug Fixes
-
-* use atomic callbacks for project and workstream creation ([#43](https://github.com/barnolacesc/dockyard/issues/43)) ([#53](https://github.com/barnolacesc/dockyard/issues/53)) ([080bcb2](https://github.com/barnolacesc/dockyard/commit/080bcb2b9612934b6328aa7432e04d4d32e845c2))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.17 ([65042c2](https://github.com/barnolacesc/dockyard/commit/65042c20894d7c95ef70519009ab287f785a4556))
-
-## [0.1.17](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.17) (2026-03-18)
-
-
-### Bug Fixes
-
-* **ci:** add actions:write permission for website deploy trigger ([#50](https://github.com/barnolacesc/dockyard/issues/50)) ([272903b](https://github.com/barnolacesc/dockyard/commit/272903b156793a96a8182143fe77adaa6ebef1d9))
-* defer workstream selection to let @Binding propagate ([#43](https://github.com/barnolacesc/dockyard/issues/43)) ([#52](https://github.com/barnolacesc/dockyard/issues/52)) ([d687430](https://github.com/barnolacesc/dockyard/commit/d687430d81728eb84fcd2ba224cf2f665ac0721b))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.16 ([ff602af](https://github.com/barnolacesc/dockyard/commit/ff602af9f8b7c59e551478d25382429b9e25eed4))
-
-## [0.1.16](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.16) (2026-03-17)
-
-
-### Bug Fixes
-
-* use os_log Logger with public privacy for debug logging ([#43](https://github.com/barnolacesc/dockyard/issues/43)) ([#49](https://github.com/barnolacesc/dockyard/issues/49)) ([467d749](https://github.com/barnolacesc/dockyard/commit/467d74982622974bccfe8332e2d8a9b1f96d3859))
-* **website:** add brew update to upgrade instructions, trigger deploy after release ([#47](https://github.com/barnolacesc/dockyard/issues/47)) ([385f085](https://github.com/barnolacesc/dockyard/commit/385f085d5f96a711e3feabb456dffbafaa0f088a)), closes [#40](https://github.com/barnolacesc/dockyard/issues/40) [#42](https://github.com/barnolacesc/dockyard/issues/42)
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.15 ([e898537](https://github.com/barnolacesc/dockyard/commit/e898537e0c959c4f36edb346df47e480cc5f4c05))
-
-## [0.1.15](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.15) (2026-03-17)
-
-
-### Bug Fixes
-
-* add comprehensive debug logging for workspace creation ([#43](https://github.com/barnolacesc/dockyard/issues/43)) ([#44](https://github.com/barnolacesc/dockyard/issues/44)) ([9e52aa1](https://github.com/barnolacesc/dockyard/commit/9e52aa1665b7f1da5c7c8a86a2ef091f5df8d749))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.14 ([b4c06bc](https://github.com/barnolacesc/dockyard/commit/b4c06bc849f1451a0a5507197d128c1f375ae16a))
-
-## [0.1.14](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.14) (2026-03-17)
-
-
-### Bug Fixes
-
-* **ci:** use correct xcodegen-action version tag (1.2.4, no v prefix) ([#36](https://github.com/barnolacesc/dockyard/issues/36)) ([70e79a6](https://github.com/barnolacesc/dockyard/commit/70e79a624e090429cb2e1e97a35ff67421dd76ed))
-
-## [0.1.13](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.13) (2026-03-17)
-
-
-### Bug Fixes
-
-* **ci:** use correct xcodegen action (xavierLowmiller/xcodegen-action) ([#34](https://github.com/barnolacesc/dockyard/issues/34)) ([abfcac3](https://github.com/barnolacesc/dockyard/commit/abfcac320332011b7cd50421a2b02e35fc53928c))
-
-## [0.1.12](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.12) (2026-03-17)
-
-
-### Bug Fixes
-
-* **ci:** correct xcodegen setup action name ([#32](https://github.com/barnolacesc/dockyard/issues/32)) ([a70ef8a](https://github.com/barnolacesc/dockyard/commit/a70ef8a0af8672665c46a851870e36257ea6d9db))
-
-## [0.1.11](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.11) (2026-03-17)
-
-
-### Performance
-
-* **ci:** replace brew with dedicated setup actions for zig and xcodegen ([#30](https://github.com/barnolacesc/dockyard/issues/30)) ([d438aaf](https://github.com/barnolacesc/dockyard/commit/d438aafae5a83a6b5f74c917abe08781f982e3ea))
-
-## [0.1.10](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.10) (2026-03-17)
-
-
-### Performance
-
-* **ci:** cache ghostty xcframework between builds ([#26](https://github.com/barnolacesc/dockyard/issues/26)) ([1d51987](https://github.com/barnolacesc/dockyard/commit/1d519873cecf52acf6ffee39c0d47ddd7f52b5a9))
-* **ci:** cache SPM packages between builds ([#29](https://github.com/barnolacesc/dockyard/issues/29)) ([960b037](https://github.com/barnolacesc/dockyard/commit/960b03734755023fa4086987a4dfd15031f843a1))
-
-
-### Miscellaneous
-
-* **deps:** update actions/cache action to v5 ([#27](https://github.com/barnolacesc/dockyard/issues/27)) ([c506297](https://github.com/barnolacesc/dockyard/commit/c50629746d9936178b63399901f82dde0bbb14a2))
-
-## [0.1.9](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.9) (2026-03-17)
-
-
-### Bug Fixes
-
-* pass env vars to tmux sessions via -e flags ([#24](https://github.com/barnolacesc/dockyard/issues/24)) ([596f731](https://github.com/barnolacesc/dockyard/commit/596f7313c0a97dfb6ad092b3fb8ea2065d278681))
-
-## [0.1.8](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.8) (2026-03-17)
-
-
-### Features
-
-* **website:** add changelog page with timeline layout ([#20](https://github.com/barnolacesc/dockyard/issues/20)) ([d0b38e5](https://github.com/barnolacesc/dockyard/commit/d0b38e50c5043a5da22c8525b6145c5c1e1c1c9a))
-
-
-### Bug Fixes
-
-* **ci:** remove --deep from app re-signing, add debug logging ([#23](https://github.com/barnolacesc/dockyard/issues/23)) ([d298fb8](https://github.com/barnolacesc/dockyard/commit/d298fb898d6eb081daf244371c0a735208e175c3))
-* let release-please bump version in Info.plist ([#22](https://github.com/barnolacesc/dockyard/issues/22)) ([1624a40](https://github.com/barnolacesc/dockyard/commit/1624a40be203c21b3723994b0fe1d3a2d4096fd4))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.7 ([7a67bf2](https://github.com/barnolacesc/dockyard/commit/7a67bf2ebb8cea5dc998e788a5c79e17e2f01687))
-
-## [0.1.7](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.7) (2026-03-17)
-
-
-### Bug Fixes
-
-* resolve workspace creation failure in production builds ([#18](https://github.com/barnolacesc/dockyard/issues/18)) ([ece00ab](https://github.com/barnolacesc/dockyard/commit/ece00ab0c20b17f4e169c16e1a748804a1ea8222))
-
-
-### Miscellaneous
-
-* update versions.json to v0.1.6 ([b0acea2](https://github.com/barnolacesc/dockyard/commit/b0acea2441e1fd2dc70ff7035b8b8afa12554fbc))
-
-## [0.1.6](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.6) (2026-03-17)
-
-
-### Bug Fixes
-
-* **ci:** enable hardened runtime and secure timestamps for notarization ([#16](https://github.com/barnolacesc/dockyard/issues/16)) ([5f52d57](https://github.com/barnolacesc/dockyard/commit/5f52d576c4ac87d1e88f6a002c291f9322fbafe7))
-
-## [0.1.5](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.5) (2026-03-17)
-
-
-### Bug Fixes
-
-* **ci:** fetch Apple notarization log on failure ([#14](https://github.com/barnolacesc/dockyard/issues/14)) ([7fc381e](https://github.com/barnolacesc/dockyard/commit/7fc381ee029486c13ac6e38248396683570c6087))
-
-## [0.1.4](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.4) (2026-03-17)
-
-
-### Bug Fixes
-
-* **ci:** skip ghostty app bundle build, only emit xcframework ([#12](https://github.com/barnolacesc/dockyard/issues/12)) ([c5844b3](https://github.com/barnolacesc/dockyard/commit/c5844b3b9203419281d0f61069b2dcb6307b1d9f))
-
-## [0.1.3](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.3) (2026-03-17)
-
-
-### Bug Fixes
-
-* **ci:** build ghostty xcframework before release build ([#10](https://github.com/barnolacesc/dockyard/issues/10)) ([f7be824](https://github.com/barnolacesc/dockyard/commit/f7be824119e04304c3a9c46ae84eadbb1f63489d))
-
-## [0.1.2](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.2) (2026-03-17)
-
-
-### Bug Fixes
-
-* resolve CI build failure and dy-run notarization ([#8](https://github.com/barnolacesc/dockyard/issues/8)) ([4e74409](https://github.com/barnolacesc/dockyard/commit/4e74409db010682053161d9f1c9bcffe263f1f3b))
-
-## [0.1.1](https://github.com/barnolacesc/dockyard/releases/tag/v0.1.1) (2026-03-17)
-
-
-### Features
-
-* add accessibility labels to all interactive elements ([8fc8b9e](https://github.com/barnolacesc/dockyard/commit/8fc8b9e3bc99872af48ab12793082b300fb956b6))
-* add copy-branch-name button in workstream info header ([017ea45](https://github.com/barnolacesc/dockyard/commit/017ea451e11b9ece5edb1582655de2d2d1415ba1))
-* add doc tabs (README, CLAUDE, AGENTS) to project overview page ([41513e3](https://github.com/barnolacesc/dockyard/commit/41513e3ed1c8915f02acd40ea2f86595407d3138))
-* add Environment tab with setup/run script terminals ([da14cfa](https://github.com/barnolacesc/dockyard/commit/da14cfafcb6e1dd2c5d56e965788bea276160490))
-* add GitHub Sponsors and Buy Me a Coffee funding options ([3da86a5](https://github.com/barnolacesc/dockyard/commit/3da86a593d36ea92ea9c32e6c211b8181e6651a9))
-* add keyboard shortcuts for Rebuild (⌃⇧S) and Start/Rerun (⌃⇧R) ([9d04703](https://github.com/barnolacesc/dockyard/commit/9d047035118f36bd3b435716ea1aa8460c161231))
-* add onboarding view with prerequisites and getting started guide ([6b5b09c](https://github.com/barnolacesc/dockyard/commit/6b5b09c12c96dad7219617c557c21ffc673a6254))
-* add run-script port detection ([360e453](https://github.com/barnolacesc/dockyard/commit/360e45343c411574bea435565b4027b957458655))
-* add scripts/dev.sh for development workflow ([c0be015](https://github.com/barnolacesc/dockyard/commit/c0be0158d4f26c8971d3c642d08e5c4364d4da45))
-* add Sentry crash reporting, update privacy policy ([5a2f954](https://github.com/barnolacesc/dockyard/commit/5a2f9547eafb1c6378eb037c54f6bd4a863aa464))
-* add setting to disable quit confirmation ([9fb2579](https://github.com/barnolacesc/dockyard/commit/9fb25798b000d57b0bede1f7a591655b7aa8f80b))
-* add sponsor message to ff CLI (~1 in 5 runs) ([2cf4428](https://github.com/barnolacesc/dockyard/commit/2cf442824e149e9a98da507f139aeb81524decc4))
-* add update checker with sidebar notification badge ([21df890](https://github.com/barnolacesc/dockyard/commit/21df8907d26e08abcf020e8682c09fb5394ecd54))
-* automate versions.json update in release workflow ([a5bfb02](https://github.com/barnolacesc/dockyard/commit/a5bfb02d799fc4578cd2f6f7a407b7de394e5a57))
-* bundle ff CLI script in app resources ([c03257b](https://github.com/barnolacesc/dockyard/commit/c03257b12d06cd9e090a13184527e90ce1ec713e))
-* change workstream navigation to Cmd+Shift+1-9 ([eae8d6a](https://github.com/barnolacesc/dockyard/commit/eae8d6a9d4018bab9206ad9726e1b70086c224c4))
-* confirm before quit when workstreams are active ([ab43577](https://github.com/barnolacesc/dockyard/commit/ab435771d8f8c6cd7e48020614e125dab7d8fd1f))
-* debug builds use separate identity from release ([23b0d22](https://github.com/barnolacesc/dockyard/commit/23b0d229c1db090af1f7397ba9d07889a76710d5))
-* debug icon with orange band, tmux config in .config dir ([cd5d0e7](https://github.com/barnolacesc/dockyard/commit/cd5d0e7cf1e2421cd15bd202aae7ea2029369240))
-* notify user when project directories are removed from disk ([e5e6238](https://github.com/barnolacesc/dockyard/commit/e5e6238ad3ea332062127ac6bf5961aa16fa670f))
-* preload agent and environment terminals in background on workstream open ([ff8dd2e](https://github.com/barnolacesc/dockyard/commit/ff8dd2ec3598e1dc51adeba012a65a8567656bc7))
-* replace MarkdownView with cmark-gfm WKWebView renderer ([3eb7380](https://github.com/barnolacesc/dockyard/commit/3eb7380d6fb2efcea5e8aed921162c7c95f98529))
-* restore workspace tab state ([493facb](https://github.com/barnolacesc/dockyard/commit/493facb5ca593dc750b09c4a539615f6ce026ad6))
-* separate URL scheme and CLI for debug builds ([ed97fc6](https://github.com/barnolacesc/dockyard/commit/ed97fc668e27371cd64fdf3d5e96b7b1a27a4b83))
-* show "Run gh auth login" hint when gh is installed but not authenticated ([a224535](https://github.com/barnolacesc/dockyard/commit/a22453569301df6ceb9c60f9795f3f9f42f66030))
-* show install prompt when Claude Code is not found ([49be786](https://github.com/barnolacesc/dockyard/commit/49be7865923e2b047ec9860ebcc90f311ab346ee))
-* show page title in browser tab label ([f1f954d](https://github.com/barnolacesc/dockyard/commit/f1f954d65a907c8b3bbc83ce0fb6e12ba88a1dfb))
-* show project icon in workstream info header if found ([5ad1966](https://github.com/barnolacesc/dockyard/commit/5ad19666c11ece9b74af9b6a16650904ef55ff71))
-* show running command in terminal tab label ([895b6b6](https://github.com/barnolacesc/dockyard/commit/895b6b614971d1d056ea3010447af075a4ac2e20))
-* **website:** add favicon, OG image, and SEO meta tags ([eb71e2a](https://github.com/barnolacesc/dockyard/commit/eb71e2ad16457ecd08787f5785d98dcb3c279f6f))
-* **website:** add privacy policy page in 4 languages ([6c60735](https://github.com/barnolacesc/dockyard/commit/6c60735e9923a1643a42d6b173d1a8b5ed33a54d))
-* **website:** add versions.json and /get page for update notifications ([0e9889d](https://github.com/barnolacesc/dockyard/commit/0e9889ded1a041915a3639527d13d55fbb285148))
-* **website:** replace OG image with branded banner ([4c45058](https://github.com/barnolacesc/dockyard/commit/4c4505863760bb9ca277d1d545c4cbdc1ffa437c))
-* **website:** replace terminal simulation with real app screenshots ([93cef2f](https://github.com/barnolacesc/dockyard/commit/93cef2f0bfa4a003d440926ce2ec714b8b838ee8))
-
-
-### Bug Fixes
-
-* add Cmd+E to help view, align Claude install URLs, remove dead code ([ba61ffa](https://github.com/barnolacesc/dockyard/commit/ba61ffa4a0beba8527e9dd4dee3c456782f1f74c))
-* add missing localization strings for Settings, HelpView, BrowserView, ProjectOverview ([489a7b8](https://github.com/barnolacesc/dockyard/commit/489a7b83e84cf25d93c58379446de7062373e637))
-* address security audit findings ([13e846f](https://github.com/barnolacesc/dockyard/commit/13e846fa54d26ce1cf2e860b7d951b2d75e5b7f0))
-* avoid worktree path collision for `/` vs `-` in names ([36ec6d5](https://github.com/barnolacesc/dockyard/commit/36ec6d557222b823eba067883dc12b4742185ecd))
-* browser retry hint, dead retryBrowser notification, settings persistence ([0e2e439](https://github.com/barnolacesc/dockyard/commit/0e2e43959c17afbe351d051a834243f5681e3653))
-* change workstream shortcuts to Ctrl+1-9 (Cmd+Shift collides with screenshots) ([c90bb91](https://github.com/barnolacesc/dockyard/commit/c90bb916b6ebadcd01766fdcf5a84904a913f998))
-* correct embedded terminal selection coordinates ([80a72db](https://github.com/barnolacesc/dockyard/commit/80a72db0c546934a7decb958dd458ced558ec72d))
-* disable wait-after-command, fix restart, add favicon sizes ([a0ecbb9](https://github.com/barnolacesc/dockyard/commit/a0ecbb92e0d11e7e8496776bc152dc6de5b60171))
-* dispatch surfaceRegistry deinit removal to main thread ([e09edd3](https://github.com/barnolacesc/dockyard/commit/e09edd3d9517dc916d35aefbf46fdca213443999))
-* drop redundant .atomic option in FilePersistence ([e95b36b](https://github.com/barnolacesc/dockyard/commit/e95b36baeb2cc6d7512826faae68904b19041c8c))
-* eliminate AppleScript command injection in openInTerminal ([82df6f2](https://github.com/barnolacesc/dockyard/commit/82df6f2cc60c082f2c7fb7a8adb57cce1bac3320))
-* explicitly free ghostty surface on restart to prevent launch failures ([a489892](https://github.com/barnolacesc/dockyard/commit/a4898929fb76a3d7242450ebc2a85505b1ac8d66))
-* hide CLI install when already correctly installed ([1b1c7a1](https://github.com/barnolacesc/dockyard/commit/1b1c7a11a66db5bd4cfafc12fd5e75ca1020368e))
-* improve worktree creation error message clarity ([3db0f24](https://github.com/barnolacesc/dockyard/commit/3db0f24ab08456066e470b53f30d75f3e3059549))
-* improve worktree creation error message with specific failure reasons ([b85d39a](https://github.com/barnolacesc/dockyard/commit/b85d39a414032c41c51bf86d90516f5029d548d8))
-* isolate test config storage from app roster ([e95916c](https://github.com/barnolacesc/dockyard/commit/e95916cfe38a3ae9807ded916c177e24a35f2328))
-* localize all remaining hardcoded strings ([a611245](https://github.com/barnolacesc/dockyard/commit/a6112452102e4cc3d4f14237e957e0dfda7b9a14))
-* make wait_after_command per-surface, restore agent respawn ([14689b3](https://github.com/barnolacesc/dockyard/commit/14689b30a65342a6fb228e5e2418cf30fbfb2dcb))
-* mention all config formats in environment tab instructions ([743ac36](https://github.com/barnolacesc/dockyard/commit/743ac36d205108c4fcc659d00a32e9efe923c6c8))
-* move ghostty callbacks out of main actor init ([a0ec131](https://github.com/barnolacesc/dockyard/commit/a0ec1314c65b55fc33c11ad7d0ff9f97631b4889))
-* normalize detached HEAD branch name to nil ([339917f](https://github.com/barnolacesc/dockyard/commit/339917fe63328113db508fdf8ad6dc5a123c2921))
-* pin third-party CI actions to commit SHAs ([aebdb70](https://github.com/barnolacesc/dockyard/commit/aebdb7080cea6e0edd94a6212d15f880ae7fb32b))
-* pretty-print JSON config files for readability ([72092b2](https://github.com/barnolacesc/dockyard/commit/72092b2fbe98cba17df91fa3a84f9d83c66629db))
-* prevent env scripts from respawning, add help view links ([6001cec](https://github.com/barnolacesc/dockyard/commit/6001cec83a82f4b7320a85a030c6b82772b28087))
-* prevent git flag injection via names starting with dash ([8804fab](https://github.com/barnolacesc/dockyard/commit/8804fab9da62405ca3ddfedf7c9cf5f1c8ca0a79))
-* prevent shell injection in TmuxSession.wrapCommand ([b9a26c2](https://github.com/barnolacesc/dockyard/commit/b9a26c25cdee2794e335a662c9bee2bfe3d5418c))
-* prevent surfaceRegistry use-after-free and Cmd+W monitor accumulation ([b681cd4](https://github.com/barnolacesc/dockyard/commit/b681cd44fda1078743238c7fde995648139dd749))
-* proc_listchildpids returns count not bytes, add Stop button ([70f24b3](https://github.com/barnolacesc/dockyard/commit/70f24b31ff22026aae794292f04b6d6288951d1e))
-* propagate errors from FilePersistence.writeAtomically instead of swallowing ([7bbea7f](https://github.com/barnolacesc/dockyard/commit/7bbea7ff5ec2e040bddba426008ca9377d67999d))
-* rebuild cached claude command when workstreamName changes ([b0be7e0](https://github.com/barnolacesc/dockyard/commit/b0be7e07d4ba114527ad25ea22aa12d3e18d8d14))
-* remove .dockyard/config.json, fix website i18n and nav ([79d9776](https://github.com/barnolacesc/dockyard/commit/79d97760e905ecad4c7facecb656832da5e6102e))
-* remove cat workaround, fix env script restart timing ([e98cd5b](https://github.com/barnolacesc/dockyard/commit/e98cd5b7becb56342dee25ef21409947aa6a7b9f))
-* remove hard cap on surface cleanup in removeWorkstreamSurfaces ([5ea7ea2](https://github.com/barnolacesc/dockyard/commit/5ea7ea208f50e2b92815ac6dbc138a460bb572ee))
-* remove redundant codesign --deep --force on .app bundle ([f44028c](https://github.com/barnolacesc/dockyard/commit/f44028c740655d267e9f6ce354c8817b710e7ebf))
-* remove wait_after_command override, let ghostty use its default ([3610a86](https://github.com/barnolacesc/dockyard/commit/3610a86a9af31fc786738ce039d06975e0168310))
-* rename "Projects Removed" alert to "Projects Not Found" and use comma-separated list ([0d09a84](https://github.com/barnolacesc/dockyard/commit/0d09a849049dbf247c0523f8e0baf85d27dc1f1b))
-* replace favicon PNGs with barnolacesc icons, kill tmux on restart ([af7adc9](https://github.com/barnolacesc/dockyard/commit/af7adc91ebcd42dd5b10b8a9b9262a3e47530c3e))
-* replace predictable /tmp filenames with shell variables in CI ([102b3fc](https://github.com/barnolacesc/dockyard/commit/102b3fc9865d3af853a46df59165ffed7e9dd0b1))
-* resolve relative image paths in markdown info view ([21807de](https://github.com/barnolacesc/dockyard/commit/21807dedc794b836107f6b74e08f57a887796e08))
-* restore keyboard focus rings on browser nav buttons ([e22b4b9](https://github.com/barnolacesc/dockyard/commit/e22b4b9df358a2f2de77cc086dd555d5b31744c2))
-* restore native mouse behavior in tmux terminals ([a455855](https://github.com/barnolacesc/dockyard/commit/a4558559fcc13e740f75b0b14becd71e8a90a286))
-* restore tmux environment sessions ([d606c1d](https://github.com/barnolacesc/dockyard/commit/d606c1d87f0afdcf692dcc4c5a84692d4605aac0))
-* revert CI action SHA pinning to version tags, fix deinit deadlock ([5027aa2](https://github.com/barnolacesc/dockyard/commit/5027aa2615a42273bfac4958d182b169db335284))
-* rewrite website translations as native copywriting ([c3af758](https://github.com/barnolacesc/dockyard/commit/c3af7585af24b7303de6ca7f3b40ea0558862d5b))
-* scope CI permissions per job for least privilege ([2711fae](https://github.com/barnolacesc/dockyard/commit/2711fae56bc9e510158d4c2dcbdb2f4eec32dd11))
-* show alert when adding workstream to non-git directory ([b3356dd](https://github.com/barnolacesc/dockyard/commit/b3356dd53dc8706b1fb43d6921c4ae8b256c7756))
-* show error dialog when ghostty fails to initialize ([991214b](https://github.com/barnolacesc/dockyard/commit/991214b6bd9896c43e87e3197c7f923e664217ce))
-* show error when worktree creation fails ([1af1cce](https://github.com/barnolacesc/dockyard/commit/1af1cce6e10b39a71c313282294961212079b809))
-* show pointer cursor on sidebar bottom buttons ([a185708](https://github.com/barnolacesc/dockyard/commit/a185708fa6762d9fbd0bdf1f241588ec80dadd5c))
-* sidebar bottom bar always visible, not clipped by drop zone ([13c057b](https://github.com/barnolacesc/dockyard/commit/13c057b4d63c542116dc100d27242fc6f269347d))
-* sign bundled dy-run and stabilize project identity ([aa2d863](https://github.com/barnolacesc/dockyard/commit/aa2d863c34338568d981dbcd5386e90864390a62))
-* skip doc tabs for markdown files smaller than 20 bytes ([4e406c6](https://github.com/barnolacesc/dockyard/commit/4e406c695659b3c1972308a3746464ef037d9e8a))
-* sleep after env script exits instead of returning to shell ([bb147b2](https://github.com/barnolacesc/dockyard/commit/bb147b2d2e7f434084a912740a645ac2447420d0))
-* split tmux/non-tmux env terminal approach, fix rebuild loop ([cc5ee14](https://github.com/barnolacesc/dockyard/commit/cc5ee1482e0cf50fe0490dded9d2c5bf1733a8c8))
-* stop swallowing Gatekeeper failures in release script ([7c8b5e5](https://github.com/barnolacesc/dockyard/commit/7c8b5e5c9b247a582b770dafdd23ada50e0c000b))
-* surface cleanup now covers all prefixes and generation numbers ([eeb3dba](https://github.com/barnolacesc/dockyard/commit/eeb3dba8dd756125e258e706ff4212c1f42ebf43))
-* swap env shortcuts (Rebuild ⌃⇧R, Start/Rerun ⌃⇧S) ([8efc198](https://github.com/barnolacesc/dockyard/commit/8efc198b45fc6a0992aaf448f4c6aa50cf8dbcad))
-* translation audit across all 4 languages ([0c8c10c](https://github.com/barnolacesc/dockyard/commit/0c8c10c99f2d8dac0d1cf11a9dcb9f0c46588afd))
-* update Buy Me a Coffee URL to barnolacesc account ([856b7fb](https://github.com/barnolacesc/dockyard/commit/856b7fbdeed1428250d5b2ec1a2cb32c9fd05162))
-* use cat to keep env terminals open, add Rebuild/Rerun/Start labels ([32286f5](https://github.com/barnolacesc/dockyard/commit/32286f5b0bf12e6b06df4bdb3a8c12f452b6f415))
-* use initialInput for all env terminals, fix tmux restart loop ([1e3b3cf](https://github.com/barnolacesc/dockyard/commit/1e3b3cf052e23732bf053c2acddefb4f6581471c))
-* use initialInput instead of command for env scripts ([d7c70c9](https://github.com/barnolacesc/dockyard/commit/d7c70c9f47509365e0c3b3552d4430f02019a1dc))
-* use keychain profile for CI notarization instead of CLI password ([115050a](https://github.com/barnolacesc/dockyard/commit/115050a70bad4a0de3a1899ffc6789429d6af5f1))
-* use smaller font and colon in gh auth login hint ([9dfde67](https://github.com/barnolacesc/dockyard/commit/9dfde67281b786b77e19d8d5609908a5026d40e8))
-* validate .env symlink source and fix derivedUUID comment ([4a79d74](https://github.com/barnolacesc/dockyard/commit/4a79d74740743170c7f7522f4cd851742fe9ffe4))
-* **website:** add --cask to brew install commands ([efed35e](https://github.com/barnolacesc/dockyard/commit/efed35e39c6a91b550bcc1213d76e0fe43cd6b22))
-* **website:** add Claude Code link in features, enable HTML in descriptions ([8cdbdee](https://github.com/barnolacesc/dockyard/commit/8cdbdee832e7682b4f2fb59b9f06cf1404cc4ec5))
-* **website:** add Claude Code link in hero text, add tmux to credits ([822e712](https://github.com/barnolacesc/dockyard/commit/822e7129ba1b64801248ca282be2c7f62d02fae5))
-* **website:** add copy-to-clipboard visual feedback on /get page ([6fef3b6](https://github.com/barnolacesc/dockyard/commit/6fef3b67315adac0539698338b57efe234d5846d))
-* **website:** add upgrade command to /get page ([1da011a](https://github.com/barnolacesc/dockyard/commit/1da011a0eea156bd345aec2a60c1f67fbe175949))
-* **website:** adjust skyline spacing (more top margin, less bottom gap) ([77f0a19](https://github.com/barnolacesc/dockyard/commit/77f0a19137190b2883a38c18377ef05ba94feedf))
-* **website:** clarify that Claude Code sends code to Anthropic's API ([ae8d649](https://github.com/barnolacesc/dockyard/commit/ae8d64941f43f434b2a7dfbb3900da878e46ceda))
-* **website:** compact footer and add sponsor link ([7cc5961](https://github.com/barnolacesc/dockyard/commit/7cc59614717310eda7d00307416aa7a92a592889))
-* **website:** fix hreflang x-default, add privacy link, localize sponsor link ([781f0ac](https://github.com/barnolacesc/dockyard/commit/781f0aca05866467b32b7363e4944af5f425b1b4))
-* **website:** localize page titles, simplify config section ([e5e673e](https://github.com/barnolacesc/dockyard/commit/e5e673ee772ddf3bb216d38886bcc8d91b461da1))
-* **website:** regenerate favicons from hi-res 1024x1024 source ([bab5c34](https://github.com/barnolacesc/dockyard/commit/bab5c34af0a3ab2e291367158d618b88b2c2e1e0))
-* **website:** reorder sponsor page, financial support first ([ddd02d1](https://github.com/barnolacesc/dockyard/commit/ddd02d159eb52906646a24c7e7c82d9515fbc0a9))
-* **website:** sponsor page sections, ghostty URL, remove duplicate credit ([9966a76](https://github.com/barnolacesc/dockyard/commit/9966a7633da06bb9e6e5c188d000bd4aa81180f7))
-* **website:** tighten skyline viewBox to match terminal preview width ([5fb9fb5](https://github.com/barnolacesc/dockyard/commit/5fb9fb5e6f311ee430e7d9e098dcbd5af328932a))
-* **website:** translate sponsor page to all 4 languages ([9b906f3](https://github.com/barnolacesc/dockyard/commit/9b906f3352efacc5a1a6c8693b4ac5f75654f641))
-* **website:** translate sponsor page to all 4 languages ([2573ebd](https://github.com/barnolacesc/dockyard/commit/2573ebd6f7de4f966070249540825e6819832d89))
-* **website:** update built CSS ([f4a0153](https://github.com/barnolacesc/dockyard/commit/f4a015345077c64731d03a7e280b56fd16c276e9))
-* **website:** update favicons from barnolacesc.com ([cec8a2d](https://github.com/barnolacesc/dockyard/commit/cec8a2daaa0b5dab400f6c1df0c69733239caa14))
-* **website:** update OG image to correct dimensions (1669x630) ([72c3caf](https://github.com/barnolacesc/dockyard/commit/72c3cafc83d8e3dd0da95cc6c9737d4076326693))
-* **website:** update OG image to standard 1200x630 dimensions ([e9100dc](https://github.com/barnolacesc/dockyard/commit/e9100dc4da84a89cc824b649a39aa29a3ee026d9))
-* **website:** update stylesheet ([4b75d80](https://github.com/barnolacesc/dockyard/commit/4b75d80f53cd00be11379fcb8e57ceac797697f5))
-* **website:** use descriptive homepage title for SEO ([77088bb](https://github.com/barnolacesc/dockyard/commit/77088bbe9c138eea72466536a9d07f7631c6cd27))
-* **website:** use proper hero title for CA/ES ([e8e3ea5](https://github.com/barnolacesc/dockyard/commit/e8e3ea5511fcd1ed36e56d0481b68c5edc9f2cbd))
-
-
-### Refactoring
-
-* consolidate duplicated performArchive into shared function ([68b6885](https://github.com/barnolacesc/dockyard/commit/68b6885e0636e4ae88a375cfd93779816e180fd2))
-* extract abbreviatePath into shared String extension ([5dcf9a4](https://github.com/barnolacesc/dockyard/commit/5dcf9a47329e73e7b48abb61d1cd7df8ce743d4e))
-* move derivedUUID to PathUtilities ([7035f33](https://github.com/barnolacesc/dockyard/commit/7035f33fbeb423056d106b80c3520faf9830e444))
-* move persistence from UserDefaults to JSON files ([d79a80b](https://github.com/barnolacesc/dockyard/commit/d79a80b8209104ad0603eb946fd09adec9653f51))
-* move retroactive Identifiable conformances to PathUtilities ([12f47a7](https://github.com/barnolacesc/dockyard/commit/12f47a7c953bfa44bf6c9560192def1c1e74d445))
-* remove dead code and misleading async ([089ab29](https://github.com/barnolacesc/dockyard/commit/089ab29fe41032ee2ef1d1e87e27f1b50f1ca2a3))
-* remove emdash/conductor/superset config compatibility ([ddcb924](https://github.com/barnolacesc/dockyard/commit/ddcb92473b291b45acd546de73cf588cf4baaa74))
-* remove emdash/conductor/superset, make run script on-demand ([c2272c7](https://github.com/barnolacesc/dockyard/commit/c2272c728c49de45b6d3ee3faaf923e6033940f3))
-* remove redundant objectWillChange handler for cachedClaudeCommand ([6a41461](https://github.com/barnolacesc/dockyard/commit/6a41461c69deebfa1460610f97b2799557e4dc24))
-* rename bridging header, pin ghostty v1.3.1, modernize project ([c78270c](https://github.com/barnolacesc/dockyard/commit/c78270c70474277259a64284d2da599311dd35a1))
-* **website:** remove dead HTML content from homepage ([5e8f015](https://github.com/barnolacesc/dockyard/commit/5e8f0153d9fb7c71535c56fe4720d49dfbc8200f))
-
-
-### Performance
-
-* cache projectIndex/workstreamIndex in ProjectSidebar ([b275ffa](https://github.com/barnolacesc/dockyard/commit/b275ffac0178bc607546a61adb501b3f3e600675))
-* consolidate polling timers ([4e816e1](https://github.com/barnolacesc/dockyard/commit/4e816e19fd90f065afdf6b192f1a724e689d816c))
-* occlude non-visible terminal surfaces to save GPU ([e1cf600](https://github.com/barnolacesc/dockyard/commit/e1cf60063abc2460fb8d80c013283b663a899da4))
-* parallelize git subprocess calls in refreshPathValidity ([63671ba](https://github.com/barnolacesc/dockyard/commit/63671ba3c89c8550db901ab9f015ebb8898a9ed4))
-
-
-### Miscellaneous
-
-* add OG banner design to future TODO ([07fea3c](https://github.com/barnolacesc/dockyard/commit/07fea3cdcd61b11ec3f7c6131fd0c039d5bfabba))
-* clean up TODO list ([7caf9ad](https://github.com/barnolacesc/dockyard/commit/7caf9ada4f65d89159e2c05f61d3a1d1cf76d052))
-* clean up TODO, deduplicate, record terminal lifecycle fixes ([c1ab179](https://github.com/barnolacesc/dockyard/commit/c1ab17979581712a1d43609b2098497642b815d8))
-* consolidate TODO list, mark completed items ([ff0a2b2](https://github.com/barnolacesc/dockyard/commit/ff0a2b2d0af772a12fec29f09c72fcf1b5da8aeb))
-* **deps:** update actions/checkout action to v6 ([#6](https://github.com/barnolacesc/dockyard/issues/6)) ([c9ea157](https://github.com/barnolacesc/dockyard/commit/c9ea157442af9f42b5b5238bfb20270fb3ca56e6))
-* **deps:** update dependency macos to v15 ([#7](https://github.com/barnolacesc/dockyard/issues/7)) ([67754f9](https://github.com/barnolacesc/dockyard/commit/67754f9ebb5fa2072977bd68f24f80c3d7416866))
-* enable strict concurrency checks ([4b95cbe](https://github.com/barnolacesc/dockyard/commit/4b95cbeafe9308a7321475e697b0ef577cfe1945))
-* flip project to swift 6 ([bf0c227](https://github.com/barnolacesc/dockyard/commit/bf0c227347349f7386310a65e22182f4ba546080))
-* increase CLI sponsor message frequency to 1 in 2 runs ([9740718](https://github.com/barnolacesc/dockyard/commit/97407182ca13ed419c0678c8d6bbb361807e314a))
-* mark CI scoping, onboarding, and persistence migration as done ([5923068](https://github.com/barnolacesc/dockyard/commit/5923068ab32f61d96c724ae998a2d6007b96d05a))
-* mark completed items in TODO ([e3fbc45](https://github.com/barnolacesc/dockyard/commit/e3fbc4525ec79137c272c8b204d192c78b48c5a6))
-* mark completed TODO items from latest parallel batch ([e467b93](https://github.com/barnolacesc/dockyard/commit/e467b936b1fe437fd6bf44f02ef7714b560b3d4a))
-* mark completed TODO items from parallel agent work ([689a334](https://github.com/barnolacesc/dockyard/commit/689a334bfe950bd28bfa02124c193b96a68f6786))
-* mark Homebrew tap as done in TODO ([a10ff74](https://github.com/barnolacesc/dockyard/commit/a10ff74b57924e693155bc4ae926983e1a8b45c1))
-* mark port detection as implemented, update TODO ([7f530be](https://github.com/barnolacesc/dockyard/commit/7f530befd7a6d0f9b7051ca249c3a8e5932fc73e))
-* mark projectIndex caching as done ([b911cb7](https://github.com/barnolacesc/dockyard/commit/b911cb72088f84e29aa29c6316ce8abd95af8cb1))
-* mark round 2 fixes done, add release routine documentation task ([9b6457e](https://github.com/barnolacesc/dockyard/commit/9b6457e64e9752c77fc0ed2ce38c58e81bf9d7bd))
-* mark round 2/3 UX and website fixes as done ([2435d54](https://github.com/barnolacesc/dockyard/commit/2435d549c158a96329b7fdf470dddf7c4acbc365))
-* move distribution and release docs to pre-release ([6658477](https://github.com/barnolacesc/dockyard/commit/66584772bbaf469c8de57ada890e038f8c805789))
-* remove node_modules from repo, add to .gitignore ([6753168](https://github.com/barnolacesc/dockyard/commit/675316869598b330bc80488216aaf4559146914e))
-* triage TODO for pre-release push ([eda0c40](https://github.com/barnolacesc/dockyard/commit/eda0c40d78bc885e851e93f825ec94fce99902f2))
-* update style ([3b1b9fa](https://github.com/barnolacesc/dockyard/commit/3b1b9fad00b42a913ee50449d41f28ff9eaa8a42))
-* update todo ([77bbdcf](https://github.com/barnolacesc/dockyard/commit/77bbdcfba75da3db14cf07b78cbd7dc1082a71e6))
-* update TODO with round 2 fixes and new planning tasks ([94514db](https://github.com/barnolacesc/dockyard/commit/94514db959f149b463d858e0a292d5605710e1e8))
-* update TODO, remove stale config.json reference ([805e3f1](https://github.com/barnolacesc/dockyard/commit/805e3f12cbcec6ce1a62731682750e64bdc8b60a))
-
-
-### Documentation
-
-* add CONTRIBUTING.md and CODE_OF_CONDUCT.md ([ae5694f](https://github.com/barnolacesc/dockyard/commit/ae5694f234fac7d67e99db801e76279fc69e5580))
-* add credits section to README and update TODO ([24aa040](https://github.com/barnolacesc/dockyard/commit/24aa040102afe5425b9198a0579c8108041e4ffd))
-* add distribution and auto-update strategy ([1e33fdf](https://github.com/barnolacesc/dockyard/commit/1e33fdf8e37b27f18335482784fd1f1a36977243))
-* add remaining audit findings to TODO ([e8381bb](https://github.com/barnolacesc/dockyard/commit/e8381bbc06527a105ea8163672e40603698f3f6e))
-* add round 2 audit findings to TODO ([7e5d8e2](https://github.com/barnolacesc/dockyard/commit/7e5d8e2ec1885c366049f1dd4f7522011ef44757))
-* add slow background polling fallback for port detection ([37a9cec](https://github.com/barnolacesc/dockyard/commit/37a9cecd5d1f3151e4c18b3270f7152444516bd9))
-* add support section to README ([f75de3d](https://github.com/barnolacesc/dockyard/commit/f75de3d2e05bd73c870a3b58f97cc2be3202567d))
-* add Swift 6 strict concurrency migration plan ([97193fd](https://github.com/barnolacesc/dockyard/commit/97193fdb753a26e036bc16e60b4b714e69d922b0))
-* clarify dy-run crash recovery (user hits Rerun, no special handling) ([78cffae](https://github.com/barnolacesc/dockyard/commit/78cffae2aaa014bb8a24a80003368754f3e4f204))
-* comprehensive TODO from security and architecture audit ([a2032da](https://github.com/barnolacesc/dockyard/commit/a2032da665e541c3a5f44915c9fcb53c3820b2fd))
-* comprehensive TODO rewrite, add missing items ([275f839](https://github.com/barnolacesc/dockyard/commit/275f839ba0b0f40080f1b170843953cd994828b1))
-* consolidate distribution docs ([9678046](https://github.com/barnolacesc/dockyard/commit/9678046f447707208eb68fabd3ab7a3f870ce7ed))
-* consolidate port detection into final implementation plan ([3f351c4](https://github.com/barnolacesc/dockyard/commit/3f351c4e3db96b9db755e7d8f16182a7687cec21))
-* fix README install/upgrade instructions, update CLAUDE.md ([8286c99](https://github.com/barnolacesc/dockyard/commit/8286c9939536cdab3a3bea1743c4fe1545c3d493))
-* recommend public_repo scope for HOMEBREW_TAP_TOKEN ([36fc5c5](https://github.com/barnolacesc/dockyard/commit/36fc5c5bac32f68f17ef15dfee6d7f832fa6f1cb))
-* remove port detection disable setting question (not needed) ([3f1757b](https://github.com/barnolacesc/dockyard/commit/3f1757b686ed01197ab119d378b6614afc075ad6))
-* rename CLAUDE.md to AGENTS.md, update README and TODO ([26dd2ad](https://github.com/barnolacesc/dockyard/commit/26dd2ad9de8591ad91cbb15b92c2eb291d37c6f6))
-* scope crash reporting options and implementation plan ([e19d437](https://github.com/barnolacesc/dockyard/commit/e19d437d7204e55bc018cca41220c5f1d5900d09))
-* scope port detection for run scripts ([bd49c43](https://github.com/barnolacesc/dockyard/commit/bd49c433db94049a72cbffc4530f053e8814ae78))
-* update distribution.md with current CI workflow and release routine ([a7bb738](https://github.com/barnolacesc/dockyard/commit/a7bb73808c8c8b9d92e9645169d8c7b2c7d2a536))
-* update README, AGENTS.md, website, TODO for port detection ([5e63d17](https://github.com/barnolacesc/dockyard/commit/5e63d171bb3a66ce52c984be168aebe98550b7b9))
-* update shortcuts in README and CLAUDE.md ([c92817e](https://github.com/barnolacesc/dockyard/commit/c92817e2f17ac225ae4ffaeca52b11101f74aa64))
-* use FSEvents instead of polling for port detection state ([2510b6f](https://github.com/barnolacesc/dockyard/commit/2510b6f3222b016917b1a471ab858aef75c50ef9))
-
-
-### CI/CD
-
-* add weekly Ghostty compatibility test workflow ([6ab12f6](https://github.com/barnolacesc/dockyard/commit/6ab12f68354bd681ced75408ace18cfde03672cd))
-* automate build, sign, notarize, DMG, and release upload ([ac60ae1](https://github.com/barnolacesc/dockyard/commit/ac60ae152066eb1d71bc8625f3cd16296accaabc))
+* add CodeQL, Dependabot, and SHA-pin remaining actions (VRA phase 3) ([508ae7a](https://github.com/barnolacesc/dockyard/commit/508ae7a37a37feff2984eb6f25a57a7bbf181e54))
+* extend CodeQL to actions/javascript, tune Dependabot (issue [#48](https://github.com/barnolacesc/dockyard/issues/48) phase 3) ([a05abc6](https://github.com/barnolacesc/dockyard/commit/a05abc6cba4dd731b5b1a726014188430e472975))
