@@ -201,12 +201,18 @@ struct WorkstreamInfoView: View {
                 Text(desc)
                     .font(.system(size: 16, weight: .bold))
                     .multilineTextAlignment(.center)
-                Text(workstreamName)
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 5) {
+                    CodingCLIIcon(cli: selectedCodingCLI, size: 11, useBrandColor: true)
+                    Text(workstreamName)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
             } else {
-                Text(workstreamName)
-                    .font(.system(size: 17, weight: .bold, design: .monospaced))
+                HStack(spacing: 6) {
+                    CodingCLIIcon(cli: selectedCodingCLI, size: 14, useBrandColor: true)
+                    Text(workstreamName)
+                        .font(.system(size: 17, weight: .bold, design: .monospaced))
+                }
             }
         }
         .padding(.top, 4)
@@ -436,9 +442,10 @@ struct WorkstreamInfoView: View {
                             .frame(width: 50, alignment: .leading)
 
                         Picker("", selection: $workstreamCodingCLI) {
-                            Text(defaultCodingAgentLabel).tag(String?.none)
+                            let defaultCLI = appEnv.toolStatus.resolvedCodingCLI(storedValue: globalCodingCLIRaw)
+                            Label(defaultCodingAgentLabel, image: defaultCLI.iconAssetName).tag(String?.none)
                             ForEach(CodingCLI.allCases) { cli in
-                                Text(cli.displayName).tag(String?.some(cli.rawValue))
+                                Label(cli.displayName, image: cli.iconAssetName).tag(String?.some(cli.rawValue))
                             }
                         }
                         .labelsHidden()
@@ -572,7 +579,6 @@ struct WorkstreamInfoView: View {
         }
     }
 
-    @ViewBuilder
     private var configReadRows: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let setup = scriptConfig.setup {
@@ -606,7 +612,6 @@ struct WorkstreamInfoView: View {
         }
     }
 
-    @ViewBuilder
     private var configEditorRows: some View {
         VStack(alignment: .leading, spacing: 8) {
             alignedEditorRow(label: "Setup", text: $editSetup)
@@ -970,11 +975,7 @@ private struct SectionHeader: View {
 }
 
 private struct InfoCard<Content: View>: View {
-    let content: Content
-
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
+    @ViewBuilder let content: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
