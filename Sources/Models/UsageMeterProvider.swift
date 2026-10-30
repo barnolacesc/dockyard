@@ -31,7 +31,7 @@ enum UsageMeterProvider: String, CaseIterable, Identifiable {
             return .codex
         case .agy:
             return .agy
-        case .opencode:
+        case .opencode, .pi:
             return nil
         }
     }

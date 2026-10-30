@@ -86,7 +86,7 @@ When a PR is merged, Dockyard shows a "Purge" badge so you know it's safe to cle
 
 ### The Coding Agent
 
-The coding agent tab runs [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview), [Codex](https://developers.openai.com/codex), OpenCode, or Antigravity CLI in an embedded terminal. Choose the CLI in Settings, then use the same Agent tab in every workstream.
+The coding agent tab runs [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview), [Codex](https://developers.openai.com/codex), OpenCode, Antigravity CLI, or [Pi](https://pi.dev) in an embedded terminal. Choose the CLI in Settings, then use the same Agent tab in every workstream.
 
 #### Agent settings
 

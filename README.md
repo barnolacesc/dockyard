@@ -53,7 +53,7 @@ Dockyard is a native macOS app built on [Ghostty](https://ghostty.org)'s GPU-ren
 ### Features
 
 - **Git Worktrees** &mdash; Each workstream gets its own branch and worktree. Switch between tasks without stashing.
-- **Selectable Coding CLI** &mdash; Run Claude Code, Codex, OpenCode, or Antigravity CLI in the Agent tab. Capabilities vary by CLI as documented below.
+- **Selectable Coding CLI** &mdash; Run Claude Code, Codex, OpenCode, Antigravity CLI, or Pi in the Agent tab. Capabilities vary by CLI as documented below.
 - **Tmux Persistence** &mdash; Agent sessions survive app restarts via tmux on a dedicated socket.
 - **Setup & Run Scripts** &mdash; Configure setup, run, and teardown scripts per project via `.dockyard.json`. Environment tab with split-pane terminals, Start/Rerun (⌘⇧⏎).
 - **Embedded Browser** &mdash; WKWebView tab with automatic port detection. The browser navigates to the port your run script opens.
@@ -71,16 +71,16 @@ Dockyard launches each detected CLI in the workstream directory. Tmux
 persistence is provided by Dockyard's dedicated tmux session and does not imply
 that the CLI itself supports resume after that session exits.
 
-| Capability | Claude Code | Codex | OpenCode | Antigravity CLI |
-|---|---:|---:|---:|---:|
-| Direct launch in a workstream | Yes | Yes | Yes | Yes |
-| Dockyard tmux persistence | Yes | Yes | Yes | Yes |
-| CLI session resume after tmux exits | Yes | Yes | No | No |
-| Dockyard agent-status hooks | Yes | Yes | No | Yes |
-| Active subagent status | Aggregated | No | No | Aggregated |
-| Dangerous permission bypass | Yes | Yes | No | No |
-| Automatic branch rename | Yes | Yes | Yes | No |
-| Agent Teams | Yes | No | No | No |
+| Capability | Claude Code | Codex | OpenCode | Antigravity CLI | Pi |
+|---|---:|---:|---:|---:|---:|
+| Direct launch in a workstream | Yes | Yes | Yes | Yes | Yes |
+| Dockyard tmux persistence | Yes | Yes | Yes | Yes | Yes |
+| CLI session resume after tmux exits | Yes | Yes | No | No | No |
+| Dockyard agent-status hooks | Yes | Yes | No | Yes | No |
+| Active subagent status | Aggregated | No | No | Aggregated | No |
+| Dangerous permission bypass | Yes | Yes | No | No | No |
+| Automatic branch rename | Yes | Yes | Yes | No | No |
+| Agent Teams | Yes | No | No | No | No |
 
 OpenCode support uses its per-launch configuration to supply Dockyard's
 auto-rename instructions; it does not change the project's own OpenCode files.

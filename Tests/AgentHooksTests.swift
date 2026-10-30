@@ -37,6 +37,12 @@ final class AgentHooksTests: XCTestCase {
         XCTAssertNil(try AgentHooks.hookInvocation(for: .opencode, workstreamID: UUID(), helperPath: helperPath))
     }
 
+    func testHookInvocationReturnsNilForPi() throws {
+        let helperPath = "/Applications/Dockyard.app/Contents/Helpers/dy-agent-state"
+
+        XCTAssertNil(try AgentHooks.hookInvocation(for: .pi, workstreamID: UUID(), helperPath: helperPath))
+    }
+
     func testHookInvocationForAgyWithoutWorkingDirectoryReturnsNil() throws {
         let helperPath = "/Applications/Dockyard.app/Contents/Helpers/dy-agent-state"
 

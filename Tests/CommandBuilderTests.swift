@@ -467,6 +467,70 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertTrue(command.finalCommand.contains("set-hook pane-died"))
     }
 
+    func testPiCapabilitiesMatchGenericLaunchContract() {
+        let status = ToolStatus()
+
+        XCTAssertFalse(CodingCLI.pi.supportsAgentTeams)
+        XCTAssertFalse(CodingCLI.pi.supportsAutoRenameBranch)
+        XCTAssertFalse(status.supportsSessionName(for: .pi))
+    }
+
+    func testBuildPiAgentCommandLaunchesWithoutUnverifiedFlags() {
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .pi,
+            cliPath: "/opt/homebrew/bin/pi",
+            workingDirectory: "/tmp/dockyard worktree",
+            projectName: "dockyard",
+            workstreamName: "pi-contract",
+            workstreamID: UUID(),
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: true,
+            allowOutsideWorktree: false,
+            autoRenameBranch: false,
+            envVars: ["DY_WORKTREE_DIR": "/tmp/dockyard worktree"],
+            supportsSessionName: false,
+            hookInvocation: nil
+        )
+
+        XCTAssertEqual(command.finalCommand, "/opt/homebrew/bin/pi")
+        XCTAssertEqual(command.intermediateCommands, ["/opt/homebrew/bin/pi"])
+    }
+
+    func testBuildPiAgentCommandWrapsWithTmuxPersistence() {
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .pi,
+            cliPath: "/opt/homebrew/bin/pi",
+            workingDirectory: "/tmp/worktree",
+            projectName: "dockyard",
+            workstreamName: "pi-contract",
+            workstreamID: UUID(),
+            tmuxPath: "/opt/homebrew/bin/tmux",
+            useTmux: true,
+            bypassPermissions: false,
+            allowOutsideWorktree: false,
+            autoRenameBranch: false,
+            envVars: ["DY_WORKSTREAM": "pi-contract"],
+            supportsSessionName: false,
+            hookInvocation: nil
+        )
+
+        XCTAssertEqual(command.intermediateCommands.first, "/opt/homebrew/bin/pi")
+        XCTAssertEqual(command.finalCommand, command.intermediateCommands.last)
+        XCTAssertEqual(command.intermediateCommands.count, 2)
+        XCTAssertTrue(command.finalCommand.contains("/opt/homebrew/bin/tmux -L"))
+        XCTAssertTrue(command.finalCommand.contains("new-session -A -s"))
+        let sessionName = TmuxSession.sessionName(
+            project: "dockyard",
+            workstream: "pi-contract",
+            role: "agent"
+        )
+        XCTAssertTrue(command.finalCommand.contains(sessionName))
+        XCTAssertTrue(command.finalCommand.contains("-e \"DY_WORKSTREAM=pi-contract\""))
+        XCTAssertTrue(command.finalCommand.contains("/opt/homebrew/bin/pi"))
+        XCTAssertTrue(command.finalCommand.contains("set-hook pane-died"))
+    }
+
     func testUnknownEffectiveCodingCLIUsesAutoDetectChain() {
         var status = ToolStatus()
         status.agy = .found("/usr/local/bin/agy")
@@ -1003,6 +1067,33 @@ final class CommandBuilderTests: XCTestCase {
         XCTAssertEqual(command.intermediateCommands.count, 1)
         XCTAssertEqual(command.intermediateCommands[0], "/opt/homebrew/bin/opencode --prompt \(expectedQuoted)")
         XCTAssertTrue(command.finalCommand.contains("/opt/homebrew/bin/opencode --prompt"))
+        try assertShellCanParse(command.finalCommand)
+    }
+
+    func testBuildPiAgentCommandWithInitialPromptPassesPositionalArg() throws {
+        let workstreamID = try XCTUnwrap(UUID(uuidString: "12345678-1234-1234-1234-123456789abc"))
+        let prompt = "Implement GitHub issue #42: Fix crash"
+        let command = CodingCLICommandBuilder.buildAgentCommand(
+            cli: .pi,
+            cliPath: "/opt/homebrew/bin/pi",
+            workingDirectory: "/tmp/worktree",
+            projectName: "dockyard",
+            workstreamName: "issue-42",
+            workstreamID: workstreamID,
+            tmuxPath: nil,
+            useTmux: false,
+            bypassPermissions: false,
+            allowOutsideWorktree: false,
+            autoRenameBranch: false,
+            envVars: [:],
+            supportsSessionName: false,
+            initialPrompt: prompt
+        )
+
+        let expectedQuoted = CommandBuilder.shellQuote(prompt)
+        XCTAssertEqual(command.intermediateCommands.count, 1)
+        XCTAssertEqual(command.intermediateCommands[0], "/opt/homebrew/bin/pi \(expectedQuoted)")
+        XCTAssertTrue(command.finalCommand.contains("/opt/homebrew/bin/pi"))
         try assertShellCanParse(command.finalCommand)
     }
 

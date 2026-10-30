@@ -19,7 +19,7 @@ brew install --cask barnolacesc/tap/dockyard
 
 Dockyard funciona millor quan tens instal·lat el següent (t'avisarà si falta alguna cosa):
 
-- **[Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview)**, **[Codex](https://developers.openai.com/codex)**, **OpenCode** o **Antigravity CLI** — tria l’agent de codi que vulguis utilitzar
+- **[Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview)**, **[Codex](https://developers.openai.com/codex)**, **OpenCode**, **Antigravity CLI** o **[Pi](https://pi.dev)** — tria l’agent de codi que vulguis utilitzar
 - **git** — probablement ja el tens
 - **[gh](https://cli.github.com/)** — GitHub CLI, per a l'estat de PRs i quick actions
 - **[tmux](https://github.com/tmux/tmux)** — opcional, permet persistència de sessions
@@ -85,7 +85,7 @@ Quan un PR es fusiona, Dockyard mostra un badge "Purge" perquè sàpigues que po
 
 ### El Coding Agent {#the-coding-agent}
 
-La pestanya Coding Agent executa Claude Code, Codex, OpenCode o Antigravity CLI en un terminal integrat. Tria el CLI a la configuració.
+La pestanya Coding Agent executa Claude Code, Codex, OpenCode, Antigravity CLI o Pi en un terminal integrat. Tria el CLI a la configuració.
 
 #### Configuració de l'agent {#agent-settings}
 

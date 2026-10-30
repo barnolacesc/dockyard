@@ -194,6 +194,7 @@
 "Codex" = "Codex";
 "OpenCode" = "OpenCode";
 "Antigravity CLI" = "Antigravity CLI";
+"Pi" = "Pi";
 "Coding CLI" = "Coding CLI";
 "Use Default (%@)" = "Use Default (%@)";
 "Use Default follows the Coding Agent selected in Settings." = "Use Default follows the Coding Agent selected in Settings.";
@@ -275,6 +276,9 @@
 "Antigravity CLI not found" = "Antigravity CLI not found";
 "Install Antigravity CLI to use the Coding Agent." = "Install Antigravity CLI to use the Coding Agent.";
 "Install Antigravity CLI" = "Install Antigravity CLI";
+"Pi not found" = "Pi not found";
+"Install Pi to use the Coding Agent." = "Install Pi to use the Coding Agent.";
+"Install Pi" = "Install Pi";
 
 /* BrowserView */
 "Server not responding" = "Server not responding";
@@ -856,3 +860,7 @@
 /* Agent Provider Icons */
 "Coding Agent Provider Icons" = "Coding Agent Provider Icons";
 "Identify your active agent at a glance with provider icons for Claude, OpenAI Codex, Antigravity, and OpenCode in the sidebar and tabs." = "Identify your active agent at a glance with provider icons for Claude, OpenAI Codex, Antigravity, and OpenCode in the sidebar and tabs.";
+
+/* Pi Coding Agent */
+"Pi Coding Agent Support" = "Pi Coding Agent Support";
+"Run Pi (@earendil-works/pi-coding-agent) in the Agent tab as a first-class coding agent." = "Run Pi (@earendil-works/pi-coding-agent) in the Agent tab as a first-class coding agent.";

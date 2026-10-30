@@ -11,6 +11,7 @@ final class CodingCLIIconTests: XCTestCase {
         XCTAssertEqual(CodingCLI.codex.iconAssetName, "openai")
         XCTAssertEqual(CodingCLI.agy.iconAssetName, "agy")
         XCTAssertEqual(CodingCLI.opencode.iconAssetName, "opencode")
+        XCTAssertEqual(CodingCLI.pi.iconAssetName, "pi")
     }
 
     func testBrandColorsDefinedForAllCases() {
@@ -22,7 +23,7 @@ final class CodingCLIIconTests: XCTestCase {
     }
 
     func testAssetFilesExistInBundleOrAssets() {
-        let expectedAssets = ["claude", "openai", "agy", "opencode"]
+        let expectedAssets = ["claude", "openai", "agy", "opencode", "pi"]
         for assetName in expectedAssets {
             let image = NSImage(named: NSImage.Name(assetName))
             XCTAssertNotNil(image, "Expected to load asset '\(assetName)' from asset catalog")
@@ -44,9 +45,13 @@ final class CodingCLIIconTests: XCTestCase {
         toolStatus.codex = .found("/usr/local/bin/codex")
         toolStatus.agy = .found("/usr/local/bin/agy")
         toolStatus.opencode = .found("/usr/local/bin/opencode")
+        toolStatus.pi = .found("/usr/local/bin/pi")
 
         let agyEffective = effectiveCodingCLIRaw(workstream: "agy", global: "claude")
         XCTAssertEqual(toolStatus.resolvedCodingCLI(storedValue: agyEffective), CodingCLI.agy)
+
+        let piEffective = effectiveCodingCLIRaw(workstream: "pi", global: "claude")
+        XCTAssertEqual(toolStatus.resolvedCodingCLI(storedValue: piEffective), CodingCLI.pi)
 
         let codexEffective = effectiveCodingCLIRaw(workstream: nil, global: "codex")
         XCTAssertEqual(toolStatus.resolvedCodingCLI(storedValue: codexEffective), CodingCLI.codex)
