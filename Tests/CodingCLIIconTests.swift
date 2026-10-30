@@ -37,4 +37,21 @@ final class CodingCLIIconTests: XCTestCase {
             XCTAssertTrue(icon.useBrandColor)
         }
     }
+
+    func testCodingCLIResolvedForWorkstreamOverrideAndGlobalFallback() {
+        var toolStatus = ToolStatus()
+        toolStatus.claude = .found("/usr/local/bin/claude")
+        toolStatus.codex = .found("/usr/local/bin/codex")
+        toolStatus.agy = .found("/usr/local/bin/agy")
+        toolStatus.opencode = .found("/usr/local/bin/opencode")
+
+        let agyEffective = effectiveCodingCLIRaw(workstream: "agy", global: "claude")
+        XCTAssertEqual(toolStatus.resolvedCodingCLI(storedValue: agyEffective), CodingCLI.agy)
+
+        let codexEffective = effectiveCodingCLIRaw(workstream: nil, global: "codex")
+        XCTAssertEqual(toolStatus.resolvedCodingCLI(storedValue: codexEffective), CodingCLI.codex)
+
+        let fallbackEffective = effectiveCodingCLIRaw(workstream: "", global: "")
+        XCTAssertEqual(toolStatus.resolvedCodingCLI(storedValue: fallbackEffective), CodingCLI.claude)
+    }
 }

@@ -57,7 +57,9 @@ struct SidebarAttentionRow: View {
 
 private enum AttentionCategory: Int, CaseIterable, Identifiable {
     case needsYou, inProgress, review, ready
-    var id: Int { rawValue }
+    var id: Int {
+        rawValue
+    }
 
     var title: LocalizedStringKey {
         switch self {
@@ -111,29 +113,38 @@ private struct AttentionWorkstream: Identifiable {
     let workstreamName: String
     let lastAccessedAt: Date
     let category: AttentionCategory
+    var codingCLI: CodingCLI = .claude
 }
 
 struct AttentionView: View {
     let projects: [Project]
     let onSelectWorkstream: (UUID) -> Void
     @EnvironmentObject private var agentStateStore: AgentStateStore
+    @EnvironmentObject private var appEnv: AppEnvironment
+    @AppStorage("dockyard.codingCLI") private var globalCodingCLIRaw: String = ""
 
     private var currentWorkstreams: [AttentionWorkstream] {
         projects.flatMap { project in
             project.workstreams.compactMap { workstream in
                 guard workstream.stage != .done else { return nil }
+                let resolvedCodingCLI = appEnv.toolStatus.resolvedCodingCLI(
+                    storedValue: effectiveCodingCLIRaw(workstream: workstream.codingCLI, global: globalCodingCLIRaw)
+                )
                 return AttentionWorkstream(
                     id: workstream.id,
                     projectName: project.name,
                     workstreamName: workstream.name,
                     lastAccessedAt: workstream.lastAccessedAt,
-                    category: category(for: workstream)
+                    category: category(for: workstream),
+                    codingCLI: resolvedCodingCLI
                 )
             }
         }
     }
 
-    private var attentionCount: Int { workstreams(in: .needsYou).count }
+    private var attentionCount: Int {
+        workstreams(in: .needsYou).count
+    }
 
     var body: some View {
         ScrollView {
@@ -243,7 +254,10 @@ struct AttentionView: View {
                     .frame(width: 40, height: 40)
                     .background(workstream.category.tint.opacity(0.11), in: RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous))
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(workstream.workstreamName).font(.body.weight(.semibold)).foregroundStyle(.primary).lineLimit(1)
+                    HStack(spacing: 5) {
+                        CodingCLIIcon(cli: workstream.codingCLI, size: 11, useBrandColor: true)
+                        Text(workstream.workstreamName).font(.body.weight(.semibold)).foregroundStyle(.primary).lineLimit(1)
+                    }
                     Text(workstream.projectName).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
                 Spacer(minLength: 12)

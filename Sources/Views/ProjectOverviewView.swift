@@ -25,6 +25,7 @@ struct ProjectOverviewView: View {
     @State private var showingDeleteConfirm = false
 
     @AppStorage("dockyard.defaultTerminal") private var defaultTerminal: String = ""
+    @AppStorage("dockyard.codingCLI") private var globalCodingCLIRaw: String = ""
     @State private var docFiles: [DocFile] = []
     @State private var selectedDoc: String?
 
@@ -249,6 +250,9 @@ struct ProjectOverviewView: View {
                         ForEach(sorted) { workstream in
                             let branch = appEnv.branchName(for: workstream.worktreePath)
                             let pr = branch.flatMap { appEnv.githubPR(for: project.directory, branch: $0) }
+                            let resolvedCodingCLI = appEnv.toolStatus.resolvedCodingCLI(
+                                storedValue: effectiveCodingCLIRaw(workstream: workstream.codingCLI, global: globalCodingCLIRaw)
+                            )
                             WorkstreamRow(
                                 workstream: workstream,
                                 isPathValid: appEnv.isPathValid(workstream.worktreePath),
@@ -261,6 +265,7 @@ struct ProjectOverviewView: View {
                                 prURL: pr?.url,
                                 pullRequest: pr,
                                 projectDirectory: project.directory,
+                                codingCLI: resolvedCodingCLI,
                                 onSelect: { onSelectWorkstream(workstream.id) },
                                 onRemove: { onRemoveWorkstream(workstream.id) },
                                 onPurge: { onPurgeWorkstream(workstream.id) }
@@ -1351,6 +1356,7 @@ private struct WorkstreamRow: View {
     var prURL: String?
     var pullRequest: GitHubPR?
     var projectDirectory: String = ""
+    var codingCLI: CodingCLI = .claude
     let onSelect: () -> Void
     let onRemove: () -> Void
     let onPurge: () -> Void
@@ -1397,6 +1403,7 @@ private struct WorkstreamRow: View {
                                 .foregroundStyle(DesignColor.statusWarning)
                                 .font(.system(size: 11))
                         }
+                        CodingCLIIcon(cli: codingCLI, size: 11, useBrandColor: true)
                         Text(headline)
                             .font(.system(hasRichHeadline ? .body : .body, design: hasRichHeadline ? .default : .monospaced))
                             .strikethrough(!isPathValid)
