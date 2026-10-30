@@ -90,6 +90,20 @@ extension CodingCLI {
                 supportsAutoRenameBranch: false,
                 supportsAgentTeams: false
             )
+        case .pi:
+            return CodingAgentCapabilities(
+                commandStrategy: .generic,
+                stateReportingStrategy: .unavailable,
+                supportsDirectLaunch: true,
+                supportsCLISessionResume: false,
+                supportsDockyardTmuxPersistence: true,
+                reportsMainAgentState: false,
+                reportsSubagentState: false,
+                supportsDangerousPermissionBypass: false,
+                supportsLivePermissionControl: false,
+                supportsAutoRenameBranch: false,
+                supportsAgentTeams: false
+            )
         }
     }
 

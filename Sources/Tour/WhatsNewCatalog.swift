@@ -33,6 +33,11 @@ enum WhatsNewCatalog {
                 titleKey: "Mobile View in Browser",
                 bodyKey: "Toggle between desktop and mobile viewport and user-agent in the in-app browser with a single click."
             ),
+            WhatsNewEntry(
+                symbol: "terminal.fill",
+                titleKey: "Pi Coding Agent Support",
+                bodyKey: "Run Pi (@earendil-works/pi-coding-agent) in the Agent tab as a first-class coding agent."
+            ),
         ]),
         WhatsNewRelease(version: "0.2.6", entries: [
             WhatsNewEntry(

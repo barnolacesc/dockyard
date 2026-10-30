@@ -2362,7 +2362,7 @@ private struct NewWorkstreamSheet: View {
             return NSLocalizedString("Codex will bypass approvals and sandboxing.", comment: "")
         case .agy:
             return NSLocalizedString("Antigravity CLI will start with --dangerously-skip-permissions (YOLO mode).", comment: "")
-        case .opencode:
+        case .opencode, .pi:
             return ""
         }
     }

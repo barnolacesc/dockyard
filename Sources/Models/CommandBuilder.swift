@@ -117,6 +117,7 @@ enum CodingCLI: String, CaseIterable, Identifiable {
     case codex
     case opencode
     case agy
+    case pi
 
     var id: String {
         rawValue
@@ -136,6 +137,8 @@ enum CodingCLI: String, CaseIterable, Identifiable {
             return NSLocalizedString("OpenCode", comment: "")
         case .agy:
             return NSLocalizedString("Antigravity CLI", comment: "")
+        case .pi:
+            return NSLocalizedString("Pi", comment: "")
         }
     }
 
@@ -149,6 +152,8 @@ enum CodingCLI: String, CaseIterable, Identifiable {
             return URL(string: "https://github.com/opencode")!
         case .agy:
             return URL(string: "https://antigravity.google")!
+        case .pi:
+            return URL(string: "https://pi.dev")!
         }
     }
 
@@ -162,6 +167,8 @@ enum CodingCLI: String, CaseIterable, Identifiable {
             return NSLocalizedString("OpenCode not found", comment: "")
         case .agy:
             return NSLocalizedString("Antigravity CLI not found", comment: "")
+        case .pi:
+            return NSLocalizedString("Pi not found", comment: "")
         }
     }
 
@@ -175,6 +182,8 @@ enum CodingCLI: String, CaseIterable, Identifiable {
             return NSLocalizedString("Install OpenCode to use the Coding Agent.", comment: "")
         case .agy:
             return NSLocalizedString("Install Antigravity CLI to use the Coding Agent.", comment: "")
+        case .pi:
+            return NSLocalizedString("Install Pi to use the Coding Agent.", comment: "")
         }
     }
 
@@ -188,6 +197,8 @@ enum CodingCLI: String, CaseIterable, Identifiable {
             return NSLocalizedString("Install OpenCode", comment: "")
         case .agy:
             return NSLocalizedString("Install Antigravity CLI", comment: "")
+        case .pi:
+            return NSLocalizedString("Install Pi", comment: "")
         }
     }
 }
@@ -208,6 +219,8 @@ extension ToolStatus {
             return opencode
         case .agy:
             return agy
+        case .pi:
+            return pi
         }
     }
 
@@ -221,6 +234,8 @@ extension ToolStatus {
             return opencodeVersion
         case .agy:
             return agyVersion
+        case .pi:
+            return piVersion
         }
     }
 
@@ -232,7 +247,7 @@ extension ToolStatus {
         switch cli {
         case .claude:
             return claudeSupportsSessionName
-        case .codex, .opencode, .agy:
+        case .codex, .opencode, .agy, .pi:
             return false
         }
     }
@@ -253,6 +268,9 @@ extension ToolStatus {
         }
         if codex.isInstalled {
             return .codex
+        }
+        if pi.isInstalled {
+            return .pi
         }
         return .claude
     }
@@ -642,6 +660,8 @@ enum CodingCLICommandBuilder {
         let normalizedPrompt = initialPrompt?.trimmingCharacters(in: .whitespacesAndNewlines)
         if cli == .opencode, let normalizedPrompt, !normalizedPrompt.isEmpty {
             fresh.option("--prompt", normalizedPrompt)
+        } else if cli == .pi, let normalizedPrompt, !normalizedPrompt.isEmpty {
+            fresh.quotedArg(normalizedPrompt)
         }
 
         return AgentLaunchCommand(

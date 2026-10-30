@@ -129,6 +129,11 @@ struct SettingsView: View {
                     version: appEnv.toolStatus.agyVersion
                 )
                 ToolRow(
+                    name: "pi",
+                    status: appEnv.toolStatus.pi,
+                    version: appEnv.toolStatus.piVersion
+                )
+                ToolRow(
                     name: "terminal-browser",
                     status: appEnv.toolStatus.terminalBrowser,
                     version: appEnv.toolStatus.terminalBrowserVersion
@@ -680,6 +685,8 @@ struct ToolStatus {
     var opencodeVersion: String?
     var agy: BinaryStatus = .notFound
     var agyVersion: String?
+    var pi: BinaryStatus = .notFound
+    var piVersion: String?
     var terminalBrowser: BinaryStatus = .notFound
     var terminalBrowserVersion: String?
     var gh: BinaryStatus = .notFound
@@ -714,6 +721,11 @@ struct ToolStatus {
         status.agy = findBinary("agy")
         if let path = status.agy.path {
             status.agyVersion = runForVersion(path, args: ["--version"])
+        }
+
+        status.pi = findBinary("pi")
+        if let path = status.pi.path {
+            status.piVersion = runForVersion(path, args: ["--version"])
         }
 
         status.terminalBrowser = findBinary("terminal-browser")

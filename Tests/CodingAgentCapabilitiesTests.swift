@@ -74,9 +74,28 @@ final class CodingAgentCapabilitiesTests: XCTestCase {
     func testClaudeAndAgyClaimSubagentStatus() {
         XCTAssertTrue(CodingCLI.claude.capabilities.reportsSubagentState)
         XCTAssertTrue(CodingCLI.agy.capabilities.reportsSubagentState)
-        XCTAssertTrue([CodingCLI.codex, .opencode].allSatisfy {
+        XCTAssertTrue([CodingCLI.codex, .opencode, .pi].allSatisfy {
             !$0.capabilities.reportsSubagentState
         })
+    }
+
+    func testPiCapabilitiesMatchGenericLaunchContract() {
+        XCTAssertEqual(
+            CodingCLI.pi.capabilities,
+            CodingAgentCapabilities(
+                commandStrategy: .generic,
+                stateReportingStrategy: .unavailable,
+                supportsDirectLaunch: true,
+                supportsCLISessionResume: false,
+                supportsDockyardTmuxPersistence: true,
+                reportsMainAgentState: false,
+                reportsSubagentState: false,
+                supportsDangerousPermissionBypass: false,
+                supportsLivePermissionControl: false,
+                supportsAutoRenameBranch: false,
+                supportsAgentTeams: false
+            )
+        )
     }
 
     func testMainAgentStatusClaimsHaveAReportingStrategy() {

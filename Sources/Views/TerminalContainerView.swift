@@ -1709,7 +1709,7 @@ struct TerminalContainerView: View {
             livePermissionHint = nil
         case .claude:
             livePermissionHint = NSLocalizedString("Press Shift+Tab in the Agent tab to switch permission modes.", comment: "")
-        case .opencode, .agy:
+        case .opencode, .agy, .pi:
             livePermissionHint = NSLocalizedString("Live permission controls are not available for this Coding Agent yet.", comment: "")
         }
     }

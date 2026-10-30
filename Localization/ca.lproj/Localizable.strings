@@ -194,6 +194,7 @@
 "Codex" = "Codex";
 "OpenCode" = "OpenCode";
 "Antigravity CLI" = "Antigravity CLI";
+"Pi" = "Pi";
 "Coding CLI" = "CLI de codi";
 "Use Default (%@)" = "Utilitza el valor per defecte (%@)";
 "Use Default follows the Coding Agent selected in Settings." = "Utilitza el valor per defecte segueix l'agent de codi seleccionat a Configuració.";
@@ -275,6 +276,9 @@
 "Antigravity CLI not found" = "Antigravity CLI no trobat";
 "Install Antigravity CLI to use the Coding Agent." = "Instal·la Antigravity CLI per utilitzar l'agent de codi.";
 "Install Antigravity CLI" = "Instal·la Antigravity CLI";
+"Pi not found" = "Pi no trobat";
+"Install Pi to use the Coding Agent." = "Instal·la Pi per utilitzar l'agent de codi.";
+"Install Pi" = "Instal·la Pi";
 
 /* BrowserView */
 "Server not responding" = "El servidor no respon";
@@ -856,3 +860,7 @@
 /* Agent Provider Icons */
 "Coding Agent Provider Icons" = "Icones de proveïdor de l'agent";
 "Identify your active agent at a glance with provider icons for Claude, OpenAI Codex, Antigravity, and OpenCode in the sidebar and tabs." = "Identifica l'agent actiu d'un cop d'ull amb les icones de proveïdor de Claude, OpenAI Codex, Antigravity i OpenCode a la barra lateral i a les pestanyes.";
+
+/* Pi Coding Agent */
+"Pi Coding Agent Support" = "Compatibilitat amb l'agent de codi Pi";
+"Run Pi (@earendil-works/pi-coding-agent) in the Agent tab as a first-class coding agent." = "Executa Pi (@earendil-works/pi-coding-agent) a la pestanya Agent com a agent de codi de primer nivell.";

@@ -1,4 +1,4 @@
-// ABOUTME: Provider icons and view representations for Coding Agent LLMs (Claude, OpenAI, AGY, OpenCode).
+// ABOUTME: Provider icons and view representations for Coding Agent LLMs (Claude, OpenAI, AGY, OpenCode, Pi).
 // ABOUTME: Renders brand template vector icons with optional brand coloring or monochrome tinting.
 
 import SwiftUI
@@ -10,6 +10,7 @@ extension CodingCLI {
         case .codex: return "openai"
         case .agy: return "agy"
         case .opencode: return "opencode"
+        case .pi: return "pi"
         }
     }
 
@@ -19,6 +20,7 @@ extension CodingCLI {
         case .codex: return Color(red: 0.06, green: 0.64, blue: 0.50) // OpenAI emerald
         case .agy: return Color(red: 0.19, green: 0.53, blue: 1.00) // Google Antigravity blue
         case .opencode: return Color(red: 0.55, green: 0.36, blue: 0.96) // OpenCode purple
+        case .pi: return Color(red: 0.94, green: 0.56, blue: 0.51) // Pi coral (#F09082)
         }
     }
 }
