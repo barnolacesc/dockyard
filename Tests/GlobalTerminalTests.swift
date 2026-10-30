@@ -794,4 +794,26 @@ final class GlobalTerminalTests: XCTestCase {
         XCTAssertEqual(clampedOversized.origin.x, mainFrame.minX + padding)
         XCTAssertEqual(clampedOversized.origin.y, mainFrame.minY + padding)
     }
+
+    /// Tests that GlobalTerminalPanel enforces key-readiness and remains visible in foreground when Dockyard deactivates.
+    @MainActor
+    func testGlobalTerminalPanelStaysInForegroundWhenDeactivated() {
+        let panel = GlobalTerminalPanel(
+            contentRect: NSRect(x: 100, y: 100, width: 640, height: 400),
+            styleMask: [.titled, .resizable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+
+        XCTAssertTrue(panel.canBecomeKey, "Floating terminal panel must be able to become key for keyboard input")
+        XCTAssertFalse(panel.canBecomeMain, "Floating terminal panel should not become main window")
+        XCTAssertFalse(panel.hidesOnDeactivate, "Floating terminal panel must not hide when app loses focus")
+
+        // Ensure hidesOnDeactivate cannot be accidentally overridden back to true
+        panel.hidesOnDeactivate = true
+        XCTAssertFalse(panel.hidesOnDeactivate, "hidesOnDeactivate must remain false even if explicitly assigned")
+
+        panel.isFloatingPanel = true
+        XCTAssertFalse(panel.hidesOnDeactivate, "isFloatingPanel mutation must not re-enable hidesOnDeactivate")
+    }
 }
