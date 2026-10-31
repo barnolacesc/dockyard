@@ -62,6 +62,12 @@
 
 /* Settings */
 "Settings" = "Settings";
+"Search settings…" = "Search settings…";
+"No settings match '%@'" = "No settings match '%@'";
+"Try a different search term or clear the filter." = "Try a different search term or clear the filter.";
+"Clear Search" = "Clear Search";
+"Settings Search Filter" = "Settings Search Filter";
+"Quickly locate settings across all sections with instant, case-insensitive keyword filtering." = "Quickly locate settings across all sections with instant, case-insensitive keyword filtering.";
 "Session" = "Session";
 "Tmux Mode" = "Tmux Mode";
 "Coding Agent sessions persist across app restarts. The Terminal tab is not affected. Sessions are lost on system restart." = "Coding Agent sessions persist across app restarts. The Terminal tab is not affected. Sessions are lost on system restart.";

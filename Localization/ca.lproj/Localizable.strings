@@ -62,6 +62,12 @@
 
 /* Settings */
 "Settings" = "Configuració";
+"Search settings…" = "Cerca a la configuració…";
+"No settings match '%@'" = "Cap paràmetre coincideix amb «%@»";
+"Try a different search term or clear the filter." = "Prova amb un altre terme de cerca o neteja el filtre.";
+"Clear Search" = "Neteja la cerca";
+"Settings Search Filter" = "Filtre de cerca a la configuració";
+"Quickly locate settings across all sections with instant, case-insensitive keyword filtering." = "Troba ràpidament qualsevol paràmetre entre totes les seccions amb cerca instantània per paraules clau.";
 "Session" = "Sessió";
 "Tmux Mode" = "Mode Tmux";
 "Coding Agent sessions persist across app restarts. The Terminal tab is not affected. Sessions are lost on system restart." = "Les sessions de l'agent de codi es mantenen entre reinicis de l'aplicació. La pestanya Terminal no es veu afectada. Es perden en reiniciar el sistema.";
