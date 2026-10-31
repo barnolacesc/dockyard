@@ -21,6 +21,10 @@ other = "AI‑powered"
 other = "dev workspace."
 [hero_desc]
 other = "A native macOS app built on <a href=\"https://ghostty.org\" class=\"text-brand-light hover:underline\">Ghostty</a>'s GPU-rendered terminal. Manages git worktrees, coding agent sessions, and dev servers from a single window. Each workstream gets its own branch, terminal, and AI agent — all running in parallel, all at native speed."
+[hero_tab_agent]
+other = "Coding Agent"
+[hero_tab_browser]
+other = "Embedded Browser"
 [hero_tab_split]
 other = "Split Screen"
 [hero_tab_issues]
@@ -29,26 +33,68 @@ other = "GitHub Issues"
 other = "CI & AI Reviews"
 [hero_tab_worktrees]
 other = "Worktrees"
+[hero_tab_stages]
+other = "Lifecycle Stages"
 [hero_tab_scripts]
 other = "Dev Servers"
 [hero_tab_terminal]
 other = "Floating Terminal"
 [hero_tab_compact]
 other = "Compact Dock"
+[hero_caption_agent]
+other = "Parallel coding agent execution in a GPU-accelerated Ghostty terminal with isolated git worktrees, active subagents, prompt history, and live diff tracking."
+[hero_caption_browser]
+other = "Built-in WebKit browser running local dev servers with automatic port detection (:5001), instant live reload, and mobile device emulation toggle."
 [hero_caption_split]
 other = "Side-by-side: Gemini 3.8 Flash agent working in Ghostty terminal alongside the embedded browser running the live app with auto-port detection (:3000)."
 [hero_caption_issues]
-other = "New workstream sheet: load issues from GitHub, pick your coding agent (Claude Code, Antigravity CLI, Codex), and toggle YOLO mode."
+other = "Spin up workstreams directly from GitHub issues: auto-names branches, syncs issue descriptions, and attaches your AI assistant in YOLO or guided mode."
 [hero_caption_ci]
-other = "Live CI checks popover: real-time CodeRabbit AI review status, GitHub Actions test suites, and direct PR links without leaving the app."
+other = "Live CI checks popover: real-time CodeRabbit AI review findings, GitHub Actions test suites, and direct PR status without leaving the app."
 [hero_caption_worktrees]
-other = "Centralized project overview: commit metrics, branch status, workstreams list, and 1-click clean worktree pruning."
+other = "Centralized repository overview: commit metrics, branch status, active workstreams list, and 1-click clean worktree pruning."
+[hero_caption_stages]
+other = "Context-aware workstream lifecycle: assign review stages (Working, Waiting for review, Changes requested, Approved) and monitor uncommitted diff counters across projects."
 [hero_caption_scripts]
 other = "Automated dev lifecycle: run setup & server scripts via .dockyard.json with dy-run port tracking and live status."
 [hero_caption_terminal]
 other = "Quick overlay terminal: floating terminal running LazyVim file explorer or shell tools over your active workspace."
 [hero_caption_compact]
 other = "Compact sidebar dock: minimalist icon view with attention badges, model provider indicators, and active PR pills."
+[hero_zoom_hint]
+other = "Click to zoom"
+[hero_view_in_action]
+other = "View in action"
+[hero_modal_close]
+other = "Close"
+[hero_modal_prev]
+other = "Previous"
+[hero_modal_next]
+other = "Next"
+[hero_title_agent]
+other = "dockyard — trailtrace-next / pr-114 (Coding Agent)"
+[hero_title_browser]
+other = "dockyard — embedded-browser (localhost:5001)"
+[hero_title_ci]
+other = "dockyard — pull request #271 (CI Checks & AI Review)"
+[hero_title_issues]
+other = "dockyard — new workstream from issue #274"
+[hero_title_worktrees]
+other = "dockyard — project overview & worktree manager"
+[hero_title_stages]
+other = "dockyard — workstream lifecycle & stage picker"
+[hero_tag_agent]
+other = "Ghostty Metal GPU"
+[hero_tag_browser]
+other = "Port Detection :5001"
+[hero_tag_ci]
+other = "CodeRabbit AI & CI"
+[hero_tag_issues]
+other = "GitHub Issues API"
+[hero_tag_worktrees]
+other = "Git Worktrees"
+[hero_tag_stages]
+other = "Review Lifecycle"
 [hero_download]
 other = "Download"
 [hero_source]

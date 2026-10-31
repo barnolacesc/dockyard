@@ -7,18 +7,26 @@
     </div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-px mt-14 rounded-xl overflow-hidden border border-fg-faint bg-fg-faint reveal">
       {{ $features := slice
-        (dict "icon" "&#9735;" "title" (T "feat_worktrees_title") "desc" (T "feat_worktrees_desc"))
-        (dict "icon" "&#9672;" "title" (T "feat_claude_title") "desc" (T "feat_claude_desc"))
-        (dict "icon" "&#9638;" "title" (T "feat_tmux_title") "desc" (T "feat_tmux_desc"))
-        (dict "icon" "&#9881;" "title" (T "feat_scripts_title") "desc" (T "feat_scripts_desc"))
-        (dict "icon" "&#9741;" "title" (T "feat_browser_title") "desc" (T "feat_browser_desc"))
-        (dict "icon" "&#10022;" "title" (T "feat_github_title") "desc" (T "feat_github_desc"))
+        (dict "icon" "&#9735;" "title" (T "feat_worktrees_title") "desc" (T "feat_worktrees_desc") "tab" "worktrees")
+        (dict "icon" "&#9672;" "title" (T "feat_claude_title") "desc" (T "feat_claude_desc") "tab" "agent")
+        (dict "icon" "&#9638;" "title" (T "feat_tmux_title") "desc" (T "feat_tmux_desc") "tab" "agent")
+        (dict "icon" "&#9881;" "title" (T "feat_scripts_title") "desc" (T "feat_scripts_desc") "tab" "stages")
+        (dict "icon" "&#9741;" "title" (T "feat_browser_title") "desc" (T "feat_browser_desc") "tab" "browser")
+        (dict "icon" "&#10022;" "title" (T "feat_github_title") "desc" (T "feat_github_desc") "tab" "ci")
       }}
       {{ range $features }}
-      <div class="p-8 bg-bg transition-colors hover:bg-bg-surface">
-        <div class="w-10 h-10 flex items-center justify-center rounded-[10px] border border-brand/30 bg-brand-glow text-brand-light mb-5 text-lg">{{ .icon | safeHTML }}</div>
-        <h3 class="font-sans text-sm font-semibold mb-2">{{ .title }}</h3>
-        <p class="text-sm text-fg-muted leading-relaxed">{{ .desc | safeHTML }}</p>
+      <div class="p-8 bg-bg transition-colors hover:bg-bg-surface flex flex-col justify-between group">
+        <div>
+          <div class="w-10 h-10 flex items-center justify-center rounded-[10px] border border-brand/30 bg-brand-glow text-brand-light mb-5 text-lg">{{ .icon | safeHTML }}</div>
+          <h3 class="font-sans text-sm font-semibold mb-2">{{ .title }}</h3>
+          <p class="text-sm text-fg-muted leading-relaxed">{{ .desc | safeHTML }}</p>
+        </div>
+        <div class="mt-5 pt-3 border-t border-fg-faint/40">
+          <button type="button" onclick="showScreenshot('{{ .tab }}'); document.getElementById('preview-showcase').scrollIntoView({behavior: 'smooth'})" class="inline-flex items-center gap-1.5 font-mono text-xs text-brand-light group-hover:text-fg transition-colors bg-transparent border-none p-0 cursor-pointer">
+            <span>{{ T "hero_view_in_action" }}</span>
+            <span class="transition-transform group-hover:translate-x-1">&rarr;</span>
+          </button>
+        </div>
       </div>
       {{ end }}
     </div>
