@@ -9,6 +9,11 @@ enum WhatsNewCatalog {
     static let releases: [WhatsNewRelease] = [
         WhatsNewRelease(version: "0.3.0", entries: [
             WhatsNewEntry(
+                symbol: "magnifyingglass",
+                titleKey: "Settings Search Filter",
+                bodyKey: "Quickly locate settings across all sections with instant, case-insensitive keyword filtering."
+            ),
+            WhatsNewEntry(
                 symbol: "text.bubble",
                 titleKey: "Issue Tasks Ready to Start",
                 bodyKey: "Workstreams created from GitHub issues pass the task directly to your Coding Agent. Failed launches keep the task available for retry."

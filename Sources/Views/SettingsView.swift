@@ -55,6 +55,8 @@ enum CLIInstallationValidator {
 
 struct SettingsView: View {
     @ObservedObject var appUpdater: AppUpdater = .init()
+    @State private var filter = SettingsFilter()
+    @FocusState private var isSearchFocused: Bool
     @AppStorage("dockyard.languageOverride") private var languageOverride: String = ""
     @AppStorage("dockyard.codingCLI") private var codingCLIRaw: String = ""
     @AppStorage("dockyard.tmuxMode") private var tmuxMode: Bool = false
@@ -104,215 +106,365 @@ struct SettingsView: View {
     }
 
     var body: some View {
+        VStack(spacing: 0) {
+            searchBar
+                .padding(.horizontal, DesignSpacing.xl)
+                .padding(.top, DesignSpacing.md)
+                .padding(.bottom, DesignSpacing.sm)
+
+            if filter.isSearching && !filter.hasMatches {
+                emptyStateView
+            } else {
+                settingsForm
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+            Button("") {
+                isSearchFocused = true
+            }
+            .keyboardShortcut("f", modifiers: .command)
+            .hidden()
+        }
+        .onAppear {
+            isSearchFocused = true
+        }
+        .alert("Clear project list?", isPresented: $showingClearConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Clear All", role: .destructive) {
+                NotificationCenter.default.post(name: .clearProjects, object: nil)
+            }
+        } message: {
+            Text("This will remove all projects and workstreams from the sidebar. No files on disk will be deleted. This cannot be undone.")
+        }
+    }
+
+    private var searchBar: some View {
+        HStack(spacing: DesignSpacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+                .font(.system(size: 13, weight: .medium))
+
+            TextField("Search settings…", text: $filter.query)
+                .textFieldStyle(.plain)
+                .font(.body)
+                .focused($isSearchFocused)
+                .onKeyPress(.escape) {
+                    if filter.isSearching {
+                        filter.query = ""
+                        return .handled
+                    }
+                    return .ignored
+                }
+
+            if filter.isSearching {
+                Button {
+                    filter.query = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 13))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Clear Search"))
+            }
+        }
+        .padding(.horizontal, DesignSpacing.md)
+        .padding(.vertical, DesignSpacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignRadius.md, style: .continuous)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+        )
+    }
+
+    private var emptyStateView: some View {
+        VStack(spacing: DesignSpacing.md) {
+            Spacer()
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 38))
+                .foregroundStyle(.tertiary)
+                .padding(.bottom, DesignSpacing.xs)
+
+            Text(String(format: NSLocalizedString("No settings match '%@'", comment: ""), filter.query.trimmingCharacters(in: .whitespacesAndNewlines)))
+                .font(.headline)
+                .foregroundStyle(.primary)
+
+            Text("Try a different search term or clear the filter.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Button("Clear Search") {
+                filter.query = ""
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.regular)
+            .padding(.top, DesignSpacing.xs)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(DesignSpacing.xxxl)
+    }
+
+    private var settingsForm: some View {
         Form {
             // MARK: - Environment
 
-            Section {
-                ToolRow(
-                    name: "claude",
-                    status: appEnv.toolStatus.claude,
-                    version: appEnv.toolStatus.claudeVersion
-                )
-                ToolRow(
-                    name: "codex",
-                    status: appEnv.toolStatus.codex,
-                    version: appEnv.toolStatus.codexVersion
-                )
-                ToolRow(
-                    name: "opencode",
-                    status: appEnv.toolStatus.opencode,
-                    version: appEnv.toolStatus.opencodeVersion
-                )
-                ToolRow(
-                    name: "agy",
-                    status: appEnv.toolStatus.agy,
-                    version: appEnv.toolStatus.agyVersion
-                )
-                ToolRow(
-                    name: "pi",
-                    status: appEnv.toolStatus.pi,
-                    version: appEnv.toolStatus.piVersion
-                )
-                ToolRow(
-                    name: "terminal-browser",
-                    status: appEnv.toolStatus.terminalBrowser,
-                    version: appEnv.toolStatus.terminalBrowserVersion
-                )
-                ToolRow(
-                    name: "gh",
-                    status: appEnv.toolStatus.gh,
-                    version: appEnv.toolStatus.ghVersion
-                )
-                ToolRow(
-                    name: "git",
-                    status: appEnv.toolStatus.git,
-                    version: appEnv.toolStatus.gitVersion
-                )
-                ToolRow(
-                    name: "tmux",
-                    status: appEnv.toolStatus.tmux,
-                    version: appEnv.toolStatus.tmuxVersion
-                )
-            } header: {
-                HStack {
-                    Text("Environment")
-                    Spacer()
-                    Button(action: { appEnv.refresh() }) {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.caption)
-                            .rotationEffect(.degrees(appEnv.isDetecting ? 360 : 0))
-                            .frame(width: 40, height: 40)
-                            .animation(appEnv.isDetecting && !reduceMotion ? .linear(duration: 0.8).repeatForever(autoreverses: false) : nil, value: appEnv.isDetecting)
+            if filter.matches(section: .environment) {
+                Section {
+                    if filter.matches(item: .envToolClaude) {
+                        ToolRow(
+                            name: "claude",
+                            status: appEnv.toolStatus.claude,
+                            version: appEnv.toolStatus.claudeVersion
+                        )
                     }
-                    .pressable()
-                    .disabled(appEnv.isDetecting)
-                }
+                    if filter.matches(item: .envToolCodex) {
+                        ToolRow(
+                            name: "codex",
+                            status: appEnv.toolStatus.codex,
+                            version: appEnv.toolStatus.codexVersion
+                        )
+                    }
+                    if filter.matches(item: .envToolOpencode) {
+                        ToolRow(
+                            name: "opencode",
+                            status: appEnv.toolStatus.opencode,
+                            version: appEnv.toolStatus.opencodeVersion
+                        )
+                    }
+                    if filter.matches(item: .envToolAgy) {
+                        ToolRow(
+                            name: "agy",
+                            status: appEnv.toolStatus.agy,
+                            version: appEnv.toolStatus.agyVersion
+                        )
+                    }
+                    if filter.matches(item: .envToolPi) {
+                        ToolRow(
+                            name: "pi",
+                            status: appEnv.toolStatus.pi,
+                            version: appEnv.toolStatus.piVersion
+                        )
+                    }
+                    if filter.matches(item: .envToolTerminalBrowser) {
+                        ToolRow(
+                            name: "terminal-browser",
+                            status: appEnv.toolStatus.terminalBrowser,
+                            version: appEnv.toolStatus.terminalBrowserVersion
+                        )
+                    }
+                    if filter.matches(item: .envToolGh) {
+                        ToolRow(
+                            name: "gh",
+                            status: appEnv.toolStatus.gh,
+                            version: appEnv.toolStatus.ghVersion
+                        )
+                    }
+                    if filter.matches(item: .envToolGit) {
+                        ToolRow(
+                            name: "git",
+                            status: appEnv.toolStatus.git,
+                            version: appEnv.toolStatus.gitVersion
+                        )
+                    }
+                    if filter.matches(item: .envToolTmux) {
+                        ToolRow(
+                            name: "tmux",
+                            status: appEnv.toolStatus.tmux,
+                            version: appEnv.toolStatus.tmuxVersion
+                        )
+                    }
+                } header: {
+                    HStack {
+                        Text("Environment")
+                        Spacer()
+                        Button(action: { appEnv.refresh() }) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.caption)
+                                .rotationEffect(.degrees(appEnv.isDetecting ? 360 : 0))
+                                .frame(width: 40, height: 40)
+                                .animation(appEnv.isDetecting && !reduceMotion ? .linear(duration: 0.8).repeatForever(autoreverses: false) : nil, value: appEnv.isDetecting)
+                        }
+                        .pressable()
+                        .disabled(appEnv.isDetecting)
+                    }
 
-                LabeledContent(String(format: NSLocalizedString("Install '%@' command", comment: ""), Self.cliName)) {
-                    Button(cliInstalled ? "Installed" : "Install...", action: installCLI)
-                        .disabled(cliInstalled)
+                    if filter.matches(item: .envInstallCLI) {
+                        LabeledContent(String(format: NSLocalizedString("Install '%@' command", comment: ""), Self.cliName)) {
+                            Button(cliInstalled ? "Installed" : "Install...", action: installCLI)
+                                .disabled(cliInstalled)
+                        }
+                        Text(cliInstalled
+                            ? String(format: NSLocalizedString("The '%@' command is installed and ready to use.", comment: ""), Self.cliName)
+                            : String(format: NSLocalizedString("Install the '%@' command to open directories in %@ from any terminal.", comment: ""), Self.cliName, AppConstants.appName))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                Text(cliInstalled
-                    ? String(format: NSLocalizedString("The '%@' command is installed and ready to use.", comment: ""), Self.cliName)
-                    : String(format: NSLocalizedString("Install the '%@' command to open directories in %@ from any terminal.", comment: ""), Self.cliName, AppConstants.appName))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
             // MARK: - General
 
-            Section("General") {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Base directory")
-                        Text("Default location when adding new projects.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Text(baseDirectory.abbreviatedPath)
-                        .font(.system(.body, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                    Button("Change...") {
-                        let panel = NSOpenPanel()
-                        panel.canChooseFiles = false
-                        panel.canChooseDirectories = true
-                        panel.allowsMultipleSelection = false
-                        panel.directoryURL = URL(fileURLWithPath: baseDirectory)
-                        panel.message = NSLocalizedString("Choose base directory for projects", comment: "")
-                        panel.begin { response in
-                            if response == .OK, let url = panel.url {
-                                baseDirectory = url.path
+            if filter.matches(section: .general) {
+                Section("General") {
+                    if filter.matches(item: .generalBaseDirectory) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Base directory")
+                                Text("Default location when adding new projects.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text(baseDirectory.abbreviatedPath)
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                            Button("Change...") {
+                                let panel = NSOpenPanel()
+                                panel.canChooseFiles = false
+                                panel.canChooseDirectories = true
+                                panel.allowsMultipleSelection = false
+                                panel.directoryURL = URL(fileURLWithPath: baseDirectory)
+                                panel.message = NSLocalizedString("Choose base directory for projects", comment: "")
+                                panel.begin { response in
+                                    if response == .OK, let url = panel.url {
+                                        baseDirectory = url.path
+                                    }
+                                }
                             }
                         }
                     }
-                }
 
-                VStack(alignment: .leading, spacing: 2) {
-                    LabeledContent("Branch prefix") {
-                        TextField("", text: Binding(
-                            get: { branchPrefix },
-                            set: { newValue in
-                                let filtered = String(newValue.lowercased().filter { $0.isLetter || $0 == "-" })
-                                    .replacingOccurrences(of: "--", with: "-")
-                                let trimmed = filtered.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
-                                branchPrefix = trimmed
+                    if filter.matches(item: .generalBranchPrefix) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            LabeledContent("Branch prefix") {
+                                TextField("", text: Binding(
+                                    get: { branchPrefix },
+                                    set: { newValue in
+                                        let filtered = String(newValue.lowercased().filter { $0.isLetter || $0 == "-" })
+                                            .replacingOccurrences(of: "--", with: "-")
+                                        let trimmed = filtered.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+                                        branchPrefix = trimmed
+                                    }
+                                ))
+                                .textFieldStyle(.roundedBorder)
+                                .frame(maxWidth: 150)
                             }
-                        ))
-                        .textFieldStyle(.roundedBorder)
-                        .frame(maxWidth: 150)
+                            Text("e.g. \(branchPrefix.isEmpty ? "dy" : branchPrefix)/deploy-ludicrous-speed")
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundStyle(.tertiary)
+                        }
                     }
-                    Text("e.g. \(branchPrefix.isEmpty ? "dy" : branchPrefix)/deploy-ludicrous-speed")
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(.tertiary)
-                }
 
-                SettingToggle(
-                    "Symlink .env files",
-                    isOn: $symlinkEnv,
-                    description: "Symlink .env and .env.local from the main repository into new worktrees."
-                )
-
-                VStack(alignment: .leading, spacing: 2) {
-                    LabeledContent("Editor command") {
-                        TextField("nvim .", text: $terminalEditorCommand)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(maxWidth: 200)
+                    if filter.matches(item: .generalSymlinkEnv) {
+                        SettingToggle(
+                            "Symlink .env files",
+                            isOn: $symlinkEnv,
+                            description: "Symlink .env and .env.local from the main repository into new worktrees."
+                        )
                     }
-                    Text("Runs in the worktree directory when you open an editor (Cmd+O).")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
 
-                Picker("Theme", selection: $appearance) {
-                    Text("System").tag("system")
-                    Text("Light").tag("light")
-                    Text("Dark").tag("dark")
-                }
-                .onChange(of: appearance) { _, newValue in
-                    applyAppearance(newValue)
-                }
-
-                Picker("Language", selection: $languageOverride) {
-                    ForEach(availableLanguages, id: \.code) { lang in
-                        Text(lang.name).tag(lang.code)
+                    if filter.matches(item: .generalEditorCommand) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            LabeledContent("Editor command") {
+                                TextField("nvim .", text: $terminalEditorCommand)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(maxWidth: 200)
+                            }
+                            Text("Runs in the worktree directory when you open an editor (Cmd+O).")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
-                }
-                .onChange(of: languageOverride) { _, newValue in
-                    applyLanguage(newValue)
-                }
 
-                if !languageOverride.isEmpty {
-                    Text("Restart the app for the language change to take effect.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                    if filter.matches(item: .generalTheme) {
+                        Picker("Theme", selection: $appearance) {
+                            Text("System").tag("system")
+                            Text("Light").tag("light")
+                            Text("Dark").tag("dark")
+                        }
+                        .onChange(of: appearance) { _, newValue in
+                            applyAppearance(newValue)
+                        }
+                    }
 
-                SettingToggle(
-                    "Show shortcut hints while holding ⌘",
-                    isOn: $showShortcutHints,
-                    description: "Display contextual key badges over visible controls when you hold the Command key."
-                )
-                .onChange(of: showShortcutHints) { _, enabled in
-                    shortcutHints.setEnabled(enabled)
-                }
+                    if filter.matches(item: .generalLanguage) {
+                        Picker("Language", selection: $languageOverride) {
+                            ForEach(availableLanguages, id: \.code) { lang in
+                                Text(lang.name).tag(lang.code)
+                            }
+                        }
+                        .onChange(of: languageOverride) { _, newValue in
+                            applyLanguage(newValue)
+                        }
 
-                SettingToggle(
-                    "Confirm before quitting",
-                    isOn: $confirmQuit,
-                    description: "Show a confirmation dialog when quitting with active workstreams."
-                )
+                        if !languageOverride.isEmpty {
+                            Text("Restart the app for the language change to take effect.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
 
-                SettingToggle(
-                    "Launch at login",
-                    isOn: $launchAtLogin,
-                    description: "Automatically open Dockyard when you log in."
-                )
-                .onChange(of: launchAtLogin) { _, newValue in
-                    LaunchAtLogin.setEnabled(newValue)
+                    if filter.matches(item: .generalShortcutHints) {
+                        SettingToggle(
+                            "Show shortcut hints while holding ⌘",
+                            isOn: $showShortcutHints,
+                            description: "Display contextual key badges over visible controls when you hold the Command key."
+                        )
+                        .onChange(of: showShortcutHints) { _, enabled in
+                            shortcutHints.setEnabled(enabled)
+                        }
+                    }
+
+                    if filter.matches(item: .generalConfirmQuit) {
+                        SettingToggle(
+                            "Confirm before quitting",
+                            isOn: $confirmQuit,
+                            description: "Show a confirmation dialog when quitting with active workstreams."
+                        )
+                    }
+
+                    if filter.matches(item: .generalLaunchAtLogin) {
+                        SettingToggle(
+                            "Launch at login",
+                            isOn: $launchAtLogin,
+                            description: "Automatically open Dockyard when you log in."
+                        )
+                        .onChange(of: launchAtLogin) { _, newValue in
+                            LaunchAtLogin.setEnabled(newValue)
+                        }
+                    }
                 }
             }
 
             // MARK: - Power
 
-            Section("Power") {
-                Picker("Keep Mac awake", selection: $caffeinateMode) {
-                    ForEach(CaffeinateMode.allCases) { mode in
-                        Text(mode.displayName).tag(mode.rawValue)
+            if filter.matches(section: .power) {
+                Section("Power") {
+                    if filter.matches(item: .powerKeepAwake) {
+                        Picker("Keep Mac awake", selection: $caffeinateMode) {
+                            ForEach(CaffeinateMode.allCases) { mode in
+                                Text(mode.displayName).tag(mode.rawValue)
+                            }
+                        }
+
+                        Text("Prevents idle system sleep while Dockyard is open. The display can still turn off.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
-
-                Text("Prevents idle system sleep while Dockyard is open. The display can still turn off.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
             // MARK: - Updates
 
-            if appUpdater.isSourceBuild || updater.isConfigured {
+            if (appUpdater.isSourceBuild || updater.isConfigured) && filter.matches(section: .updates) {
                 Section("Updates") {
-                    if appUpdater.isSourceBuild {
+                    if appUpdater.isSourceBuild && filter.matches(item: .updatesChannel) {
                         Picker("Release channel", selection: $updateChannel) {
                             ForEach(UpdateChannel.allCases) { channel in
                                 Text(channel.displayName).tag(channel.rawValue)
@@ -329,7 +481,7 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    if updater.isConfigured {
+                    if updater.isConfigured && filter.matches(item: .updatesAutomaticChecks) {
                         SettingToggle(
                             "Automatically check for updates",
                             isOn: Binding(
@@ -340,201 +492,233 @@ struct SettingsView: View {
                         )
                     }
 
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Check now")
-                            Text(appUpdater.isSourceBuild
-                                ? "Checks origin for updates according to your selected release channel."
-                                : "Fetches the latest appcast and installs any available update.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Button("Check for Updates...") {
-                            if appUpdater.isSourceBuild {
-                                appUpdater.checkForUpdates()
-                            } else {
-                                updater.checkForUpdates()
+                    if filter.matches(item: .updatesCheckNow) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Check now")
+                                Text(appUpdater.isSourceBuild
+                                    ? "Checks origin for updates according to your selected release channel."
+                                    : "Fetches the latest appcast and installs any available update.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
+                            Spacer()
+                            Button("Check for Updates...") {
+                                if appUpdater.isSourceBuild {
+                                    appUpdater.checkForUpdates()
+                                } else {
+                                    updater.checkForUpdates()
+                                }
+                            }
+                            .disabled(appUpdater.isChecking || (!appUpdater.isSourceBuild && !updater.canCheckForUpdates))
                         }
-                        .disabled(appUpdater.isChecking || (!appUpdater.isSourceBuild && !updater.canCheckForUpdates))
                     }
                 }
             }
 
             // MARK: - Coding Agent
 
-            Section("Coding Agent") {
-                Picker("Coding CLI", selection: codingCLIBinding) {
-                    ForEach(CodingCLI.allCases) { cli in
-                        Label(cli.displayName, image: cli.iconAssetName).tag(cli.rawValue)
-                    }
-                }
-                Text("Used as the default for workstreams that have not chosen their own Coding Agent.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                SettingToggle(
-                    "Dangerously skip permissions",
-                    isOn: $bypassPermissions,
-                    description: "Starts Coding Agents in their full dangerous mode. Claude Code uses bypassPermissions. Codex bypasses approvals and sandboxing. Use only for trusted workstreams.",
-                    descriptionStyle: bypassPermissions ? .warning : .secondary
-                )
-                .disabled(!selectedCodingCLI.capabilities.supportsDangerousPermissionBypass)
-
-                SettingToggle(
-                    "Allow writes outside worktree",
-                    isOn: $allowOutsideWorktree,
-                    description: bypassPermissions ? "Ignored while dangerous permission mode is on." : "When enabled, the coding agent can modify files anywhere on disk. When disabled, writes are restricted to the worktree directory.",
-                    descriptionStyle: allowOutsideWorktree ? .warning : .secondary
-                )
-                .disabled(bypassPermissions)
-
-                if bypassPermissions, !selectedCodingCLI.capabilities.supportsDangerousPermissionBypass {
-                    Text("Dangerous permission mode is only wired for Claude Code and Codex.")
-                        .font(.caption)
-                        .foregroundStyle(DesignColor.statusWarning)
-                }
-
-                SettingToggle(
-                    "Agent Teams",
-                    isOn: $agentTeams,
-                    description: "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams."
-                )
-                .disabled(!selectedCodingCLI.supportsAgentTeams)
-
-                if !selectedCodingCLI.supportsAgentTeams {
-                    Text("Agent Teams is only available with Claude Code.")
-                        .font(.caption)
-                        .foregroundStyle(DesignColor.statusWarning)
-                }
-
-                SettingToggle(
-                    "Auto-rename branch",
-                    isOn: $autoRenameBranch,
-                    description: "The agent automatically renames the branch to match your current task, updating the tab name and sidebar description."
-                )
-                .disabled(!selectedCodingCLI.supportsAutoRenameBranch)
-
-                if !selectedCodingCLI.supportsAutoRenameBranch {
-                    Text("Auto-rename branch is only available with Claude Code.")
-                        .font(.caption)
-                        .foregroundStyle(DesignColor.statusWarning)
-                }
-
-                Picker("Claude usage plan", selection: $claudePlanTier) {
-                    ForEach(ClaudePlanTier.allCases) { tier in
-                        Text(tier.displayName).tag(tier.rawValue)
-                    }
-                }
-                Text("Sets your subscription tier so the sidebar usage meter can show an approximate percentage remaining. Consumption is read from local Claude transcripts; limits are estimates.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                SettingToggle(
-                    "Tmux Mode",
-                    isOn: $tmuxMode,
-                    description: "Coding Agent sessions persist across app restarts. The Terminal tab is not affected. Sessions are lost on system restart."
-                )
-                .disabled(!appEnv.toolStatus.tmux.isInstalled)
-
-                if !appEnv.toolStatus.tmux.isInstalled {
-                    Text("Requires tmux to be installed.")
-                        .font(.caption)
-                        .foregroundStyle(DesignColor.statusWarning)
-                }
-
-                Picker("External Terminal", selection: $defaultTerminal) {
-                    ForEach(appEnv.installedTerminals) { app in
-                        Label {
-                            Text(app.name)
-                        } icon: {
-                            if let icon = app.icon {
-                                Image(nsImage: icon)
-                                    .resizable()
-                                    .frame(width: 16, height: 16)
-                                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
-                                    .imageOutline(radius: DesignRadius.xs)
+            if filter.matches(section: .codingAgent) {
+                Section("Coding Agent") {
+                    if filter.matches(item: .agentCodingCLI) {
+                        Picker("Coding CLI", selection: codingCLIBinding) {
+                            ForEach(CodingCLI.allCases) { cli in
+                                Label(cli.displayName, image: cli.iconAssetName).tag(cli.rawValue)
                             }
                         }
-                        .tag(app.bundleID)
+                        Text("Used as the default for workstreams that have not chosen their own Coding Agent.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                }
-                .onAppear {
-                    if defaultTerminal.isEmpty, let first = appEnv.installedTerminals.first {
-                        defaultTerminal = first.bundleID
-                    }
-                }
 
-                Picker("Open links in", selection: $linkOpenTarget) {
-                    ForEach(LinkOpenTarget.allCases) { target in
-                        Text(target.displayName).tag(target.rawValue)
-                    }
-                }
-                Text("Where links clicked in the Coding Agent, terminal, and browser tabs should open.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    if filter.matches(item: .agentDangerousPermissions) {
+                        SettingToggle(
+                            "Dangerously skip permissions",
+                            isOn: $bypassPermissions,
+                            description: "Starts Coding Agents in their full dangerous mode. Claude Code uses bypassPermissions. Codex bypasses approvals and sandboxing. Use only for trusted workstreams.",
+                            descriptionStyle: bypassPermissions ? .warning : .secondary
+                        )
+                        .disabled(!selectedCodingCLI.capabilities.supportsDangerousPermissionBypass)
 
-                Picker("External Browser", selection: $defaultBrowser) {
-                    Text("System Default").tag("")
-                    ForEach(appEnv.installedBrowsers) { app in
-                        Label {
-                            Text(app.name)
-                        } icon: {
-                            if let icon = app.icon {
-                                Image(nsImage: icon)
-                                    .resizable()
-                                    .frame(width: 16, height: 16)
-                                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
-                                    .imageOutline(radius: DesignRadius.xs)
+                        if bypassPermissions, !selectedCodingCLI.capabilities.supportsDangerousPermissionBypass {
+                            Text("Dangerous permission mode is only wired for Claude Code and Codex.")
+                                .font(.caption)
+                                .foregroundStyle(DesignColor.statusWarning)
+                        }
+                    }
+
+                    if filter.matches(item: .agentAllowOutsideWorktree) {
+                        SettingToggle(
+                            "Allow writes outside worktree",
+                            isOn: $allowOutsideWorktree,
+                            description: bypassPermissions ? "Ignored while dangerous permission mode is on." : "When enabled, the coding agent can modify files anywhere on disk. When disabled, writes are restricted to the worktree directory.",
+                            descriptionStyle: allowOutsideWorktree ? .warning : .secondary
+                        )
+                        .disabled(bypassPermissions)
+                    }
+
+                    if filter.matches(item: .agentTeams) {
+                        SettingToggle(
+                            "Agent Teams",
+                            isOn: $agentTeams,
+                            description: "Enables experimental multi-agent coordination. Agents can spawn teammates, delegate tasks, and collaborate across workstreams."
+                        )
+                        .disabled(!selectedCodingCLI.supportsAgentTeams)
+
+                        if !selectedCodingCLI.supportsAgentTeams {
+                            Text("Agent Teams is only available with Claude Code.")
+                                .font(.caption)
+                                .foregroundStyle(DesignColor.statusWarning)
+                        }
+                    }
+
+                    if filter.matches(item: .agentAutoRenameBranch) {
+                        SettingToggle(
+                            "Auto-rename branch",
+                            isOn: $autoRenameBranch,
+                            description: "The agent automatically renames the branch to match your current task, updating the tab name and sidebar description."
+                        )
+                        .disabled(!selectedCodingCLI.supportsAutoRenameBranch)
+
+                        if !selectedCodingCLI.supportsAutoRenameBranch {
+                            Text("Auto-rename branch is only available with Claude Code.")
+                                .font(.caption)
+                                .foregroundStyle(DesignColor.statusWarning)
+                        }
+                    }
+
+                    if filter.matches(item: .agentClaudeUsagePlan) {
+                        Picker("Claude usage plan", selection: $claudePlanTier) {
+                            ForEach(ClaudePlanTier.allCases) { tier in
+                                Text(tier.displayName).tag(tier.rawValue)
                             }
                         }
-                        .tag(app.bundleID)
+                        Text("Sets your subscription tier so the sidebar usage meter can show an approximate percentage remaining. Consumption is read from local Claude transcripts; limits are estimates.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if filter.matches(item: .agentTmuxMode) {
+                        SettingToggle(
+                            "Tmux Mode",
+                            isOn: $tmuxMode,
+                            description: "Coding Agent sessions persist across app restarts. The Terminal tab is not affected. Sessions are lost on system restart."
+                        )
+                        .disabled(!appEnv.toolStatus.tmux.isInstalled)
+
+                        if !appEnv.toolStatus.tmux.isInstalled {
+                            Text("Requires tmux to be installed.")
+                                .font(.caption)
+                                .foregroundStyle(DesignColor.statusWarning)
+                        }
+                    }
+
+                    if filter.matches(item: .agentExternalTerminal) {
+                        Picker("External Terminal", selection: $defaultTerminal) {
+                            ForEach(appEnv.installedTerminals) { app in
+                                Label {
+                                    Text(app.name)
+                                } icon: {
+                                    if let icon = app.icon {
+                                        Image(nsImage: icon)
+                                            .resizable()
+                                            .frame(width: 16, height: 16)
+                                            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
+                                            .imageOutline(radius: DesignRadius.xs)
+                                    }
+                                }
+                                .tag(app.bundleID)
+                            }
+                        }
+                        .onAppear {
+                            if defaultTerminal.isEmpty, let first = appEnv.installedTerminals.first {
+                                defaultTerminal = first.bundleID
+                            }
+                        }
+                    }
+
+                    if filter.matches(item: .agentOpenLinksIn) {
+                        Picker("Open links in", selection: $linkOpenTarget) {
+                            ForEach(LinkOpenTarget.allCases) { target in
+                                Text(target.displayName).tag(target.rawValue)
+                            }
+                        }
+                        Text("Where links clicked in the Coding Agent, terminal, and browser tabs should open.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if filter.matches(item: .agentExternalBrowser) {
+                        Picker("External Browser", selection: $defaultBrowser) {
+                            Text("System Default").tag("")
+                            ForEach(appEnv.installedBrowsers) { app in
+                                Label {
+                                    Text(app.name)
+                                } icon: {
+                                    if let icon = app.icon {
+                                        Image(nsImage: icon)
+                                            .resizable()
+                                            .frame(width: 16, height: 16)
+                                            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.xs, style: .continuous))
+                                            .imageOutline(radius: DesignRadius.xs)
+                                    }
+                                }
+                                .tag(app.bundleID)
+                            }
+                        }
                     }
                 }
             }
 
             // MARK: - Advanced
 
-            Section("Advanced") {
-                Toggle(isOn: $detailedLogging) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Detailed logging")
-                        if detailedLogging {
-                            HStack(spacing: 0) {
-                                Text("Log setup, run, and teardown script output to files for debugging. ")
-                                    .foregroundStyle(.secondary)
-                                Button("Open Logs Directory") {
-                                    let url = LaunchLogger.logsDirectoryURL
-                                    try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-                                    NSWorkspace.shared.open(url)
+            if filter.matches(section: .advanced) {
+                Section("Advanced") {
+                    if filter.matches(item: .advancedDetailedLogging) {
+                        Toggle(isOn: $detailedLogging) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Detailed logging")
+                                if detailedLogging {
+                                    HStack(spacing: 0) {
+                                        Text("Log setup, run, and teardown script output to files for debugging. ")
+                                            .foregroundStyle(.secondary)
+                                        Button("Open Logs Directory") {
+                                            let url = LaunchLogger.logsDirectoryURL
+                                            try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+                                            NSWorkspace.shared.open(url)
+                                        }
+                                        .pressable()
+                                        .foregroundStyle(Color.accentColor)
+                                    }
+                                    .font(.caption)
+                                } else {
+                                    Text("Log setup, run, and teardown script output to files for debugging.")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
-                                .pressable()
-                                .foregroundStyle(Color.accentColor)
                             }
-                            .font(.caption)
-                        } else {
-                            Text("Log setup, run, and teardown script output to files for debugging.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
                         }
                     }
-                }
 
-                SettingToggle(
-                    "Quick action debug",
-                    isOn: $quickActionDebug,
-                    description: "Show a debug panel with command output from quick actions."
-                )
+                    if filter.matches(item: .advancedQuickActionDebug) {
+                        SettingToggle(
+                            "Quick action debug",
+                            isOn: $quickActionDebug,
+                            description: "Show a debug panel with command output from quick actions."
+                        )
+                    }
 
-                LabeledContent("Clear project list") {
-                    Button("Clear All...", role: .destructive, action: { showingClearConfirm = true })
-                        .pressable()
-                        .foregroundStyle(DesignColor.statusError)
+                    if filter.matches(item: .advancedClearProjects) {
+                        LabeledContent("Clear project list") {
+                            Button("Clear All...", role: .destructive, action: { showingClearConfirm = true })
+                                .pressable()
+                                .foregroundStyle(DesignColor.statusError)
+                        }
+                        Text("Removes all projects and workstreams from the sidebar. No files or directories on disk will be deleted.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                Text("Removes all projects and workstreams from the sidebar. No files or directories on disk will be deleted.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
