@@ -14,6 +14,16 @@ enum WhatsNewCatalog {
                 bodyKey: "Monitor agents, stream raw terminal output, and unblock tasks from your phone over local Wi-Fi or Tailscale without cloud dependencies."
             ),
             WhatsNewEntry(
+                symbol: "camera.fill",
+                titleKey: "Mobile Image Upload & Paste",
+                bodyKey: "Upload photos or paste screenshots from your phone directly into the Coding Agent prompt via the Mobile Companion."
+            ),
+            WhatsNewEntry(
+                symbol: "tray.full.fill",
+                titleKey: "Mobile Workstream Drawer",
+                bodyKey: "Create new workstreams with automatic naming or archive finished ones directly from the Mobile Companion."
+            ),
+            WhatsNewEntry(
                 symbol: "magnifyingglass",
                 titleKey: "Settings Search Filter",
                 bodyKey: "Quickly locate settings across all sections with instant, case-insensitive keyword filtering."

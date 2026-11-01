@@ -314,6 +314,16 @@ Requires the [gh CLI](https://cli.github.com/) with authentication (`gh auth log
 
 From the sidebar, run one-click operations: **Create PR** (AI-generated title and description), **Push** (to origin with `-u`), or **Close PR** (closes with a comment). Because if you're tired of typing "now commit, push, and open a PR" into your agent for the hundredth time, you're not alone.
 
+### Mobile Companion
+
+Monitor and drive your coding agents from your phone or tablet over local Wi-Fi or Tailscale without relying on third-party cloud services.
+
+- **Instant Pairing**: Open **Dockyard > Mobile Companion...** to show a QR code. Scan it with your phone to open the PWA, then tap **Add to Home Screen** in Safari or Chrome for a fullscreen mobile app.
+- **Live Terminal Mirroring**: Stream raw terminal output from Claude Code, Codex, Antigravity, or OpenCode in real time with word wrap and font scaling toggles.
+- **Image Upload & Clipboard Paste**: Tap the camera icon or paste images directly into the prompt box. The PWA automatically optimizes high-resolution photos and uploads them to your Mac, inserting the local file path into the prompt so your agent can inspect screenshots or mockups.
+- **Workstream Management**: Tap the drawer icon to switch workstreams, spin up new workstreams with automatic naming, or archive finished ones on the go.
+- **Private & Local**: The companion server runs locally on your Mac with token-based authentication and strict origin checks.
+
 ### Updates
 
 Dockyard shows a badge in the sidebar when a newer version is available. You can also check manually from **Dockyard > Check for Updates...**

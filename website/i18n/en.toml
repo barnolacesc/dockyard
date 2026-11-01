@@ -31,6 +31,8 @@ other = "Local Environment"
 other = "CI & AI Reviews"
 [hero_tab_worktrees]
 other = "Worktrees"
+[hero_tab_companion]
+other = "Mobile Companion"
 [hero_tab_scripts]
 other = "Dev Servers"
 [hero_tab_terminal]
@@ -47,6 +49,8 @@ other = "Tailored local application lifecycle: Configure project-specific setup 
 other = "Real-time CI and review verification: Monitor CodeRabbit AI review findings, GitHub Actions test suites, and jump directly to GitHub PRs and logs."
 [hero_caption_worktrees]
 other = "Repository oversight without branch friction: View commit metrics, branch status, and clean up finished worktrees in one click without touching your main directory."
+[hero_caption_companion]
+other = "Control coding agents from your phone: Scan the local QR code to pair your device, stream live terminal output, upload images into prompts, and manage workstreams on the go."
 [hero_caption_scripts]
 other = "Automated dev lifecycle: run setup & server scripts via .dockyard.json with dy-run port tracking and live status."
 [hero_caption_terminal]
@@ -73,6 +77,8 @@ other = "dockyard — local application lifecycle & run process"
 other = "dockyard — pull request #271 (CI Checks & CodeRabbit)"
 [hero_title_worktrees]
 other = "dockyard — project overview & worktree manager"
+[hero_title_companion]
+other = "dockyard — mobile companion pairing & overview"
 [hero_tag_split]
 other = "Ghostty Metal + WebKit"
 [hero_tag_issues]
@@ -83,6 +89,8 @@ other = "Local Lifecycle & Run Scripts"
 other = "CodeRabbit AI & Actions"
 [hero_tag_worktrees]
 other = "Git Worktrees Manager"
+[hero_tag_companion]
+other = "Mobile Companion PWA"
 [hero_download]
 other = "Download"
 [hero_source]
@@ -119,6 +127,18 @@ other = "Preview your web app side-by-side with automatic port detection (:3000,
 other = "GitHub Issues & Live CI Checks"
 [feat_github_desc]
 other = "Create workstreams from GitHub issues, inspect live CI check popovers with CodeRabbit AI reviews, and manage PRs directly."
+[feat_companion_title]
+other = "Mobile Companion PWA"
+[feat_companion_desc]
+other = "Monitor agents, stream live terminal output, upload images or paste screenshots, and manage workstreams from your phone over local Wi-Fi or Tailscale."
+[feat_floating_title]
+other = "Persistent Floating Terminal"
+[feat_floating_desc]
+other = "Summon a resizable native Ghostty terminal overlay anywhere with a global shortcut, independent of your active project."
+[feat_agent_browser_title]
+other = "Agent-Controlled Browser"
+[feat_agent_browser_desc]
+other = "A dedicated Chromium browser tab your Coding Agent can drive, snapshot, and inspect while your preview browser remains yours."
 
 # How it works
 [how_label]

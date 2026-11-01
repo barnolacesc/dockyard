@@ -14,8 +14,11 @@ if [ -z "${PROJECT_DIR:-}" ]; then
 fi
 CONFIGURATION="${CONFIGURATION:-Unknown}"
 
+PRIMARY_DIR="$(git -C "${PROJECT_DIR}" worktree list --porcelain 2>/dev/null | head -n 1 | sed 's/^worktree //' || true)"
+SOURCE_PATH="${PRIMARY_DIR:-$PROJECT_DIR}"
+
 HASH=$(git -C "${PROJECT_DIR}" rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 OUT="${PROJECT_DIR}/Sources/Models/AppCommit.swift"
 printf 'enum AppCommit { static let hash = "%s"; static let sourcePath = "%s"; static let configuration = "%s" }\n' \
-    "${HASH}" "${PROJECT_DIR}" "${CONFIGURATION}" > "${OUT}"
+    "${HASH}" "${SOURCE_PATH}" "${CONFIGURATION}" > "${OUT}"

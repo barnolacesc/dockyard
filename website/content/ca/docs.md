@@ -302,6 +302,16 @@ Requereix el [gh CLI](https://cli.github.com/) amb autenticació (`gh auth login
 
 Des del sidebar, executa operacions d'un sol clic: **Create PR** (títol i descripció generats per IA), **Push** (a l'origin amb `-u`), o **Close PR** (tanca amb un comentari). Perquè si estàs cansat d'escriure "ara fes commit, push, i obre una PR" a Claude per centèsima vegada, no ets l'únic.
 
+### Mobile Companion {#mobile-companion}
+
+Monitoritza i guia els teus agents de codi des del teu telèfon o tauleta mitjançant Wi-Fi local o Tailscale sense dependre de serveis al núvol de tercers.
+
+- **Vinculació instantània**: Obre **Dockyard > Mobile Companion...** per veure un codi QR. Escaneja'l amb el mòbil per obrir la PWA i toca **Afegeix a la pantalla d'inici** a Safari o Chrome per gaudir d'una aplicació mòbil a pantalla completa.
+- **Transmissió de terminal en viu**: Rep la sortida del terminal en temps real de Claude Code, Codex, Antigravity o OpenCode amb ajust de línia i mida de lletra configurables.
+- **Pujada d'imatges i enganxat des del porta-retalls**: Toca la icona de la càmera o enganxa captures de pantalla directament al quadre d'indicacions. La PWA optimitza automàticament les imatges d'alta resolució, les puja al teu Mac i insereix la ruta local perquè el teu agent pugui inspeccionar dissenys o captures.
+- **Gestió de fluxos de treball**: Obre el menú lateral per canviar de flux de treball, crear-ne de nous amb noms automàtics o arxivar els completats des de qualsevol lloc.
+- **Privat i local**: El servidor s'executa localment al teu Mac amb autenticació per testimoni i validacions d'origen estrictes.
+
 ### Actualitzacions {#updates}
 
 Dockyard mostra un badge al sidebar quan hi ha una versió més nova disponible. També pots comprovar-ho manualment des de **Dockyard > Check for Updates...**
