@@ -2,9 +2,10 @@
 
 (function() {
   const urlParams = new URLSearchParams(window.location.search);
-  let authToken = urlParams.get('token') || localStorage.getItem('dockyard_token') || '';
+  const rawToken = urlParams.get('token') || localStorage.getItem('dockyard_token') || '';
+  let authToken = /^[a-zA-Z0-9_]{1,64}$/.test(rawToken) ? rawToken : '';
 
-  if (urlParams.get('token')) {
+  if (urlParams.get('token') && authToken) {
     localStorage.setItem('dockyard_token', authToken);
     // Remove token from URL without reload
     const cleanUrl = window.location.pathname + (urlParams.get('standalone') ? '?standalone=true' : '');
@@ -108,7 +109,7 @@
       } else if (key === 'esc') {
         sendRawKey('\x1b');
       } else if (key === 'clear') {
-        els.terminalMirror.innerHTML = '';
+        els.terminalMirror.replaceChildren();
       }
     });
   });
@@ -161,19 +162,24 @@
     }
   }
 
-  // Network Calls
+  // Network Calls with strict endpoint validation
   async function apiFetch(endpoint, options = {}) {
+    if (typeof endpoint !== 'string' || !endpoint.startsWith('/api/')) {
+      throw new Error('Invalid API endpoint');
+    }
+
     options.headers = options.headers || {};
     if (authToken) {
       options.headers['Authorization'] = `Bearer ${authToken}`;
     }
-    const separator = endpoint.includes('?') ? '&' : '?';
-    const url = `${endpoint}${authToken ? separator + 'token=' + encodeURIComponent(authToken) : ''}`;
-    const res = await fetch(url, options);
+    options.credentials = 'same-origin';
+
+    const url = new URL(endpoint, window.location.origin);
+    const res = await fetch(url.pathname + url.search, options);
     if (res.status === 401) {
       setConnectionStatus(false, 'Unauthorized');
       const newToken = prompt('Enter your Dockyard Mobile token:');
-      if (newToken) {
+      if (newToken && /^[a-zA-Z0-9_]{1,64}$/.test(newToken.trim())) {
         authToken = newToken.trim();
         localStorage.setItem('dockyard_token', authToken);
         location.reload();
@@ -275,7 +281,10 @@
   }
 
   function selectWorkstream(id) {
-    state.selectedWorkstreamId = id;
+    if (!id || typeof id !== 'string' || !/^[0-9a-fA-F-]{1,64}$/.test(id)) return;
+    const found = findWorkstream(id);
+    if (!found) return;
+    state.selectedWorkstreamId = found.workstream.id;
     closeSidebar();
     updateCurrentWorkstreamHeader();
     renderSidebar();
@@ -311,10 +320,24 @@
   }
 
   function renderSidebar() {
-    let html = '';
+    els.drawerContent.replaceChildren();
+
+    if (!state.projects || state.projects.length === 0) {
+      const emptyMsg = document.createElement('div');
+      emptyMsg.className = 'empty-projects-msg';
+      emptyMsg.textContent = 'No active projects found';
+      els.drawerContent.appendChild(emptyMsg);
+      return;
+    }
+
     for (const proj of state.projects) {
-      html += `<div class="project-group">`;
-      html += `<div class="project-title">${escapeHtml(proj.name)}</div>`;
+      const groupEl = document.createElement('div');
+      groupEl.className = 'project-group';
+
+      const titleEl = document.createElement('div');
+      titleEl.className = 'project-title';
+      titleEl.textContent = proj.name || 'Untitled';
+      groupEl.appendChild(titleEl);
 
       for (const ws of (proj.workstreams || [])) {
         const isSelected = ws.id === state.selectedWorkstreamId;
@@ -323,33 +346,71 @@
         if (ws.agentState === 'working') stateLabel = 'WORKING';
         if (ws.agentState === 'waiting') stateLabel = 'WAITING';
 
-        html += `
-          <div class="workstream-card ${isSelected ? 'selected' : ''}" data-id="${ws.id}">
-            <div class="ws-row-top">
-              <span class="ws-name">${escapeHtml(ws.name)}</span>
-              <span class="ws-badge ${stateClass}">
-                <span class="dot"></span> ${stateLabel}
-              </span>
-            </div>
-            <div class="ws-branch">${escapeHtml(ws.branch || '')}</div>
-            <div class="ws-tags">
-              ${ws.activeSubagents > 0 ? `<span class="ws-tag">${ws.activeSubagents} Subagent${ws.activeSubagents > 1 ? 's' : ''}</span>` : ''}
-              ${(ws.listeningPorts && ws.listeningPorts.length > 0) ? ws.listeningPorts.map(p => `<a href="http://${window.location.hostname}:${p}" target="_blank" class="ws-tag port" onclick="event.stopPropagation()">Port ${p} ↗</a>`).join('') : ''}
-            </div>
-          </div>
-        `;
+        const card = document.createElement('div');
+        card.className = `workstream-card ${isSelected ? 'selected' : ''}`;
+        card.dataset.id = ws.id;
+
+        const rowTop = document.createElement('div');
+        rowTop.className = 'ws-row-top';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'ws-name';
+        nameSpan.textContent = ws.name || 'Unnamed';
+
+        const badge = document.createElement('span');
+        badge.className = `ws-badge ${stateClass}`;
+
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+        badge.appendChild(dot);
+        badge.appendChild(document.createTextNode(' ' + stateLabel));
+
+        rowTop.appendChild(nameSpan);
+        rowTop.appendChild(badge);
+        card.appendChild(rowTop);
+
+        const branchEl = document.createElement('div');
+        branchEl.className = 'ws-branch';
+        branchEl.textContent = ws.branch || '';
+        card.appendChild(branchEl);
+
+        const tagsEl = document.createElement('div');
+        tagsEl.className = 'ws-tags';
+
+        if (ws.activeSubagents > 0) {
+          const subtag = document.createElement('span');
+          subtag.className = 'ws-tag';
+          subtag.textContent = `${ws.activeSubagents} Subagent${ws.activeSubagents > 1 ? 's' : ''}`;
+          tagsEl.appendChild(subtag);
+        }
+
+        if (Array.isArray(ws.listeningPorts)) {
+          for (const port of ws.listeningPorts) {
+            const portNum = parseInt(port, 10);
+            if (portNum > 0 && portNum <= 65535) {
+              const portLink = document.createElement('a');
+              portLink.className = 'ws-tag port';
+              portLink.target = '_blank';
+              portLink.rel = 'noopener noreferrer';
+              portLink.textContent = `Port ${portNum} ↗`;
+              portLink.href = `http://${window.location.hostname}:${portNum}`;
+              portLink.addEventListener('click', (e) => e.stopPropagation());
+              tagsEl.appendChild(portLink);
+            }
+          }
+        }
+
+        card.appendChild(tagsEl);
+
+        card.addEventListener('click', () => {
+          selectWorkstream(ws.id);
+        });
+
+        groupEl.appendChild(card);
       }
-      html += `</div>`;
+
+      els.drawerContent.appendChild(groupEl);
     }
-
-    els.drawerContent.innerHTML = html;
-
-    els.drawerContent.querySelectorAll('.workstream-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const id = card.dataset.id;
-        selectWorkstream(id);
-      });
-    });
   }
 
   // Raw ANSI to HTML Parser
