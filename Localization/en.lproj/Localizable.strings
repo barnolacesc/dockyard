@@ -910,3 +910,7 @@
 "Archive workstream" = "Archive workstream";
 "Archive" = "Archive";
 "Archive workstream %@? Files will remain on disk." = "Archive workstream %@? Files will remain on disk.";
+"Mobile Image Upload & Paste" = "Mobile Image Upload & Paste";
+"Upload photos or paste screenshots from your phone directly into the Coding Agent prompt via the Mobile Companion." = "Upload photos or paste screenshots from your phone directly into the Coding Agent prompt via the Mobile Companion.";
+"Mobile Workstream Drawer" = "Mobile Workstream Drawer";
+"Create new workstreams with automatic naming or archive finished ones directly from the Mobile Companion." = "Create new workstreams with automatic naming or archive finished ones directly from the Mobile Companion.";

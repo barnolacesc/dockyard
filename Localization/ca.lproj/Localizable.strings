@@ -910,3 +910,7 @@
 "Archive workstream" = "Arxiva el flux de treball";
 "Archive" = "Arxiva";
 "Archive workstream %@? Files will remain on disk." = "Voleu arxivar el flux de treball %@? Els fitxers es mantindran al disc.";
+"Mobile Image Upload & Paste" = "Pujada i enganxament d'imatges mòbil";
+"Upload photos or paste screenshots from your phone directly into the Coding Agent prompt via the Mobile Companion." = "Puja fotos o enganxa captures de pantalla des del mòbil directament a la indicació de l'agent de codi mitjançant el company mòbil.";
+"Mobile Workstream Drawer" = "Menú de fluxos de treball mòbil";
+"Create new workstreams with automatic naming or archive finished ones directly from the Mobile Companion." = "Crea nous fluxos de treball amb noms automàtics o arxiva els completats directament des del company mòbil.";

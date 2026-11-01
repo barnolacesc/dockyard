@@ -21,6 +21,10 @@
       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
       <span>{{ T "hero_tab_worktrees" }}</span>
     </button>
+    <button type="button" role="tab" id="tab-btn-companion" onclick="showScreenshot('companion')" aria-selected="false" aria-controls="panel-companion" class="ss-tab flex items-center gap-2 font-mono text-xs px-3 md:px-3.5 py-2 rounded-lg border border-fg-faint bg-bg-surface/80 text-fg-muted hover:text-fg hover:border-fg-faint hover:bg-bg-elevated transition-all cursor-pointer whitespace-nowrap">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      <span>{{ T "hero_tab_companion" }}</span>
+    </button>
   </div>
 
   <!-- macOS Native Window Frame -->
@@ -66,6 +70,11 @@
         <img src="/img/screenshots/worktrees.webp" alt="{{ T "hero_caption_worktrees" }}" class="w-full h-auto block select-none group-hover:scale-[1.006] transition-transform duration-300" loading="lazy" width="3160" height="2034">
       </div>
 
+      <!-- Mobile Companion -->
+      <div id="panel-companion" class="ss-panel w-full hidden" role="tabpanel" aria-labelledby="tab-btn-companion">
+        <img src="/img/screenshots/mobile-companion.webp" alt="{{ T "hero_caption_companion" }}" class="w-full h-auto block select-none group-hover:scale-[1.006] transition-transform duration-300" loading="lazy" width="1624" height="1185">
+      </div>
+
       <!-- Hover hint pill -->
       <div class="absolute bottom-3 right-3 hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-bg-surface/90 backdrop-blur-md border border-fg-faint text-[11px] font-mono text-fg-dim shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         <svg class="w-3.5 h-3.5 text-brand-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
@@ -84,7 +93,7 @@
         </p>
       </div>
       <div class="flex items-center gap-1.5 self-end sm:self-center text-fg-muted font-mono text-[11px] shrink-0">
-        <span id="ss-counter">1 / 5</span>
+        <span id="ss-counter">1 / 6</span>
       </div>
     </div>
   </div>
@@ -169,10 +178,17 @@ var screenshotsData = {
     tag: "{{ T "hero_tag_worktrees" }}",
     index: 5,
     imgSrc: "/img/screenshots/worktrees.webp"
+  },
+  companion: {
+    title: "{{ T "hero_title_companion" }}",
+    caption: "{{ T "hero_caption_companion" }}",
+    tag: "{{ T "hero_tag_companion" }}",
+    index: 6,
+    imgSrc: "/img/screenshots/mobile-companion.webp"
   }
 };
 
-var tabKeys = ['split', 'issues', 'environment', 'ci', 'worktrees'];
+var tabKeys = ['split', 'issues', 'environment', 'ci', 'worktrees', 'companion'];
 var currentScreenshotKey = 'split';
 
 function showScreenshot(key) {

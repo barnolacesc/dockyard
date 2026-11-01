@@ -31,6 +31,8 @@ other = "Entorn local"
 other = "CI i revisions IA"
 [hero_tab_worktrees]
 other = "Worktrees"
+[hero_tab_companion]
+other = "Company mòbil"
 [hero_tab_scripts]
 other = "Servidors Dev"
 [hero_tab_terminal]
@@ -47,6 +49,8 @@ other = "Cicle de vida de l'aplicació a mida: Configura scripts de setup i exec
 other = "Verificació de CI i revisió en directe: Supervisa troballes d'IA de CodeRabbit, tests de GitHub Actions i accedeix directament a les PRs i logs de GitHub."
 [hero_caption_worktrees]
 other = "Supervisió del repositori sense fricció: Consulta mètriques de commits, estat de branches i neteja worktrees enllestits en 1 clic sense tocar el directori principal."
+[hero_caption_companion]
+other = "Controla els agents de codi des del teu telèfon: escaneja el codi QR local per vincular el dispositiu, transmet la sortida del terminal en viu, puja imatges a les indicacions i gestiona fluxos de treball des de qualsevol lloc."
 [hero_caption_scripts]
 other = "Cicle de vida dev automatitzat: execució d'scripts de setup i servidor via .dockyard.json amb rastreig de ports dy-run."
 [hero_caption_terminal]
@@ -73,6 +77,8 @@ other = "dockyard — cicle de vida i execució de l'app local"
 other = "dockyard — pull request #271 (Checks de CI i CodeRabbit)"
 [hero_title_worktrees]
 other = "dockyard — vista general del projecte i gestor de worktrees"
+[hero_title_companion]
+other = "dockyard — vinculació i resum del company mòbil"
 [hero_tag_split]
 other = "Ghostty Metal + WebKit"
 [hero_tag_issues]
@@ -83,6 +89,8 @@ other = "Cicle de vida i scripts de run"
 other = "CodeRabbit IA i Actions"
 [hero_tag_worktrees]
 other = "Gestor de Git Worktrees"
+[hero_tag_companion]
+other = "PWA de company mòbil"
 [hero_download]
 other = "Descarrega"
 [hero_source]
@@ -119,6 +127,18 @@ other = "Previsualitza la teva app web en paral·lel amb detecció automàtica d
 other = "GitHub Issues i popovers CI"
 [feat_github_desc]
 other = "Crea workstreams des d'issues de GitHub, inspecciona checks de CI en viu amb revisions IA de CodeRabbit i gestiona PRs a l'instant."
+[feat_companion_title]
+other = "PWA de company mòbil"
+[feat_companion_desc]
+other = "Monitoritza agents, transmet la sortida del terminal en viu, puja imatges o enganxa captures i gestiona fluxos de treball des del telèfon per Wi-Fi local o Tailscale."
+[feat_floating_title]
+other = "Terminal global flotant persistent"
+[feat_floating_desc]
+other = "Mostra un panell de terminal Ghostty nadiu redimensionable amb una drecera global des de qualsevol lloc, independent del projecte actiu."
+[feat_agent_browser_title]
+other = "Navegador controlat per l'agent"
+[feat_agent_browser_desc]
+other = "Una pestanya de navegador dedicada que l'agent de codi pot controlar, capturar i inspeccionar mentre el teu navegador de vista prèvia queda intacte."
 
 # How it works
 [how_label]
