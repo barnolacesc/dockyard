@@ -18,7 +18,7 @@ enum WorkstreamArchiver {
     static func remove(
         _ workstreamID: UUID,
         in project: inout Project,
-        surfaceCache: TerminalSurfaceCache,
+        surfaceCache: TerminalSurfaceCache = TerminalSurfaceCache.shared ?? TerminalSurfaceCache(),
         tmuxPath: String?
     ) {
         if let ws = project.workstreams.first(where: { $0.id == workstreamID }) {

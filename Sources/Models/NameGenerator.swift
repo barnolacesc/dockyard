@@ -44,7 +44,7 @@ enum NameGenerator {
     ]
 
     /// Generate a unique name that doesn't collide with existing names.
-    static func generate(avoiding existing: Set<String>) -> String {
+    static func generate(avoiding existing: Set<String> = []) -> String {
         // Total combinations: 45 * 40 * 70 = 126,000
         for _ in 0 ..< 100 {
             let name = [

@@ -52,7 +52,7 @@ enum TmuxSession {
     }
 
     /// Path to the minimal tmux config that makes tmux invisible.
-    private static func configPath(in cacheDirectory: URL) -> String {
+    static func configPath(in cacheDirectory: URL = AppConstants.cacheDirectory) -> String {
         let url = cacheDirectory.appendingPathComponent("tmux.conf")
         // Write config if missing or outdated
         let fm = FileManager.default
@@ -173,10 +173,10 @@ enum TmuxSession {
     }
 
     /// Check if a session exists on the tmux socket.
-    static func sessionExists(tmuxPath: String, sessionName: String) -> Bool {
+    static func sessionExists(tmuxPath: String, sessionName: String, socket: String = socketName) -> Bool {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: tmuxPath)
-        process.arguments = ["-L", socketName, "has-session", "-t", sessionName]
+        process.arguments = ["-L", socket, "has-session", "-t", sessionName]
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         do {
@@ -186,6 +186,31 @@ enum TmuxSession {
         } catch {
             return false
         }
+    }
+
+    /// Ensure a tmux session exists on the tmux socket, creating a detached session if it doesn't.
+    static func ensureSession(tmuxPath: String, sessionName: String, workingDirectory: String? = nil, socket: String = socketName) {
+        if sessionExists(tmuxPath: tmuxPath, sessionName: sessionName, socket: socket) {
+            return
+        }
+        let conf = configPath()
+        var args = ["-L", socket]
+        if FileManager.default.fileExists(atPath: conf) {
+            args += ["-f", conf]
+        }
+        args += ["new-session", "-d", "-s", sessionName]
+        if let workingDirectory {
+            args += ["-c", workingDirectory]
+        }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: tmuxPath)
+        process.arguments = args
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {}
     }
 
     /// List active session names on the tmux socket.
@@ -201,7 +226,8 @@ enum TmuxSession {
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             process.waitUntilExit()
             guard process.terminationStatus == 0,
-                  let output = String(data: data, encoding: .utf8) else {
+                  let output = String(data: data, encoding: .utf8)
+            else {
                 return []
             }
             return output.components(separatedBy: .newlines)

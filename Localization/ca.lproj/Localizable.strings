@@ -903,3 +903,7 @@
 "Agents mirror to your phone when running in Tmux Mode. Relaunch or open a workstream to attach." = "Els agents es reflecteixen al mòbil quan s'executen en mode Tmux. Reinicia o obre un flux de treball per connectar-s'hi.";
 "Token:" = "Testimoni:";
 "Copy security token" = "Copia el testimoni de seguretat";
+"New Workstream" = "Nou flux de treball";
+"Archive workstream" = "Arxiva el flux de treball";
+"Archive" = "Arxiva";
+"Archive workstream %@? Files will remain on disk." = "Voleu arxivar el flux de treball %@? Els fitxers es mantindran al disc.";
