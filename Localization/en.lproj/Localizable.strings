@@ -920,3 +920,5 @@
 "Configured via companion.json: %@" = "Configured via companion.json: %@";
 "Custom Domain for Mobile Companion" = "Custom Domain for Mobile Companion";
 "Configure custom domains, reverse proxies, or VPN URLs for the Mobile Companion with automatic QR pairing." = "Configure custom domains, reverse proxies, or VPN URLs for the Mobile Companion with automatic QR pairing.";
+"Security Token" = "Security Token";
+"Shared secret required for companion app connections. Stays the same across sessions." = "Shared secret required for companion app connections. Stays the same across sessions.";

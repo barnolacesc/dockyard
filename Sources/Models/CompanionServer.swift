@@ -17,6 +17,7 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
     struct ConfigFile: Codable, Sendable {
         var customURL: String?
         var port: Int?
+        var token: String?
     }
 
     @Published private(set) var isRunning: Bool = false
@@ -56,17 +57,44 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
 
     // MARK: - Token & URLs
 
+    private var lastObservedToken: String = currentToken()
+
     var token: String {
         Self.currentToken()
     }
 
+    var configFileToken: String? {
+        Self.loadConfigFile()?.token?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     static func currentToken() -> String {
-        if let existing = UserDefaults.standard.string(forKey: tokenStorageKey), !existing.isEmpty {
+        if let env = ProcessInfo.processInfo.environment["DOCKYARD_COMPANION_TOKEN"]?.trimmingCharacters(in: .whitespacesAndNewlines), !env.isEmpty {
+            return env
+        }
+        if let fileToken = loadConfigFile()?.token?.trimmingCharacters(in: .whitespacesAndNewlines), !fileToken.isEmpty {
+            return fileToken
+        }
+        if let existing = UserDefaults.standard.string(forKey: tokenStorageKey)?.trimmingCharacters(in: .whitespacesAndNewlines), !existing.isEmpty {
             return existing
         }
         let newToken = generateToken()
         UserDefaults.standard.set(newToken, forKey: tokenStorageKey)
         return newToken
+    }
+
+    func setCustomToken(_ token: String) {
+        let trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            rotateToken()
+        } else {
+            UserDefaults.standard.set(trimmed, forKey: Self.tokenStorageKey)
+            Self.disconnectAllClients()
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.connectedClientsCount = 0
+                self.objectWillChange.send()
+            }
+        }
     }
 
     func rotateToken() {
@@ -884,7 +912,14 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
         NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.objectWillChange.send()
+                guard let self else { return }
+                let current = Self.currentToken()
+                if current != self.lastObservedToken {
+                    self.lastObservedToken = current
+                    Self.disconnectAllClients()
+                    self.connectedClientsCount = 0
+                }
+                self.objectWillChange.send()
             }
             .store(in: &cancellables)
     }

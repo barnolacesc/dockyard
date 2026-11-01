@@ -920,3 +920,5 @@
 "Configured via companion.json: %@" = "Configurat mitjançant companion.json: %@";
 "Custom Domain for Mobile Companion" = "Domini personalitzat per al company mòbil";
 "Configure custom domains, reverse proxies, or VPN URLs for the Mobile Companion with automatic QR pairing." = "Configura dominis personalitzats, servidors intermediaris inversos o URL de VPN per al company mòbil amb vinculació automàtica per codi QR.";
+"Security Token" = "Token de seguretat";
+"Shared secret required for companion app connections. Stays the same across sessions." = "Secret compartit necessari per a les connexions de l'app complementària. Es manté igual entre sessions.";

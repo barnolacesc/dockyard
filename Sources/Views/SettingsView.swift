@@ -80,6 +80,7 @@ struct SettingsView: View {
     @AppStorage(AppUpdater.channelStorageKey) private var updateChannel: String = AppUpdater.loadChannel().rawValue
     @AppStorage("dockyard.baseDirectory") private var baseDirectory: String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? ""
     @AppStorage(CompanionServer.customURLStorageKey) private var customCompanionURL: String = ""
+    @AppStorage(CompanionServer.tokenStorageKey) private var companionToken: String = ""
     @ObservedObject private var companionServer = CompanionServer.shared
     @State private var showingCompanionPairing: Bool = false
 
@@ -131,6 +132,9 @@ struct SettingsView: View {
         }
         .onAppear {
             isSearchFocused = true
+            if companionToken.isEmpty {
+                companionToken = companionServer.token
+            }
         }
         .alert("Clear project list?", isPresented: $showingClearConfirm) {
             Button("Cancel", role: .cancel) {}
@@ -575,6 +579,33 @@ struct SettingsView: View {
                                     .foregroundStyle(.secondary)
                             } else {
                                 Text("Optional domain or reverse proxy URL (e.g. VPN, homelab, or Cloudflare tunnel). When set, pairing QR codes and links use this URL.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+
+                    if filter.matches(item: .mobileCompanionToken) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Security Token")
+                            HStack(spacing: 8) {
+                                TextField("Security Token", text: $companionToken)
+                                    .textFieldStyle(.roundedBorder)
+                                    .font(.system(.body, design: .monospaced))
+
+                                Button("Reset Token") {
+                                    companionServer.rotateToken()
+                                    companionToken = companionServer.token
+                                }
+                                .buttonStyle(.bordered)
+                            }
+
+                            if let fileToken = companionServer.configFileToken, !fileToken.isEmpty {
+                                Text(String(format: NSLocalizedString("Configured via companion.json: %@", comment: ""), fileToken))
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Text("Shared secret required for companion app connections. Stays the same across sessions.")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
