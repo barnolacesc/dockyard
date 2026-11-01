@@ -29,6 +29,9 @@ packages:
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
     from: "2.9.1"
+  FlyingFox:
+    url: https://github.com/swhitty/FlyingFox.git
+    from: "0.27.1"
 
 targets:
   Dockyard:
@@ -76,6 +79,9 @@ targets:
       - path: Resources/Scripts/dy
         buildPhase: resources
       - path: Resources/notification.wav
+        buildPhase: resources
+      - path: Resources/Web
+        type: folder
         buildPhase: resources
       - path: ghostty/zig-out/share/terminfo
         type: folder
@@ -129,6 +135,8 @@ targets:
         product: cmark-gfm-extensions
       - package: Sparkle
         product: Sparkle
+      - package: FlyingFox
+        product: FlyingFox
     preBuildScripts:
       - script: |
           set -e
@@ -204,6 +212,7 @@ targets:
       - Tests
     dependencies:
       - target: Dockyard
+      - package: FlyingFox
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.barnolacesc.dockyard.tests

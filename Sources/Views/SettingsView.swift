@@ -79,6 +79,8 @@ struct SettingsView: View {
     @AppStorage("dockyard.quickActionDebug") private var quickActionDebug: Bool = false
     @AppStorage(AppUpdater.channelStorageKey) private var updateChannel: String = AppUpdater.loadChannel().rawValue
     @AppStorage("dockyard.baseDirectory") private var baseDirectory: String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? ""
+    @ObservedObject private var companionServer = CompanionServer.shared
+    @State private var showingCompanionPairing: Bool = false
 
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
 
@@ -511,6 +513,51 @@ struct SettingsView: View {
                                 }
                             }
                             .disabled(appUpdater.isChecking || (!appUpdater.isSourceBuild && !updater.canCheckForUpdates))
+                        }
+                    }
+                }
+            }
+
+            // MARK: - Mobile Companion
+
+            if filter.matches(section: .mobileCompanion) {
+                Section("Mobile Companion") {
+                    if filter.matches(item: .mobileCompanionEnable) {
+                        Toggle("Enable Mobile Companion", isOn: Binding(
+                            get: { companionServer.isRunning },
+                            set: { enabled in
+                                if enabled {
+                                    companionServer.start()
+                                } else {
+                                    companionServer.stop()
+                                }
+                            }
+                        ))
+
+                        Text("Allow monitoring and steering coding agents from your phone via a local Progressive Web App.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if companionServer.isRunning {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Pairing & Status")
+                                if let url = companionServer.bestPairingURL {
+                                    Text(url.absoluteString)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                }
+                            }
+                            Spacer()
+                            Button("Pair Phone…") {
+                                showingCompanionPairing = true
+                            }
+                            .popover(isPresented: $showingCompanionPairing, arrowEdge: .trailing) {
+                                CompanionPairingView()
+                            }
                         }
                     }
                 }

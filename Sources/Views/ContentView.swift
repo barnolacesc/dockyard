@@ -183,6 +183,7 @@ struct ContentView: View {
     @State private var previousPreferredUsageProvider: UsageMeterProvider?
     @State private var whatsNewReleases: [WhatsNewRelease] = []
     @State private var showWhatsNew = false
+    @State private var showingCompanionSheet = false
     @State private var projectActiveTabs: [UUID: ProjectTab] = [:]
     @State private var openProjectTerminalIDs: Set<UUID> = []
     @AppStorage("dockyard.codingCLI") private var codingCLIRaw: String = ""
@@ -416,6 +417,23 @@ struct ContentView: View {
             .shortcutHintOverlay()
             .tourOverlay()
             .sheet(isPresented: $showWhatsNew) { whatsNewSheet }
+            .sheet(isPresented: $showingCompanionSheet) {
+                VStack(spacing: 0) {
+                    HStack {
+                        Spacer()
+                        Button("Done") {
+                            showingCompanionSheet = false
+                        }
+                        .padding(.top, 12)
+                        .padding(.trailing, 16)
+                    }
+                    CompanionPairingView()
+                        .padding(.bottom, 12)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .openMobileCompanion)) { _ in
+                showingCompanionSheet = true
+            }
             .onReceive(NotificationCenter.default.publisher(for: .openWhatsNew)) { _ in
                 whatsNewReleases = WhatsNewCatalog.releases
                 showWhatsNew = true
