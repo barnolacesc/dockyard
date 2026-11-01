@@ -303,7 +303,7 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
                     return HTTPResponse(statusCode: .internalServerError, headers: [.contentType: "application/json"], body: Data("{\"error\":\"failed to create worktree\"}".utf8))
                 }
 
-                let defaultBypass = UserDefaults.standard.bool(forKey: "dockyard.defaultBypassPermissions")
+                let defaultBypass = UserDefaults.standard.bool(forKey: "dockyard.bypassPermissions") || UserDefaults.standard.bool(forKey: "dockyard.defaultBypassPermissions")
                 let defaultCLIRaw = UserDefaults.standard.string(forKey: "dockyard.codingCLI")
                 let effectiveBypass = payload?.bypassPermissions ?? defaultBypass
                 let effectiveCLI = payload?.codingCLI ?? ((defaultCLIRaw?.isEmpty == false) ? defaultCLIRaw : nil)
@@ -724,7 +724,7 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
         }
 
         let defaultAgentRaw = UserDefaults.standard.string(forKey: "dockyard.codingCLI") ?? ""
-        let defaultBypass = UserDefaults.standard.bool(forKey: "dockyard.defaultBypassPermissions")
+        let defaultBypass = UserDefaults.standard.bool(forKey: "dockyard.bypassPermissions") || UserDefaults.standard.bool(forKey: "dockyard.defaultBypassPermissions")
 
         let hostDict: [String: Any] = [
             "name": Host.current().localizedName ?? ProcessInfo.processInfo.hostName,
