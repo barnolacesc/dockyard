@@ -287,6 +287,7 @@ enum GitOperations {
         }
 
         addExcludeEntry(at: projectPath, pattern: ".dockyard-state/")
+        AgentHooks.ensureAgyWorkspaceTrusted(workingDirectory: worktreeDir.path)
 
         return worktreeDir.path
     }
