@@ -486,6 +486,26 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         XCTAssertEqual(resolvedTerminalEditorCommand("hx ."), "hx .")
     }
 
+    func testTerminalEditorLaunchCommandWrapsInLoginShell() {
+        let launchCmd = terminalEditorLaunchCommand("nvim .", shell: "/bin/zsh")
+        XCTAssertEqual(launchCmd, "/bin/zsh -lic 'exec /bin/sh -c '\\''nvim .'\\'''")
+    }
+
+    func testTerminalEditorLaunchCommandDefaultsEmptyInputToNvimInLoginShell() {
+        let launchCmd = terminalEditorLaunchCommand("  \n\t  ", shell: "/bin/zsh")
+        XCTAssertEqual(launchCmd, "/bin/zsh -lic 'exec /bin/sh -c '\\''nvim .'\\'''")
+    }
+
+    func testTerminalEditorLaunchCommandDoesNotDoubleWrap() {
+        let wrapped = "/bin/zsh -lic 'exec /bin/sh -c '\\''nvim .'\\'''"
+        XCTAssertEqual(terminalEditorLaunchCommand(wrapped, shell: "/bin/zsh"), wrapped)
+    }
+
+    func testTerminalEditorLaunchCommandSupportsFish() {
+        let launchCmd = terminalEditorLaunchCommand("hx .", shell: "/opt/homebrew/bin/fish")
+        XCTAssertEqual(launchCmd, "/opt/homebrew/bin/fish -lic \"exec /bin/sh -c \\\"hx .\\\"\"")
+    }
+
     private func makeSnapshot(activeTab: WorkspaceTab) -> WorkspaceTabSnapshot {
         WorkspaceTabSnapshot(
             tabs: [.agent],

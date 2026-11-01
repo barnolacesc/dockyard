@@ -406,6 +406,14 @@ func resolvedTerminalEditorCommand(_ raw: String) -> String {
     return trimmed.isEmpty ? "nvim ." : trimmed
 }
 
+func terminalEditorLaunchCommand(_ raw: String, shell: String = CommandBuilder.userShell) -> String {
+    let command = resolvedTerminalEditorCommand(raw)
+    if command.hasPrefix(shell) && command.contains(" -lic ") {
+        return command
+    }
+    return CommandBuilder.loginCommand(command, shell: shell)
+}
+
 func terminalBrowserLaunchCommand(path: String, url: String) -> String {
     "\(CommandBuilder.shellQuote(path)) open \(CommandBuilder.shellQuote(url))"
 }
@@ -940,7 +948,7 @@ struct TerminalContainerView: View {
                 surfaceID: id,
                 workstreamID: workstreamID,
                 workingDirectory: workingDirectory,
-                command: terminalEditorCommands[id],
+                command: terminalEditorCommands[id].map { terminalEditorLaunchCommand($0) },
                 isFocused: true,
                 environmentVars: terminalEnvVars
             )
