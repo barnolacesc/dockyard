@@ -12,6 +12,12 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
     static let tokenStorageKey = "dockyard.companionToken"
     static let portStorageKey = "dockyard.companionPort"
     static let enabledStorageKey = "dockyard.companionEnabled"
+    static let customURLStorageKey = "dockyard.companionCustomURL"
+
+    struct ConfigFile: Codable, Sendable {
+        var customURL: String?
+        var port: Int?
+    }
 
     @Published private(set) var isRunning: Bool = false
     @Published private(set) var connectedClientsCount: Int = 0
@@ -28,10 +34,16 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
     private nonisolated(unsafe) static var clientContinuations: [UUID: AsyncStream<WSMessage>.Continuation] = [:]
 
     init() {
-        currentPort = UserDefaults.standard.integer(forKey: Self.portStorageKey)
-        if currentPort <= 0 {
-            currentPort = Self.defaultPort
+        let fileConfig = Self.loadConfigFile()
+        var port = UserDefaults.standard.integer(forKey: Self.portStorageKey)
+        if port <= 0 {
+            if let filePort = fileConfig?.port, filePort > 0 && filePort <= 65535 {
+                port = filePort
+            } else {
+                port = Self.defaultPort
+            }
         }
+        currentPort = port
         setupStateObservation()
         if UserDefaults.standard.bool(forKey: Self.enabledStorageKey) {
             start()
@@ -72,6 +84,68 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
         "dy_" + UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
     }
 
+    static func loadConfigFile() -> ConfigFile? {
+        let primaryURL = AppConstants.configDirectory.appendingPathComponent("companion.json")
+        let fallbackURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".dockyard")
+            .appendingPathComponent("companion.json")
+
+        let targetURL: URL
+        if FileManager.default.fileExists(atPath: primaryURL.path) {
+            targetURL = primaryURL
+        } else if FileManager.default.fileExists(atPath: fallbackURL.path) {
+            targetURL = fallbackURL
+        } else {
+            return nil
+        }
+
+        guard let data = try? Data(contentsOf: targetURL) else { return nil }
+        return try? JSONDecoder().decode(ConfigFile.self, from: data)
+    }
+
+    var configFileCustomURL: String? {
+        Self.loadConfigFile()?.customURL?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var customBaseURLString: String? {
+        if let env = ProcessInfo.processInfo.environment["DOCKYARD_COMPANION_URL"]?.trimmingCharacters(in: .whitespacesAndNewlines), !env.isEmpty {
+            return env
+        }
+        if let stored = UserDefaults.standard.string(forKey: Self.customURLStorageKey)?.trimmingCharacters(in: .whitespacesAndNewlines), !stored.isEmpty {
+            return stored
+        }
+        if let fileConfig = configFileCustomURL, !fileConfig.isEmpty {
+            return fileConfig
+        }
+        return nil
+    }
+
+    static func formatPairingURL(base: String, token: String) -> URL? {
+        var trimmed = base.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        if !trimmed.lowercased().hasPrefix("http://") && !trimmed.lowercased().hasPrefix("https://") {
+            trimmed = "https://" + trimmed
+        }
+
+        guard var components = URLComponents(string: trimmed) else { return nil }
+
+        if components.path.isEmpty {
+            components.path = "/"
+        }
+
+        var queryItems = components.queryItems?.filter { $0.name != "token" } ?? []
+        queryItems.append(URLQueryItem(name: "token", value: token))
+        components.queryItems = queryItems
+
+        return components.url
+    }
+
+    var customURL: URL? {
+        guard let base = customBaseURLString else { return nil }
+        return Self.formatPairingURL(base: base, token: token)
+    }
+
     var localURL: URL? {
         guard let ip = localIP ?? Self.resolveLocalIP() else { return nil }
         return URL(string: "http://\(ip):\(currentPort)/?token=\(token)")
@@ -83,7 +157,7 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
     }
 
     var bestPairingURL: URL? {
-        tailscaleURL ?? localURL
+        customURL ?? tailscaleURL ?? localURL
     }
 
     // MARK: - Lifecycle
@@ -804,6 +878,13 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.broadcastCurrentSnapshot()
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
             }
             .store(in: &cancellables)
     }

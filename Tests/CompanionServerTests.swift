@@ -40,6 +40,61 @@ final class CompanionServerTests: XCTestCase {
         }
     }
 
+    func testFormatPairingURL() {
+        let dummyToken = "dy_abc123"
+
+        // Standard HTTPS without trailing slash
+        let url1 = CompanionServer.formatPairingURL(base: "https://companion.example.com", token: dummyToken)
+        XCTAssertEqual(url1?.absoluteString, "https://companion.example.com/?token=dy_abc123")
+
+        // Standard HTTPS with trailing slash
+        let url2 = CompanionServer.formatPairingURL(base: "https://companion.example.com/", token: dummyToken)
+        XCTAssertEqual(url2?.absoluteString, "https://companion.example.com/?token=dy_abc123")
+
+        // Missing scheme defaults to https
+        let url3 = CompanionServer.formatPairingURL(base: "companion.example.com", token: dummyToken)
+        XCTAssertEqual(url3?.absoluteString, "https://companion.example.com/?token=dy_abc123")
+
+        // Custom HTTP with port and subpath
+        let url4 = CompanionServer.formatPairingURL(base: "http://192.168.1.50:8080/app", token: dummyToken)
+        XCTAssertEqual(url4?.absoluteString, "http://192.168.1.50:8080/app?token=dy_abc123")
+
+        // Empty and whitespace strings return nil
+        XCTAssertNil(CompanionServer.formatPairingURL(base: "", token: dummyToken))
+        XCTAssertNil(CompanionServer.formatPairingURL(base: "   \n\t  ", token: dummyToken))
+    }
+
+    func testCustomURLTakesPrecedenceInBestPairingURL() {
+        let server = CompanionServer.shared
+        let originalStored = UserDefaults.standard.string(forKey: CompanionServer.customURLStorageKey)
+        defer {
+            if let original = originalStored {
+                UserDefaults.standard.set(original, forKey: CompanionServer.customURLStorageKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: CompanionServer.customURLStorageKey)
+            }
+        }
+
+        UserDefaults.standard.set("https://custom-phone-companion.example.com", forKey: CompanionServer.customURLStorageKey)
+        XCTAssertNotNil(server.customURL)
+        XCTAssertEqual(server.customURL?.host, "custom-phone-companion.example.com")
+        XCTAssertEqual(server.bestPairingURL, server.customURL)
+
+        UserDefaults.standard.removeObject(forKey: CompanionServer.customURLStorageKey)
+        if server.configFileCustomURL == nil {
+            XCTAssertNil(server.customURL)
+            XCTAssertEqual(server.bestPairingURL, server.tailscaleURL ?? server.localURL)
+        }
+    }
+
+    func testConfigFileCodable() throws {
+        let config = CompanionServer.ConfigFile(customURL: "https://companion.example.com", port: 9876)
+        let data = try JSONEncoder().encode(config)
+        let decoded = try JSONDecoder().decode(CompanionServer.ConfigFile.self, from: data)
+        XCTAssertEqual(decoded.customURL, "https://companion.example.com")
+        XCTAssertEqual(decoded.port, 9876)
+    }
+
     func testBuildStatusJSON() throws {
         let data = CompanionServer.buildStatusJSON()
         XCTAssertFalse(data.isEmpty)

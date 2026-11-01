@@ -914,3 +914,9 @@
 "Upload photos or paste screenshots from your phone directly into the Coding Agent prompt via the Mobile Companion." = "Puja fotos o enganxa captures de pantalla des del mòbil directament a la indicació de l'agent de codi mitjançant el company mòbil.";
 "Mobile Workstream Drawer" = "Menú de fluxos de treball mòbil";
 "Create new workstreams with automatic naming or archive finished ones directly from the Mobile Companion." = "Crea nous fluxos de treball amb noms automàtics o arxiva els completats directament des del company mòbil.";
+"Custom URL" = "URL personalitzat";
+"Custom Base URL" = "URL base personalitzat";
+"Optional domain or reverse proxy URL (e.g. VPN, homelab, or Cloudflare tunnel). When set, pairing QR codes and links use this URL." = "Domini o URL de servidor intermediari invers opcional (p. ex. VPN, homelab o túnel de Cloudflare). Quan està definit, els codis QR i els enllaços de vinculació utilitzen aquest URL.";
+"Configured via companion.json: %@" = "Configurat mitjançant companion.json: %@";
+"Custom Domain for Mobile Companion" = "Domini personalitzat per al company mòbil";
+"Configure custom domains, reverse proxies, or VPN URLs for the Mobile Companion with automatic QR pairing." = "Configura dominis personalitzats, servidors intermediaris inversos o URL de VPN per al company mòbil amb vinculació automàtica per codi QR.";

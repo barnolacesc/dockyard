@@ -914,3 +914,9 @@
 "Upload photos or paste screenshots from your phone directly into the Coding Agent prompt via the Mobile Companion." = "Upload photos or paste screenshots from your phone directly into the Coding Agent prompt via the Mobile Companion.";
 "Mobile Workstream Drawer" = "Mobile Workstream Drawer";
 "Create new workstreams with automatic naming or archive finished ones directly from the Mobile Companion." = "Create new workstreams with automatic naming or archive finished ones directly from the Mobile Companion.";
+"Custom URL" = "Custom URL";
+"Custom Base URL" = "Custom Base URL";
+"Optional domain or reverse proxy URL (e.g. VPN, homelab, or Cloudflare tunnel). When set, pairing QR codes and links use this URL." = "Optional domain or reverse proxy URL (e.g. VPN, homelab, or Cloudflare tunnel). When set, pairing QR codes and links use this URL.";
+"Configured via companion.json: %@" = "Configured via companion.json: %@";
+"Custom Domain for Mobile Companion" = "Custom Domain for Mobile Companion";
+"Configure custom domains, reverse proxies, or VPN URLs for the Mobile Companion with automatic QR pairing." = "Configure custom domains, reverse proxies, or VPN URLs for the Mobile Companion with automatic QR pairing.";
