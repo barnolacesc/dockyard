@@ -196,6 +196,58 @@ enum TmuxSession {
         killSession(tmuxPath: tmuxPath, sessionName: agentSession)
     }
 
+    /// Capture the visible lines and scrollback buffer of a tmux pane, preserving ANSI escapes.
+    static func capturePane(tmuxPath: String, sessionName: String, lines: Int = 120, socket: String = socketName) -> String? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: tmuxPath)
+        process.arguments = ["-L", socket, "capture-pane", "-e", "-p", "-t", sessionName, "-S", "-\(max(10, lines))"]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+        do {
+            try process.run()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else { return nil }
+            return String(data: data, encoding: .utf8)
+        } catch {
+            return nil
+        }
+    }
+
+    /// Send keys or text to a tmux session pane.
+    static func sendKeys(tmuxPath: String, sessionName: String, text: String, pressEnter: Bool = true, socket: String = socketName) {
+        if !text.isEmpty {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: tmuxPath)
+            process.arguments = ["-L", socket, "send-keys", "-t", sessionName, "-l", text]
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
+            try? process.run()
+            process.waitUntilExit()
+        }
+        if pressEnter {
+            let enterProcess = Process()
+            enterProcess.executableURL = URL(fileURLWithPath: tmuxPath)
+            enterProcess.arguments = ["-L", socket, "send-keys", "-t", sessionName, "Enter"]
+            enterProcess.standardOutput = FileHandle.nullDevice
+            enterProcess.standardError = FileHandle.nullDevice
+            try? enterProcess.run()
+            enterProcess.waitUntilExit()
+        }
+    }
+
+    /// Send a control interrupt (Ctrl+C) to a tmux session pane.
+    static func sendInterrupt(tmuxPath: String, sessionName: String, socket: String = socketName) {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: tmuxPath)
+        process.arguments = ["-L", socket, "send-keys", "-t", sessionName, "C-c"]
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        try? process.run()
+        process.waitUntilExit()
+    }
+
     private static func sanitize(_ name: String) -> String {
         name.replacingOccurrences(of: ":", with: "-")
             .replacingOccurrences(of: ".", with: "-")

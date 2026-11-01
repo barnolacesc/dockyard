@@ -38,6 +38,7 @@ extension Notification.Name {
     static let archiveWorkstream = Notification.Name("dockyard.archiveWorkstream")
     static let openAgentAttention = Notification.Name("dockyard.openAgentAttention")
     static let toggleGlobalTerminal = Notification.Name("dockyard.toggleGlobalTerminal")
+    static let openMobileCompanion = Notification.Name("dockyard.openMobileCompanion")
 }
 
 @MainActor
@@ -340,6 +341,12 @@ struct DockyardApp: App {
                     NotificationCenter.default.post(name: .toggleSidebarWidth, object: nil)
                 }
                 .keyboardShortcut(".", modifiers: [.command, .option])
+
+                Divider()
+
+                Button("Mobile Companion…") {
+                    NotificationCenter.default.post(name: .openMobileCompanion, object: nil)
+                }
             }
             // Tabs
             CommandGroup(after: .toolbar) {

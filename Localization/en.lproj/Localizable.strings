@@ -870,3 +870,30 @@
 /* Pi Coding Agent */
 "Pi Coding Agent Support" = "Pi Coding Agent Support";
 "Run Pi (@earendil-works/pi-coding-agent) in the Agent tab as a first-class coding agent." = "Run Pi (@earendil-works/pi-coding-agent) in the Agent tab as a first-class coding agent.";
+
+/* Mobile Companion */
+"Mobile Companion" = "Mobile Companion";
+"Mobile Companion..." = "Mobile Companion...";
+"Mobile Companion PWA" = "Mobile Companion PWA";
+"Monitor agents, stream raw terminal output, and unblock tasks from your phone over local Wi-Fi or Tailscale without cloud dependencies." = "Monitor agents, stream raw terminal output, and unblock tasks from your phone over local Wi-Fi or Tailscale without cloud dependencies.";
+"Enable Mobile Companion" = "Enable Mobile Companion";
+"Runs a lightweight local web server to monitor and control coding agents from your phone or tablet on the same network or via Tailscale." = "Runs a lightweight local web server to monitor and control coding agents from your phone or tablet on the same network or via Tailscale.";
+"Pairing & Status" = "Pairing & Status";
+"Pair Phone..." = "Pair Phone...";
+"Online • Ready to pair" = "Online • Ready to pair";
+"Mobile Companion: Offline (click to pair)" = "Mobile Companion: Offline (click to pair)";
+"Mobile Companion: %d connected (click to manage)" = "Mobile Companion: %d connected (click to manage)";
+"Mobile Companion: Online (click to pair)" = "Mobile Companion: Online (click to pair)";
+"Tailscale" = "Tailscale";
+"Local Wi-Fi" = "Local Wi-Fi";
+"Scan with your phone's camera, then tap 'Add to Home Screen' in Safari." = "Scan with your phone's camera, then tap 'Add to Home Screen' in Safari.";
+"Waiting for phone..." = "Waiting for phone...";
+"1 device connected" = "1 device connected";
+"%d devices connected" = "%d devices connected";
+"Copied" = "Copied";
+"Copy URL" = "Copy URL";
+"Open in Browser" = "Open in Browser";
+"Reset Token" = "Reset Token";
+"Invalidates the current pairing URL and disconnects active phones." = "Invalidates the current pairing URL and disconnects active phones.";
+"Control and observe coding agents on this Mac from your phone without cloud services." = "Control and observe coding agents on this Mac from your phone without cloud services.";
+"Start Companion Server" = "Start Companion Server";

@@ -8,6 +8,7 @@ public enum SettingsSectionID: String, CaseIterable, Sendable {
     case general
     case power
     case updates
+    case mobileCompanion
     case codingAgent
     case advanced
 
@@ -17,6 +18,7 @@ public enum SettingsSectionID: String, CaseIterable, Sendable {
         case .general: return "General"
         case .power: return "Power"
         case .updates: return "Updates"
+        case .mobileCompanion: return "Mobile Companion"
         case .codingAgent: return "Coding Agent"
         case .advanced: return "Advanced"
         }
@@ -28,6 +30,7 @@ public enum SettingsSectionID: String, CaseIterable, Sendable {
         case .general: return ["General"]
         case .power: return ["Power", "Energia"]
         case .updates: return ["Updates", "Actualitzacions"]
+        case .mobileCompanion: return ["Mobile Companion", "Acompanyant mòbil"]
         case .codingAgent: return ["Coding Agent", "Agent de codi"]
         case .advanced: return ["Advanced", "Avançat"]
         }
@@ -43,6 +46,8 @@ public enum SettingsSectionID: String, CaseIterable, Sendable {
             return ["energy", "battery", "sleep", "awake", "caffeinate", "idle", "energia", "repòs", "bateria"]
         case .updates:
             return ["version", "sparkle", "upgrade", "channels", "releases", "actualització", "versions"]
+        case .mobileCompanion:
+            return ["phone", "mobile", "ios", "pwa", "remote", "companion", "qr", "mòbil", "telèfon", "control remot"]
         case .codingAgent:
             return ["agent", "claude", "codex", "opencode", "agy", "pi", "llm", "ai", "cli", "assistant"]
         case .advanced:
@@ -91,6 +96,10 @@ public enum SettingsItemID: String, CaseIterable, Sendable {
     case updatesChannel
     case updatesAutomaticChecks
     case updatesCheckNow
+
+    // MARK: - Mobile Companion
+
+    case mobileCompanionEnable
 
     // MARK: - Coding Agent
 
@@ -193,6 +202,9 @@ public enum SettingsSearchRegistry {
             .updatesChannel,
             .updatesAutomaticChecks,
             .updatesCheckNow,
+        ],
+        .mobileCompanion: [
+            .mobileCompanionEnable,
         ],
         .codingAgent: [
             .agentCodingCLI,
@@ -420,6 +432,17 @@ public enum SettingsSearchRegistry {
             description: "Checks origin for updates according to your selected release channel or appcast.",
             options: ["Check for Updates...", "Comprova si hi ha actualitzacions..."],
             keywords: ["check now", "comprova ara", "check for updates", "update check", "fetch", "latest version"]
+        ),
+
+        // MARK: - Mobile Companion
+
+        .mobileCompanionEnable: SettingsItemDefinition(
+            id: .mobileCompanionEnable,
+            section: .mobileCompanion,
+            title: "Enable Mobile Companion",
+            description: "Allow monitoring and steering coding agents from your phone via a local Progressive Web App.",
+            options: ["On", "Off", "Activat", "Desactivat"],
+            keywords: ["phone", "mobile", "pwa", "pair", "qr", "companion", "mòbil", "telèfon", "emparellar", "control remot"]
         ),
 
         // MARK: - Coding Agent
