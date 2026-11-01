@@ -2941,6 +2941,8 @@ extension Notification.Name {
 
 @MainActor
 final class TerminalSurfaceCache: ObservableObject {
+    weak static var shared: TerminalSurfaceCache?
+
     private var surfaces: [UUID: TerminalView] = [:]
     private var surfaceParams: [UUID: SurfaceParams] = [:]
     private var tabSnapshots: [UUID: WorkspaceTabSnapshot] = [:]
@@ -2971,6 +2973,7 @@ final class TerminalSurfaceCache: ObservableObject {
     }
 
     init() {
+        Self.shared = self
         NotificationCenter.default.addObserver(
             forName: .terminalSurfaceClosed,
             object: nil,

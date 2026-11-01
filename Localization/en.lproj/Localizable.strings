@@ -906,3 +906,7 @@
 "Upload image" = "Upload image";
 "Uploading..." = "Uploading...";
 "Failed to upload image" = "Failed to upload image";
+"New Workstream" = "New Workstream";
+"Archive workstream" = "Archive workstream";
+"Archive" = "Archive";
+"Archive workstream %@? Files will remain on disk." = "Archive workstream %@? Files will remain on disk.";

@@ -142,7 +142,7 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
 
     // MARK: - Route Configuration
 
-    private static func configureRoutes(on server: HTTPServer) {
+    static func configureRoutes(on server: HTTPServer) {
         Task {
             // Static PWA Files
             await server.appendRoute("GET /") { request in
@@ -253,6 +253,129 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
 
             await server.appendRoute("POST /api/workstreams/:id/image") { request in
                 await handleUploadImage(request: request)
+            }
+
+            await server.appendRoute("POST /api/projects/:id/workstreams") { request in
+                guard isAuthorized(request) else {
+                    return HTTPResponse(statusCode: .unauthorized, headers: [.contentType: "application/json"], body: Data("{\"error\":\"unauthorized\"}".utf8))
+                }
+                guard let idStr = request.routeParameters["id"], let projectID = UUID(uuidString: idStr) else {
+                    return HTTPResponse(statusCode: .badRequest, headers: [.contentType: "application/json"], body: Data("{\"error\":\"invalid project ID\"}".utf8))
+                }
+                var projects = ProjectStore.load()
+                guard let projectIndex = projects.firstIndex(where: { $0.id == projectID }) else {
+                    return HTTPResponse(statusCode: .notFound, headers: [.contentType: "application/json"], body: Data("{\"error\":\"project not found\"}".utf8))
+                }
+                let project = projects[projectIndex]
+
+                struct CreateWorkstreamPayload: Codable {
+                    let name: String?
+                    let baseBranch: String?
+                }
+                let body = try? await request.bodyData
+                let payload = body.flatMap { try? JSONDecoder().decode(CreateWorkstreamPayload.self, from: $0) }
+
+                let existingNames = Set(project.workstreams.map(\.name))
+                let workstreamName: String
+                if let requested = payload?.name?.trimmingCharacters(in: .whitespacesAndNewlines), !requested.isEmpty {
+                    workstreamName = requested
+                } else {
+                    workstreamName = NameGenerator.generate(avoiding: existingNames)
+                }
+
+                let branchPrefix = UserDefaults.standard.string(forKey: "dockyard.branchPrefix") ?? "dy"
+                let symlinkEnv = (UserDefaults.standard.object(forKey: "dockyard.symlinkEnv") as? Bool) ?? true
+
+                let worktreePath = await Task.detached(priority: .userInitiated) {
+                    GitOperations.createWorktree(
+                        projectPath: project.directory,
+                        projectName: project.name,
+                        workstreamName: workstreamName,
+                        branchPrefix: branchPrefix,
+                        symlinkEnv: symlinkEnv,
+                        baseBranch: payload?.baseBranch
+                    )
+                }.value
+
+                guard let worktreePath else {
+                    return HTTPResponse(statusCode: .internalServerError, headers: [.contentType: "application/json"], body: Data("{\"error\":\"failed to create worktree\"}".utf8))
+                }
+
+                let newWorkstream = Workstream(name: workstreamName, worktreePath: worktreePath)
+                projects[projectIndex].workstreams.append(newWorkstream)
+                ProjectStore.save(projects)
+
+                let tmuxMode = UserDefaults.standard.bool(forKey: "dockyard.tmuxMode")
+                let tmuxPath = CommandLineTools.path(for: "tmux") ?? defaultTmuxPath()
+                if tmuxMode, let tmuxPath {
+                    let sessionName = TmuxSession.sessionName(project: project.name, workstream: workstreamName, role: "agent")
+                    TmuxSession.ensureSession(tmuxPath: tmuxPath, sessionName: sessionName, workingDirectory: worktreePath)
+                }
+
+                CompanionServer.shared.broadcastCurrentSnapshot()
+
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(
+                        name: .workstreamCreated,
+                        object: nil,
+                        userInfo: ["projectID": projectID, "workstream": newWorkstream]
+                    )
+                    NotificationCenter.default.post(
+                        name: .workstreamWorktreeReady,
+                        object: nil,
+                        userInfo: ["workstreamID": newWorkstream.id, "worktreePath": worktreePath]
+                    )
+                }
+
+                let branch = GitOperations.currentBranch(at: worktreePath) ?? (branchPrefix.isEmpty ? workstreamName : "\(branchPrefix)/\(workstreamName)")
+
+                struct ResponsePayload: Codable {
+                    struct WSInfo: Codable {
+                        let id: String
+                        let name: String
+                        let branch: String
+                    }
+
+                    let ok: Bool
+                    let workstream: WSInfo
+                }
+
+                let responseObj = ResponsePayload(
+                    ok: true,
+                    workstream: .init(
+                        id: newWorkstream.id.uuidString.lowercased(),
+                        name: workstreamName,
+                        branch: branch
+                    )
+                )
+
+                let responseData = (try? JSONEncoder().encode(responseObj)) ?? Data("{\"ok\":true}".utf8)
+                return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json; charset=utf-8"], body: responseData)
+            }
+
+            await server.appendRoute("POST /api/workstreams/:id/close") { request in
+                guard isAuthorized(request) else {
+                    return HTTPResponse(statusCode: .unauthorized, headers: [.contentType: "application/json"], body: Data("{\"error\":\"unauthorized\"}".utf8))
+                }
+                guard let idStr = request.routeParameters["id"], let wsID = UUID(uuidString: idStr) else {
+                    return HTTPResponse(statusCode: .badRequest, headers: [.contentType: "application/json"], body: Data("{\"error\":\"invalid workstream ID\"}".utf8))
+                }
+                var projects = ProjectStore.load()
+                guard let projectIndex = projects.firstIndex(where: { $0.workstreams.contains(where: { $0.id == wsID }) }) else {
+                    return HTTPResponse(statusCode: .notFound, headers: [.contentType: "application/json"], body: Data("{\"error\":\"workstream not found\"}".utf8))
+                }
+
+                await MainActor.run {
+                    let tmuxPath = CommandLineTools.path(for: "tmux") ?? defaultTmuxPath()
+                    let surfaceCache = TerminalSurfaceCache.shared ?? TerminalSurfaceCache()
+                    WorkstreamArchiver.remove(wsID, in: &projects[projectIndex], surfaceCache: surfaceCache, tmuxPath: tmuxPath)
+                    ProjectStore.save(projects)
+                    NotificationCenter.default.post(name: .workstreamRemoved, object: wsID)
+                }
+
+                CompanionServer.shared.broadcastCurrentSnapshot()
+
+                return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json; charset=utf-8"], body: Data("{\"ok\":true}".utf8))
             }
 
             // WebSocket

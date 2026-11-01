@@ -235,6 +235,13 @@
     return id;
   }
 
+  function validateProjectId(id) {
+    if (typeof id !== 'string' || !UUID_REGEX.test(id)) {
+      throw new Error('Invalid project ID');
+    }
+    return id;
+  }
+
   function validateAction(action) {
     if (!ALLOWED_ACTIONS.includes(action)) {
       throw new Error('Invalid action');
@@ -589,10 +596,64 @@
       const groupEl = document.createElement('div');
       groupEl.className = 'project-group';
 
+      const headerEl = document.createElement('div');
+      headerEl.className = 'project-header';
+
       const titleEl = document.createElement('div');
       titleEl.className = 'project-title';
       titleEl.textContent = proj.name || 'Untitled';
-      groupEl.appendChild(titleEl);
+      headerEl.appendChild(titleEl);
+
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-ws-btn';
+      addBtn.title = 'New Workstream';
+      addBtn.setAttribute('aria-label', 'New Workstream');
+      addBtn.textContent = '+';
+
+      addBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (addBtn.disabled) return;
+        addBtn.disabled = true;
+        addBtn.classList.add('loading');
+        addBtn.textContent = '';
+        const spinner = document.createElement('span');
+        spinner.className = 'btn-spinner';
+        addBtn.appendChild(spinner);
+
+        try {
+          const projId = validateProjectId(proj.id);
+          const res = await apiFetch(`/api/projects/${projId}/workstreams`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+          });
+          const data = await res.json();
+          if (data.ok && data.workstream) {
+            let found = findWorkstream(data.workstream.id);
+            if (!found) {
+              if (!proj.workstreams) proj.workstreams = [];
+              proj.workstreams.push({
+                id: data.workstream.id,
+                name: data.workstream.name,
+                branch: data.workstream.branch,
+                agentState: 'idle',
+                activeSubagents: 0,
+                listeningPorts: []
+              });
+            }
+            selectWorkstream(data.workstream.id);
+          }
+        } catch (err) {
+          console.error('Failed to create workstream:', err);
+        } finally {
+          addBtn.disabled = false;
+          addBtn.classList.remove('loading');
+          addBtn.textContent = '+';
+        }
+      });
+
+      headerEl.appendChild(addBtn);
+      groupEl.appendChild(headerEl);
 
       for (const ws of (proj.workstreams || [])) {
         const isSelected = ws.id === state.selectedWorkstreamId;
@@ -612,6 +673,9 @@
         nameSpan.className = 'ws-name';
         nameSpan.textContent = ws.name || 'Unnamed';
 
+        const actionsWrapper = document.createElement('div');
+        actionsWrapper.className = 'ws-actions';
+
         const badge = document.createElement('span');
         badge.className = `ws-badge ${stateClass}`;
 
@@ -619,9 +683,58 @@
         dot.className = 'dot';
         badge.appendChild(dot);
         badge.appendChild(document.createTextNode(' ' + stateLabel));
+        actionsWrapper.appendChild(badge);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'close-ws-btn';
+        closeBtn.title = 'Archive';
+        closeBtn.setAttribute('aria-label', 'Archive');
+        closeBtn.textContent = '✕';
+        closeBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const confirmed = window.confirm(`Archive workstream ${ws.name}? Files will remain on disk.`);
+          if (!confirmed) return;
+
+          try {
+            const wsId = validateWorkstreamId(ws.id);
+            await apiFetch(`/api/workstreams/${wsId}/close`, {
+              method: 'POST'
+            });
+
+            if (proj.workstreams) {
+              proj.workstreams = proj.workstreams.filter(w => w.id !== ws.id);
+            }
+
+            if (state.selectedWorkstreamId === ws.id) {
+              let nextWs = null;
+              for (const p of state.projects) {
+                for (const w of (p.workstreams || [])) {
+                  if (w.id !== ws.id) {
+                    nextWs = w;
+                    break;
+                  }
+                }
+                if (nextWs) break;
+              }
+              if (nextWs) {
+                selectWorkstream(nextWs.id);
+              } else {
+                state.selectedWorkstreamId = null;
+                updateCurrentWorkstreamHeader();
+                renderSidebar();
+                els.terminalMirror.replaceChildren();
+              }
+            } else {
+              renderSidebar();
+            }
+          } catch (err) {
+            console.error('Failed to archive workstream:', err);
+          }
+        });
+        actionsWrapper.appendChild(closeBtn);
 
         rowTop.appendChild(nameSpan);
-        rowTop.appendChild(badge);
+        rowTop.appendChild(actionsWrapper);
         card.appendChild(rowTop);
 
         const branchEl = document.createElement('div');
@@ -856,6 +969,22 @@
         const msg = JSON.parse(event.data);
         if (msg.type === 'snapshot') {
           state.projects = msg.projects || [];
+          if (state.selectedWorkstreamId && !findWorkstream(state.selectedWorkstreamId)) {
+            let nextWs = null;
+            for (const p of state.projects) {
+              for (const w of (p.workstreams || [])) {
+                nextWs = w;
+                break;
+              }
+              if (nextWs) break;
+            }
+            if (nextWs) {
+              selectWorkstream(nextWs.id);
+            } else {
+              state.selectedWorkstreamId = null;
+              els.terminalMirror.replaceChildren();
+            }
+          }
           renderSidebar();
           updateCurrentWorkstreamHeader();
         } else if (msg.type === 'state_change') {

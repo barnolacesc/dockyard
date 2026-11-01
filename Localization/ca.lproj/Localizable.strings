@@ -906,3 +906,7 @@
 "Upload image" = "Puja una imatge";
 "Uploading..." = "Pujant...";
 "Failed to upload image" = "Error en pujar la imatge";
+"New Workstream" = "Nou flux de treball";
+"Archive workstream" = "Arxiva el flux de treball";
+"Archive" = "Arxiva";
+"Archive workstream %@? Files will remain on disk." = "Voleu arxivar el flux de treball %@? Els fitxers es mantindran al disc.";
