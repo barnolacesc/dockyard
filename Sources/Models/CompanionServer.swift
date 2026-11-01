@@ -238,12 +238,12 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
             }
 
             // WebSocket
+            let wsHTTPHandler = WebSocketHTTPHandler(handler: MessageFrameWSHandler(handler: CompanionWSMessageHandler()))
             await server.appendRoute("GET /ws") { request in
                 guard isAuthorized(request) else {
                     return HTTPResponse(statusCode: .unauthorized)
                 }
-                let wsHandler = MessageFrameWSHandler(handler: CompanionWSMessageHandler())
-                return HTTPResponse(webSocket: wsHandler)
+                return try await wsHTTPHandler.handleRequest(request)
             }
         }
     }
@@ -261,8 +261,19 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
             headers[.setCookie] = "dockyard_token=\(token); Path=/; SameSite=Lax; Max-Age=31536000"
         }
 
-        let body = loadStaticFileData(named: "index", extension: "html") ?? Data("<!DOCTYPE html><html><body>Dockyard</body></html>".utf8)
-        return HTTPResponse(statusCode: .ok, headers: headers, body: body)
+        guard let body = loadStaticFileData(named: "index", extension: "html"),
+              var htmlString = String(data: body, encoding: .utf8) else {
+            return HTTPResponse(statusCode: .ok, headers: headers, body: Data("<!DOCTYPE html><html><body>Dockyard</body></html>".utf8))
+        }
+
+        if isAuthorized(request) {
+            htmlString = htmlString.replacingOccurrences(
+                of: "</head>",
+                with: "  <script>window.DOCKYARD_AUTH_TOKEN = \"\(token)\";</script>\n</head>"
+            )
+        }
+
+        return HTTPResponse(statusCode: .ok, headers: headers, body: Data(htmlString.utf8))
     }
 
     private static func serveStaticFile(named name: String, extension ext: String, contentType: String) -> HTTPResponse {

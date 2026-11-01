@@ -1,12 +1,16 @@
 // Dockyard Mobile Companion — Client Application
 
 (function() {
+  const serverToken = window.DOCKYARD_AUTH_TOKEN || '';
   const urlParams = new URLSearchParams(window.location.search);
-  const rawToken = urlParams.get('token') || localStorage.getItem('dockyard_token') || '';
+  const rawToken = urlParams.get('token') || serverToken || localStorage.getItem('dockyard_token') || '';
   let authToken = /^[a-zA-Z0-9_]{1,64}$/.test(rawToken) ? rawToken : '';
 
-  if (urlParams.get('token') && authToken) {
+  if (authToken) {
     localStorage.setItem('dockyard_token', authToken);
+  }
+
+  if (urlParams.get('token') && authToken) {
     // Remove token from URL without reload
     const cleanUrl = window.location.pathname + (urlParams.get('standalone') ? '?standalone=true' : '');
     window.history.replaceState({}, document.title, cleanUrl);

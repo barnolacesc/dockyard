@@ -2,7 +2,7 @@
   "name": "Dockyard Companion",
   "short_name": "Dockyard",
   "description": "Mobile companion for Dockyard Agent Development Environment",
-  "start_url": "/?standalone=true",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#090d16",
   "theme_color": "#090d16",
