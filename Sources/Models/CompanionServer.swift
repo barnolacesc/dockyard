@@ -271,6 +271,8 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
                 struct CreateWorkstreamPayload: Codable {
                     let name: String?
                     let baseBranch: String?
+                    let codingCLI: String?
+                    let bypassPermissions: Bool?
                 }
                 let body = try? await request.bodyData
                 let payload = body.flatMap { try? JSONDecoder().decode(CreateWorkstreamPayload.self, from: $0) }
@@ -301,16 +303,19 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
                     return HTTPResponse(statusCode: .internalServerError, headers: [.contentType: "application/json"], body: Data("{\"error\":\"failed to create worktree\"}".utf8))
                 }
 
-                let newWorkstream = Workstream(name: workstreamName, worktreePath: worktreePath)
+                let defaultBypass = UserDefaults.standard.bool(forKey: "dockyard.defaultBypassPermissions")
+                let defaultCLIRaw = UserDefaults.standard.string(forKey: "dockyard.codingCLI")
+                let effectiveBypass = payload?.bypassPermissions ?? defaultBypass
+                let effectiveCLI = payload?.codingCLI ?? ((defaultCLIRaw?.isEmpty == false) ? defaultCLIRaw : nil)
+
+                let newWorkstream = Workstream(
+                    name: workstreamName,
+                    worktreePath: worktreePath,
+                    bypassPermissions: effectiveBypass,
+                    codingCLI: effectiveCLI
+                )
                 projects[projectIndex].workstreams.append(newWorkstream)
                 ProjectStore.save(projects)
-
-                let tmuxMode = UserDefaults.standard.bool(forKey: "dockyard.tmuxMode")
-                let tmuxPath = CommandLineTools.path(for: "tmux") ?? defaultTmuxPath()
-                if tmuxMode, let tmuxPath {
-                    let sessionName = TmuxSession.sessionName(project: project.name, workstream: workstreamName, role: "agent")
-                    TmuxSession.ensureSession(tmuxPath: tmuxPath, sessionName: sessionName, workingDirectory: worktreePath)
-                }
 
                 CompanionServer.shared.broadcastCurrentSnapshot()
 
@@ -718,9 +723,14 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
             ])
         }
 
+        let defaultAgentRaw = UserDefaults.standard.string(forKey: "dockyard.codingCLI") ?? ""
+        let defaultBypass = UserDefaults.standard.bool(forKey: "dockyard.defaultBypassPermissions")
+
         let hostDict: [String: Any] = [
             "name": Host.current().localizedName ?? ProcessInfo.processInfo.hostName,
             "version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.2.7",
+            "defaultAgent": defaultAgentRaw,
+            "defaultBypass": defaultBypass,
         ]
 
         let fullPayload: [String: Any] = [
