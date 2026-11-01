@@ -119,6 +119,36 @@
         <!-- Rendered dynamically -->
       </div>
     </aside>
+
+    <!-- New Workstream Modal -->
+    <div id="new-ws-modal" class="modal-backdrop" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title">New Workstream</div>
+          <button id="modal-close-btn" class="modal-close-btn" aria-label="Close" type="button">✕</button>
+        </div>
+        <form id="new-ws-form" class="modal-body">
+          <div class="modal-project-badge" id="modal-project-name">Project</div>
+          <div class="form-group">
+            <label class="modal-label" for="ws-name-input">Session Name</label>
+            <div class="input-with-action">
+              <input type="text" id="ws-name-input" class="modal-input" placeholder="e.g. swift-blue-harbor" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+              <button type="button" id="ws-dice-btn" class="input-action-btn" title="Generate random name" aria-label="Generate random name">🎲</button>
+            </div>
+          </div>
+          <div class="modal-defaults-info">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+            </svg>
+            <span id="modal-defaults-text">Default agent • Default permissions</span>
+          </div>
+          <div class="modal-actions">
+            <button type="button" id="modal-cancel-btn" class="modal-btn secondary">Cancel</button>
+            <button type="submit" id="modal-submit-btn" class="modal-btn primary">Create</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
   <script src="/app.js"></script>

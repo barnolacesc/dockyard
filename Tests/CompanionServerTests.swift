@@ -47,7 +47,11 @@ final class CompanionServerTests: XCTestCase {
         let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         XCTAssertNotNil(json)
         XCTAssertEqual(json?["type"] as? String, "snapshot")
-        XCTAssertNotNil(json?["host"])
+        let host = json?["host"] as? [String: Any]
+        XCTAssertNotNil(host)
+        XCTAssertNotNil(host?["name"])
+        XCTAssertNotNil(host?["defaultAgent"])
+        XCTAssertNotNil(host?["defaultBypass"])
         XCTAssertNotNil(json?["projects"])
     }
 
@@ -520,6 +524,55 @@ final class CompanionServerTests: XCTestCase {
             updatedProjects = ProjectStore.load()
             let savedProject2 = try XCTUnwrap(updatedProjects.first(where: { $0.id == project.id }))
             XCTAssertEqual(savedProject2.workstreams.count, 2)
+
+            // 3. Create with explicit codingCLI and bypassPermissions
+            var req3 = URLRequest(url: endpoint)
+            req3.httpMethod = "POST"
+            req3.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            req3.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req3.httpBody = try JSONSerialization.data(withJSONObject: [
+                "name": "feature-yolo",
+                "codingCLI": "agy",
+                "bypassPermissions": true,
+            ])
+
+            let (data3, res3) = try await URLSession.shared.data(for: req3)
+            let http3 = try XCTUnwrap(res3 as? HTTPURLResponse)
+            XCTAssertEqual(http3.statusCode, 200)
+
+            updatedProjects = ProjectStore.load()
+            let savedProject3 = try XCTUnwrap(updatedProjects.first(where: { $0.id == project.id }))
+            XCTAssertEqual(savedProject3.workstreams.count, 3)
+            let ws3 = try XCTUnwrap(savedProject3.workstreams.first(where: { $0.name == "feature-yolo" }))
+            XCTAssertEqual(ws3.codingCLI, "agy")
+            XCTAssertTrue(ws3.bypassPermissions)
+
+            // 4. Create inheriting default codingCLI and bypassPermissions from settings
+            UserDefaults.standard.set("codex", forKey: "dockyard.codingCLI")
+            UserDefaults.standard.set(true, forKey: "dockyard.bypassPermissions")
+            defer {
+                UserDefaults.standard.removeObject(forKey: "dockyard.codingCLI")
+                UserDefaults.standard.removeObject(forKey: "dockyard.bypassPermissions")
+            }
+
+            var req4 = URLRequest(url: endpoint)
+            req4.httpMethod = "POST"
+            req4.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            req4.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req4.httpBody = try JSONSerialization.data(withJSONObject: [
+                "name": "feature-inherited",
+            ])
+
+            let (data4, res4) = try await URLSession.shared.data(for: req4)
+            let http4 = try XCTUnwrap(res4 as? HTTPURLResponse)
+            XCTAssertEqual(http4.statusCode, 200)
+
+            updatedProjects = ProjectStore.load()
+            let savedProject4 = try XCTUnwrap(updatedProjects.first(where: { $0.id == project.id }))
+            XCTAssertEqual(savedProject4.workstreams.count, 4)
+            let ws4 = try XCTUnwrap(savedProject4.workstreams.first(where: { $0.name == "feature-inherited" }))
+            XCTAssertEqual(ws4.codingCLI, "codex")
+            XCTAssertTrue(ws4.bypassPermissions)
         }
     }
 

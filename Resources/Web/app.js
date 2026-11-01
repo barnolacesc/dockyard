@@ -20,8 +20,34 @@
     wrapMode: localStorage.getItem('dockyard_term_wrap') !== 'false',
     fontSize: parseFloat(localStorage.getItem('dockyard_term_fontsize')) || 11.5,
     isListeningVoice: false,
-    speechRecognition: null
+    speechRecognition: null,
+    host: null,
+    activeNewWsProjectId: null
   };
+
+  // Random Name Generator for New Workstreams (Operation-Adjective-Component)
+  const NAME_OPERATIONS = [
+    'build', 'check', 'clean', 'clone', 'fetch', 'fixup', 'flush', 'merge',
+    'parse', 'patch', 'probe', 'prune', 'pull', 'push', 'route', 'scan',
+    'spawn', 'sync', 'trace', 'watch', 'debug', 'drain', 'boot', 'bind', 'fork'
+  ];
+  const NAME_ADJECTIVES = [
+    'slow', 'fast', 'busy', 'idle', 'noisy', 'stale', 'fresh', 'clean',
+    'valid', 'quick', 'sharp', 'solid', 'hot', 'warm', 'cold', 'light',
+    'heavy', 'clear', 'dense', 'short', 'deep', 'smart', 'prime', 'eager', 'async'
+  ];
+  const NAME_COMPONENTS = [
+    'core', 'gpu', 'cpu', 'ram', 'bus', 'pipe', 'proc', 'task', 'lock',
+    'tcp', 'udp', 'http', 'tls', 'arp', 'byte', 'heap', 'stack', 'cache',
+    'node', 'edge', 'tree', 'table', 'index', 'log', 'queue', 'chan', 'frame'
+  ];
+
+  function generateRandomWorkstreamName() {
+    const op = NAME_OPERATIONS[Math.floor(Math.random() * NAME_OPERATIONS.length)];
+    const adj = NAME_ADJECTIVES[Math.floor(Math.random() * NAME_ADJECTIVES.length)];
+    const comp = NAME_COMPONENTS[Math.floor(Math.random() * NAME_COMPONENTS.length)];
+    return `${op}-${adj}-${comp}`;
+  }
 
   // DOM Elements
   const els = {
@@ -46,7 +72,16 @@
     menuBtn: document.getElementById('menu-btn'),
     drawerCloseBtn: document.getElementById('drawer-close-btn'),
     btnToggleWrap: document.getElementById('btn-toggle-wrap'),
-    btnFontSize: document.getElementById('btn-font-size')
+    btnFontSize: document.getElementById('btn-font-size'),
+    newWsModal: document.getElementById('new-ws-modal'),
+    modalProjectName: document.getElementById('modal-project-name'),
+    newWsForm: document.getElementById('new-ws-form'),
+    wsNameInput: document.getElementById('ws-name-input'),
+    wsDiceBtn: document.getElementById('ws-dice-btn'),
+    modalDefaultsText: document.getElementById('modal-defaults-text'),
+    modalCancelBtn: document.getElementById('modal-cancel-btn'),
+    modalSubmitBtn: document.getElementById('modal-submit-btn'),
+    modalCloseBtn: document.getElementById('modal-close-btn')
   };
 
   // Initialize Speech Recognition if supported
@@ -87,6 +122,41 @@
   els.menuBtn.addEventListener('click', openSidebar);
   els.drawerCloseBtn.addEventListener('click', closeSidebar);
   els.sidebarOverlay.addEventListener('click', closeSidebar);
+
+  // New Workstream Modal Event Handlers
+  if (els.newWsModal) {
+    els.newWsModal.addEventListener('click', (e) => {
+      if (e.target === els.newWsModal) {
+        closeNewWorkstreamModal();
+      }
+    });
+  }
+  if (els.modalCloseBtn) {
+    els.modalCloseBtn.addEventListener('click', closeNewWorkstreamModal);
+  }
+  if (els.modalCancelBtn) {
+    els.modalCancelBtn.addEventListener('click', closeNewWorkstreamModal);
+  }
+  if (els.newWsForm) {
+    els.newWsForm.addEventListener('submit', handleNewWorkstreamSubmit);
+  }
+  if (els.wsDiceBtn) {
+    els.wsDiceBtn.addEventListener('click', () => {
+      if (els.wsNameInput) {
+        const next = generateRandomWorkstreamName();
+        els.wsNameInput.value = next;
+        els.wsNameInput.focus();
+        els.wsNameInput.select();
+      }
+    });
+  }
+  if (els.wsNameInput) {
+    els.wsNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeNewWorkstreamModal();
+      }
+    });
+  }
 
   els.btnApprove.addEventListener('click', () => sendAction('approve'));
   els.btnDeny.addEventListener('click', () => sendAction('deny'));
@@ -498,6 +568,7 @@
       const res = await apiFetch('/api/status');
       const data = await res.json();
       state.projects = data.projects || [];
+      state.host = data.host || null;
       renderSidebar();
 
       // Pick first workstream if none selected
@@ -581,6 +652,109 @@
     }
   }
 
+  function updateModalDefaultsText() {
+    const agentMap = {
+      claude: 'Claude Code',
+      codex: 'Codex',
+      agy: 'Antigravity CLI (AGY)',
+      opencode: 'OpenCode',
+      pi: 'Pi'
+    };
+    const host = state.host || {};
+    const agentName = agentMap[host.defaultAgent] || (host.defaultAgent ? host.defaultAgent : 'Default agent');
+    const bypassText = host.defaultBypass ? 'YOLO permissions' : 'Default permissions';
+    if (els.modalDefaultsText) {
+      els.modalDefaultsText.textContent = `${agentName} • ${bypassText}`;
+    }
+  }
+
+  function openNewWorkstreamModal(proj) {
+    if (!proj) return;
+    state.activeNewWsProjectId = proj.id;
+    if (els.modalProjectName) {
+      els.modalProjectName.textContent = proj.name || 'Untitled Project';
+    }
+    const suggested = generateRandomWorkstreamName();
+    if (els.wsNameInput) {
+      els.wsNameInput.value = suggested;
+      els.wsNameInput.placeholder = suggested;
+    }
+    updateModalDefaultsText();
+    if (els.newWsModal) {
+      els.newWsModal.style.display = 'flex';
+      setTimeout(() => {
+        if (els.wsNameInput) {
+          els.wsNameInput.focus();
+          els.wsNameInput.select();
+        }
+      }, 50);
+    }
+  }
+
+  function closeNewWorkstreamModal() {
+    state.activeNewWsProjectId = null;
+    if (els.newWsModal) {
+      els.newWsModal.style.display = 'none';
+    }
+    if (els.modalSubmitBtn) {
+      els.modalSubmitBtn.disabled = false;
+      els.modalSubmitBtn.textContent = 'Create';
+    }
+  }
+
+  async function handleNewWorkstreamSubmit(e) {
+    if (e) e.preventDefault();
+    if (!state.activeNewWsProjectId) return;
+    if (els.modalSubmitBtn && els.modalSubmitBtn.disabled) return;
+
+    const requestedName = (els.wsNameInput ? els.wsNameInput.value : '').trim();
+    if (els.modalSubmitBtn) {
+      els.modalSubmitBtn.disabled = true;
+      els.modalSubmitBtn.textContent = 'Creating...';
+    }
+
+    try {
+      const projId = validateProjectId(state.activeNewWsProjectId);
+      const res = await apiFetch(`/api/projects/${projId}/workstreams`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestedName ? { name: requestedName } : {})
+      });
+      const data = await res.json();
+      if (data.ok && data.workstream) {
+        let found = findWorkstream(data.workstream.id);
+        const proj = state.projects.find(p => p.id === state.activeNewWsProjectId);
+        if (!found && proj) {
+          if (!proj.workstreams) proj.workstreams = [];
+          proj.workstreams.push({
+            id: data.workstream.id,
+            name: data.workstream.name,
+            branch: data.workstream.branch,
+            agentState: 'idle',
+            activeSubagents: 0,
+            listeningPorts: []
+          });
+        }
+        closeNewWorkstreamModal();
+        closeSidebar();
+        selectWorkstream(data.workstream.id);
+      } else {
+        alert(data.error || 'Failed to create workstream');
+        if (els.modalSubmitBtn) {
+          els.modalSubmitBtn.disabled = false;
+          els.modalSubmitBtn.textContent = 'Create';
+        }
+      }
+    } catch (err) {
+      console.error('Failed to create workstream:', err);
+      alert('Failed to create workstream: ' + (err.message || 'Network error'));
+      if (els.modalSubmitBtn) {
+        els.modalSubmitBtn.disabled = false;
+        els.modalSubmitBtn.textContent = 'Create';
+      }
+    }
+  }
+
   function renderSidebar() {
     els.drawerContent.replaceChildren();
 
@@ -610,46 +784,9 @@
       addBtn.setAttribute('aria-label', 'New Workstream');
       addBtn.textContent = '+';
 
-      addBtn.addEventListener('click', async (e) => {
+      addBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (addBtn.disabled) return;
-        addBtn.disabled = true;
-        addBtn.classList.add('loading');
-        addBtn.textContent = '';
-        const spinner = document.createElement('span');
-        spinner.className = 'btn-spinner';
-        addBtn.appendChild(spinner);
-
-        try {
-          const projId = validateProjectId(proj.id);
-          const res = await apiFetch(`/api/projects/${projId}/workstreams`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({})
-          });
-          const data = await res.json();
-          if (data.ok && data.workstream) {
-            let found = findWorkstream(data.workstream.id);
-            if (!found) {
-              if (!proj.workstreams) proj.workstreams = [];
-              proj.workstreams.push({
-                id: data.workstream.id,
-                name: data.workstream.name,
-                branch: data.workstream.branch,
-                agentState: 'idle',
-                activeSubagents: 0,
-                listeningPorts: []
-              });
-            }
-            selectWorkstream(data.workstream.id);
-          }
-        } catch (err) {
-          console.error('Failed to create workstream:', err);
-        } finally {
-          addBtn.disabled = false;
-          addBtn.classList.remove('loading');
-          addBtn.textContent = '+';
-        }
+        openNewWorkstreamModal(proj);
       });
 
       headerEl.appendChild(addBtn);
@@ -969,6 +1106,7 @@
         const msg = JSON.parse(event.data);
         if (msg.type === 'snapshot') {
           state.projects = msg.projects || [];
+          if (msg.host) state.host = msg.host;
           if (state.selectedWorkstreamId && !findWorkstream(state.selectedWorkstreamId)) {
             let nextWs = null;
             for (const p of state.projects) {
