@@ -564,7 +564,23 @@
     return result;
   }
 
-  // Raw ANSI to HTML Parser with divider clipping and trailing space trim
+  function isArtLine(line, plain) {
+    // Unicode blocks, box drawing, braille, geometric shapes
+    const graphicCount = (plain.match(/[\u2580-\u259F\u2500-\u257F\u2800-\u28FF\u25A0-\u25FF]/g) || []).length;
+    if (graphicCount >= 2) return true;
+
+    // Background color sequences on lines with visible content (colored banner bars)
+    const hasBg = /\x1b\[(?:4[0-7]|10[0-7]|48[;0-9]*)m/.test(line);
+    if (hasBg && plain.length >= 6) return true;
+
+    // Classic ASCII art patterns (slashes, pipes, underscores, hashes)
+    const asciiArtChars = (plain.match(/[/\\|_#`~^]/g) || []).length;
+    if (asciiArtChars >= 6 && asciiArtChars / (plain.length || 1) >= 0.3) return true;
+
+    return false;
+  }
+
+  // Raw ANSI to HTML Parser with divider clipping, ASCII art preservation, and trailing space trim
   function ansiToHtml(str) {
     if (!str) return '';
 
@@ -581,19 +597,41 @@
 
     if (rawLines.length === 0) return '';
 
-    const htmlLines = rawLines.map(line => {
+    let html = '';
+    let currentArtLines = [];
+
+    function flushArt() {
+      if (currentArtLines.length > 0) {
+        html += `<div class="term-art-block">${currentArtLines.join('')}</div>`;
+        currentArtLines = [];
+      }
+    }
+
+    for (const line of rawLines) {
       const plain = line.replace(/\x1b\[[0-9;]*m/g, '').trim();
       const isSeparator = /^([─━═_\-—┄┈=])\1{7,}$/.test(plain) ||
                           /^[\s─━═_\-—┄┈=]{12,}$/.test(plain) ||
                           /^[┌├└][─━═_\-—┄┈=]{8,}[┐┤┘]?$/.test(plain);
 
-      const parsed = parseAnsiTokens(line);
-      const content = parsed.length > 0 ? parsed : '&nbsp;';
-      const sepClass = isSeparator ? ' term-divider' : '';
-      return `<div class="term-line${sepClass}">${content}</div>`;
-    });
+      if (isSeparator) {
+        flushArt();
+        const parsed = parseAnsiTokens(line);
+        const content = parsed.length > 0 ? parsed : '&nbsp;';
+        html += `<div class="term-line term-divider">${content}</div>`;
+      } else if (isArtLine(line, plain)) {
+        const parsed = parseAnsiTokens(line);
+        const content = parsed.length > 0 ? parsed : '&nbsp;';
+        currentArtLines.push(`<div class="term-line term-art">${content}</div>`);
+      } else {
+        flushArt();
+        const parsed = parseAnsiTokens(line);
+        const content = parsed.length > 0 ? parsed : '&nbsp;';
+        html += `<div class="term-line">${content}</div>`;
+      }
+    }
+    flushArt();
 
-    return htmlLines.join('');
+    return html;
   }
 
   function renderTerminal(text) {
