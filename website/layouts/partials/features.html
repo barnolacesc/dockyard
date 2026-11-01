@@ -22,7 +22,7 @@
           <p class="text-sm text-fg-muted leading-relaxed">{{ .desc | safeHTML }}</p>
         </div>
         <div class="mt-5 pt-3 border-t border-fg-faint/40">
-          <button type="button" onclick="showScreenshot('{{ .tab }}'); document.getElementById('preview-showcase').scrollIntoView({behavior: 'smooth'})" class="inline-flex items-center gap-1.5 font-mono text-xs text-brand-light group-hover:text-fg transition-colors bg-transparent border-none p-0 cursor-pointer">
+          <button type="button" aria-label="{{ T "hero_view_in_action" }}: {{ .title }}" onclick="showScreenshot('{{ .tab }}'); var behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'; document.getElementById('preview-showcase').scrollIntoView({behavior: behavior})" class="inline-flex items-center gap-1.5 font-mono text-xs text-brand-light group-hover:text-fg transition-colors bg-transparent border-none p-0 cursor-pointer">
             <span>{{ T "hero_view_in_action" }}</span>
             <span class="transition-transform group-hover:translate-x-1">&rarr;</span>
           </button>

@@ -30,8 +30,8 @@
   <!-- macOS Native Window Frame -->
   <div class="rounded-xl md:rounded-2xl overflow-hidden border border-fg-faint bg-bg-surface shadow-[0_20px_60px_var(--color-shadow)] transition-all">
     <!-- Window Titlebar -->
-    <div class="flex items-center justify-between px-4 py-3 border-b border-fg-faint bg-bg/80 backdrop-blur-sm select-none" aria-hidden="true">
-      <div class="flex items-center gap-2">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-fg-faint bg-bg/80 backdrop-blur-sm select-none">
+      <div class="flex items-center gap-2" aria-hidden="true">
         <span class="w-3 h-3 rounded-full bg-[#ff5f56] border border-black/10 inline-block"></span>
         <span class="w-3 h-3 rounded-full bg-[#ffbd2e] border border-black/10 inline-block"></span>
         <span class="w-3 h-3 rounded-full bg-[#27c93f] border border-black/10 inline-block"></span>
@@ -280,6 +280,34 @@ document.addEventListener('keydown', function(e) {
     navigateModal(1);
   }
 });
+
+// Tablist arrow key navigation (WAI-ARIA tabs pattern)
+var tablist = document.querySelector('[role="tablist"]');
+if (tablist) {
+  tablist.addEventListener('keydown', function(e) {
+    var tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+    var currentIndex = tabs.findIndex(function(t) { return t === document.activeElement; });
+    if (currentIndex === -1) return;
+
+    var targetIndex = -1;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      targetIndex = (currentIndex + 1) % tabs.length;
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      targetIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    } else if (e.key === 'Home') {
+      targetIndex = 0;
+    } else if (e.key === 'End') {
+      targetIndex = tabs.length - 1;
+    }
+
+    if (targetIndex !== -1) {
+      e.preventDefault();
+      var targetKey = tabKeys[targetIndex];
+      showScreenshot(targetKey);
+      tabs[targetIndex].focus();
+    }
+  });
+}
 
 // Preload remaining WebP images after initial load to make tab switching instantaneous
 window.addEventListener('load', function() {
