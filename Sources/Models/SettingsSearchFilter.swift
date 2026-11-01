@@ -101,6 +101,7 @@ public enum SettingsItemID: String, CaseIterable, Sendable {
 
     case mobileCompanionEnable
     case mobileCompanionCustomURL
+    case mobileCompanionToken
 
     // MARK: - Coding Agent
 
@@ -207,6 +208,7 @@ public enum SettingsSearchRegistry {
         .mobileCompanion: [
             .mobileCompanionEnable,
             .mobileCompanionCustomURL,
+            .mobileCompanionToken,
         ],
         .codingAgent: [
             .agentCodingCLI,
@@ -452,6 +454,13 @@ public enum SettingsSearchRegistry {
             title: "Custom Base URL",
             description: "Optional domain or reverse proxy URL (e.g. VPN, homelab, or Cloudflare tunnel). When set, pairing QR codes and links use this URL.",
             keywords: ["url", "domain", "reverse proxy", "dns", "hostname", "vpn", "homelab", "domini", "túnel", "adreça"]
+        ),
+        .mobileCompanionToken: SettingsItemDefinition(
+            id: .mobileCompanionToken,
+            section: .mobileCompanion,
+            title: "Security Token",
+            description: "Shared secret required for companion app connections. Stays the same across sessions.",
+            keywords: ["token", "password", "secret", "auth", "contrasenya", "clau", "seguretat", "autenticació"]
         ),
 
         // MARK: - Coding Agent

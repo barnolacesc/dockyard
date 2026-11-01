@@ -88,11 +88,27 @@ final class CompanionServerTests: XCTestCase {
     }
 
     func testConfigFileCodable() throws {
-        let config = CompanionServer.ConfigFile(customURL: "https://companion.example.com", port: 9876)
+        let config = CompanionServer.ConfigFile(customURL: "https://companion.example.com", port: 9876, token: "my-secret-token")
         let data = try JSONEncoder().encode(config)
         let decoded = try JSONDecoder().decode(CompanionServer.ConfigFile.self, from: data)
         XCTAssertEqual(decoded.customURL, "https://companion.example.com")
         XCTAssertEqual(decoded.port, 9876)
+        XCTAssertEqual(decoded.token, "my-secret-token")
+    }
+
+    func testSetCustomToken() {
+        let server = CompanionServer.shared
+        let originalToken = UserDefaults.standard.string(forKey: CompanionServer.tokenStorageKey)
+        defer {
+            if let original = originalToken {
+                UserDefaults.standard.set(original, forKey: CompanionServer.tokenStorageKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: CompanionServer.tokenStorageKey)
+            }
+        }
+
+        server.setCustomToken("custom-pass-1234")
+        XCTAssertEqual(UserDefaults.standard.string(forKey: CompanionServer.tokenStorageKey), "custom-pass-1234")
     }
 
     func testBuildStatusJSON() throws {
