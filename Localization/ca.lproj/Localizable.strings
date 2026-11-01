@@ -870,3 +870,36 @@
 /* Pi Coding Agent */
 "Pi Coding Agent Support" = "Compatibilitat amb l'agent de codi Pi";
 "Run Pi (@earendil-works/pi-coding-agent) in the Agent tab as a first-class coding agent." = "Executa Pi (@earendil-works/pi-coding-agent) a la pestanya Agent com a agent de codi de primer nivell.";
+
+/* Mobile Companion */
+"Mobile Companion" = "Company mòbil";
+"Mobile Companion..." = "Company mòbil...";
+"Mobile Companion PWA" = "PWA de company mòbil";
+"Monitor agents, stream raw terminal output, and unblock tasks from your phone over local Wi-Fi or Tailscale without cloud dependencies." = "Monitora agents, transmet la sortida directa del terminal i desbloqueja tasques des del teu telèfon per Wi-Fi local o Tailscale sense dependències al núvol.";
+"Enable Mobile Companion" = "Activa el company mòbil";
+"Runs a lightweight local web server to monitor and control coding agents from your phone or tablet on the same network or via Tailscale." = "Executa un servidor web local lleuger per monitorar i controlar els agents de codi des del teu telèfon o tauleta a la mateixa xarxa o mitjançant Tailscale.";
+"Pairing & Status" = "Vinculació i estat";
+"Pair Phone..." = "Vincula el telèfon...";
+"Online • Ready to pair" = "En línia • A punt per vincular";
+"Mobile Companion: Offline (click to pair)" = "Company mòbil: Desconnectat (fes clic per vincular)";
+"Mobile Companion: %d connected (click to manage)" = "Company mòbil: %d connectats (fes clic per gestionar)";
+"Mobile Companion: Online (click to pair)" = "Company mòbil: En línia (fes clic per vincular)";
+"Tailscale" = "Tailscale";
+"Local Wi-Fi" = "Wi-Fi local";
+"Scan with your phone's camera, then tap 'Add to Home Screen' in Safari." = "Escaneja amb la càmera del telèfon i toca 'Afegeix a la pantalla d'inici' a Safari.";
+"Waiting for phone..." = "Esperant el telèfon...";
+"1 device connected" = "1 dispositiu connectat";
+"%d devices connected" = "%d dispositius connectats";
+"Copied" = "Copiat";
+"Copy URL" = "Copia l'URL";
+"Open in Browser" = "Obre al navegador";
+"Reset Token" = "Restableix el testimoni";
+"Invalidates the current pairing URL and disconnects active phones." = "Invalida l'URL de vinculació actual i desconnecta els telèfons actius.";
+"Control and observe coding agents on this Mac from your phone without cloud services." = "Controla i observa els agents de codi d'aquest Mac des del teu telèfon sense serveis al núvol.";
+"Start Companion Server" = "Inicia el servidor del company";
+"Persistent Sessions Required" = "Sessions persistents requerides";
+"Enable Tmux Mode to mirror agents." = "Activa el mode Tmux per reflectir agents.";
+"Enable" = "Activa";
+"Agents mirror to your phone when running in Tmux Mode. Relaunch or open a workstream to attach." = "Els agents es reflecteixen al mòbil quan s'executen en mode Tmux. Reinicia o obre un flux de treball per connectar-s'hi.";
+"Token:" = "Testimoni:";
+"Copy security token" = "Copia el testimoni de seguretat";
