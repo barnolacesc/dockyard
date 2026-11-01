@@ -14,6 +14,7 @@ extension Notification.Name {
     static let initialAgentPromptConsumed = Notification.Name("dockyard.initialAgentPromptConsumed")
     static let projectCreated = Notification.Name("dockyard.projectCreated")
     static let purgeWorkstream = Notification.Name("dockyard.purgeWorkstream")
+    static let workstreamRemoved = Notification.Name("dockyard.workstreamRemoved")
     static let worktreeHeadChanged = Notification.Name("dockyard.worktreeHeadChanged")
 }
 
@@ -183,6 +184,7 @@ struct ContentView: View {
     @State private var previousPreferredUsageProvider: UsageMeterProvider?
     @State private var whatsNewReleases: [WhatsNewRelease] = []
     @State private var showWhatsNew = false
+    @State private var showingCompanionSheet = false
     @State private var projectActiveTabs: [UUID: ProjectTab] = [:]
     @State private var openProjectTerminalIDs: Set<UUID> = []
     @AppStorage("dockyard.codingCLI") private var codingCLIRaw: String = ""
@@ -416,6 +418,23 @@ struct ContentView: View {
             .shortcutHintOverlay()
             .tourOverlay()
             .sheet(isPresented: $showWhatsNew) { whatsNewSheet }
+            .sheet(isPresented: $showingCompanionSheet) {
+                VStack(spacing: 0) {
+                    HStack {
+                        Spacer()
+                        Button("Done") {
+                            showingCompanionSheet = false
+                        }
+                        .padding(.top, 12)
+                        .padding(.trailing, 16)
+                    }
+                    CompanionPairingView()
+                        .padding(.bottom, 12)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .openMobileCompanion)) { _ in
+                showingCompanionSheet = true
+            }
             .onReceive(NotificationCenter.default.publisher(for: .openWhatsNew)) { _ in
                 whatsNewReleases = WhatsNewCatalog.releases
                 showWhatsNew = true
@@ -766,10 +785,21 @@ struct ContentView: View {
                       let projectID = info["projectID"] as? UUID,
                       let workstream = info["workstream"] as? Workstream,
                       let index = projects.firstIndex(where: { $0.id == projectID }) else { return }
-                projects[index].workstreams.insert(workstream, at: 0)
+                if !projects[index].workstreams.contains(where: { $0.id == workstream.id }) {
+                    projects[index].workstreams.insert(workstream, at: 0)
+                }
                 selection = .workstream(workstream.id)
                 ProjectStore.save(projects)
                 logger.warning("[Dockyard] workstreamCreated notification handled: \(workstream.name, privacy: .public)")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .workstreamRemoved)) { notification in
+                guard let wsID = notification.object as? UUID else { return }
+                for pi in projects.indices {
+                    projects[pi].workstreams.removeAll { $0.id == wsID }
+                }
+                if case let .workstream(selectedID) = selection, selectedID == wsID {
+                    selection = nil
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: .workstreamWorktreeReady)) { notification in
                 guard let info = notification.userInfo,

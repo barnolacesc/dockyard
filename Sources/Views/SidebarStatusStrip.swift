@@ -14,6 +14,8 @@ struct SidebarStatusStrip: View {
     var onNextUsageProvider: () -> Void = {}
 
     @AppStorage(CaffeinateMode.storageKey) private var caffeinateMode: String = CaffeinateMode.off.rawValue
+    @ObservedObject private var companionServer = CompanionServer.shared
+    @State private var showingCompanionPairing: Bool = false
 
     private var currentCaffeinateMode: CaffeinateMode {
         CaffeinateMode(rawValue: caffeinateMode) ?? .off
@@ -51,10 +53,50 @@ struct SidebarStatusStrip: View {
                     .help(NSLocalizedString("Agents waiting on you", comment: ""))
             }
             Spacer(minLength: 4)
+            companionToggle
             caffeinateToggle
         }
         .font(.system(size: 12))
         .foregroundStyle(.tertiary)
+    }
+
+    private var companionToggle: some View {
+        Button {
+            showingCompanionPairing.toggle()
+        } label: {
+            Image(systemName: "iphone.gen3")
+                .font(.system(size: 12))
+        }
+        .pressable()
+        .foregroundStyle(companionForeground)
+        .help(companionTooltip)
+        .accessibilityLabel(Text("Mobile Companion"))
+        .popover(isPresented: $showingCompanionPairing, arrowEdge: .trailing) {
+            CompanionPairingView()
+        }
+    }
+
+    private var companionForeground: Color {
+        if !companionServer.isRunning {
+            return .secondary
+        }
+        if companionServer.connectedClientsCount > 0 {
+            return DesignColor.statusSuccess
+        }
+        return Color.accentColor
+    }
+
+    private var companionTooltip: String {
+        if !companionServer.isRunning {
+            return NSLocalizedString("Mobile Companion: Offline (click to pair)", comment: "")
+        }
+        if companionServer.connectedClientsCount > 0 {
+            return String(
+                format: NSLocalizedString("Mobile Companion: %d connected (click to manage)", comment: ""),
+                companionServer.connectedClientsCount
+            )
+        }
+        return NSLocalizedString("Mobile Companion: Online (click to pair)", comment: "")
     }
 
     private var caffeinateToggle: some View {

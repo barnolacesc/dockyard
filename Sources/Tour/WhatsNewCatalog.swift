@@ -9,6 +9,11 @@ enum WhatsNewCatalog {
     static let releases: [WhatsNewRelease] = [
         WhatsNewRelease(version: "0.3.0", entries: [
             WhatsNewEntry(
+                symbol: "iphone.gen3",
+                titleKey: "Mobile Companion PWA",
+                bodyKey: "Monitor agents, stream raw terminal output, and unblock tasks from your phone over local Wi-Fi or Tailscale without cloud dependencies."
+            ),
+            WhatsNewEntry(
                 symbol: "magnifyingglass",
                 titleKey: "Settings Search Filter",
                 bodyKey: "Quickly locate settings across all sections with instant, case-insensitive keyword filtering."

@@ -87,4 +87,11 @@ enum AppConstants {
             .appendingPathComponent(".dockyard")
             .appendingPathComponent("worktrees")
     }
+
+    /// Uploads directory: ~/.dockyard/uploads/.
+    static var uploadsDirectory: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".dockyard")
+            .appendingPathComponent("uploads")
+    }
 }
