@@ -919,6 +919,15 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
             }
             .store(in: &cancellables)
 
+        // Heartbeat snapshot broadcast every 1.5 seconds if clients are connected
+        Timer.publish(every: 1.5, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self, self.connectedClientsCount > 0 else { return }
+                self.broadcastCurrentSnapshot()
+            }
+            .store(in: &cancellables)
+
         NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
