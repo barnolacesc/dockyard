@@ -14,6 +14,11 @@ enum WhatsNewCatalog {
                 bodyKey: "Monitor agents, stream raw terminal output, and unblock tasks from your phone over local Wi-Fi or Tailscale without cloud dependencies."
             ),
             WhatsNewEntry(
+                symbol: "network",
+                titleKey: "Custom Domain for Mobile Companion",
+                bodyKey: "Configure custom domains, reverse proxies, or VPN URLs for the Mobile Companion with automatic QR pairing."
+            ),
+            WhatsNewEntry(
                 symbol: "camera.fill",
                 titleKey: "Mobile Image Upload & Paste",
                 bodyKey: "Upload photos or paste screenshots from your phone directly into the Coding Agent prompt via the Mobile Companion."

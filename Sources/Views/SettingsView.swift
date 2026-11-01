@@ -79,6 +79,7 @@ struct SettingsView: View {
     @AppStorage("dockyard.quickActionDebug") private var quickActionDebug: Bool = false
     @AppStorage(AppUpdater.channelStorageKey) private var updateChannel: String = AppUpdater.loadChannel().rawValue
     @AppStorage("dockyard.baseDirectory") private var baseDirectory: String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? ""
+    @AppStorage(CompanionServer.customURLStorageKey) private var customCompanionURL: String = ""
     @ObservedObject private var companionServer = CompanionServer.shared
     @State private var showingCompanionPairing: Bool = false
 
@@ -557,6 +558,25 @@ struct SettingsView: View {
                             }
                             .popover(isPresented: $showingCompanionPairing, arrowEdge: .trailing) {
                                 CompanionPairingView()
+                            }
+                        }
+                    }
+
+                    if filter.matches(item: .mobileCompanionCustomURL) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Custom Base URL")
+                            TextField("https://companion.example.com", text: $customCompanionURL)
+                                .textFieldStyle(.roundedBorder)
+
+                            if customCompanionURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                               let fileURL = companionServer.configFileCustomURL {
+                                Text(String(format: NSLocalizedString("Configured via companion.json: %@", comment: ""), fileURL))
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Text("Optional domain or reverse proxy URL (e.g. VPN, homelab, or Cloudflare tunnel). When set, pairing QR codes and links use this URL.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
