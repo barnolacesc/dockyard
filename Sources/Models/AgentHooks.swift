@@ -2,6 +2,9 @@
 // ABOUTME: coding agent lifecycle events to the bundled dy-agent-state helper.
 
 import Foundation
+import OSLog
+
+private let logger = Logger(subsystem: "dockyard", category: "agent-hooks")
 
 struct AgentHookInvocation: Equatable {
     let generatedConfigURL: URL?
@@ -76,6 +79,7 @@ enum AgentHooks {
             return codexHookInvocation(workstreamID: workstreamID, helperPath: helperPath, workingDirectory: workingDirectory)
         case .agyHooks:
             guard let workingDirectory else { return nil }
+            ensureAgyWorkspaceTrusted(workingDirectory: workingDirectory)
             guard let url = try writeAgyHooks(workingDirectory: workingDirectory, workstreamID: workstreamID, helperPath: helperPath) else {
                 return nil
             }
@@ -218,6 +222,65 @@ enum AgentHooks {
             try? FileManager.default.removeItem(at: hooksURL)
         } else if let updatedData = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]) {
             try? FilePersistence.writeAtomically(updatedData, to: hooksURL)
+        }
+    }
+
+    /// Path to Antigravity CLI's configuration file (`~/.gemini/antigravity-cli/settings.json`).
+    static var agySettingsURL: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".gemini", isDirectory: true)
+            .appendingPathComponent("antigravity-cli", isDirectory: true)
+            .appendingPathComponent("settings.json")
+    }
+
+    /// Registers the given workspace path into Antigravity CLI's `trustedWorkspaces`
+    /// in `settings.json` so that `agy` does not prompt "Do you trust the contents of this project?".
+    @discardableResult
+    static func ensureAgyWorkspaceTrusted(
+        workingDirectory: String,
+        settingsURL: URL = agySettingsURL
+    ) -> Bool {
+        let standardPath = (workingDirectory as NSString).standardizingPath
+        guard !standardPath.isEmpty else { return false }
+        let resolvedPath = URL(fileURLWithPath: standardPath).resolvingSymlinksInPath().path
+
+        var settings: [String: Any] = [:]
+        if FileManager.default.fileExists(atPath: settingsURL.path) {
+            guard let data = try? Data(contentsOf: settingsURL),
+                  let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+            else {
+                return false
+            }
+            settings = json
+        }
+
+        var trusted = (settings["trustedWorkspaces"] as? [String]) ?? []
+        var modified = false
+
+        if !trusted.contains(standardPath) {
+            trusted.append(standardPath)
+            modified = true
+        }
+
+        if !resolvedPath.isEmpty && resolvedPath != standardPath && !trusted.contains(resolvedPath) {
+            trusted.append(resolvedPath)
+            modified = true
+        }
+
+        guard modified else { return true }
+
+        settings["trustedWorkspaces"] = trusted
+
+        guard let updatedData = try? JSONSerialization.data(withJSONObject: settings, options: [.prettyPrinted, .sortedKeys]) else {
+            return false
+        }
+
+        do {
+            try FilePersistence.writeAtomically(updatedData, to: settingsURL)
+            return true
+        } catch {
+            logger.warning("[Dockyard] Failed to update agy trustedWorkspaces at \(settingsURL.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return false
         }
     }
 

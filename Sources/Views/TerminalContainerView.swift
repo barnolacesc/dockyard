@@ -617,6 +617,10 @@ struct TerminalContainerView: View {
     private func buildAgentCommand() -> String? {
         guard let cliPath = selectedCodingCLIPath else { return nil }
 
+        if selectedCodingCLI == .agy {
+            AgentHooks.ensureAgyWorkspaceTrusted(workingDirectory: workingDirectory)
+        }
+
         var hookInvocation: AgentHookInvocation?
         if let helperPath = AgentHooks.bundledHelperPath {
             do {

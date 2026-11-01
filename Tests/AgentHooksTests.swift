@@ -449,4 +449,55 @@ final class AgentHooksTests: XCTestCase {
         let afterRemoveContent = try String(contentsOf: hooksURL)
         XCTAssertEqual(afterRemoveContent, originalContent)
     }
+
+    func testEnsureAgyWorkspaceTrustedCreatesSettingsWhenMissing() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let settingsURL = tempDir.appendingPathComponent("settings.json")
+        let workspace = "/Users/test/workspace/one"
+
+        let success = AgentHooks.ensureAgyWorkspaceTrusted(workingDirectory: workspace, settingsURL: settingsURL)
+        XCTAssertTrue(success)
+
+        let data = try Data(contentsOf: settingsURL)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let trusted = try XCTUnwrap(json["trustedWorkspaces"] as? [String])
+        XCTAssertTrue(trusted.contains(workspace))
+    }
+
+    func testEnsureAgyWorkspaceTrustedAppendsAndPreservesExistingFields() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let settingsURL = tempDir.appendingPathComponent("settings.json")
+        let initialJSON: [String: Any] = [
+            "model": "Gemini 3.8 Flash (High)",
+            "trustedWorkspaces": ["/Users/test/existing"],
+        ]
+        let initialData = try JSONSerialization.data(withJSONObject: initialJSON, options: [.prettyPrinted])
+        try initialData.write(to: settingsURL)
+
+        let newWorkspace = "/Users/test/workspace/two"
+        let success = AgentHooks.ensureAgyWorkspaceTrusted(workingDirectory: newWorkspace, settingsURL: settingsURL)
+        XCTAssertTrue(success)
+
+        let data = try Data(contentsOf: settingsURL)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertEqual(json["model"] as? String, "Gemini 3.8 Flash (High)")
+        let trusted = try XCTUnwrap(json["trustedWorkspaces"] as? [String])
+        XCTAssertEqual(trusted.first, "/Users/test/existing")
+        XCTAssertTrue(trusted.contains(newWorkspace))
+
+        // Calling again does not duplicate
+        let secondSuccess = AgentHooks.ensureAgyWorkspaceTrusted(workingDirectory: newWorkspace, settingsURL: settingsURL)
+        XCTAssertTrue(secondSuccess)
+
+        let secondData = try Data(contentsOf: settingsURL)
+        let secondJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: secondData) as? [String: Any])
+        let secondTrusted = try XCTUnwrap(secondJSON["trustedWorkspaces"] as? [String])
+        XCTAssertEqual(secondTrusted.filter { $0 == newWorkspace }.count, 1)
+    }
 }
