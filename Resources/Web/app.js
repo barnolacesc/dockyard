@@ -583,7 +583,7 @@
 
     const htmlLines = rawLines.map(line => {
       const plain = line.replace(/\x1b\[[0-9;]*m/g, '').trim();
-      const isSeparator = /^([─━═_\-—┄┈=])\1{7,}$/.test(plain) || 
+      const isSeparator = /^([─━═_\-—┄┈=])\1{7,}$/.test(plain) ||
                           /^[\s─━═_\-—┄┈=]{12,}$/.test(plain) ||
                           /^[┌├└][─━═_\-—┄┈=]{8,}[┐┤┘]?$/.test(plain);
 
