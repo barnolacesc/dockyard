@@ -140,16 +140,46 @@ html, body {
 
 .terminal-mirror {
   flex: 1;
-  padding: 12px 14px;
+  padding: 10px 14px;
   overflow-y: auto;
   overflow-x: auto;
-  font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
-  font-size: 12.5px;
-  line-height: 1.45;
-  white-space: pre-wrap;
-  word-break: break-all;
+  font-family: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 11.5px;
+  line-height: 1.42;
+  letter-spacing: -0.2px;
   color: #c9d1d9;
   -webkit-overflow-scrolling: touch;
+}
+
+.terminal-mirror.wrap-mode {
+  white-space: normal;
+}
+
+.terminal-mirror.wrap-mode .term-line {
+  white-space: pre-wrap;
+  word-break: normal;
+  overflow-wrap: break-word;
+  min-height: 1.42em;
+}
+
+.terminal-mirror.wrap-mode .term-divider {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: clip !important;
+  opacity: 0.45;
+  letter-spacing: -1px;
+}
+
+.terminal-mirror.raw-mode {
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.terminal-mirror.raw-mode .term-line {
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+  min-height: 1.42em;
 }
 
 /* Scroll To Bottom Button */
@@ -276,6 +306,12 @@ html, body {
 .key-btn.danger {
   color: var(--color-red);
   border-color: rgba(248, 81, 73, 0.3);
+}
+
+.key-btn.active {
+  background: rgba(88, 166, 255, 0.15);
+  border-color: rgba(88, 166, 255, 0.4);
+  color: var(--color-blue);
 }
 
 .input-row {
@@ -540,6 +576,15 @@ html, body {
 .ansi-magenta { color: #bc8cff; }
 .ansi-cyan { color: #39c5cf; }
 .ansi-white { color: #f0f6fc; }
+.ansi-bright-black { color: #768390; }
+.ansi-bright-red { color: #ffa198; }
+.ansi-bright-green { color: #56d364; }
+.ansi-bright-yellow { color: #e3b341; }
+.ansi-bright-blue { color: #79c0ff; }
+.ansi-bright-magenta { color: #d2a8ff; }
+.ansi-bright-cyan { color: #56d4dd; }
+.ansi-bright-white { color: #ffffff; }
+
 .ansi-bg-black { background-color: #21262d; }
 .ansi-bg-red { background-color: #da3633; }
 .ansi-bg-green { background-color: #238636; }
@@ -548,3 +593,11 @@ html, body {
 .ansi-bg-magenta { background-color: #8957e5; }
 .ansi-bg-cyan { background-color: #1b7c83; }
 .ansi-bg-white { background-color: #f0f6fc; color: #0d1117; }
+.ansi-bg-bright-black { background-color: #30363d; }
+.ansi-bg-bright-red { background-color: #b62324; }
+.ansi-bg-bright-green { background-color: #1a7f37; }
+.ansi-bg-bright-yellow { background-color: #845306; }
+.ansi-bg-bright-blue { background-color: #0969da; }
+.ansi-bg-bright-magenta { background-color: #8250df; }
+.ansi-bg-bright-cyan { background-color: #1b7c83; }
+.ansi-bg-bright-white { background-color: #ffffff; color: #0d1117; }

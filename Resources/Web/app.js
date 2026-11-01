@@ -17,6 +17,8 @@
     selectedWorkstreamId: null,
     terminalLines: '',
     autoScroll: true,
+    wrapMode: localStorage.getItem('dockyard_term_wrap') !== 'false',
+    fontSize: parseFloat(localStorage.getItem('dockyard_term_fontsize')) || 11.5,
     isListeningVoice: false,
     speechRecognition: null
   };
@@ -40,7 +42,9 @@
     sidebarDrawer: document.getElementById('sidebar-drawer'),
     drawerContent: document.getElementById('drawer-content'),
     menuBtn: document.getElementById('menu-btn'),
-    drawerCloseBtn: document.getElementById('drawer-close-btn')
+    drawerCloseBtn: document.getElementById('drawer-close-btn'),
+    btnToggleWrap: document.getElementById('btn-toggle-wrap'),
+    btnFontSize: document.getElementById('btn-font-size')
   };
 
   // Initialize Speech Recognition if supported
@@ -108,9 +112,51 @@
         sendRawKey('\x1b');
       } else if (key === 'clear') {
         els.terminalMirror.replaceChildren();
+      } else if (key === 'wrap') {
+        toggleWrapMode();
+      } else if (key === 'font-size') {
+        cycleFontSize();
       }
     });
   });
+
+  function updateTerminalViewMode() {
+    if (state.wrapMode) {
+      els.terminalMirror.classList.add('wrap-mode');
+      els.terminalMirror.classList.remove('raw-mode');
+      if (els.btnToggleWrap) {
+        els.btnToggleWrap.textContent = 'Wrap ↩';
+        els.btnToggleWrap.classList.add('active');
+      }
+    } else {
+      els.terminalMirror.classList.remove('wrap-mode');
+      els.terminalMirror.classList.add('raw-mode');
+      if (els.btnToggleWrap) {
+        els.btnToggleWrap.textContent = 'Scroll ⇄';
+        els.btnToggleWrap.classList.remove('active');
+      }
+    }
+    els.terminalMirror.style.fontSize = `${state.fontSize}px`;
+    if (els.btnFontSize) {
+      els.btnFontSize.textContent = `Aa ${state.fontSize}px`;
+    }
+  }
+
+  function toggleWrapMode() {
+    state.wrapMode = !state.wrapMode;
+    localStorage.setItem('dockyard_term_wrap', state.wrapMode ? 'true' : 'false');
+    updateTerminalViewMode();
+  }
+
+  function cycleFontSize() {
+    const sizes = [10.5, 11.5, 13];
+    let currentIndex = sizes.indexOf(state.fontSize);
+    if (currentIndex === -1) currentIndex = 1;
+    const nextIndex = (currentIndex + 1) % sizes.length;
+    state.fontSize = sizes[nextIndex];
+    localStorage.setItem('dockyard_term_fontsize', state.fontSize.toString());
+    updateTerminalViewMode();
+  }
 
   els.terminalMirror.addEventListener('scroll', () => {
     const threshold = 40;
@@ -438,61 +484,116 @@
     }
   }
 
-  // Raw ANSI to HTML Parser
-  function ansiToHtml(str) {
-    if (!str) return '';
+  function xterm256Color(n) {
+    if (n < 16) {
+      const std = ['#000', '#c00', '#0c0', '#c60', '#00c', '#c0c', '#0cc', '#ccc', '#666', '#f33', '#3f3', '#ff3', '#33f', '#f3f', '#3ff', '#fff'];
+      return std[n] || '#fff';
+    }
+    if (n >= 232) {
+      const g = 8 + (n - 232) * 10;
+      return `rgb(${g},${g},${g})`;
+    }
+    n -= 16;
+    const r = Math.floor(n / 36) * 51;
+    const g = Math.floor((n % 36) / 6) * 51;
+    const b = (n % 6) * 51;
+    return `rgb(${r},${g},${b})`;
+  }
 
-    // Strip carriage returns and non-color terminal controls (like cursor position/hide)
-    str = str.replace(/\x1b\[\?25[hl]/g, ''); // cursor show/hide
-    str = str.replace(/\x1b\[[0-9;]*[HfABCDsuJK]/g, ''); // cursor movement & clear line
+  const ANSI_CODE_TO_CLASS = {
+    1: 'ansi-bold', 2: 'ansi-dim', 3: 'ansi-italic', 4: 'ansi-underline',
+    30: 'ansi-black', 31: 'ansi-red', 32: 'ansi-green', 33: 'ansi-yellow',
+    34: 'ansi-blue', 35: 'ansi-magenta', 36: 'ansi-cyan', 37: 'ansi-white',
+    40: 'ansi-bg-black', 41: 'ansi-bg-red', 42: 'ansi-bg-green', 43: 'ansi-bg-yellow',
+    44: 'ansi-bg-blue', 45: 'ansi-bg-magenta', 46: 'ansi-bg-cyan', 47: 'ansi-bg-white',
+    90: 'ansi-bright-black', 91: 'ansi-bright-red', 92: 'ansi-bright-green', 93: 'ansi-bright-yellow',
+    94: 'ansi-bright-blue', 95: 'ansi-bright-magenta', 96: 'ansi-bright-cyan', 97: 'ansi-bright-white',
+    100: 'ansi-bg-bright-black', 101: 'ansi-bg-bright-red', 102: 'ansi-bg-bright-green', 103: 'ansi-bg-bright-yellow',
+    104: 'ansi-bg-bright-blue', 105: 'ansi-bg-bright-magenta', 106: 'ansi-bg-bright-cyan', 107: 'ansi-bg-bright-white'
+  };
 
-    const codeToClass = {
-      1: 'ansi-bold',
-      2: 'ansi-dim',
-      3: 'ansi-italic',
-      4: 'ansi-underline',
-      30: 'ansi-black',
-      31: 'ansi-red',
-      32: 'ansi-green',
-      33: 'ansi-yellow',
-      34: 'ansi-blue',
-      35: 'ansi-magenta',
-      36: 'ansi-cyan',
-      37: 'ansi-white',
-      40: 'ansi-bg-black',
-      41: 'ansi-bg-red',
-      42: 'ansi-bg-green',
-      43: 'ansi-bg-yellow',
-      44: 'ansi-bg-blue',
-      45: 'ansi-bg-magenta',
-      46: 'ansi-bg-cyan',
-      47: 'ansi-bg-white'
-    };
-
+  function parseAnsiTokens(str) {
     let result = '';
     let currentClasses = new Set();
+    let currentFgStyle = '';
+    let currentBgStyle = '';
+
     const tokens = str.split(/(\x1b\[[0-9;]*m)/g);
 
     for (const token of tokens) {
       if (token.startsWith('\x1b[')) {
         const rawCodes = token.slice(2, -1).split(';').map(n => parseInt(n, 10) || 0);
-        for (const code of rawCodes) {
+        let i = 0;
+        while (i < rawCodes.length) {
+          const code = rawCodes[i];
           if (code === 0) {
             currentClasses.clear();
-          } else if (codeToClass[code]) {
-            currentClasses.add(codeToClass[code]);
+            currentFgStyle = '';
+            currentBgStyle = '';
+            i++;
+          } else if (code === 38 && rawCodes[i + 1] === 2 && i + 4 < rawCodes.length) {
+            currentFgStyle = `color: rgb(${rawCodes[i + 2]}, ${rawCodes[i + 3]}, ${rawCodes[i + 4]});`;
+            i += 5;
+          } else if (code === 48 && rawCodes[i + 1] === 2 && i + 4 < rawCodes.length) {
+            currentBgStyle = `background-color: rgb(${rawCodes[i + 2]}, ${rawCodes[i + 3]}, ${rawCodes[i + 4]});`;
+            i += 5;
+          } else if (code === 38 && rawCodes[i + 1] === 5 && i + 2 < rawCodes.length) {
+            currentFgStyle = `color: ${xterm256Color(rawCodes[i + 2])};`;
+            i += 3;
+          } else if (code === 48 && rawCodes[i + 1] === 5 && i + 2 < rawCodes.length) {
+            currentBgStyle = `background-color: ${xterm256Color(rawCodes[i + 2])};`;
+            i += 3;
+          } else if (ANSI_CODE_TO_CLASS[code]) {
+            currentClasses.add(ANSI_CODE_TO_CLASS[code]);
+            i++;
+          } else {
+            i++;
           }
         }
       } else if (token) {
-        if (currentClasses.size > 0) {
-          result += `<span class="${Array.from(currentClasses).join(' ')}">${escapeHtml(token)}</span>`;
+        const classAttr = currentClasses.size > 0 ? ` class="${Array.from(currentClasses).join(' ')}"` : '';
+        const styleStr = (currentFgStyle + ' ' + currentBgStyle).trim();
+        const styleAttr = styleStr ? ` style="${styleStr}"` : '';
+        if (classAttr || styleAttr) {
+          result += `<span${classAttr}${styleAttr}>${escapeHtml(token)}</span>`;
         } else {
           result += escapeHtml(token);
         }
       }
     }
-
     return result;
+  }
+
+  // Raw ANSI to HTML Parser with divider clipping and trailing space trim
+  function ansiToHtml(str) {
+    if (!str) return '';
+
+    str = str.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    str = str.replace(/\x1b\[\?25[hl]/g, '');
+    str = str.replace(/\x1b\[[0-9;]*[HfABCDsuJK]/g, '');
+
+    const rawLines = str.split('\n');
+
+    // Trim excessive trailing empty lines from tmux capture
+    while (rawLines.length > 0 && rawLines[rawLines.length - 1].replace(/\x1b\[[0-9;]*m/g, '').trim() === '') {
+      rawLines.pop();
+    }
+
+    if (rawLines.length === 0) return '';
+
+    const htmlLines = rawLines.map(line => {
+      const plain = line.replace(/\x1b\[[0-9;]*m/g, '').trim();
+      const isSeparator = /^([─━═_\-—┄┈=])\1{7,}$/.test(plain) || 
+                          /^[\s─━═_\-—┄┈=]{12,}$/.test(plain) ||
+                          /^[┌├└][─━═_\-—┄┈=]{8,}[┐┤┘]?$/.test(plain);
+
+      const parsed = parseAnsiTokens(line);
+      const content = parsed.length > 0 ? parsed : '&nbsp;';
+      const sepClass = isSeparator ? ' term-divider' : '';
+      return `<div class="term-line${sepClass}">${content}</div>`;
+    });
+
+    return htmlLines.join('');
   }
 
   function renderTerminal(text) {
@@ -574,6 +675,7 @@
   }, 2500);
 
   // Initial load
+  updateTerminalViewMode();
   fetchInitialStatus().then(() => {
     setupWebSocket();
     fetchCurrentTerminal();
