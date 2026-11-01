@@ -21,40 +21,32 @@ other = "entorn de desenvolupament"
 other = "amb IA."
 [hero_desc]
 other = "App nativa de macOS sobre el terminal GPU de <a href=\"https://ghostty.org\" class=\"text-brand-light hover:underline\">Ghostty</a>. Gestiona git worktrees, sessions d'agent de codi i servidors dev des d'una sola finestra. Cada workstream té branch, terminal i agent propis, tot en paral·lel, tot a velocitat nativa."
-[hero_tab_agent]
-other = "Agent de codi"
-[hero_tab_browser]
-other = "Navegador incrustat"
 [hero_tab_split]
 other = "Pantalla dividida"
 [hero_tab_issues]
 other = "GitHub Issues"
+[hero_tab_environment]
+other = "Entorn local"
 [hero_tab_ci]
 other = "CI i revisions IA"
 [hero_tab_worktrees]
 other = "Worktrees"
-[hero_tab_stages]
-other = "Fases de revisió"
 [hero_tab_scripts]
 other = "Servidors Dev"
 [hero_tab_terminal]
 other = "Terminal flotant"
 [hero_tab_compact]
 other = "Dock compacte"
-[hero_caption_agent]
-other = "Execució d'agents de codi en paral·lel al terminal Ghostty accelerat per GPU, amb worktrees de git aïllats, subagents actius, historial de prompts i seguiment de diffs en viu."
-[hero_caption_browser]
-other = "Navegador WebKit integrat executant servidors de desenvolupament amb detecció automàtica de ports (:5001), recàrrega instantània i emulació mòbil."
 [hero_caption_split]
-other = "Pantalla dividida: agent Gemini 3.8 Flash treballant al terminal Ghostty al costat del navegador incrustat amb l'app en viu (:3000)."
+other = "Productivitat en pantalla dividida: L'agent de codi treballa al terminal GPU mentre la teva app s'executa en viu al navegador incrustat amb detecció automàtica de ports (:3000)."
 [hero_caption_issues]
-other = "Crea workstreams directament des de GitHub issues: anomena branches automàticament, sincronitza la descripció i vincula l'assistent d'IA en mode YOLO o guiat."
+other = "Converteix issues en espais de treball aïllats: Navega per les issues del projecte des de Dockyard, genera el nom del branch i tria l'agent d'IA amb mode YOLO."
+[hero_caption_environment]
+other = "Cicle de vida de l'aplicació a mida: Configura scripts de setup i execució per projecte (bun run dev, npm...) amb symlinks de .env i redirecció de ports."
 [hero_caption_ci]
-other = "Popover de checks de CI en directe: seguiment en temps real de revisions IA de CodeRabbit, GitHub Actions i estat de la PR sense sortir de l'app."
+other = "Verificació de CI i revisió en directe: Supervisa troballes d'IA de CodeRabbit, tests de GitHub Actions i accedeix directament a les PRs i logs de GitHub."
 [hero_caption_worktrees]
-other = "Vista general del projecte: mètriques de commits, estat de branches, llista de workstreams actius i neteja de worktrees nets en 1 clic."
-[hero_caption_stages]
-other = "Seguiment de fases del cicle de vida segons el context: assigna fases (Treballant, Esperant revisió, Canvis demanats, Aprovat) i supervisa comptadors de diffs entre projectes."
+other = "Supervisió del repositori sense fricció: Consulta mètriques de commits, estat de branches i neteja worktrees enllestits en 1 clic sense tocar el directori principal."
 [hero_caption_scripts]
 other = "Cicle de vida dev automatitzat: execució d'scripts de setup i servidor via .dockyard.json amb rastreig de ports dy-run."
 [hero_caption_terminal]
@@ -71,30 +63,26 @@ other = "Tanca"
 other = "Anterior"
 [hero_modal_next]
 other = "Següent"
-[hero_title_agent]
-other = "dockyard — trailtrace-next / pr-114 (Agent de codi)"
-[hero_title_browser]
-other = "dockyard — navegador incrustat (localhost:5001)"
-[hero_title_ci]
-other = "dockyard — pull request #271 (Checks de CI i revisió IA)"
+[hero_title_split]
+other = "dockyard — trailtrace-next / dy/portability (Pantalla dividida)"
 [hero_title_issues]
 other = "dockyard — nou workstream des de la issue #274"
+[hero_title_environment]
+other = "dockyard — cicle de vida i execució de l'app local"
+[hero_title_ci]
+other = "dockyard — pull request #271 (Checks de CI i CodeRabbit)"
 [hero_title_worktrees]
 other = "dockyard — vista general del projecte i gestor de worktrees"
-[hero_title_stages]
-other = "dockyard — cicle de vida del workstream i selector de fase"
-[hero_tag_agent]
-other = "Ghostty Metal GPU"
-[hero_tag_browser]
-other = "Detecció de ports :5001"
-[hero_tag_ci]
-other = "CodeRabbit IA i CI"
+[hero_tag_split]
+other = "Ghostty Metal + WebKit"
 [hero_tag_issues]
 other = "API de GitHub Issues"
+[hero_tag_environment]
+other = "Cicle de vida i scripts de run"
+[hero_tag_ci]
+other = "CodeRabbit IA i Actions"
 [hero_tag_worktrees]
-other = "Git Worktrees"
-[hero_tag_stages]
-other = "Fases de revisió"
+other = "Gestor de Git Worktrees"
 [hero_download]
 other = "Descarrega"
 [hero_source]

@@ -8,10 +8,10 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-px mt-14 rounded-xl overflow-hidden border border-fg-faint bg-fg-faint reveal">
       {{ $features := slice
         (dict "icon" "&#9735;" "title" (T "feat_worktrees_title") "desc" (T "feat_worktrees_desc") "tab" "worktrees")
-        (dict "icon" "&#9672;" "title" (T "feat_claude_title") "desc" (T "feat_claude_desc") "tab" "agent")
-        (dict "icon" "&#9638;" "title" (T "feat_tmux_title") "desc" (T "feat_tmux_desc") "tab" "agent")
-        (dict "icon" "&#9881;" "title" (T "feat_scripts_title") "desc" (T "feat_scripts_desc") "tab" "stages")
-        (dict "icon" "&#9741;" "title" (T "feat_browser_title") "desc" (T "feat_browser_desc") "tab" "browser")
+        (dict "icon" "&#9672;" "title" (T "feat_claude_title") "desc" (T "feat_claude_desc") "tab" "split")
+        (dict "icon" "&#9638;" "title" (T "feat_tmux_title") "desc" (T "feat_tmux_desc") "tab" "split")
+        (dict "icon" "&#9881;" "title" (T "feat_scripts_title") "desc" (T "feat_scripts_desc") "tab" "environment")
+        (dict "icon" "&#9741;" "title" (T "feat_browser_title") "desc" (T "feat_browser_desc") "tab" "split")
         (dict "icon" "&#10022;" "title" (T "feat_github_title") "desc" (T "feat_github_desc") "tab" "ci")
       }}
       {{ range $features }}
