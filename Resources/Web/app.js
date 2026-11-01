@@ -162,10 +162,33 @@
     }
   }
 
+  // Strict Validation Helpers
+  const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+  const ALLOWED_ACTIONS = ['approve', 'deny', 'interrupt'];
+
+  function validateWorkstreamId(id) {
+    if (typeof id !== 'string' || !UUID_REGEX.test(id)) {
+      throw new Error('Invalid workstream ID');
+    }
+    return id;
+  }
+
+  function validateAction(action) {
+    if (!ALLOWED_ACTIONS.includes(action)) {
+      throw new Error('Invalid action');
+    }
+    return action;
+  }
+
   // Network Calls with strict endpoint validation
   async function apiFetch(endpoint, options = {}) {
     if (typeof endpoint !== 'string' || !endpoint.startsWith('/api/')) {
       throw new Error('Invalid API endpoint');
+    }
+
+    const url = new URL(endpoint, window.location.origin);
+    if (url.origin !== window.location.origin) {
+      throw new Error('Untrusted origin');
     }
 
     options.headers = options.headers || {};
@@ -174,8 +197,7 @@
     }
     options.credentials = 'same-origin';
 
-    const url = new URL(endpoint, window.location.origin);
-    const res = await fetch(url.pathname + url.search, options);
+    const res = await fetch(url, options);
     if (res.status === 401) {
       setConnectionStatus(false, 'Unauthorized');
       const newToken = prompt('Enter your Dockyard Mobile token:');
@@ -192,7 +214,9 @@
   async function sendAction(action) {
     if (!state.selectedWorkstreamId) return;
     try {
-      await apiFetch(`/api/workstreams/${state.selectedWorkstreamId}/${action}`, {
+      const wsId = validateWorkstreamId(state.selectedWorkstreamId);
+      const safeAction = validateAction(action);
+      await apiFetch(`/api/workstreams/${wsId}/${safeAction}`, {
         method: 'POST'
       });
       // Refresh terminal after short delay
@@ -205,7 +229,8 @@
   async function sendRawKey(key) {
     if (!state.selectedWorkstreamId) return;
     try {
-      await apiFetch(`/api/workstreams/${state.selectedWorkstreamId}/input`, {
+      const wsId = validateWorkstreamId(state.selectedWorkstreamId);
+      await apiFetch(`/api/workstreams/${wsId}/input`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: key, pressEnter: false })
@@ -221,7 +246,8 @@
     if (!text || !state.selectedWorkstreamId) return;
     els.promptInput.value = '';
     try {
-      await apiFetch(`/api/workstreams/${state.selectedWorkstreamId}/input`, {
+      const wsId = validateWorkstreamId(state.selectedWorkstreamId);
+      await apiFetch(`/api/workstreams/${wsId}/input`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: text, pressEnter: true })
@@ -260,7 +286,8 @@
   async function fetchCurrentTerminal() {
     if (!state.selectedWorkstreamId) return;
     try {
-      const res = await apiFetch(`/api/workstreams/${state.selectedWorkstreamId}/terminal?lines=150`);
+      const wsId = validateWorkstreamId(state.selectedWorkstreamId);
+      const res = await apiFetch(`/api/workstreams/${wsId}/terminal?lines=150`);
       if (res.ok) {
         const text = await res.text();
         renderTerminal(text);
