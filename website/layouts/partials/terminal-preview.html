@@ -1,29 +1,25 @@
 <div id="preview-showcase" class="mt-8 md:mt-14 animate-fade-up-4">
   <!-- Interactive tab switcher -->
   <div class="flex items-center justify-start md:justify-center gap-1.5 md:gap-2 mb-4 overflow-x-auto pb-2 scrollbar-none select-none" role="tablist" aria-label="Dockyard screenshots">
-    <button type="button" role="tab" id="tab-btn-agent" onclick="showScreenshot('agent')" aria-selected="true" aria-controls="panel-agent" class="ss-tab ss-tab-active flex items-center gap-2 font-mono text-xs px-3 md:px-3.5 py-2 rounded-lg border border-brand bg-brand/15 text-fg font-medium transition-all shadow-[0_2px_8px_rgba(0,0,0,0.2)] cursor-pointer whitespace-nowrap">
-      <svg class="w-3.5 h-3.5 text-brand-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
-      <span>{{ T "hero_tab_agent" }}</span>
-    </button>
-    <button type="button" role="tab" id="tab-btn-browser" onclick="showScreenshot('browser')" aria-selected="false" aria-controls="panel-browser" class="ss-tab flex items-center gap-2 font-mono text-xs px-3 md:px-3.5 py-2 rounded-lg border border-fg-faint bg-bg-surface/80 text-fg-muted hover:text-fg hover:border-fg-faint hover:bg-bg-elevated transition-all cursor-pointer whitespace-nowrap">
-      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-      <span>{{ T "hero_tab_browser" }}</span>
-    </button>
-    <button type="button" role="tab" id="tab-btn-ci" onclick="showScreenshot('ci')" aria-selected="false" aria-controls="panel-ci" class="ss-tab flex items-center gap-2 font-mono text-xs px-3 md:px-3.5 py-2 rounded-lg border border-fg-faint bg-bg-surface/80 text-fg-muted hover:text-fg hover:border-fg-faint hover:bg-bg-elevated transition-all cursor-pointer whitespace-nowrap">
-      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-      <span>{{ T "hero_tab_ci" }}</span>
+    <button type="button" role="tab" id="tab-btn-split" onclick="showScreenshot('split')" aria-selected="true" aria-controls="panel-split" class="ss-tab ss-tab-active flex items-center gap-2 font-mono text-xs px-3 md:px-3.5 py-2 rounded-lg border border-brand bg-brand/15 text-fg font-medium transition-all shadow-[0_2px_8px_rgba(0,0,0,0.2)] cursor-pointer whitespace-nowrap">
+      <svg class="w-3.5 h-3.5 text-brand-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+      <span>{{ T "hero_tab_split" }}</span>
     </button>
     <button type="button" role="tab" id="tab-btn-issues" onclick="showScreenshot('issues')" aria-selected="false" aria-controls="panel-issues" class="ss-tab flex items-center gap-2 font-mono text-xs px-3 md:px-3.5 py-2 rounded-lg border border-fg-faint bg-bg-surface/80 text-fg-muted hover:text-fg hover:border-fg-faint hover:bg-bg-elevated transition-all cursor-pointer whitespace-nowrap">
       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
       <span>{{ T "hero_tab_issues" }}</span>
     </button>
+    <button type="button" role="tab" id="tab-btn-environment" onclick="showScreenshot('environment')" aria-selected="false" aria-controls="panel-environment" class="ss-tab flex items-center gap-2 font-mono text-xs px-3 md:px-3.5 py-2 rounded-lg border border-fg-faint bg-bg-surface/80 text-fg-muted hover:text-fg hover:border-fg-faint hover:bg-bg-elevated transition-all cursor-pointer whitespace-nowrap">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+      <span>{{ T "hero_tab_environment" }}</span>
+    </button>
+    <button type="button" role="tab" id="tab-btn-ci" onclick="showScreenshot('ci')" aria-selected="false" aria-controls="panel-ci" class="ss-tab flex items-center gap-2 font-mono text-xs px-3 md:px-3.5 py-2 rounded-lg border border-fg-faint bg-bg-surface/80 text-fg-muted hover:text-fg hover:border-fg-faint hover:bg-bg-elevated transition-all cursor-pointer whitespace-nowrap">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <span>{{ T "hero_tab_ci" }}</span>
+    </button>
     <button type="button" role="tab" id="tab-btn-worktrees" onclick="showScreenshot('worktrees')" aria-selected="false" aria-controls="panel-worktrees" class="ss-tab flex items-center gap-2 font-mono text-xs px-3 md:px-3.5 py-2 rounded-lg border border-fg-faint bg-bg-surface/80 text-fg-muted hover:text-fg hover:border-fg-faint hover:bg-bg-elevated transition-all cursor-pointer whitespace-nowrap">
       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
       <span>{{ T "hero_tab_worktrees" }}</span>
-    </button>
-    <button type="button" role="tab" id="tab-btn-stages" onclick="showScreenshot('stages')" aria-selected="false" aria-controls="panel-stages" class="ss-tab flex items-center gap-2 font-mono text-xs px-3 md:px-3.5 py-2 rounded-lg border border-fg-faint bg-bg-surface/80 text-fg-muted hover:text-fg hover:border-fg-faint hover:bg-bg-elevated transition-all cursor-pointer whitespace-nowrap">
-      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      <span>{{ T "hero_tab_stages" }}</span>
     </button>
   </div>
 
@@ -35,7 +31,7 @@
         <span class="w-3 h-3 rounded-full bg-[#ff5f56] border border-black/10 inline-block"></span>
         <span class="w-3 h-3 rounded-full bg-[#ffbd2e] border border-black/10 inline-block"></span>
         <span class="w-3 h-3 rounded-full bg-[#27c93f] border border-black/10 inline-block"></span>
-        <span id="window-title" class="ml-3 font-mono text-xs text-fg-muted truncate max-w-[200px] sm:max-w-xs md:max-w-md">{{ T "hero_title_agent" }}</span>
+        <span id="window-title" class="ml-3 font-mono text-xs text-fg-muted truncate max-w-[200px] sm:max-w-xs md:max-w-md">{{ T "hero_title_split" }}</span>
       </div>
       <button onclick="openCurrentScreenshotModal()" class="inline-flex items-center gap-1.5 text-xs text-fg-muted hover:text-fg font-mono px-2.5 py-1 rounded-md border border-fg-faint/60 hover:border-fg-faint bg-bg-surface/60 transition-colors cursor-pointer" title="{{ T "hero_zoom_hint" }}">
         <svg class="w-3.5 h-3.5 text-brand-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
@@ -45,19 +41,9 @@
 
     <!-- Screenshots viewport -->
     <div class="relative bg-bg cursor-zoom-in group overflow-hidden" onclick="openCurrentScreenshotModal()" title="{{ T "hero_zoom_hint" }}">
-      <!-- Agent -->
-      <div id="panel-agent" class="ss-panel w-full" role="tabpanel" aria-labelledby="tab-btn-agent">
-        <img src="/img/screenshots/agent.webp" alt="{{ T "hero_caption_agent" }}" class="w-full h-auto block select-none group-hover:scale-[1.006] transition-transform duration-300" loading="eager" width="3160" height="2034">
-      </div>
-
-      <!-- Browser -->
-      <div id="panel-browser" class="ss-panel w-full hidden" role="tabpanel" aria-labelledby="tab-btn-browser">
-        <img src="/img/screenshots/browser.webp" alt="{{ T "hero_caption_browser" }}" class="w-full h-auto block select-none group-hover:scale-[1.006] transition-transform duration-300" loading="lazy" width="2576" height="1673">
-      </div>
-
-      <!-- CI & AI Reviews -->
-      <div id="panel-ci" class="ss-panel w-full hidden" role="tabpanel" aria-labelledby="tab-btn-ci">
-        <img src="/img/screenshots/ci-review.webp" alt="{{ T "hero_caption_ci" }}" class="w-full h-auto block select-none group-hover:scale-[1.006] transition-transform duration-300" loading="lazy" width="3248" height="2122">
+      <!-- Side-by-Side Dev -->
+      <div id="panel-split" class="ss-panel w-full" role="tabpanel" aria-labelledby="tab-btn-split">
+        <img src="/img/screenshots/split-view.webp" alt="{{ T "hero_caption_split" }}" class="w-full h-auto block select-none group-hover:scale-[1.006] transition-transform duration-300" loading="eager" width="3160" height="2034">
       </div>
 
       <!-- GitHub Issues -->
@@ -65,14 +51,19 @@
         <img src="/img/screenshots/github-issues.webp" alt="{{ T "hero_caption_issues" }}" class="w-full h-auto block select-none group-hover:scale-[1.006] transition-transform duration-300" loading="lazy" width="3160" height="2034">
       </div>
 
+      <!-- Local Environment -->
+      <div id="panel-environment" class="ss-panel w-full hidden" role="tabpanel" aria-labelledby="tab-btn-environment">
+        <img src="/img/screenshots/local-environment.webp" alt="{{ T "hero_caption_environment" }}" class="w-full h-auto block select-none group-hover:scale-[1.006] transition-transform duration-300" loading="lazy" width="3160" height="2034">
+      </div>
+
+      <!-- CI & AI Reviews -->
+      <div id="panel-ci" class="ss-panel w-full hidden" role="tabpanel" aria-labelledby="tab-btn-ci">
+        <img src="/img/screenshots/ci-review.webp" alt="{{ T "hero_caption_ci" }}" class="w-full h-auto block select-none group-hover:scale-[1.006] transition-transform duration-300" loading="lazy" width="3248" height="2122">
+      </div>
+
       <!-- Git Worktrees -->
       <div id="panel-worktrees" class="ss-panel w-full hidden" role="tabpanel" aria-labelledby="tab-btn-worktrees">
         <img src="/img/screenshots/worktrees.webp" alt="{{ T "hero_caption_worktrees" }}" class="w-full h-auto block select-none group-hover:scale-[1.006] transition-transform duration-300" loading="lazy" width="3160" height="2034">
-      </div>
-
-      <!-- Lifecycle Stages -->
-      <div id="panel-stages" class="ss-panel w-full hidden" role="tabpanel" aria-labelledby="tab-btn-stages">
-        <img src="/img/screenshots/lifecycle-stages.webp" alt="{{ T "hero_caption_stages" }}" class="w-full h-auto block select-none group-hover:scale-[1.006] transition-transform duration-300" loading="lazy" width="3160" height="2034">
       </div>
 
       <!-- Hover hint pill -->
@@ -86,14 +77,14 @@
     <div class="px-4 sm:px-6 py-4 border-t border-fg-faint bg-bg-surface/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
       <div class="flex items-center gap-2.5 flex-wrap">
         <span id="ss-tag" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-mono text-[11px] font-medium bg-brand/15 text-brand-light border border-brand/30">
-          {{ T "hero_tag_agent" }}
+          {{ T "hero_tag_split" }}
         </span>
         <p id="ss-caption" class="text-fg-dim font-sans text-xs sm:text-sm leading-relaxed max-w-[720px]">
-          {{ T "hero_caption_agent" }}
+          {{ T "hero_caption_split" }}
         </p>
       </div>
       <div class="flex items-center gap-1.5 self-end sm:self-center text-fg-muted font-mono text-[11px] shrink-0">
-        <span id="ss-counter">1 / 6</span>
+        <span id="ss-counter">1 / 5</span>
       </div>
     </div>
   </div>
@@ -144,33 +135,33 @@
 
 <script>
 var screenshotsData = {
-  agent: {
-    title: "{{ T "hero_title_agent" }}",
-    caption: "{{ T "hero_caption_agent" }}",
-    tag: "{{ T "hero_tag_agent" }}",
+  split: {
+    title: "{{ T "hero_title_split" }}",
+    caption: "{{ T "hero_caption_split" }}",
+    tag: "{{ T "hero_tag_split" }}",
     index: 1,
-    imgSrc: "/img/screenshots/agent.webp"
-  },
-  browser: {
-    title: "{{ T "hero_title_browser" }}",
-    caption: "{{ T "hero_caption_browser" }}",
-    tag: "{{ T "hero_tag_browser" }}",
-    index: 2,
-    imgSrc: "/img/screenshots/browser.webp"
-  },
-  ci: {
-    title: "{{ T "hero_title_ci" }}",
-    caption: "{{ T "hero_caption_ci" }}",
-    tag: "{{ T "hero_tag_ci" }}",
-    index: 3,
-    imgSrc: "/img/screenshots/ci-review.webp"
+    imgSrc: "/img/screenshots/split-view.webp"
   },
   issues: {
     title: "{{ T "hero_title_issues" }}",
     caption: "{{ T "hero_caption_issues" }}",
     tag: "{{ T "hero_tag_issues" }}",
-    index: 4,
+    index: 2,
     imgSrc: "/img/screenshots/github-issues.webp"
+  },
+  environment: {
+    title: "{{ T "hero_title_environment" }}",
+    caption: "{{ T "hero_caption_environment" }}",
+    tag: "{{ T "hero_tag_environment" }}",
+    index: 3,
+    imgSrc: "/img/screenshots/local-environment.webp"
+  },
+  ci: {
+    title: "{{ T "hero_title_ci" }}",
+    caption: "{{ T "hero_caption_ci" }}",
+    tag: "{{ T "hero_tag_ci" }}",
+    index: 4,
+    imgSrc: "/img/screenshots/ci-review.webp"
   },
   worktrees: {
     title: "{{ T "hero_title_worktrees" }}",
@@ -178,18 +169,11 @@ var screenshotsData = {
     tag: "{{ T "hero_tag_worktrees" }}",
     index: 5,
     imgSrc: "/img/screenshots/worktrees.webp"
-  },
-  stages: {
-    title: "{{ T "hero_title_stages" }}",
-    caption: "{{ T "hero_caption_stages" }}",
-    tag: "{{ T "hero_tag_stages" }}",
-    index: 6,
-    imgSrc: "/img/screenshots/lifecycle-stages.webp"
   }
 };
 
-var tabKeys = ['agent', 'browser', 'ci', 'issues', 'worktrees', 'stages'];
-var currentScreenshotKey = 'agent';
+var tabKeys = ['split', 'issues', 'environment', 'ci', 'worktrees'];
+var currentScreenshotKey = 'split';
 
 function showScreenshot(key) {
   if (!screenshotsData[key]) return;
@@ -312,9 +296,9 @@ if (tablist) {
 // Preload remaining WebP images after initial load to make tab switching instantaneous
 window.addEventListener('load', function() {
   tabKeys.forEach(function(k) {
-    if (k !== 'agent') {
+    if (k !== 'split') {
       var img = new Image();
-      img.src = '/img/screenshots/' + (k === 'ci' ? 'ci-review' : (k === 'issues' ? 'github-issues' : (k === 'stages' ? 'lifecycle-stages' : k))) + '.webp';
+      img.src = screenshotsData[k].imgSrc;
     }
   });
 });
