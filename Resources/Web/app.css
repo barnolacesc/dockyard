@@ -375,7 +375,7 @@ html, body {
   border-color: var(--color-blue);
 }
 
-.mic-btn, .send-btn {
+.image-btn, .mic-btn, .send-btn {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   color: var(--text-main);
@@ -389,8 +389,31 @@ html, body {
   flex-shrink: 0;
 }
 
-.mic-btn:active, .send-btn:active {
+.image-btn:active, .mic-btn:active, .send-btn:active {
   background: #30363d;
+}
+
+.image-btn.uploading {
+  pointer-events: none;
+  opacity: 0.85;
+  color: var(--color-blue);
+  border-color: var(--color-blue);
+  animation: pulse-upload 1.2s infinite ease-in-out;
+}
+
+.image-btn.uploading svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-upload {
+  0% { box-shadow: 0 0 0 0 rgba(88, 166, 255, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(88, 166, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(88, 166, 255, 0); }
 }
 
 .mic-btn.listening {

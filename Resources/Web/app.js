@@ -36,6 +36,8 @@
     btnApprove: document.getElementById('btn-approve'),
     btnDeny: document.getElementById('btn-deny'),
     promptInput: document.getElementById('prompt-input'),
+    imageInput: document.getElementById('image-input'),
+    imageBtn: document.getElementById('image-btn'),
     micBtn: document.getElementById('mic-btn'),
     sendBtn: document.getElementById('send-btn'),
     sidebarOverlay: document.getElementById('sidebar-overlay'),
@@ -98,6 +100,22 @@
   });
 
   els.micBtn.addEventListener('click', toggleVoiceDictation);
+
+  if (els.imageBtn && els.imageInput) {
+    els.imageBtn.addEventListener('click', () => {
+      els.imageInput.click();
+    });
+
+    els.imageInput.addEventListener('change', () => {
+      const file = els.imageInput.files && els.imageInput.files[0];
+      if (file) {
+        uploadImageFile(file);
+      }
+    });
+  }
+
+  els.promptInput.addEventListener('paste', handlePaste);
+  document.addEventListener('paste', handlePaste);
 
   document.querySelectorAll('.key-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -299,6 +317,172 @@
       setTimeout(fetchCurrentTerminal, 350);
     } catch (err) {
       console.error('Failed to send prompt:', err);
+    }
+  }
+
+  function handlePaste(e) {
+    if (e.defaultPrevented) return;
+    const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type && item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          uploadImageFile(file);
+          return;
+        }
+      }
+    }
+  }
+
+  async function downscaleImageIfNeeded(file) {
+    if (!file || !file.type || !file.type.startsWith('image/')) {
+      return { blob: file, type: file?.type || 'image/png' };
+    }
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const MAX_DIM = 2048;
+        let { width, height } = img;
+
+        if (width <= MAX_DIM && height <= MAX_DIM) {
+          resolve({ blob: file, type: file.type || 'image/png' });
+          return;
+        }
+
+        if (width > height) {
+          height = Math.round((height * MAX_DIM) / width);
+          width = MAX_DIM;
+        } else {
+          width = Math.round((width * MAX_DIM) / height);
+          height = MAX_DIM;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve({ blob: file, type: file.type || 'image/png' });
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const mime = (file.type === 'image/jpeg' || file.type === 'image/webp') ? file.type : 'image/png';
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve({ blob, type: mime });
+          } else {
+            resolve({ blob: file, type: file.type || 'image/png' });
+          }
+        }, mime, 0.85);
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve({ blob: file, type: file.type || 'image/png' });
+      };
+
+      img.src = objectUrl;
+    });
+  }
+
+  function setUploadingImage(uploading) {
+    if (!els.imageBtn) return;
+    if (uploading) {
+      els.imageBtn.classList.add('uploading');
+      els.imageBtn.setAttribute('aria-label', 'Uploading...');
+      els.imageBtn.setAttribute('title', 'Uploading...');
+      els.imageBtn.disabled = true;
+    } else {
+      els.imageBtn.classList.remove('uploading');
+      els.imageBtn.setAttribute('aria-label', 'Upload image');
+      els.imageBtn.setAttribute('title', 'Upload image');
+      els.imageBtn.disabled = false;
+    }
+  }
+
+  function insertPathIntoPrompt(filePath) {
+    const input = els.promptInput;
+    if (!input) return;
+
+    const val = input.value;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+
+    let prefix = '';
+    let suffix = ' ';
+
+    if (typeof start === 'number' && typeof end === 'number') {
+      const before = val.substring(0, start);
+      const after = val.substring(end);
+      if (before.length > 0 && !before.endsWith(' ')) {
+        prefix = ' ';
+      }
+      if (after.length > 0 && after.startsWith(' ')) {
+        suffix = '';
+      }
+      const inserted = prefix + filePath + suffix;
+      input.value = before + inserted + after;
+      const newCursorPos = before.length + inserted.length;
+      input.setSelectionRange(newCursorPos, newCursorPos);
+    } else {
+      if (val.length > 0 && !val.endsWith(' ')) {
+        prefix = ' ';
+      }
+      input.value = val + prefix + filePath + suffix;
+    }
+
+    input.focus();
+  }
+
+  async function uploadImageFile(file) {
+    if (!state.selectedWorkstreamId) {
+      alert('Please select a workstream first.');
+      return;
+    }
+    if (!file || !file.type || !file.type.startsWith('image/')) {
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const wsId = validateWorkstreamId(state.selectedWorkstreamId);
+      const { blob, type } = await downscaleImageIfNeeded(file);
+
+      const res = await apiFetch(`/api/workstreams/${wsId}/image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': type
+        },
+        body: blob
+      });
+
+      if (!res.ok) {
+        throw new Error(`Upload failed with status: ${res.status}`);
+      }
+
+      const json = await res.json();
+      if (json.ok && json.path) {
+        insertPathIntoPrompt(json.path);
+      } else {
+        throw new Error(json.error || 'Failed to upload image');
+      }
+    } catch (err) {
+      console.error('Failed to upload image:', err);
+      alert('Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+      if (els.imageInput) {
+        els.imageInput.value = '';
+      }
     }
   }
 

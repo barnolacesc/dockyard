@@ -903,3 +903,6 @@
 "Agents mirror to your phone when running in Tmux Mode. Relaunch or open a workstream to attach." = "Agents mirror to your phone when running in Tmux Mode. Relaunch or open a workstream to attach.";
 "Token:" = "Token:";
 "Copy security token" = "Copy security token";
+"Upload image" = "Upload image";
+"Uploading..." = "Uploading...";
+"Failed to upload image" = "Failed to upload image";

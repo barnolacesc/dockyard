@@ -903,3 +903,6 @@
 "Agents mirror to your phone when running in Tmux Mode. Relaunch or open a workstream to attach." = "Els agents es reflecteixen al mòbil quan s'executen en mode Tmux. Reinicia o obre un flux de treball per connectar-s'hi.";
 "Token:" = "Testimoni:";
 "Copy security token" = "Copia el testimoni de seguretat";
+"Upload image" = "Puja una imatge";
+"Uploading..." = "Pujant...";
+"Failed to upload image" = "Error en pujar la imatge";

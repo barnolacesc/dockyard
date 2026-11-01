@@ -251,6 +251,10 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
                 return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json"], body: Data("{\"ok\":\(success)}".utf8))
             }
 
+            await server.appendRoute("POST /api/workstreams/:id/image") { request in
+                await handleUploadImage(request: request)
+            }
+
             // WebSocket
             let wsHTTPHandler = WebSocketHTTPHandler(handler: MessageFrameWSHandler(handler: CompanionWSMessageHandler()))
             await server.appendRoute("GET /ws") { request in
@@ -264,6 +268,233 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
 
     // MARK: - Handlers
 
+    private static let uuidRegex: NSRegularExpression = try! NSRegularExpression(pattern: "^[0-9A-Fa-f\\-]{36}$")
+
+    static func handleUploadImage(request: HTTPRequest) async -> HTTPResponse {
+        guard isAuthorized(request) else {
+            return HTTPResponse(
+                statusCode: .unauthorized,
+                headers: [.contentType: "application/json"],
+                body: Data("{\"error\":\"unauthorized\"}".utf8)
+            )
+        }
+
+        let routeID = request.routeParameters["id"]
+        let pathComponents = request.path.split(separator: "/")
+        let fallbackID = (pathComponents.count == 4 && pathComponents[0] == "api" && pathComponents[1] == "workstreams" && pathComponents[3] == "image") ? String(pathComponents[2]) : nil
+        guard let idStr = routeID ?? fallbackID else {
+            return HTTPResponse(
+                statusCode: .badRequest,
+                headers: [.contentType: "application/json"],
+                body: Data("{\"error\":\"missing workstream id\"}".utf8)
+            )
+        }
+
+        let range = NSRange(location: 0, length: idStr.utf16.count)
+        guard uuidRegex.firstMatch(in: idStr, options: [], range: range) != nil,
+              let id = UUID(uuidString: idStr)
+        else {
+            return HTTPResponse(
+                statusCode: .badRequest,
+                headers: [.contentType: "application/json"],
+                body: Data("{\"error\":\"invalid workstream id\"}".utf8)
+            )
+        }
+
+        let projects = ProjectStore.load()
+        let workstreamExists = projects.contains { project in
+            project.workstreams.contains { $0.id == id }
+        }
+        guard workstreamExists else {
+            return HTTPResponse(
+                statusCode: .notFound,
+                headers: [.contentType: "application/json"],
+                body: Data("{\"error\":\"workstream not found\"}".utf8)
+            )
+        }
+
+        guard let body = try? await request.bodyData, !body.isEmpty else {
+            return HTTPResponse(
+                statusCode: .badRequest,
+                headers: [.contentType: "application/json"],
+                body: Data("{\"error\":\"unsupported image type / bad payload\"}".utf8)
+            )
+        }
+
+        let contentType = request.headers[.contentType] ?? ""
+        guard let (imageData, ext) = extractImage(from: body, contentType: contentType) else {
+            return HTTPResponse(
+                statusCode: .badRequest,
+                headers: [.contentType: "application/json"],
+                body: Data("{\"error\":\"unsupported image type / bad payload\"}".utf8)
+            )
+        }
+
+        let uploadsDir = AppConstants.uploadsDirectory.appendingPathComponent(id.uuidString.lowercased())
+        do {
+            try FileManager.default.createDirectory(
+                at: uploadsDir,
+                withIntermediateDirectories: true,
+                attributes: [.posixPermissions: 0o700]
+            )
+            try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: uploadsDir.path)
+
+            let timestamp = Int(Date().timeIntervalSince1970)
+            let shortUUID = String(UUID().uuidString.prefix(8)).lowercased()
+            let filename = "\(timestamp)_\(shortUUID).\(ext)"
+            let destinationURL = uploadsDir.appendingPathComponent(filename)
+            try imageData.write(to: destinationURL)
+
+            let responsePayload: [String: Any] = [
+                "ok": true,
+                "path": destinationURL.path,
+            ]
+            let json = try JSONSerialization.data(withJSONObject: responsePayload)
+            return HTTPResponse(
+                statusCode: .ok,
+                headers: [.contentType: "application/json"],
+                body: json
+            )
+        } catch {
+            return HTTPResponse(
+                statusCode: .internalServerError,
+                headers: [.contentType: "application/json"],
+                body: Data("{\"error\":\"failed to save image\"}".utf8)
+            )
+        }
+    }
+
+    static func extractImage(from data: Data, contentType: String) -> (data: Data, ext: String)? {
+        guard !data.isEmpty else { return nil }
+
+        let trimmedType = contentType.trimmingCharacters(in: .whitespaces)
+        if trimmedType.lowercased().hasPrefix("multipart/form-data") {
+            guard let boundary = extractBoundary(from: trimmedType) else { return nil }
+            return parseMultipartImageData(data: data, boundary: boundary)
+        }
+
+        let mime = trimmedType.components(separatedBy: ";").first?.trimmingCharacters(in: .whitespaces).lowercased() ?? ""
+        var ext: String?
+        switch mime {
+        case "image/png":
+            ext = "png"
+        case "image/jpeg", "image/jpg":
+            ext = "jpg"
+        case "image/webp":
+            ext = "webp"
+        case "image/gif":
+            ext = "gif"
+        default:
+            ext = detectImageExtension(from: data)
+        }
+
+        guard let ext, data.count >= 4 else { return nil }
+        return (data, ext)
+    }
+
+    static func extractBoundary(from contentType: String) -> String? {
+        let components = contentType.components(separatedBy: ";")
+        for component in components {
+            let trimmed = component.trimmingCharacters(in: .whitespaces)
+            if trimmed.lowercased().hasPrefix("boundary=") {
+                var val = String(trimmed.dropFirst("boundary=".count))
+                if val.hasPrefix("\""), val.hasSuffix("\""), val.count >= 2 {
+                    val = String(val.dropFirst().dropLast())
+                }
+                return val
+            }
+        }
+        return nil
+    }
+
+    static func parseMultipartImageData(data: Data, boundary: String) -> (data: Data, ext: String)? {
+        let delimiter = Data(("--" + boundary).utf8)
+        var ranges: [Range<Data.Index>] = []
+        var searchStart = data.startIndex
+
+        while searchStart < data.endIndex,
+              let found = data.range(of: delimiter, options: [], in: searchStart ..< data.endIndex)
+        {
+            ranges.append(found)
+            searchStart = found.upperBound
+        }
+
+        guard ranges.count >= 2 else { return nil }
+
+        let headerSeparators = [
+            Data("\r\n\r\n".utf8),
+            Data("\n\n".utf8),
+        ]
+
+        for i in 0 ..< (ranges.count - 1) {
+            let partStart = ranges[i].upperBound
+            let partEnd = ranges[i + 1].lowerBound
+            guard partStart < partEnd else { continue }
+
+            let partData = data[partStart ..< partEnd]
+
+            var headerSeparatorRange: Range<Data.Index>?
+            for sep in headerSeparators {
+                if let found = partData.range(of: sep) {
+                    headerSeparatorRange = found
+                    break
+                }
+            }
+
+            guard let headerRange = headerSeparatorRange else { continue }
+            let headerBytes = partData[partData.startIndex ..< headerRange.lowerBound]
+            var bodyBytes = partData[headerRange.upperBound ..< partData.endIndex]
+
+            if bodyBytes.suffix(2) == Data("\r\n".utf8) {
+                bodyBytes = bodyBytes.dropLast(2)
+            } else if bodyBytes.suffix(1) == Data("\n".utf8) {
+                bodyBytes = bodyBytes.dropLast(1)
+            }
+
+            guard !bodyBytes.isEmpty else { continue }
+
+            let headersString = String(decoding: headerBytes, as: UTF8.self).lowercased()
+            var ext: String?
+
+            if headersString.contains("content-type: image/png") || headersString.contains(".png") {
+                ext = "png"
+            } else if headersString.contains("content-type: image/jpeg") || headersString.contains("content-type: image/jpg") || headersString.contains(".jpg") || headersString.contains(".jpeg") {
+                ext = "jpg"
+            } else if headersString.contains("content-type: image/webp") || headersString.contains(".webp") {
+                ext = "webp"
+            } else if headersString.contains("content-type: image/gif") || headersString.contains(".gif") {
+                ext = "gif"
+            } else {
+                ext = detectImageExtension(from: Data(bodyBytes))
+            }
+
+            if let ext, bodyBytes.count >= 4 {
+                return (Data(bodyBytes), ext)
+            }
+        }
+
+        return nil
+    }
+
+    static func detectImageExtension(from data: Data) -> String? {
+        if data.starts(with: [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]) {
+            return "png"
+        }
+        if data.starts(with: [0xFF, 0xD8, 0xFF]) {
+            return "jpg"
+        }
+        if data.starts(with: [0x47, 0x49, 0x46, 0x38]) {
+            return "gif"
+        }
+        if data.count >= 12,
+           data.prefix(4) == Data([0x52, 0x49, 0x46, 0x46]),
+           data[data.index(data.startIndex, offsetBy: 8) ..< data.index(data.startIndex, offsetBy: 12)] == Data([0x57, 0x45, 0x42, 0x50])
+        {
+            return "webp"
+        }
+        return nil
+    }
+
     private static func handleIndexHTML(_ request: HTTPRequest) -> HTTPResponse {
         var headers: HTTPHeaders = [
             .contentType: "text/html; charset=utf-8",
@@ -276,7 +507,8 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
         }
 
         guard let body = loadStaticFileData(named: "index", extension: "html"),
-              var htmlString = String(data: body, encoding: .utf8) else {
+              var htmlString = String(data: body, encoding: .utf8)
+        else {
             return HTTPResponse(statusCode: .ok, headers: headers, body: Data("<!DOCTYPE html><html><body>Dockyard</body></html>".utf8))
         }
 
