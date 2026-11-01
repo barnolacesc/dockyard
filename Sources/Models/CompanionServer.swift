@@ -95,6 +95,7 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
         currentPort = targetPort
         UserDefaults.standard.set(targetPort, forKey: Self.portStorageKey)
         UserDefaults.standard.set(true, forKey: Self.enabledStorageKey)
+        UserDefaults.standard.set(true, forKey: "dockyard.tmuxMode")
 
         localIP = Self.resolveLocalIP()
         tailscaleIP = Self.resolveTailscaleIP()
@@ -180,7 +181,20 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
                     return HTTPResponse(statusCode: .badRequest)
                 }
                 let lines = Int(request.query["lines"] ?? "") ?? 150
-                let text = captureWorkstreamTerminal(workstreamID: id, lines: lines) ?? "Session offline or idle"
+                let text: String
+                if let captured = captureWorkstreamTerminal(workstreamID: id, lines: lines), !captured.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    text = captured
+                } else {
+                    let tmuxInstalled = (CommandLineTools.path(for: "tmux") ?? defaultTmuxPath()) != nil
+                    let tmuxEnabled = UserDefaults.standard.bool(forKey: "dockyard.tmuxMode")
+                    if !tmuxInstalled {
+                        text = "\u{001B}[1;31m● Tmux is not installed on this Mac.\u{001B}[0m\n\nInstall tmux to enable live mobile terminal streaming:\n  brew install tmux\n"
+                    } else if !tmuxEnabled {
+                        text = "\u{001B}[1;33m● Persistent Sessions (tmux) is disabled.\u{001B}[0m\n\nMobile mirroring requires persistent sessions.\nEnable Tmux Mode in Dockyard Settings > Persistent Sessions,\nthen relaunch Dockyard.\n"
+                    } else {
+                        text = "\u{001B}[1;36m┌────────────────────────────────────────────────────────┐\u{001B}[0m\n\u{001B}[1;36m│\u{001B}[0m  \u{001B}[1;33m● Agent not attached to tmux\u{001B}[0m                          \u{001B}[1;36m│\u{001B}[0m\n\u{001B}[1;36m└────────────────────────────────────────────────────────┘\u{001B}[0m\n\nThis agent was started before Tmux Mode was active,\nor the session is currently offline.\n\n\u{001B}[1;32mTo mirror this terminal to your phone:\u{001B}[0m\n  Restart Dockyard or switch to another workstream.\n  Active agents will automatically launch in tmux.\n"
+                    }
+                }
                 return HTTPResponse(statusCode: .ok, headers: [.contentType: "text/plain; charset=utf-8"], body: Data(text.utf8))
             }
 
@@ -200,8 +214,8 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
                 let text = payload?.text ?? ""
                 let pressEnter = payload?.pressEnter ?? true
 
-                sendWorkstreamInput(workstreamID: id, text: text, pressEnter: pressEnter)
-                return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json"], body: Data("{\"ok\":true}".utf8))
+                let success = sendWorkstreamInput(workstreamID: id, text: text, pressEnter: pressEnter)
+                return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json"], body: Data("{\"ok\":\(success)}".utf8))
             }
 
             await server.appendRoute("POST /api/workstreams/:id/approve") { request in
@@ -211,8 +225,8 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
                 guard let idStr = request.routeParameters["id"], let id = UUID(uuidString: idStr) else {
                     return HTTPResponse(statusCode: .badRequest)
                 }
-                sendWorkstreamInput(workstreamID: id, text: "y", pressEnter: true)
-                return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json"], body: Data("{\"ok\":true}".utf8))
+                let success = sendWorkstreamInput(workstreamID: id, text: "y", pressEnter: true)
+                return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json"], body: Data("{\"ok\":\(success)}".utf8))
             }
 
             await server.appendRoute("POST /api/workstreams/:id/deny") { request in
@@ -222,8 +236,8 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
                 guard let idStr = request.routeParameters["id"], let id = UUID(uuidString: idStr) else {
                     return HTTPResponse(statusCode: .badRequest)
                 }
-                sendWorkstreamInput(workstreamID: id, text: "n", pressEnter: true)
-                return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json"], body: Data("{\"ok\":true}".utf8))
+                let success = sendWorkstreamInput(workstreamID: id, text: "n", pressEnter: true)
+                return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json"], body: Data("{\"ok\":\(success)}".utf8))
             }
 
             await server.appendRoute("POST /api/workstreams/:id/interrupt") { request in
@@ -233,8 +247,8 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
                 guard let idStr = request.routeParameters["id"], let id = UUID(uuidString: idStr) else {
                     return HTTPResponse(statusCode: .badRequest)
                 }
-                sendWorkstreamInterrupt(workstreamID: id)
-                return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json"], body: Data("{\"ok\":true}".utf8))
+                let success = sendWorkstreamInterrupt(workstreamID: id)
+                return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json"], body: Data("{\"ok\":\(success)}".utf8))
             }
 
             // WebSocket
@@ -369,15 +383,30 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
         guard let tmuxPath = CommandLineTools.path(for: "tmux") ?? defaultTmuxPath() else {
             return nil
         }
+        let activeSessions = TmuxSession.listSessions(tmuxPath: tmuxPath)
+        guard !activeSessions.isEmpty else { return nil }
+
         let projects = ProjectStore.load()
         for p in projects {
             for ws in p.workstreams where ws.id == workstreamID {
                 let codexSession = TmuxSession.codexSessionName(workstreamID: ws.id)
-                if TmuxSession.sessionExists(tmuxPath: tmuxPath, sessionName: codexSession) {
+                if activeSessions.contains(codexSession) {
                     return (tmuxPath, codexSession)
                 }
+
                 let agentSession = TmuxSession.sessionName(project: p.name, workstream: ws.name, role: "agent")
-                return (tmuxPath, agentSession)
+                if activeSessions.contains(agentSession) {
+                    return (tmuxPath, agentSession)
+                }
+
+                // Fallback: match by workstream ID substring or workstream name with /agent
+                let idPrefix = ws.id.uuidString.lowercased()
+                let wsSanitized = TmuxSession.sanitize(ws.name)
+                if let matched = activeSessions.first(where: {
+                    $0.contains(idPrefix) || ($0.contains(wsSanitized) && $0.hasSuffix("/agent"))
+                }) {
+                    return (tmuxPath, matched)
+                }
             }
         }
         return nil
@@ -395,18 +424,22 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
         return TmuxSession.capturePane(tmuxPath: tmuxPath, sessionName: sessionName, lines: lines)
     }
 
-    private static func sendWorkstreamInput(workstreamID: UUID, text: String, pressEnter: Bool) {
+    @discardableResult
+    private static func sendWorkstreamInput(workstreamID: UUID, text: String, pressEnter: Bool) -> Bool {
         guard let (tmuxPath, sessionName) = resolveTmuxSession(for: workstreamID) else {
-            return
+            return false
         }
         TmuxSession.sendKeys(tmuxPath: tmuxPath, sessionName: sessionName, text: text, pressEnter: pressEnter)
+        return true
     }
 
-    private static func sendWorkstreamInterrupt(workstreamID: UUID) {
+    @discardableResult
+    private static func sendWorkstreamInterrupt(workstreamID: UUID) -> Bool {
         guard let (tmuxPath, sessionName) = resolveTmuxSession(for: workstreamID) else {
-            return
+            return false
         }
         TmuxSession.sendInterrupt(tmuxPath: tmuxPath, sessionName: sessionName)
+        return true
     }
 
     // MARK: - WebSockets & State Observation

@@ -10,12 +10,6 @@
     localStorage.setItem('dockyard_token', authToken);
   }
 
-  if (urlParams.get('token') && authToken) {
-    // Remove token from URL without reload
-    const cleanUrl = window.location.pathname + (urlParams.get('standalone') ? '?standalone=true' : '');
-    window.history.replaceState({}, document.title, cleanUrl);
-  }
-
   // App State
   let state = {
     connected: false,

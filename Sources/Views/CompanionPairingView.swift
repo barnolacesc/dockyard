@@ -6,8 +6,10 @@ import SwiftUI
 
 struct CompanionPairingView: View {
     @ObservedObject private var server = CompanionServer.shared
+    @AppStorage("dockyard.tmuxMode") private var tmuxMode: Bool = true
     @State private var useTailscale: Bool = false
     @State private var copied: Bool = false
+    @State private var copiedToken: Bool = false
 
     private var activeURL: URL? {
         if useTailscale, let tailscale = server.tailscaleURL {
@@ -46,6 +48,9 @@ struct CompanionPairingView: View {
         .onAppear {
             if server.tailscaleIP != nil {
                 useTailscale = true
+            }
+            if !tmuxMode {
+                tmuxMode = true
             }
         }
     }
@@ -126,6 +131,34 @@ struct CompanionPairingView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
+            if !tmuxMode {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(DesignColor.statusWarning)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Persistent Sessions Required")
+                            .font(.caption.bold())
+                        Text("Enable Tmux Mode to mirror agents.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("Enable") {
+                        tmuxMode = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                }
+                .padding(8)
+                .background(DesignColor.statusWarning.opacity(0.1))
+                .cornerRadius(8)
+            } else {
+                Text("Agents mirror to your phone when running in Tmux Mode. Relaunch or open a workstream to attach.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
             // Connection Details & Actions
             VStack(spacing: 8) {
                 HStack {
@@ -173,6 +206,26 @@ struct CompanionPairingView: View {
                     .buttonStyle(.borderless)
                     .help(NSLocalizedString("Invalidates the current pairing URL and disconnects active phones.", comment: ""))
                 }
+
+                HStack(spacing: 4) {
+                    Text("Token:")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text(server.token)
+                        .font(.system(.caption2, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer()
+                    Button {
+                        copyToken()
+                    } label: {
+                        Image(systemName: copiedToken ? "checkmark" : "doc.on.doc")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.borderless)
+                    .help(NSLocalizedString("Copy security token", comment: ""))
+                }
             }
         }
     }
@@ -207,6 +260,15 @@ struct CompanionPairingView: View {
         copied = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             copied = false
+        }
+    }
+
+    private func copyToken() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(server.token, forType: .string)
+        copiedToken = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            copiedToken = false
         }
     }
 

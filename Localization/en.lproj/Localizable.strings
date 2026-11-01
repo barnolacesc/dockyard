@@ -897,3 +897,9 @@
 "Invalidates the current pairing URL and disconnects active phones." = "Invalidates the current pairing URL and disconnects active phones.";
 "Control and observe coding agents on this Mac from your phone without cloud services." = "Control and observe coding agents on this Mac from your phone without cloud services.";
 "Start Companion Server" = "Start Companion Server";
+"Persistent Sessions Required" = "Persistent Sessions Required";
+"Enable Tmux Mode to mirror agents." = "Enable Tmux Mode to mirror agents.";
+"Enable" = "Enable";
+"Agents mirror to your phone when running in Tmux Mode. Relaunch or open a workstream to attach." = "Agents mirror to your phone when running in Tmux Mode. Relaunch or open a workstream to attach.";
+"Token:" = "Token:";
+"Copy security token" = "Copy security token";

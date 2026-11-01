@@ -172,6 +172,7 @@ enum TmuxSession {
         }
     }
 
+    /// Check if a session exists on the tmux socket.
     static func sessionExists(tmuxPath: String, sessionName: String) -> Bool {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: tmuxPath)
@@ -184,6 +185,30 @@ enum TmuxSession {
             return process.terminationStatus == 0
         } catch {
             return false
+        }
+    }
+
+    /// List active session names on the tmux socket.
+    static func listSessions(tmuxPath: String, socket: String = socketName) -> [String] {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: tmuxPath)
+        process.arguments = ["-L", socket, "list-sessions", "-F", "#{session_name}"]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+        do {
+            try process.run()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0,
+                  let output = String(data: data, encoding: .utf8) else {
+                return []
+            }
+            return output.components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+        } catch {
+            return []
         }
     }
 
@@ -248,7 +273,7 @@ enum TmuxSession {
         process.waitUntilExit()
     }
 
-    private static func sanitize(_ name: String) -> String {
+    static func sanitize(_ name: String) -> String {
         name.replacingOccurrences(of: ":", with: "-")
             .replacingOccurrences(of: ".", with: "-")
             .replacingOccurrences(of: " ", with: "-")

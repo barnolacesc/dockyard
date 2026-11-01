@@ -103,4 +103,10 @@ final class CompanionServerTests: XCTestCase {
             socket: "dockyard-test"
         )
     }
+
+    func testTmuxListSessionsAndSanitize() {
+        XCTAssertEqual(TmuxSession.sanitize("my project:test.1"), "my-project-test-1")
+        let sessions = TmuxSession.listSessions(tmuxPath: "/usr/bin/false", socket: "nonexistent-socket")
+        XCTAssertTrue(sessions.isEmpty)
+    }
 }

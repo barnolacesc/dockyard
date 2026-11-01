@@ -897,3 +897,9 @@
 "Invalidates the current pairing URL and disconnects active phones." = "Invalida l'URL de vinculació actual i desconnecta els telèfons actius.";
 "Control and observe coding agents on this Mac from your phone without cloud services." = "Controla i observa els agents de codi d'aquest Mac des del teu telèfon sense serveis al núvol.";
 "Start Companion Server" = "Inicia el servidor del company";
+"Persistent Sessions Required" = "Sessions persistents requerides";
+"Enable Tmux Mode to mirror agents." = "Activa el mode Tmux per reflectir agents.";
+"Enable" = "Activa";
+"Agents mirror to your phone when running in Tmux Mode. Relaunch or open a workstream to attach." = "Els agents es reflecteixen al mòbil quan s'executen en mode Tmux. Reinicia o obre un flux de treball per connectar-s'hi.";
+"Token:" = "Testimoni:";
+"Copy security token" = "Copia el testimoni de seguretat";
