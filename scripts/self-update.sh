@@ -18,9 +18,11 @@ set -eu
 BUILD_MODE="${1:-br}"
 TARGET_REF="${2:-}"
 
-# Run from the repo root regardless of caller cwd.
+# Run from the primary repo root regardless of caller cwd or linked worktrees.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR/.."
+PRIMARY_DIR="$(git -C "$SCRIPT_DIR/.." worktree list --porcelain 2>/dev/null | head -n 1 | sed 's/^worktree //' || true)"
+REPO_DIR="${PRIMARY_DIR:-$SCRIPT_DIR/..}"
+cd "$REPO_DIR"
 
 echo "Fetching latest main…"
 git fetch origin main --tags
@@ -31,7 +33,7 @@ if [ -z "${DOCKYARD_SELF_UPDATE_REEXEC:-}" ] \
     && [ "$(git rev-parse HEAD:scripts/self-update.sh)" != "$(git rev-parse origin/main:scripts/self-update.sh)" ]; then
     echo "Update flow changed upstream; re-running with the latest script…"
     latest="$(git show origin/main:scripts/self-update.sh)"
-    DOCKYARD_SELF_UPDATE_REEXEC=1 exec sh -c "$latest" "$SCRIPT_DIR/self-update.sh" "$BUILD_MODE" "$TARGET_REF"
+    DOCKYARD_SELF_UPDATE_REEXEC=1 exec sh -c "$latest" "$REPO_DIR/scripts/self-update.sh" "$BUILD_MODE" "$TARGET_REF"
 fi
 
 # Drop changes to the generated build artifact (regenerated every build) so it never
