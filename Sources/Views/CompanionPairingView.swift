@@ -5,17 +5,29 @@ import CoreImage.CIFilterBuiltins
 import SwiftUI
 
 struct CompanionPairingView: View {
+    enum ConnectionSource: String, CaseIterable, Identifiable {
+        case custom
+        case tailscale
+        case local
+
+        var id: String { rawValue }
+    }
+
     @ObservedObject private var server = CompanionServer.shared
     @AppStorage("dockyard.tmuxMode") private var tmuxMode: Bool = true
-    @State private var useTailscale: Bool = false
+    @State private var selectedSource: ConnectionSource = .local
     @State private var copied: Bool = false
     @State private var copiedToken: Bool = false
 
     private var activeURL: URL? {
-        if useTailscale, let tailscale = server.tailscaleURL {
-            return tailscale
+        switch selectedSource {
+        case .custom:
+            return server.customURL ?? server.tailscaleURL ?? server.localURL
+        case .tailscale:
+            return server.tailscaleURL ?? server.localURL ?? server.customURL
+        case .local:
+            return server.localURL ?? server.tailscaleURL ?? server.customURL
         }
-        return server.localURL ?? server.tailscaleURL
     }
 
     private var urlString: String {
@@ -32,6 +44,18 @@ struct CompanionPairingView: View {
         }
     }
 
+    private var availableSources: [ConnectionSource] {
+        var sources: [ConnectionSource] = []
+        if server.customURL != nil {
+            sources.append(.custom)
+        }
+        if server.tailscaleIP != nil {
+            sources.append(.tailscale)
+        }
+        sources.append(.local)
+        return sources
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             header
@@ -46,11 +70,22 @@ struct CompanionPairingView: View {
         .padding(18)
         .frame(width: 320)
         .onAppear {
-            if server.tailscaleIP != nil {
-                useTailscale = true
+            if server.customURL != nil {
+                selectedSource = .custom
+            } else if server.tailscaleIP != nil {
+                selectedSource = .tailscale
+            } else {
+                selectedSource = .local
             }
             if !tmuxMode {
                 tmuxMode = true
+            }
+        }
+        .onChange(of: server.customURL != nil) { hasCustom in
+            if hasCustom && selectedSource == .local {
+                selectedSource = .custom
+            } else if !hasCustom && selectedSource == .custom {
+                selectedSource = server.tailscaleIP != nil ? .tailscale : .local
             }
         }
     }
@@ -98,10 +133,18 @@ struct CompanionPairingView: View {
 
     private var runningContent: some View {
         VStack(spacing: 14) {
-            if server.tailscaleIP != nil {
-                Picker(selection: $useTailscale, label: EmptyView()) {
-                    Text("Tailscale").tag(true)
-                    Text("Local Wi-Fi").tag(false)
+            if availableSources.count > 1 {
+                Picker(selection: $selectedSource, label: EmptyView()) {
+                    ForEach(availableSources) { source in
+                        switch source {
+                        case .custom:
+                            Text("Custom URL").tag(source)
+                        case .tailscale:
+                            Text("Tailscale").tag(source)
+                        case .local:
+                            Text("Local Wi-Fi").tag(source)
+                        }
+                    }
                 }
                 .pickerStyle(.segmented)
             }

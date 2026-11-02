@@ -350,6 +350,14 @@
     return res;
   }
 
+  function scheduleFastTerminalUpdates() {
+    fetchCurrentTerminal();
+    setTimeout(fetchCurrentTerminal, 120);
+    setTimeout(fetchCurrentTerminal, 350);
+    setTimeout(fetchCurrentTerminal, 700);
+    setTimeout(fetchCurrentTerminal, 1200);
+  }
+
   async function sendAction(action) {
     if (!state.selectedWorkstreamId) return;
     try {
@@ -358,8 +366,7 @@
       await apiFetch(`/api/workstreams/${wsId}/${safeAction}`, {
         method: 'POST'
       });
-      // Refresh terminal after short delay
-      setTimeout(fetchCurrentTerminal, 300);
+      scheduleFastTerminalUpdates();
     } catch (err) {
       console.error(`Failed to send ${action}:`, err);
     }
@@ -374,7 +381,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: key, pressEnter: false })
       });
-      setTimeout(fetchCurrentTerminal, 250);
+      scheduleFastTerminalUpdates();
     } catch (err) {
       console.error('Failed to send key:', err);
     }
@@ -391,7 +398,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: text, pressEnter: true })
       });
-      setTimeout(fetchCurrentTerminal, 350);
+      scheduleFastTerminalUpdates();
     } catch (err) {
       console.error('Failed to send prompt:', err);
     }
@@ -589,8 +596,11 @@
     }
   }
 
+  let isFetchingTerminal = false;
   async function fetchCurrentTerminal() {
-    if (!state.selectedWorkstreamId) return;
+    if (!state.selectedWorkstreamId || isFetchingTerminal) return;
+    if (document.visibilityState !== 'visible') return;
+    isFetchingTerminal = true;
     try {
       const wsId = validateWorkstreamId(state.selectedWorkstreamId);
       const res = await apiFetch(`/api/workstreams/${wsId}/terminal?lines=150`);
@@ -600,6 +610,28 @@
       }
     } catch (err) {
       console.error('Failed to fetch terminal:', err);
+    } finally {
+      isFetchingTerminal = false;
+    }
+  }
+
+  let isFetchingStatus = false;
+  async function fetchStatusSilently() {
+    if (isFetchingStatus) return;
+    if (document.visibilityState !== 'visible') return;
+    isFetchingStatus = true;
+    try {
+      const res = await apiFetch('/api/status');
+      if (res.ok) {
+        const data = await res.json();
+        state.projects = data.projects || [];
+        renderSidebar();
+        updateCurrentWorkstreamHeader();
+      }
+    } catch (err) {
+      console.error('Failed to fetch status silently:', err);
+    } finally {
+      isFetchingStatus = false;
     }
   }
 
@@ -1090,15 +1122,21 @@
     const wsUrl = `${protocol}//${window.location.host}/ws?token=${encodeURIComponent(authToken)}`;
 
     let ws = null;
+    let pingTimer = null;
     try {
       ws = new WebSocket(wsUrl);
     } catch (e) {
-      setTimeout(setupWebSocket, 3000);
+      setTimeout(setupWebSocket, 1500);
       return;
     }
 
     ws.onopen = () => {
       setConnectionStatus(true, 'Live');
+      pingTimer = setInterval(() => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send('ping');
+        }
+      }, 8000);
     };
 
     ws.onmessage = (event) => {
@@ -1147,21 +1185,42 @@
     };
 
     ws.onclose = () => {
+      if (pingTimer) clearInterval(pingTimer);
       setConnectionStatus(false, 'Reconnecting...');
-      setTimeout(setupWebSocket, 3000);
+      setTimeout(setupWebSocket, 1500);
     };
 
     ws.onerror = () => {
+      if (pingTimer) clearInterval(pingTimer);
       ws.close();
     };
   }
 
-  // Polling fallback to keep terminal fresh even without WebSocket updates
+  // Fast 850ms terminal polling for real-time responsiveness
   setInterval(() => {
     if (document.visibilityState === 'visible' && state.selectedWorkstreamId) {
       fetchCurrentTerminal();
     }
-  }, 2500);
+  }, 850);
+
+  // Fast 1500ms status refresh to keep workstreams and agent badges live
+  setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      fetchStatusSilently();
+    }
+  }, 1500);
+
+  // Instant refresh when unlocking phone or switching back to app
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      fetchStatusSilently();
+      fetchCurrentTerminal();
+    }
+  });
+  window.addEventListener('focus', () => {
+    fetchStatusSilently();
+    fetchCurrentTerminal();
+  });
 
   // Initial load
   updateTerminalViewMode();
