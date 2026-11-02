@@ -112,6 +112,132 @@ html, body {
   gap: 8px;
 }
 
+.model-usage-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.model-usage-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  font-family: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-main);
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+.model-usage-pill:active {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(0.97);
+}
+
+.model-usage-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.model-usage-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.model-usage-icon.agy,
+.model-usage-icon.gemini {
+  color: #388bfd; /* Google Antigravity blue */
+}
+
+.model-usage-icon.codex,
+.model-usage-icon.openai {
+  color: #10a37f; /* OpenAI emerald */
+}
+
+.model-usage-icon.claude {
+  color: #d97857; /* Claude terracotta */
+}
+
+.model-usage-numbers {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.2px;
+}
+
+.model-usage-val {
+  color: var(--text-muted);
+}
+
+.model-usage-val.healthy {
+  color: #c9d1d9;
+}
+
+.model-usage-val.warning {
+  color: #d29922; /* amber when <= 20% remaining */
+}
+
+.model-usage-val.danger {
+  color: #f85149; /* red when <= 10% remaining */
+}
+
+.usage-toast {
+  position: fixed;
+  top: calc(52px + env(safe-area-inset-top, 0px) + 8px);
+  right: 14px;
+  max-width: 280px;
+  background: #1f242c;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  color: var(--text-main);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: pre-line;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.usage-toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 440px) {
+  #connection-text {
+    display: none;
+  }
+  .connection-pill {
+    padding: 4px 5px;
+  }
+  .current-workstream-title {
+    max-width: 110px;
+  }
+  .title-main, .title-sub {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 .connection-pill {
   display: flex;
   align-items: center;

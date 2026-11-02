@@ -14,7 +14,7 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
     static let enabledStorageKey = "dockyard.companionEnabled"
     static let customURLStorageKey = "dockyard.companionCustomURL"
 
-    struct ConfigFile: Codable, Sendable {
+    struct ConfigFile: Codable {
         var customURL: String?
         var port: Int?
         var token: String?
@@ -38,14 +38,22 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
         let fileConfig = Self.loadConfigFile()
         var port = UserDefaults.standard.integer(forKey: Self.portStorageKey)
         if port <= 0 {
-            if let filePort = fileConfig?.port, filePort > 0 && filePort <= 65535 {
+            if let filePort = fileConfig?.port, filePort > 0, filePort <= 65535 {
                 port = filePort
             } else {
                 port = Self.defaultPort
             }
         }
         currentPort = port
-        setupStateObservation()
+        if Thread.isMainThread {
+            MainActor.assumeIsolated {
+                setupStateObservation()
+            }
+        } else {
+            Task { @MainActor in
+                self.setupStateObservation()
+            }
+        }
         if UserDefaults.standard.bool(forKey: Self.enabledStorageKey) {
             start()
         }
@@ -152,7 +160,7 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
         var trimmed = base.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
 
-        if !trimmed.lowercased().hasPrefix("http://") && !trimmed.lowercased().hasPrefix("https://") {
+        if !trimmed.lowercased().hasPrefix("http://"), !trimmed.lowercased().hasPrefix("https://") {
             trimmed = "https://" + trimmed
         }
 
@@ -222,6 +230,12 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
 
         publishBonjour(port: targetPort)
         isRunning = true
+
+        Task { @MainActor in
+            AgyUsageStore.shared.refresh()
+            CodexUsageStore.shared.refresh()
+            ClaudeUsageStore.shared.refresh()
+        }
     }
 
     func stop() {
@@ -271,8 +285,20 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
                 guard isAuthorized(request) else {
                     return HTTPResponse(statusCode: .unauthorized, headers: [.contentType: "application/json"], body: Data("{\"error\":\"unauthorized\"}".utf8))
                 }
-                let data = buildStatusJSON()
+                let data = await MainActor.run { buildStatusJSON() }
                 return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json; charset=utf-8"], body: data)
+            }
+
+            await server.appendRoute("POST /api/usage/refresh") { request in
+                guard isAuthorized(request) else {
+                    return HTTPResponse(statusCode: .unauthorized, headers: [.contentType: "application/json"], body: Data("{\"error\":\"unauthorized\"}".utf8))
+                }
+                await MainActor.run {
+                    AgyUsageStore.shared.refresh(force: true)
+                    CodexUsageStore.shared.refresh(force: true)
+                    ClaudeUsageStore.shared.refresh(force: true)
+                }
+                return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json; charset=utf-8"], body: Data("{\"ok\":true}".utf8))
             }
 
             await server.appendRoute("GET /api/workstreams/:id/terminal") { request in
@@ -787,6 +813,92 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
 
     // MARK: - State Serialization
 
+    @MainActor
+    static func buildModelUsageList() -> [[String: Any]] {
+        var list: [[String: Any]] = []
+
+        // 1. Antigravity CLI (Gemini models)
+        if let agyReport = AgyUsageStore.shared.report, !agyReport.isEmpty {
+            var dict: [String: Any] = [
+                "provider": "agy",
+                "name": "Antigravity",
+            ]
+            var hasValues = false
+            if let fiveHour = agyReport.fiveHour {
+                dict["fiveHourRemaining"] = fiveHour.remainingPercent
+                hasValues = true
+                if let reset = fiveHour.resetsAt {
+                    dict["resetsAt5h"] = ISO8601DateFormatter().string(from: reset)
+                }
+            }
+            if let week = agyReport.week {
+                dict["weeklyRemaining"] = week.remainingPercent
+                hasValues = true
+                if let reset = week.resetsAt {
+                    dict["resetsAtWeekly"] = ISO8601DateFormatter().string(from: reset)
+                }
+            }
+            if hasValues {
+                list.append(dict)
+            }
+        }
+
+        // 2. OpenAI Codex
+        if let codexReport = CodexUsageStore.shared.report, !codexReport.isEmpty {
+            var dict: [String: Any] = [
+                "provider": "codex",
+                "name": "OpenAI",
+            ]
+            var hasValues = false
+            if let fiveHour = codexReport.fiveHour {
+                dict["fiveHourRemaining"] = max(0, min(100, 100 - fiveHour.usedPercent))
+                hasValues = true
+                if let reset = fiveHour.resetsAt {
+                    dict["resetsAt5h"] = ISO8601DateFormatter().string(from: reset)
+                }
+            }
+            if let week = codexReport.week {
+                dict["weeklyRemaining"] = max(0, min(100, 100 - week.usedPercent))
+                hasValues = true
+                if let reset = week.resetsAt {
+                    dict["resetsAtWeekly"] = ISO8601DateFormatter().string(from: reset)
+                }
+            }
+            if hasValues {
+                list.append(dict)
+            }
+        }
+
+        // 3. Claude Code (only if quota percentage report is available)
+        if let claudeReport = ClaudeUsageStore.shared.report, !claudeReport.isEmpty {
+            var dict: [String: Any] = [
+                "provider": "claude",
+                "name": "Claude",
+            ]
+            var hasValues = false
+            if let session = claudeReport.session {
+                dict["fiveHourRemaining"] = max(0, min(100, 100 - session.percentUsed))
+                hasValues = true
+                if let resetText = session.resetText {
+                    dict["resetsAt5h"] = resetText
+                }
+            }
+            if let week = claudeReport.week {
+                dict["weeklyRemaining"] = max(0, min(100, 100 - week.percentUsed))
+                hasValues = true
+                if let resetText = week.resetText {
+                    dict["resetsAtWeekly"] = resetText
+                }
+            }
+            if hasValues {
+                list.append(dict)
+            }
+        }
+
+        return list
+    }
+
+    @MainActor
     static func buildStatusJSON() -> Data {
         let projects = ProjectStore.load()
         let agentStates = AgentStateStore.shared.states
@@ -839,6 +951,7 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
             "type": "snapshot",
             "host": hostDict,
             "projects": projectDicts,
+            "modelUsage": buildModelUsageList(),
         ]
 
         return (try? JSONSerialization.data(withJSONObject: fullPayload)) ?? Data("{}".utf8)
@@ -911,6 +1024,7 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
 
     // MARK: - WebSockets & State Observation
 
+    @MainActor
     private func setupStateObservation() {
         AgentStateStore.shared.objectWillChange
             .receive(on: DispatchQueue.main)
@@ -941,6 +1055,27 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
                 self.objectWillChange.send()
             }
             .store(in: &cancellables)
+
+        AgyUsageStore.shared.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.broadcastCurrentSnapshot()
+            }
+            .store(in: &cancellables)
+
+        CodexUsageStore.shared.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.broadcastCurrentSnapshot()
+            }
+            .store(in: &cancellables)
+
+        ClaudeUsageStore.shared.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.broadcastCurrentSnapshot()
+            }
+            .store(in: &cancellables)
     }
 
     static func registerWSClient(id: UUID, continuation: AsyncStream<WSMessage>.Continuation) {
@@ -949,13 +1084,12 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
         let count = clientContinuations.count
         clientsLock.unlock()
 
-        DispatchQueue.main.async {
+        Task { @MainActor in
             CompanionServer.shared.connectedClientsCount = count
-        }
-
-        let initialData = buildStatusJSON()
-        if let jsonStr = String(data: initialData, encoding: .utf8) {
-            continuation.yield(.text(jsonStr))
+            let initialData = buildStatusJSON()
+            if let jsonStr = String(data: initialData, encoding: .utf8) {
+                continuation.yield(.text(jsonStr))
+            }
         }
     }
 
@@ -979,16 +1113,21 @@ final class CompanionServer: ObservableObject, @unchecked Sendable {
         clientsLock.unlock()
     }
 
+    private static func activeContinuations() -> [AsyncStream<WSMessage>.Continuation] {
+        clientsLock.withLock {
+            Array(clientContinuations.values)
+        }
+    }
+
     func broadcastCurrentSnapshot() {
-        let data = Self.buildStatusJSON()
-        guard let str = String(data: data, encoding: .utf8) else { return }
+        Task { @MainActor in
+            let data = Self.buildStatusJSON()
+            guard let str = String(data: data, encoding: .utf8) else { return }
 
-        Self.clientsLock.lock()
-        let active = Array(Self.clientContinuations.values)
-        Self.clientsLock.unlock()
-
-        for c in active {
-            c.yield(.text(str))
+            let active = Self.activeContinuations()
+            for c in active {
+                c.yield(.text(str))
+            }
         }
     }
 
