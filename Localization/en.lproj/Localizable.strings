@@ -922,3 +922,5 @@
 "Configure custom domains, reverse proxies, or VPN URLs for the Mobile Companion with automatic QR pairing." = "Configure custom domains, reverse proxies, or VPN URLs for the Mobile Companion with automatic QR pairing.";
 "Security Token" = "Security Token";
 "Shared secret required for companion app connections. Stays the same across sessions." = "Shared secret required for companion app connections. Stays the same across sessions.";
+"Mobile Model Usage Limits" = "Mobile Model Usage Limits";
+"View real-time remaining 5-hour and weekly quota percentages for contracted models in the Mobile Companion header." = "View real-time remaining 5-hour and weekly quota percentages for contracted models in the Mobile Companion header.";

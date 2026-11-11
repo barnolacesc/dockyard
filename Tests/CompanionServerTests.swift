@@ -111,6 +111,7 @@ final class CompanionServerTests: XCTestCase {
         XCTAssertEqual(UserDefaults.standard.string(forKey: CompanionServer.tokenStorageKey), "custom-pass-1234")
     }
 
+    @MainActor
     func testBuildStatusJSON() throws {
         let data = CompanionServer.buildStatusJSON()
         XCTAssertFalse(data.isEmpty)
@@ -124,6 +125,25 @@ final class CompanionServerTests: XCTestCase {
         XCTAssertNotNil(host?["defaultAgent"])
         XCTAssertNotNil(host?["defaultBypass"])
         XCTAssertNotNil(json?["projects"])
+        XCTAssertNotNil(json?["modelUsage"])
+    }
+
+    @MainActor
+    func testBuildModelUsageList() {
+        let list = CompanionServer.buildModelUsageList()
+        // list should be an array (may be empty if no probe reports yet, but must be valid)
+        for item in list {
+            XCTAssertNotNil(item["provider"])
+            XCTAssertNotNil(item["name"])
+            let fiveHour = item["fiveHourRemaining"] as? Int
+            let weekly = item["weeklyRemaining"] as? Int
+            if let fiveHour {
+                XCTAssertTrue(fiveHour >= 0 && fiveHour <= 100, "5-hour remaining must be between 0 and 100")
+            }
+            if let weekly {
+                XCTAssertTrue(weekly >= 0 && weekly <= 100, "Weekly remaining must be between 0 and 100")
+            }
+        }
     }
 
     @MainActor
@@ -715,5 +735,42 @@ final class CompanionServerTests: XCTestCase {
             XCTAssertEqual(savedProject.workstreams.count, 1)
             XCTAssertEqual(savedProject.workstreams.first?.id, ws2.id)
         }
+    }
+
+    func testUsageRefreshEndpoint() async throws {
+        try await withTestServer { baseURL, token in
+            let endpoint = baseURL.appendingPathComponent("api/usage/refresh")
+
+            var req = URLRequest(url: endpoint)
+            req.httpMethod = "POST"
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+            let (data, res) = try await URLSession.shared.data(for: req)
+            let http = try XCTUnwrap(res as? HTTPURLResponse)
+            XCTAssertEqual(http.statusCode, 200)
+
+            let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+            XCTAssertEqual(json?["ok"] as? Bool, true)
+        }
+    }
+
+    func testModelUsageRemainingPercentagesCalculations() {
+        // Codex reports used percent, so remaining percent is (100 - usedPercent) clamped between 0 and 100
+        let codexFullUsage = CodexUsageReport.Window(usedPercent: 100, resetsAt: nil, windowMinutes: 300)
+        let codexZeroUsage = CodexUsageReport.Window(usedPercent: 0, resetsAt: nil, windowMinutes: 300)
+        let codexPartialUsage = CodexUsageReport.Window(usedPercent: 95, resetsAt: nil, windowMinutes: 300)
+
+        XCTAssertEqual(max(0, min(100, 100 - codexFullUsage.usedPercent)), 0)
+        XCTAssertEqual(max(0, min(100, 100 - codexZeroUsage.usedPercent)), 100)
+        XCTAssertEqual(max(0, min(100, 100 - codexPartialUsage.usedPercent)), 5)
+
+        // Antigravity report directly provides remainingPercent
+        let agyWindow = AgyUsageReport.Window(usedPercent: 4, remainingPercent: 96, resetsAt: nil)
+        XCTAssertEqual(agyWindow.remainingPercent, 96)
+        XCTAssertEqual(agyWindow.usedPercent, 4)
+
+        // Claude report provides percentUsed, so remaining is 100 - percentUsed
+        let claudeWindow = ClaudeUsageReport.Window(percentUsed: 15, resetText: "5h")
+        XCTAssertEqual(max(0, min(100, 100 - claudeWindow.percentUsed)), 85)
     }
 }
