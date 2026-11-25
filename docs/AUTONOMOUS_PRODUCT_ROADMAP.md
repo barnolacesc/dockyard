@@ -24,15 +24,23 @@ for this benchmark; confirm the product name before investing in a Zed-specific
 integration. Benchmark descriptions are observations from vendor documentation,
 not claims that Dockyard already implements the same contract.
 
+**Owner priority clarification (2026-11-25):** Cesc mainly directs agents,
+follows their browser work and controls tasks from his phone. Reviewing diffs
+is not his primary workflow. Prioritize a reliable **phone → agent → browser →
+feedback** loop over a code-review cockpit. A user should be able to notice a
+waiting task, respond on the phone, see what the agent is doing in its browser,
+intervene when needed and understand the outcome without opening a diff.
+
 ### Existing Dockyard foundation and gaps
 
 At this baseline Dockyard already has worktree-scoped CLI agent/terminal/browser
 tabs, tmux persistence, GitHub issue-to-workstream and PR/check visibility,
 Attention notifications, an optional agent-controlled Chromium browser, and a
 Mobile Companion PWA with pairing, agent prompting, uploads and workstream
-actions. Do not repackage these as new features. The gaps are a strong native
-review loop; truthful multi-agent session history and handoff; reproducible
-execution environments; verifiable UI evidence; and optional remote compute.
+actions. Do not repackage these as new features. The gaps are reliable
+cross-device task control; a clear handoff between the user's browser and the
+agent-controlled browser; truthful agent/subagent feedback and actionable
+waiting states; verifiable browser activity; and optional remote compute.
 The current CLI support matrix is in the README; an adapter must not imply that
 every provider exposes subagent identity, resume or permissions.
 
@@ -40,20 +48,26 @@ every provider exposes subagent identity, resume or permissions.
 
 | Priority | Candidate | Differentiated user outcome and acceptance evidence | Boundary |
 |---|---|---|---|
-| P0 | **R75: complete issue → workstream → agent → PR journey** | Keep the existing R75 matrix as the first step. A user can recover the same task after restart and see its current PR/check state without duplicates. Native end-to-end, keyboard and VoiceOver evidence. | Reliability of shipped functions; no new GitHub mutation or auto-merge. |
-| P0 | **Native review cockpit** | Show one combined worktree diff (staged, unstaged and untracked), changed-file navigation, test/CI evidence and line-anchored review notes. Batch selected notes into one agent follow-up; keep unresolved notes across revisions. Prove comments remain attached or clearly become stale after a hunk moves. | Start read-only; stage/commit, conflict resolution and arbitrary agent input are separate reviewed steps. Never infer approval from green checks. |
-| P1 | **Agent session inbox and history** | Group CLI sessions across projects/worktrees with honest running, waiting, failed, done and stale states; jump to a terminal, resume only where the CLI supports it, and archive without silently deleting work. Capability matrix and restart/stale-writer tests extend R76 and issue #54. | No invented per-subagent identity or transcript access. Preserve provider-native auth and history. |
-| P1 | **Proof-of-work artifacts** | Bind a PR/workstream to reproducible test output, local preview URL, screenshots or short UI capture and exact source revision. A reviewer can inspect what the agent verified and distinguish generated evidence from human acceptance. Test private-path/secret redaction and artifact expiry. | Browser control stays opt-in; no automatic public publishing or uploading private captures. |
-| P1 | **Reproducible per-workstream environment** | Extend `.dockyard.json` setup/run with a versioned, opt-in environment recipe and explicit resource budget. Creating a worktree from the same revision yields the same declared tools/dependencies; failed setup is visible and retryable. Compare local sandbox/container feasibility first. | No implicit shell trust expansion, secret copying, network access or new runtime dependency for ordinary workstreams. |
+| P0 | **Mobile Companion task control** | Build on existing pairing and prompting: from a phone see the active workstream, send a follow-up, answer a waiting agent question and observe whether the answer was accepted. Reconnect after sleep/network loss without duplicate actions; show clear capability-based controls for pause/resume/cancel only where supported. | No remote arbitrary command surface, secret leakage or silent permission bypass. A phone action is not deployment approval. |
+| P0 | **Agent browser visibility and handoff** | Make it obvious which browser belongs to the user and which to the agent. From the Mac, then the paired phone, see the agent browser's current page and activity, request a fresh screenshot, and deliberately take over or hand back control. Prove browser-session ownership, stale-frame handling and reconnection with a real UI task. | Existing WKWebView and opt-in Chromium are distinct; do not claim they share sessions. Browser control and captures require explicit scope and privacy boundaries. |
+| P0 | **Truthful agent/subagent feedback and Needs You inbox** | Show running, waiting, failed, done and stale work across supported CLIs, with a useful next action and low-noise mobile notification when input is needed. Display individual subagents and timelines only when a provider exposes them; otherwise label counts/aggregate activity honestly. Extend R76 and issue #54 with restart and stale-writer tests. | No invented subagent identity, transcript access or universal pause/resume contract. Preserve provider-native auth and history. |
+| P1 | **Cross-device continuity** | A task opened on Mac is recognizable on the phone and returns to the same workstream after app/browser restart. Show last confirmed event and pending actions, not a misleading live state while disconnected. | Scope delivery/authentication per paired device; do not silently replay a stale prompt or approval. |
+| P1 | **Evidence of agent activity** | Attach bounded browser screenshots, navigation milestones, test output and local preview links to a task with timestamps and source revision. Present a compact user-facing activity trail so Cesc can verify the outcome without reading diffs. Test redaction and expiry. | Browser control stays opt-in; no automatic public publishing or uploading private captures. |
+| P1 | **R75: issue → workstream → agent → PR reliability** | Retain the existing journey matrix as maintenance, after the phone/browser/feedback loop. Recover the same task after restart and show accurate PR/check state without duplicates. | No new GitHub mutation or auto-merge. |
+| P2 | **Reproducible per-workstream environment** | Extend `.dockyard.json` setup/run with a versioned, opt-in environment recipe and explicit resource budget. Creating a worktree from the same revision yields the same declared tools/dependencies; failed setup is visible and retryable. Compare local sandbox/container feasibility first. | No implicit shell trust expansion, secret copying, network access or new runtime dependency for ordinary workstreams. |
 | P2 | **Remote worktree execution** | Connect to a user-controlled SSH host, create an isolated worktree there, attach its agent/terminal and recover after network loss; show which host owns processes and files. Prototype one host and measure latency/reconnect before a UI commitment. | Host identity, credentials, port forwarding, filesystem boundaries and cleanup need a separate threat review. No hosted-cloud promise. |
-| P2 | **Companion review and approval inbox** | Extend the existing PWA to inspect bounded diffs/evidence and answer a specific waiting agent prompt from a paired phone; test reconnection and stale-approval rejection. | No raw secret exposure, silent permission bypass, remote arbitrary command or implied deployment approval. |
 | P2 | **Agent interoperability contract** | Investigate ACP for agents that actually implement it, alongside existing CLI/tmux mode. Show a per-agent capability manifest for prompts, tools, permissions, resume and status; one adapter spike must prove value over terminal mode. | Do not rewrite working CLI integrations or force a provider-specific model subscription. |
-| P3 | **Alternative-attempt comparison** | Start two isolated agents on the same bounded task, compare diffs, tests and resource use, then choose a winner or reject both without touching `main`. Prototype after the review cockpit exists. | Explicit cost ceiling; never auto-merge a preferred attempt. |
+| P3 | **Optional native diff review** | If users need it, prototype read-only changed-file navigation and selected feedback to an agent; validate demand before building a full review cockpit. | Never infer approval from green checks or auto-merge. |
+| P3 | **Alternative-attempt comparison** | If users need it, start two isolated agents on the same bounded task, compare outcomes and evidence, then choose one or reject both without touching `main`. Prototype only after basic agent visibility is trustworthy. | Explicit cost ceiling; never auto-merge a preferred attempt. |
 | P3 | **Event-driven maintenance agents** | A paused-by-default, scoped bot can react to a selected issue/CI event, prepare a bounded PR and place decisions in a Needs You queue. Prove pause, dedupe, audit trail and per-repo access before schedules. | No autonomous publication, rights decisions or unlimited PR generation. Keep TrailTrace/Dockyard project automation separate from product behavior. |
 
-**Next build slice:** finish R75, then design and test the read-only review
-cockpit. Keep only one or two active implementation PRs per product until the
-review queue is healthy. R76 and issue #54 inform the session inbox; existing
+**Next build slice:** map the current Mac and Mobile Companion task states,
+identify one concrete phone-to-agent waiting/response failure, and fix that
+vertical slice end-to-end. Then prototype agent-browser visibility and a
+deliberate control handoff. Measure whether Cesc can see, respond and verify
+one real agent browser task from the phone without a diff. Keep only one or two
+active implementation PRs per product until the review queue is healthy.
+R76 and issue #54 inform truthful status; existing
 issues #196 (base branch), #202/#204/#214/#225 (bounded restore/tree paths)
 remain separate maintenance, not substitutes for this product direction.
 Release PR #261 is approval-gated. Native macOS CI, accessibility and privacy
