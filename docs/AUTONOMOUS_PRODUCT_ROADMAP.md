@@ -1,17 +1,86 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-09-15 against `origin/main` at
-`e7c236cf66e3d7d11d4985397715ce2b144098c8`.
+Last product-direction review: 2026-11-25 against `origin/main` at
+`e2faee7` and the open issue/PR queue. The dated execution queues below are
+historical snapshots; their issue and CI statuses are not current.
 
 This is the product-direction record for autonomous development. GitHub issues
 and pull requests remain the execution record. `TODO.md` is source material,
 not an automatically trusted backlog.
 
-The first **Current autonomous queue** is canonical. Dated **Live
-reconciliation** and superseded queue sections are retained as an audit trail
-and can contain stale statuses.
+The **2026-11-25 product opportunities** below are the current direction for
+new work. They are candidates, not permission to implement or ship all of them.
+Reconcile a bounded slice with code, open issues and native CI before work.
+Dated autonomous queues and **Live reconciliation** sections are retained as
+an audit trail and can contain stale statuses.
 
-## Current autonomous queue — 2026-09-15 19:30 CEST
+## 2026-11-25 product opportunities — agentic development environment
+
+**Owner direction:** resume TrailTrace Labs and Dockyard development, with
+Dockyard focused on useful capabilities demonstrated by current agentic
+development environments. This is a product roadmap, not a release plan or an
+instruction to restart unattended feature generation. Treat "Z" as **Zed**
+for this benchmark; confirm the product name before investing in a Zed-specific
+integration. Benchmark descriptions are observations from vendor documentation,
+not claims that Dockyard already implements the same contract.
+
+### Existing Dockyard foundation and gaps
+
+At this baseline Dockyard already has worktree-scoped CLI agent/terminal/browser
+tabs, tmux persistence, GitHub issue-to-workstream and PR/check visibility,
+Attention notifications, an optional agent-controlled Chromium browser, and a
+Mobile Companion PWA with pairing, agent prompting, uploads and workstream
+actions. Do not repackage these as new features. The gaps are a strong native
+review loop; truthful multi-agent session history and handoff; reproducible
+execution environments; verifiable UI evidence; and optional remote compute.
+The current CLI support matrix is in the README; an adapter must not imply that
+every provider exposes subagent identity, resume or permissions.
+
+### Sequence and candidate outcomes
+
+| Priority | Candidate | Differentiated user outcome and acceptance evidence | Boundary |
+|---|---|---|---|
+| P0 | **R75: complete issue → workstream → agent → PR journey** | Keep the existing R75 matrix as the first step. A user can recover the same task after restart and see its current PR/check state without duplicates. Native end-to-end, keyboard and VoiceOver evidence. | Reliability of shipped functions; no new GitHub mutation or auto-merge. |
+| P0 | **Native review cockpit** | Show one combined worktree diff (staged, unstaged and untracked), changed-file navigation, test/CI evidence and line-anchored review notes. Batch selected notes into one agent follow-up; keep unresolved notes across revisions. Prove comments remain attached or clearly become stale after a hunk moves. | Start read-only; stage/commit, conflict resolution and arbitrary agent input are separate reviewed steps. Never infer approval from green checks. |
+| P1 | **Agent session inbox and history** | Group CLI sessions across projects/worktrees with honest running, waiting, failed, done and stale states; jump to a terminal, resume only where the CLI supports it, and archive without silently deleting work. Capability matrix and restart/stale-writer tests extend R76 and issue #54. | No invented per-subagent identity or transcript access. Preserve provider-native auth and history. |
+| P1 | **Proof-of-work artifacts** | Bind a PR/workstream to reproducible test output, local preview URL, screenshots or short UI capture and exact source revision. A reviewer can inspect what the agent verified and distinguish generated evidence from human acceptance. Test private-path/secret redaction and artifact expiry. | Browser control stays opt-in; no automatic public publishing or uploading private captures. |
+| P1 | **Reproducible per-workstream environment** | Extend `.dockyard.json` setup/run with a versioned, opt-in environment recipe and explicit resource budget. Creating a worktree from the same revision yields the same declared tools/dependencies; failed setup is visible and retryable. Compare local sandbox/container feasibility first. | No implicit shell trust expansion, secret copying, network access or new runtime dependency for ordinary workstreams. |
+| P2 | **Remote worktree execution** | Connect to a user-controlled SSH host, create an isolated worktree there, attach its agent/terminal and recover after network loss; show which host owns processes and files. Prototype one host and measure latency/reconnect before a UI commitment. | Host identity, credentials, port forwarding, filesystem boundaries and cleanup need a separate threat review. No hosted-cloud promise. |
+| P2 | **Companion review and approval inbox** | Extend the existing PWA to inspect bounded diffs/evidence and answer a specific waiting agent prompt from a paired phone; test reconnection and stale-approval rejection. | No raw secret exposure, silent permission bypass, remote arbitrary command or implied deployment approval. |
+| P2 | **Agent interoperability contract** | Investigate ACP for agents that actually implement it, alongside existing CLI/tmux mode. Show a per-agent capability manifest for prompts, tools, permissions, resume and status; one adapter spike must prove value over terminal mode. | Do not rewrite working CLI integrations or force a provider-specific model subscription. |
+| P3 | **Alternative-attempt comparison** | Start two isolated agents on the same bounded task, compare diffs, tests and resource use, then choose a winner or reject both without touching `main`. Prototype after the review cockpit exists. | Explicit cost ceiling; never auto-merge a preferred attempt. |
+| P3 | **Event-driven maintenance agents** | A paused-by-default, scoped bot can react to a selected issue/CI event, prepare a bounded PR and place decisions in a Needs You queue. Prove pause, dedupe, audit trail and per-repo access before schedules. | No autonomous publication, rights decisions or unlimited PR generation. Keep TrailTrace/Dockyard project automation separate from product behavior. |
+
+**Next build slice:** finish R75, then design and test the read-only review
+cockpit. Keep only one or two active implementation PRs per product until the
+review queue is healthy. R76 and issue #54 inform the session inbox; existing
+issues #196 (base branch), #202/#204/#214/#225 (bounded restore/tree paths)
+remain separate maintenance, not substitutes for this product direction.
+Release PR #261 is approval-gated. Native macOS CI, accessibility and privacy
+evidence are required for each implementation slice. TrailTrace Labs retains
+its own product roadmap and release gates; this document does not assign it a
+Dockyard feature backlog.
+
+### Benchmark evidence (checked 2026-11-25)
+
+- [Orca worktrees](https://orca.dev/docs/model/worktrees) combine isolated
+  worktrees, agent terminals, browser tabs and a review/PR lifecycle; its
+  [AI diff review](https://orca.dev/docs/review/annotate-ai-diff) batches
+  line-level notes back to an agent. [Remote worktrees](https://orca.dev/docs/recipes/remote-worktrees)
+  and [mobile companion](https://orca.dev/docs/mobile) motivate later slices.
+- [Zed parallel agents](https://zed.dev/docs/ai/parallel-agents) provide
+  project-grouped thread history and optional worktree isolation;
+  [external agents](https://zed.dev/docs/ai/external-agents) use ACP. Provider
+  behavior differs, so Dockyard should expose capabilities rather than promise
+  uniform controls.
+- [Cursor worktrees](https://cursor.com/docs/configuration/worktrees) and
+  [cloud agents](https://cursor.com/docs/cloud-agent) show isolated execution,
+  environment setup and cross-device task continuation;
+  [capabilities](https://cursor.com/docs/cloud-agent/capabilities) include
+  browser verification artifacts. Dockyard's local-first posture remains a
+  product choice, not a missing cloud account feature.
+
+## Previous autonomous queue — 2026-09-15 19:30 CEST
 
 `origin/main` is `e7c236c`. The roadmap has been reconciled after the product
 work merged on 11–14 September: GitHub-issue workstream creation, the Attention
