@@ -1,98 +1,43 @@
 # Dockyard Autonomous Product Roadmap
 
-Last product-direction review: 2026-11-25 against `origin/main` at
-`e2faee7` and the open issue/PR queue. The dated execution queues below are
-historical snapshots; their issue and CI statuses are not current.
+Last product-direction review: 2026-11-27. This document directs **new autonomous product development**, not routine reliability fixes or a release. GitHub issues/PRs remain the execution record. The dated queues below are historical snapshots, not permission to pick old Ready items.
 
-This is the product-direction record for autonomous development. GitHub issues
-and pull requests remain the execution record. `TODO.md` is source material,
-not an automatically trusted backlog.
+## Current direction — Mobile Companion webapp first
 
-The **2026-11-25 product opportunities** below are the current direction for
-new work. They are candidates, not permission to implement or ship all of them.
-Reconcile a bounded slice with code, open issues and native CI before work.
-Dated autonomous queues and **Live reconciliation** sections are retained as
-an audit trail and can contain stale statuses.
+**Cesc's decision (2026-11-27):** Dockyard's core Mac application already exists. Spend **100% of the autonomous feature-development lane on making the existing Mobile Companion webapp more useful and easier to use**. Ease of use and UX are the product pillars, not a polish phase after features. Mac/server changes are allowed only when required to make one mobile user journey work end-to-end; do not start a separate desktop, diff-review, remote-execution or agent-platform roadmap.
 
-## 2026-11-25 product opportunities — agentic development environment
+The intended loop is: **open phone → see what needs me → understand what the agent is doing → answer or intervene → verify the outcome**. A person should be able to complete this while away from the Mac without reading terminal noise or code diffs. Preserve an optional terminal for advanced use; do not make it the primary screen.
 
-**Owner direction:** resume TrailTrace Labs and Dockyard development, with
-Dockyard focused on useful capabilities demonstrated by current agentic
-development environments. This is a product roadmap, not a release plan or an
-instruction to restart unattended feature generation. Treat "Z" as **Zed**
-for this benchmark; confirm the product name before investing in a Zed-specific
-integration. Benchmark descriptions are observations from vendor documentation,
-not claims that Dockyard already implements the same contract.
+### Existing foundation and baseline gap
 
-**Owner priority clarification (2026-11-25):** Cesc mainly directs agents,
-follows their browser work and controls tasks from his phone. Reviewing diffs
-is not his primary workflow. Prioritize a reliable **phone → agent → browser →
-feedback** loop over a code-review cockpit. A user should be able to notice a
-waiting task, respond on the phone, see what the agent is doing in its browser,
-intervene when needed and understand the outcome without opening a diff.
+Dockyard already has a paired Companion PWA, `/api/status`, workstreams, a terminal mirror, prompt and image sending, approve/deny/interrupt actions, new workstream creation, and a waiting banner. Do not re-sell these as new features. The current `Resources/Web/index.html` opens into a terminal-centric layout; `Resources/Web/app.js` polls status and terminal and maps agent states to terse WORKING/WAITING labels. The missing product contract is a calm task-first overview, clear next actions, trustworthy freshness and feedback, and usable browser visibility from a phone. Inventory the current routes and UI before proposing each slice; provider capabilities and browser-control boundaries remain explicit.
 
-### Existing Dockyard foundation and gaps
+### UX rules for every slice
 
-At this baseline Dockyard already has worktree-scoped CLI agent/terminal/browser
-tabs, tmux persistence, GitHub issue-to-workstream and PR/check visibility,
-Attention notifications, an optional agent-controlled Chromium browser, and a
-Mobile Companion PWA with pairing, agent prompting, uploads and workstream
-actions. Do not repackage these as new features. The gaps are reliable
-cross-device task control; a clear handoff between the user's browser and the
-agent-controlled browser; truthful agent/subagent feedback and actionable
-waiting states; verifiable browser activity; and optional remote compute.
-The current CLI support matrix is in the README; an adapter must not imply that
-every provider exposes subagent identity, resume or permissions.
+- **One obvious next action:** show the task goal, human-readable status, last confirmed update, and what Cesc can do now. No raw-state jargon as the only explanation; no empty dashboard chrome.
+- **Progressive disclosure:** task summary first, activity/evidence next, terminal and source-control details only when requested. No mandatory diff-review flow.
+- **Truth over animation:** distinguish working, needs input, finished, failed, disconnected and stale. A queued phone action is not an accepted action. Never invent individual subagents when a provider exposes only aggregate state.
+- **Phone-native interaction:** thumb-reachable controls, short copy, readable typography, safe-area handling, keyboard behavior, screen-reader labels and reduced motion. Restore browser zoom; the current `user-scalable=no` is a known accessibility concern to address in an appropriate slice.
+- **Safe recovery:** reconnect to the same task after sleep or network loss, show whether a send was confirmed, and prevent duplicate prompts/approvals. Destructive or permission-changing actions require a distinct confirmation and supported capability.
+- **Evidence over feature count:** each implementation PR demonstrates a real phone → agent → result journey at narrow and wide mobile sizes, including VoiceOver/keyboard and disconnected states. Collect Cesc's qualitative feedback after using a real task before opening the next large slice.
 
-### Sequence and candidate outcomes
+### Sequenced autonomous build queue
 
-| Priority | Candidate | Differentiated user outcome and acceptance evidence | Boundary |
-|---|---|---|---|
-| P0 | **Mobile Companion task control** | Build on existing pairing and prompting: from a phone see the active workstream, send a follow-up, answer a waiting agent question and observe whether the answer was accepted. Reconnect after sleep/network loss without duplicate actions; show clear capability-based controls for pause/resume/cancel only where supported. | No remote arbitrary command surface, secret leakage or silent permission bypass. A phone action is not deployment approval. |
-| P0 | **Agent browser visibility and handoff** | Make it obvious which browser belongs to the user and which to the agent. From the Mac, then the paired phone, see the agent browser's current page and activity, request a fresh screenshot, and deliberately take over or hand back control. Prove browser-session ownership, stale-frame handling and reconnection with a real UI task. | Existing WKWebView and opt-in Chromium are distinct; do not claim they share sessions. Browser control and captures require explicit scope and privacy boundaries. |
-| P0 | **Truthful agent/subagent feedback and Needs You inbox** | Show running, waiting, failed, done and stale work across supported CLIs, with a useful next action and low-noise mobile notification when input is needed. Display individual subagents and timelines only when a provider exposes them; otherwise label counts/aggregate activity honestly. Extend R76 and issue #54 with restart and stale-writer tests. | No invented subagent identity, transcript access or universal pause/resume contract. Preserve provider-native auth and history. |
-| P1 | **Cross-device continuity** | A task opened on Mac is recognizable on the phone and returns to the same workstream after app/browser restart. Show last confirmed event and pending actions, not a misleading live state while disconnected. | Scope delivery/authentication per paired device; do not silently replay a stale prompt or approval. |
-| P1 | **Evidence of agent activity** | Attach bounded browser screenshots, navigation milestones, test output and local preview links to a task with timestamps and source revision. Present a compact user-facing activity trail so Cesc can verify the outcome without reading diffs. Test redaction and expiry. | Browser control stays opt-in; no automatic public publishing or uploading private captures. |
-| P1 | **R75: issue → workstream → agent → PR reliability** | Retain the existing journey matrix as maintenance, after the phone/browser/feedback loop. Recover the same task after restart and show accurate PR/check state without duplicates. | No new GitHub mutation or auto-merge. |
-| P2 | **Reproducible per-workstream environment** | Extend `.dockyard.json` setup/run with a versioned, opt-in environment recipe and explicit resource budget. Creating a worktree from the same revision yields the same declared tools/dependencies; failed setup is visible and retryable. Compare local sandbox/container feasibility first. | No implicit shell trust expansion, secret copying, network access or new runtime dependency for ordinary workstreams. |
-| P2 | **Remote worktree execution** | Connect to a user-controlled SSH host, create an isolated worktree there, attach its agent/terminal and recover after network loss; show which host owns processes and files. Prototype one host and measure latency/reconnect before a UI commitment. | Host identity, credentials, port forwarding, filesystem boundaries and cleanup need a separate threat review. No hosted-cloud promise. |
-| P2 | **Agent interoperability contract** | Investigate ACP for agents that actually implement it, alongside existing CLI/tmux mode. Show a per-agent capability manifest for prompts, tools, permissions, resume and status; one adapter spike must prove value over terminal mode. | Do not rewrite working CLI integrations or force a provider-specific model subscription. |
-| P3 | **Optional native diff review** | If users need it, prototype read-only changed-file navigation and selected feedback to an agent; validate demand before building a full review cockpit. | Never infer approval from green checks or auto-merge. |
-| P3 | **Alternative-attempt comparison** | If users need it, start two isolated agents on the same bounded task, compare outcomes and evidence, then choose one or reject both without touching `main`. Prototype only after basic agent visibility is trustworthy. | Explicit cost ceiling; never auto-merge a preferred attempt. |
-| P3 | **Event-driven maintenance agents** | A paused-by-default, scoped bot can react to a selected issue/CI event, prepare a bounded PR and place decisions in a Needs You queue. Prove pause, dedupe, audit trail and per-repo access before schedules. | No autonomous publication, rights decisions or unlimited PR generation. Keep TrailTrace/Dockyard project automation separate from product behavior. |
+| Priority | Mobile user outcome | Bounded acceptance evidence |
+|---|---|---|
+| P0.1 | **Task-first home / Needs You inbox.** On opening the PWA, see active tasks, blocked questions, failures and recent completions across workstreams, with a clear next action. The terminal remains available one tap deeper. | A user can find and answer the one blocked task among several in under two taps; unread/attention state survives refresh; stale and offline tasks are not shown as live. Use existing status data first, extend the bridge only for missing confirmed facts. |
+| P0.2 | **Reliable mobile reply loop.** Respond to a waiting agent with text, photo or file and know whether the agent accepted it. Present approval/deny only for a real provider-supported request; distinguish send, pending, delivered and failed. | One real waiting task is unblocked from the phone; retry after loss of network neither duplicates nor silently drops the reply; errors retain draft text and expose a retry. |
+| P0.3 | **Readable agent activity and outcomes.** Replace a terminal-only progress view with a concise timeline of meaningful milestones, subagent status when actually available, and a final result card with evidence links. | Cesc can tell what changed, what is still running, and what needs him without opening the terminal. Unknown provider detail is labelled unknown, not fabricated; noisy events are grouped. |
+| P1.1 | **Agent browser viewing on mobile.** From the task, open the correct agent-owned browser tab/page, see a fresh screenshot and navigation milestones, and tell user browser from agent browser. | A real browser task can be followed from the phone, with capture timestamp, source workstream and explicit stale-frame/reconnect behavior. Existing WKWebView and opt-in Chromium remain distinct sessions. |
+| P1.2 | **Deliberate browser handoff.** Let Cesc request control when supported, clearly show who currently controls the browser, then return control to the agent without losing task context. | One verified phone takeover/hand-back journey; stale commands are rejected and the UI confirms ownership transitions. No silent camera, page capture or browser permission expansion. |
+| P1.3 | **Cross-device continuity and notification tuning.** A task begun on Mac opens on the phone in the same workstream; actionable needs get low-noise alerts, while normal progress is visible in-app. | Sleep/reconnect/restart test shows last confirmed state, pending actions and destination; notification deep links open the correct task; per-task mute/read controls work. |
+| P2 | **Mobile usability hardening.** Performance on a real phone, loading/empty/error states, accessible zoom, one-handed navigation and understandable pairing/reconnection help. | Measure first useful content and action latency on representative devices; test with VoiceOver, keyboard, reduced motion and poor network. Avoid a new framework unless the existing web stack is the measured blocker. |
 
-**Next build slice:** map the current Mac and Mobile Companion task states,
-identify one concrete phone-to-agent waiting/response failure, and fix that
-vertical slice end-to-end. Then prototype agent-browser visibility and a
-deliberate control handoff. Measure whether Cesc can see, respond and verify
-one real agent browser task from the phone without a diff. Keep only one or two
-active implementation PRs per product until the review queue is healthy.
-R76 and issue #54 inform truthful status; existing
-issues #196 (base branch), #202/#204/#214/#225 (bounded restore/tree paths)
-remain separate maintenance, not substitutes for this product direction.
-Release PR #261 is approval-gated. Native macOS CI, accessibility and privacy
-evidence are required for each implementation slice. TrailTrace Labs retains
-its own product roadmap and release gates; this document does not assign it a
-Dockyard feature backlog.
+**Build discipline:** start with P0.1 and one end-to-end task journey; keep at most one or two active implementation PRs. Reconcile open work before adding a PR, use current main, review native macOS CI and mobile browser evidence, and never auto-merge or publish. Existing PR #288 is this direction proposal; it must be reviewed/merged before autonomous implementation of the new queue. Existing issue #54 and R76 may supply status evidence, but are not separate desktop deliverables. PR #289 and other maintenance work do not change this mobile-only product priority. Release work remains approval-gated.
 
-### Benchmark evidence (checked 2026-11-25)
+### Orca inspiration — adopt selectively, do not clone
 
-- [Orca worktrees](https://orca.dev/docs/model/worktrees) combine isolated
-  worktrees, agent terminals, browser tabs and a review/PR lifecycle; its
-  [AI diff review](https://orca.dev/docs/review/annotate-ai-diff) batches
-  line-level notes back to an agent. [Remote worktrees](https://orca.dev/docs/recipes/remote-worktrees)
-  and [mobile companion](https://orca.dev/docs/mobile) motivate later slices.
-- [Zed parallel agents](https://zed.dev/docs/ai/parallel-agents) provide
-  project-grouped thread history and optional worktree isolation;
-  [external agents](https://zed.dev/docs/ai/external-agents) use ACP. Provider
-  behavior differs, so Dockyard should expose capabilities rather than promise
-  uniform controls.
-- [Cursor worktrees](https://cursor.com/docs/configuration/worktrees) and
-  [cloud agents](https://cursor.com/docs/cloud-agent) show isolated execution,
-  environment setup and cross-device task continuation;
-  [capabilities](https://cursor.com/docs/cloud-agent/capabilities) include
-  browser verification artifacts. Dockyard's local-first posture remains a
-  product choice, not a missing cloud account feature.
+Orca's [Mobile companion](https://orca.dev/docs/mobile) documents a cross-host agent/worktree list, waiting/done states, short replies and a mobile browser view; its [Agents feed](https://orca.dev/docs/activity) groups blocking questions, completions and response previews; its [Notifications](https://orca.dev/docs/notifications) provides low-noise catch-up and tuning. These are evidence that task triage, response and browser visibility matter on a phone, **not** a request to copy Orca's mobile terminal controls, source-control editing, account switching, remote host management or visual styling. Dockyard should stay local-first, simpler and task-first. Benchmark each candidate against Cesc's actual phone workflow before implementation.
 
 ## Previous autonomous queue — 2026-09-15 19:30 CEST
 
