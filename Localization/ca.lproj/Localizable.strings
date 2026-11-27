@@ -510,6 +510,14 @@
 "Fetching usage…" = "Carregant l'ús…";
 "No usage data — tap to refresh" = "Sense dades d'ús — toca per actualitzar";
 
+"Dockyard will briefly close and reopen. Your selected project or workstream and saved workspace tabs return. Running terminal and agent sessions may not survive; save in-progress work first." = "Dockyard es tancarà i es tornarà a obrir breument. Es recuperaran el projecte o flux de treball seleccionat i les pestanyes desades. Les sessions de terminal i agent en execució poden no sobreviure al reinici; desa abans la feina en curs.";
+"Install in the background while you keep working. Dockyard will ask before restarting to apply the update." = "Instal·la en segon pla mentre continues treballant. Dockyard et demanarà que el reiniciïs per aplicar l’actualització.";
+"Hide Details" = "Amaga els detalls";
+"Details" = "Detalls";
+"Expanded" = "Desplegat";
+"Collapsed" = "Plegat";
+"Saved workspace tabs reopen; running sessions may stop." = "Es recuperen les pestanyes desades; les sessions en execució poden aturar-se.";
+"Installs in the background; restart later to apply." = "S’instal·la en segon pla; reinicia més tard per aplicar-la.";
 "Update Available" = "Actualització disponible";
 "Install Update" = "Instal·la l’actualització";
 "Later" = "Més tard";

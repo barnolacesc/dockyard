@@ -510,6 +510,14 @@
 "Fetching usage…" = "Fetching usage…";
 "No usage data — tap to refresh" = "No usage data — tap to refresh";
 
+"Dockyard will briefly close and reopen. Your selected project or workstream and saved workspace tabs return. Running terminal and agent sessions may not survive; save in-progress work first." = "Dockyard will briefly close and reopen. Your selected project or workstream and saved workspace tabs return. Running terminal and agent sessions may not survive; save in-progress work first.";
+"Install in the background while you keep working. Dockyard will ask before restarting to apply the update." = "Install in the background while you keep working. Dockyard will ask before restarting to apply the update.";
+"Hide Details" = "Hide Details";
+"Details" = "Details";
+"Expanded" = "Expanded";
+"Collapsed" = "Collapsed";
+"Saved workspace tabs reopen; running sessions may stop." = "Saved workspace tabs reopen; running sessions may stop.";
+"Installs in the background; restart later to apply." = "Installs in the background; restart later to apply.";
 "Update Available" = "Update Available";
 "Install Update" = "Install Update";
 "Later" = "Later";

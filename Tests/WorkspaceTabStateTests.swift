@@ -43,6 +43,44 @@ final class WorkspaceTabSnapshotTests: XCTestCase {
         XCTAssertEqual(snapshot.terminalTitles[terminalID], "zsh")
     }
 
+    func testRestartRestoresSelectionAndSavedWorkspaceTabsWithoutAssumingLiveSessions() throws {
+        let selectionSuite = "test.dockyard.updateRestart.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: selectionSuite))
+        defer { defaults.removePersistentDomain(forName: selectionSuite) }
+
+        let workstreamID = UUID()
+        let terminalID = UUID()
+        let browserID = UUID()
+        SidebarSelection.workstream(workstreamID).save(defaults: defaults)
+        WorkspaceTabSnapshotStore.save(
+            WorkspaceTabSnapshot(
+                tabs: [.agent, .terminal(terminalID), .browser(browserID)],
+                terminalCount: 1,
+                browserCount: 1,
+                activeTab: .terminal(terminalID),
+                browserTitles: [browserID: "Local preview"],
+                terminalTitles: [terminalID: "zsh"],
+                runStarted: false,
+                runStoppedManually: false,
+                browserURLs: [browserID: "http://localhost:3000"]
+            ),
+            for: workstreamID
+        )
+
+        // Simulate a new ContentView after the updater terminates the app. The saved
+        // layout survives, but no claim is made that either process kept running.
+        XCTAssertEqual(SidebarSelection.loadSaved(defaults: defaults), .workstream(workstreamID))
+        let restored = startupWorkspaceTabState(
+            snapshot: nil,
+            persistedSnapshot: WorkspaceTabSnapshotStore.load(for: workstreamID)
+        )
+        XCTAssertEqual(restored.tabs, [.agent, .terminal(terminalID), .browser(browserID)])
+        XCTAssertEqual(restored.activeTab, .terminal(terminalID))
+        XCTAssertEqual(restored.browserURLs[browserID], "http://localhost:3000")
+        XCTAssertEqual(restored.terminalTitles[terminalID], "zsh")
+        XCTAssertEqual(restored.reconciled(liveSurfaceIDs: []).tabs, [.agent, .browser(browserID)])
+    }
+
     func testAgentBrowserRoundTripsAndRequiresLiveTerminalSurface() throws {
         let workstreamID = UUID()
         let agentBrowserID = derivedUUID(from: workstreamID, salt: "agent-browser-1")
