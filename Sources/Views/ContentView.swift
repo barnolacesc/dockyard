@@ -1137,42 +1137,19 @@ private struct UpdateInstalledNotice: View {
     let onDismiss: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 20, weight: .medium))
-                .foregroundStyle(.green)
-                .frame(width: 24, height: 24)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Update Installed")
-                    .font(.system(size: 13, weight: .semibold))
-
-                Text("The latest changes are ready. Restart Dockyard to apply them and see what's new.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button("Restart & View What's New", action: onRestart)
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                    .pressable()
-            }
-
-            Button(action: onDismiss) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .semibold))
-                    .frame(width: 28, height: 28)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .accessibilityLabel("Later")
-        }
-        .padding(14)
-        .frame(width: 360, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous))
-        .shadow(color: .black.opacity(0.10), radius: 2, y: 1)
-        .shadow(color: .black.opacity(0.18), radius: 16, y: 6)
+        CompactUpdateNotice(
+            title: NSLocalizedString("Update Installed", comment: "Installed update notice title"),
+            icon: "checkmark.circle.fill",
+            iconColor: .green,
+            summary: NSLocalizedString("Saved workspace tabs reopen; running sessions may stop.", comment: "Compact restart warning"),
+            details: NSLocalizedString(
+                "Dockyard will briefly close and reopen. Your selected project or workstream and saved workspace tabs return. Running terminal and agent sessions may not survive; save in-progress work first.",
+                comment: "What a source-update restart restores and what it cannot promise"
+            ),
+            actionTitle: NSLocalizedString("Restart", comment: "Apply an installed source update"),
+            onAction: onRestart,
+            onDismiss: onDismiss
+        )
     }
 }
 
@@ -1183,55 +1160,105 @@ private struct UpdateAvailableNotice: View {
     let onDismiss: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "arrow.down.circle.fill")
-                .font(.system(size: 20, weight: .medium))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 24, height: 24)
+        CompactUpdateNotice(
+            title: releaseTag.map {
+                String(format: NSLocalizedString("Release %@ Available", comment: "Update available popup title with release tag"), $0)
+            } ?? NSLocalizedString("Update Available", comment: "Available update notice title"),
+            icon: "arrow.down.circle.fill",
+            iconColor: .accentColor,
+            summary: NSLocalizedString("Installs in the background; restart later to apply.", comment: "Compact background install summary"),
+            details: NSLocalizedString(
+                "Install in the background while you keep working. Dockyard will ask before restarting to apply the update.",
+                comment: "Background source-update behavior"
+            ),
+            actionTitle: NSLocalizedString("Install Update", comment: "Start installing the source update"),
+            onAction: onUpdate,
+            onDismiss: onDismiss
+        )
+        .accessibilityValue(releaseTag != nil
+            ? String(format: NSLocalizedString("Release %@ available", comment: "Available release update"), releaseTag!)
+            : String(format: NSLocalizedString("%d updates available", comment: "Available source updates"), commitsAhead))
+    }
+}
 
-            VStack(alignment: .leading, spacing: 6) {
-                if let releaseTag {
-                    Text(String(format: NSLocalizedString("Release %@ Available", comment: "Update available popup title with release tag"), releaseTag))
-                        .font(.system(size: 13, weight: .semibold))
+private struct CompactUpdateNotice: View {
+    let title: String
+    let icon: String
+    let iconColor: Color
+    let summary: String
+    let details: String
+    let actionTitle: String
+    let onAction: () -> Void
+    let onDismiss: () -> Void
 
-                    Text(String(format: NSLocalizedString("Dockyard %@ is available. It will install in the background while you keep working.", comment: "Update available popup message with release tag"), releaseTag))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    Text("Update Available")
-                        .font(.system(size: 13, weight: .semibold))
+    @State private var isExpanded = false
 
-                    Text("A new version of Dockyard is ready. It will install in the background while you keep working.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .foregroundStyle(iconColor)
+                    .accessibilityHidden(true)
 
-                Button("Install Update", action: onUpdate)
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Button(actionTitle, action: onAction)
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
                     .pressable()
+
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .semibold))
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("Later")
             }
 
-            Button(action: onDismiss) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .semibold))
-                    .frame(width: 28, height: 28)
-                    .contentShape(Rectangle())
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(summary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button {
+                    isExpanded.toggle()
+                } label: {
+                    Label(
+                        isExpanded
+                            ? NSLocalizedString("Hide Details", comment: "Collapse update notice details")
+                            : NSLocalizedString("Details", comment: "Expand update notice details"),
+                        systemImage: isExpanded ? "chevron.up" : "chevron.down"
+                    )
+                    .font(.caption)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .accessibilityValue(isExpanded
+                    ? NSLocalizedString("Expanded", comment: "Disclosure is expanded")
+                    : NSLocalizedString("Collapsed", comment: "Disclosure is collapsed"))
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .accessibilityLabel("Later")
+
+            if isExpanded {
+                Text(details)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
-        .padding(14)
+        .padding(10)
         .frame(width: 360, alignment: .leading)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignRadius.lg, style: .continuous))
         .shadow(color: .black.opacity(0.10), radius: 2, y: 1)
         .shadow(color: .black.opacity(0.18), radius: 16, y: 6)
-        .accessibilityValue(releaseTag != nil
-            ? String(format: NSLocalizedString("Release %@ available", comment: "Available release update"), releaseTag!)
-            : String(format: NSLocalizedString("%d updates available", comment: "Available source updates"), commitsAhead))
     }
 }
 
