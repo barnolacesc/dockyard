@@ -39,6 +39,16 @@ Dockyard already has a paired Companion PWA, `/api/status`, workstreams, a termi
 
 Orca's [Mobile companion](https://orca.dev/docs/mobile) documents a cross-host agent/worktree list, waiting/done states, short replies and a mobile browser view; its [Agents feed](https://orca.dev/docs/activity) groups blocking questions, completions and response previews; its [Notifications](https://orca.dev/docs/notifications) provides low-noise catch-up and tuning. These are evidence that task triage, response and browser visibility matter on a phone, **not** a request to copy Orca's mobile terminal controls, source-control editing, account switching, remote host management or visual styling. Dockyard should stay local-first, simpler and task-first. Benchmark each candidate against Cesc's actual phone workflow before implementation.
 
+### Herdr inspiration — useful mobile patterns, not a terminal-first pivot
+
+Cesc also named [Herdr Mobile](https://herdr.dev/mobile/) as a reference. Its cross-machine inbox puts **needs you**, done, working and idle in attention order, with unread state; the mobile compose flow accepts longer text, screenshots, photos and dictation. Helpers appear beneath the agent that started them, and the mobile session can reconnect to an agent that continues running in Herdr's background core. These are product references, not evidence that Dockyard already has the same capabilities.
+
+- Bring the *attention ordering* and readable unread/needs-you signals into P0.1, but group by Dockyard task/workstream and avoid adding machine or terminal hierarchy to the primary screen.
+- Evaluate screenshot/photo/voice composition in P0.2 only after the basic reply acknowledgement and retry path works; show attachment delivery status, not merely that the phone queued it.
+- In P0.3, nest helper activity under its parent task **only where the agent provider exposes verified parent/child events**. Otherwise show a truthful aggregate update. Do not fabricate a subagent tree for visual parity.
+- Use Herdr's return-to-work continuity as a benchmark for P1.3: reopening the PWA should land on the same task and make confirmed, pending and stale state obvious. This does not imply Dockyard agents survive a host reboot.
+- Keep terminal keybars, pane maps, arbitrary app mods and multi-machine SSH setup out of the autonomous mobile queue unless real user testing shows they improve Cesc's core phone workflow. Dockyard's default remains a simple task-first webapp.
+
 ## Previous autonomous queue — 2026-09-15 19:30 CEST
 
 `origin/main` is `e7c236c`. The roadmap has been reconciled after the product
