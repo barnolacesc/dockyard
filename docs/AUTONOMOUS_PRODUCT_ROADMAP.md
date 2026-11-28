@@ -1,17 +1,55 @@
 # Dockyard Autonomous Product Roadmap
 
-Last reconciled: 2026-09-15 against `origin/main` at
-`e7c236cf66e3d7d11d4985397715ce2b144098c8`.
+Last product-direction review: 2026-11-27. This document directs **new autonomous product development**, not routine reliability fixes or a release. GitHub issues/PRs remain the execution record. The dated queues below are historical snapshots, not permission to pick old Ready items.
 
-This is the product-direction record for autonomous development. GitHub issues
-and pull requests remain the execution record. `TODO.md` is source material,
-not an automatically trusted backlog.
+## Current direction — Mobile Companion webapp first
 
-The first **Current autonomous queue** is canonical. Dated **Live
-reconciliation** and superseded queue sections are retained as an audit trail
-and can contain stale statuses.
+**Cesc's decision (2026-11-27):** Dockyard's core Mac application already exists. Spend **100% of the autonomous feature-development lane on making the existing Mobile Companion webapp more useful and easier to use**. Ease of use and UX are the product pillars, not a polish phase after features. Mac/server changes are allowed only when required to make one mobile user journey work end-to-end; do not start a separate desktop, diff-review, remote-execution or agent-platform roadmap.
 
-## Current autonomous queue — 2026-09-15 19:30 CEST
+The intended loop is: **open phone → see what needs me → understand what the agent is doing → answer or intervene → verify the outcome**. A person should be able to complete this while away from the Mac without reading terminal noise or code diffs. Preserve an optional terminal for advanced use; do not make it the primary screen.
+
+### Existing foundation and baseline gap
+
+Dockyard already has a paired Companion PWA, `/api/status`, workstreams, a terminal mirror, prompt and image sending, approve/deny/interrupt actions, new workstream creation, and a waiting banner. Do not re-sell these as new features. The current `Resources/Web/index.html` opens into a terminal-centric layout; `Resources/Web/app.js` polls status and terminal and maps agent states to terse WORKING/WAITING labels. The missing product contract is a calm task-first overview, clear next actions, trustworthy freshness and feedback, and usable browser visibility from a phone. Inventory the current routes and UI before proposing each slice; provider capabilities and browser-control boundaries remain explicit.
+
+### UX rules for every slice
+
+- **One obvious next action:** show the task goal, human-readable status, last confirmed update, and what Cesc can do now. No raw-state jargon as the only explanation; no empty dashboard chrome.
+- **Progressive disclosure:** task summary first, activity/evidence next, terminal and source-control details only when requested. No mandatory diff-review flow.
+- **Truth over animation:** distinguish working, needs input, finished, failed, disconnected and stale. A queued phone action is not an accepted action. Never invent individual subagents when a provider exposes only aggregate state.
+- **Phone-native interaction:** thumb-reachable controls, short copy, readable typography, safe-area handling, keyboard behavior, screen-reader labels and reduced motion. Restore browser zoom; the current `user-scalable=no` is a known accessibility concern to address in an appropriate slice.
+- **Safe recovery:** reconnect to the same task after sleep or network loss, show whether a send was confirmed, and prevent duplicate prompts/approvals. Destructive or permission-changing actions require a distinct confirmation and supported capability.
+- **Evidence over feature count:** each implementation PR demonstrates a real phone → agent → result journey at narrow and wide mobile sizes, including VoiceOver/keyboard and disconnected states. Collect Cesc's qualitative feedback after using a real task before opening the next large slice.
+
+### Sequenced autonomous build queue
+
+| Priority | Mobile user outcome | Bounded acceptance evidence |
+|---|---|---|
+| P0.1 | **Task-first home / Needs You inbox.** On opening the PWA, see active tasks, blocked questions, failures and recent completions across workstreams, with a clear next action. The terminal remains available one tap deeper. | A user can find and answer the one blocked task among several in under two taps; unread/attention state survives refresh; stale and offline tasks are not shown as live. Use existing status data first, extend the bridge only for missing confirmed facts. |
+| P0.2 | **Reliable mobile reply loop.** Respond to a waiting agent with text, photo or file and know whether the agent accepted it. Present approval/deny only for a real provider-supported request; distinguish send, pending, delivered and failed. | One real waiting task is unblocked from the phone; retry after loss of network neither duplicates nor silently drops the reply; errors retain draft text and expose a retry. |
+| P0.3 | **Readable agent activity and outcomes.** Replace a terminal-only progress view with a concise timeline of meaningful milestones, subagent status when actually available, and a final result card with evidence links. | Cesc can tell what changed, what is still running, and what needs him without opening the terminal. Unknown provider detail is labelled unknown, not fabricated; noisy events are grouped. |
+| P1.1 | **Agent browser viewing on mobile.** From the task, open the correct agent-owned browser tab/page, see a fresh screenshot and navigation milestones, and tell user browser from agent browser. | A real browser task can be followed from the phone, with capture timestamp, source workstream and explicit stale-frame/reconnect behavior. Existing WKWebView and opt-in Chromium remain distinct sessions. |
+| P1.2 | **Deliberate browser handoff.** Let Cesc request control when supported, clearly show who currently controls the browser, then return control to the agent without losing task context. | One verified phone takeover/hand-back journey; stale commands are rejected and the UI confirms ownership transitions. No silent camera, page capture or browser permission expansion. |
+| P1.3 | **Cross-device continuity and notification tuning.** A task begun on Mac opens on the phone in the same workstream; actionable needs get low-noise alerts, while normal progress is visible in-app. | Sleep/reconnect/restart test shows last confirmed state, pending actions and destination; notification deep links open the correct task; per-task mute/read controls work. |
+| P2 | **Mobile usability hardening.** Performance on a real phone, loading/empty/error states, accessible zoom, one-handed navigation and understandable pairing/reconnection help. | Measure first useful content and action latency on representative devices; test with VoiceOver, keyboard, reduced motion and poor network. Avoid a new framework unless the existing web stack is the measured blocker. |
+
+**Build discipline:** start with P0.1 and one end-to-end task journey; keep at most one or two active implementation PRs. Reconcile open work before adding a PR, use current main, review native macOS CI and mobile browser evidence, and never auto-merge or publish. Existing PR #288 is this direction proposal; it must be reviewed/merged before autonomous implementation of the new queue. Existing issue #54 and R76 may supply status evidence, but are not separate desktop deliverables. PR #289 and other maintenance work do not change this mobile-only product priority. Release work remains approval-gated.
+
+### Orca inspiration — adopt selectively, do not clone
+
+Orca's [Mobile companion](https://orca.dev/docs/mobile) documents a cross-host agent/worktree list, waiting/done states, short replies and a mobile browser view; its [Agents feed](https://orca.dev/docs/activity) groups blocking questions, completions and response previews; its [Notifications](https://orca.dev/docs/notifications) provides low-noise catch-up and tuning. These are evidence that task triage, response and browser visibility matter on a phone, **not** a request to copy Orca's mobile terminal controls, source-control editing, account switching, remote host management or visual styling. Dockyard should stay local-first, simpler and task-first. Benchmark each candidate against Cesc's actual phone workflow before implementation.
+
+### Herdr inspiration — useful mobile patterns, not a terminal-first pivot
+
+Cesc also named [Herdr Mobile](https://herdr.dev/mobile/) as a reference. Its cross-machine inbox puts **needs you**, done, working and idle in attention order, with unread state; the mobile compose flow accepts longer text, screenshots, photos and dictation. Helpers appear beneath the agent that started them, and the mobile session can reconnect to an agent that continues running in Herdr's background core. These are product references, not evidence that Dockyard already has the same capabilities.
+
+- Bring the *attention ordering* and readable unread/needs-you signals into P0.1, but group by Dockyard task/workstream and avoid adding machine or terminal hierarchy to the primary screen.
+- Evaluate screenshot/photo/voice composition in P0.2 only after the basic reply acknowledgement and retry path works; show attachment delivery status, not merely that the phone queued it.
+- In P0.3, nest helper activity under its parent task **only where the agent provider exposes verified parent/child events**. Otherwise show a truthful aggregate update. Do not fabricate a subagent tree for visual parity.
+- Use Herdr's return-to-work continuity as a benchmark for P1.3: reopening the PWA should land on the same task and make confirmed, pending and stale state obvious. This does not imply Dockyard agents survive a host reboot.
+- Keep terminal keybars, pane maps, arbitrary app mods and multi-machine SSH setup out of the autonomous mobile queue unless real user testing shows they improve Cesc's core phone workflow. Dockyard's default remains a simple task-first webapp.
+
+## Previous autonomous queue — 2026-09-15 19:30 CEST
 
 `origin/main` is `e7c236c`. The roadmap has been reconciled after the product
 work merged on 11–14 September: GitHub-issue workstream creation, the Attention
